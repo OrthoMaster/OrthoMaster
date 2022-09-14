@@ -2,7 +2,7 @@ import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
 
-let API_URL = "http://orthomasterapi-lb-1130920879.eu-west-1.elb.amazonaws.com/logtime"
+let API_URL = "https://api.orthomaster.fr/logtime"
 
 
 export const saveLogtimeOnLesson = async (log) => {
