@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
     SafeAreaView,
@@ -15,6 +15,8 @@ import { Page1, Page2, Page3 } from "./Pages";
 
 import Carousel from "react-native-snap-carousel";
 
+
+
 export const AuthHome = ({navigation}) => {
     const [indicatorIndex, setIndicatorIndex] = useState(0)
     const pages = [<Page1 />, <Page2 />, <Page3 />]
@@ -24,10 +26,10 @@ export const AuthHome = ({navigation}) => {
             <StatusBar barStyle={'default'} />
             <Carousel
                 data={pages}
-                renderItem={item => pages[indicatorIndex]}
+                renderItem={item => pages[item.index]}
                 sliderWidth={Dimensions.get('screen').width}
                 itemWidth={Dimensions.get('screen').width}
-                onSnapToItem={(e) => setIndicatorIndex(e)}
+                onBeforeSnapToItem={(e) => setIndicatorIndex(e)}
             />
             <View style={styles.carouselIndicatorContainer}>
                 {
@@ -65,7 +67,7 @@ export const AuthHome = ({navigation}) => {
                       });
                 }}
                 >
-                    <Text style={styles.buttonText}>S'inscrire</Text>
+                    <Text style={styles.buttonText}>Nous contacter</Text>
                 </TouchableOpacity>
             </View>
             

@@ -8,7 +8,8 @@ import {
   StatusBar,
   Image,
   Pressable,
-  Dimensions
+  Dimensions,
+  Platform
 } from "react-native";
 
 import YoutubePlayer from "react-native-youtube-iframe";
@@ -20,21 +21,33 @@ export const VideoFullScreenModal = ({
   videoUrl,
   isVisible,
   onClose,
+  videoRef
 }) => {
-  const videoRef = useRef()
   const [isPlaying, setIsPlaying] = useState(true)
+  const refPlayerFS = useRef()
 
   let dim = Dimensions.get('screen')
 
+  // const init = async () => {
+  //   refPlayerFS.current.seekTo(await videoRef.current.getCurrentTime())
+  // }
+
+  // useEffect(() => {
+
+  //   // console.log('time:',currentTime);
+  //   init()
+  //   // refPlayerFS.current.seekTo(videoRef)
+  // }, [])
+
+
   const jumpTime = async (time) => {
-    videoRef.current.seekTo(await videoRef.current.getCurrentTime() + time)
+    refPlayerFS.current.seekTo(await refPlayerFS.current.getCurrentTime() + time)
   }
 
   return (
     <Modal
       animationType="slide"
       visible={isVisible}
-      supportedOrientations={['portrait', 'landscape']}
     // onRequestClose={() => {
     //   Alert.alert("Modal has been closed.");
     //   setModalVisible(!modalVisible);
@@ -43,36 +56,45 @@ export const VideoFullScreenModal = ({
       <SafeAreaView style={styles.container}>
         <StatusBar
           animated={true}
-          backgroundColor="#61dafb"
+          backgroundColor="#000000"
           barStyle={'light-content'}
         />
 
 
-        <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center' }}>
+        <View style={styles.displayerContainer}>
+
+          {/* <View style={{ width: 300, height: 200, backgroundColor: 'yellow' }} /> */}
+
+
           <Pressable
             onPress={() => {
               setIsPlaying(!isPlaying)
             }}
-            style={{}}
+            style={{
+              // transform: [{ rotateZ:'90deg' }],
+            }}
           >
 
-            <View pointerEvents='none' style={{ alignItems: 'center' }}>
+            <View pointerEvents='none' style={{
+              alignItems: 'center',
+            }}>
               <YoutubePlayer
-                ref={videoRef}
-                width={dim.height > dim.width ? dim.width : (dim.height - 60) * 16 / 9}
-                height={dim.height > dim.width ? dim.width * 9 / 16 : dim.height - 60}
+                ref={refPlayerFS}
+                width={dim.height * 0.7}
+                height={dim.height * 0.7 * 9 / 16}
                 videoId={videoUrl}
                 initialPlayerParams={{
                   controls: 0,
                   modestbranding: 1
                 }}
                 play={isPlaying}
+                webViewStyle={{
+                }}
               />
-              {/* <Text style={{color: '#ffffff'}}>{videoRef.current.getCurrentTime()}</Text> */}
             </View>
           </Pressable>
           <VideoControls
-            videoRef={videoRef}
+            videoRef={refPlayerFS}
             running={isPlaying}
             theme='light'
             onPlay={() => {
@@ -87,12 +109,17 @@ export const VideoFullScreenModal = ({
             onFullScreen={() => {
               onClose()
             }}
+            style={{
+              width: dim.width,
+            }}
           />
 
         </View>
 
 
-        <TouchableOpacity style={[styles.closeButton, { top: Dimensions.get('screen').height > Dimensions.get('screen').width ? 30 : 5 }]}
+        <TouchableOpacity style={[styles.closeButton, {
+          top: dim.height * 0.8
+        }]}
           onPress={() => onClose()}
         >
           <Image
@@ -101,8 +128,8 @@ export const VideoFullScreenModal = ({
           />
         </TouchableOpacity>
 
-      </SafeAreaView>
-    </Modal>
+      </SafeAreaView >
+    </Modal >
   )
 }
 
@@ -110,14 +137,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
-    flexDirection: 'column',
+    alignContent: 'center',
+    justifyContent: 'center',
+    alignItems: 'center'
+
+  },
+  displayerContainer: {
+    alignSelf: 'center',
+    transform: [{ rotateZ: '90deg' }],
+    alignItems: 'center',
+    // width: Dimensions.get('screen').height * 0.8,
+    // height: (Dimensions.get('screen').height * 0.8) * 9 / 16,
   },
   closeButton: {
     height: 50,
     width: 50,
+    margin: 10,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
+    alignSelf: 'flex-end'
   },
   closeButtonImg: {
     height: '40%',

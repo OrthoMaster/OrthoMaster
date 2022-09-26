@@ -12,11 +12,12 @@ export const VideoControls = ({
     onJumpBefore,
     onJumpAfter,
     onFullScreen,
-    theme
+    theme,
+    style
 }) => {
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, style]}>
             <View style={styles.videoControls}>
                 <TouchableOpacity
                     style={styles.buttonVideoControl}
