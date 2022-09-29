@@ -24,7 +24,7 @@ export const AuthHome = ({navigation}) => {
             <StatusBar barStyle={'default'} />
             <Carousel
                 data={pages}
-                renderItem={item => pages[indicatorIndex]}
+                renderItem={item => pages[item.index]}
                 sliderWidth={Dimensions.get('screen').width}
                 itemWidth={Dimensions.get('screen').width}
                 onSnapToItem={(e) => setIndicatorIndex(e)}
@@ -43,7 +43,7 @@ export const AuthHome = ({navigation}) => {
             <View style={styles.buttonsContainer}>
                 <TouchableOpacity style={[styles.button,
                 {
-                    backgroundColor: '#828392'
+                    backgroundColor: '#E75A08'
                 }]}
                 onPress={()=>{
                     navigation.navigate('auth-home')
@@ -52,7 +52,7 @@ export const AuthHome = ({navigation}) => {
                     <Text style={styles.buttonText}>Se connecter</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.button, {
+                {/* <TouchableOpacity style={[styles.button, {
                     backgroundColor: '#E75A08'
                 }]}
                 onPress={()=>{
@@ -65,8 +65,8 @@ export const AuthHome = ({navigation}) => {
                       });
                 }}
                 >
-                    <Text style={styles.buttonText}>S'inscrire</Text>
-                </TouchableOpacity>
+                    <Text style={styles.buttonText}>Nous contacter</Text>
+                </TouchableOpacity> */}
             </View>
             
         </SafeAreaView>

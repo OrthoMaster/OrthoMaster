@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "1.0.0",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/appicon.png",
     "userInterfaceStyle": "light",
@@ -14,17 +14,16 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hugotaieb.OrthoMaster"
+      "bundleIdentifier": "com.hugotaieb.OrthoMaster",
+      "buildNumber": "3"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/appicon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.hugotaieb.OrthoMaster"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      "package": "com.hugotaieb.OrthoMaster",
+      "versionCode": 2
     },
     "extra": {
       "eas": {

@@ -3,7 +3,7 @@ import axios from "axios";
 import { restoreLocalConfigAsync } from "../utils";
 
 
-const API_URL = "http://orthomasterapi-lb-1130920879.eu-west-1.elb.amazonaws.com/contents/search";
+const API_URL = "https://api.orthomaster.fr/contents/search";
 
 export const fetchSearchList = async ({ contentType = null, filters = null, body = null, searchText = "" }, page) => {
 

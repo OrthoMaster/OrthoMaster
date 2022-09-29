@@ -20,15 +20,15 @@ const FlashButton = ({ label, onPress, buttonColor }) => {
       buttonImage= require('../../../assets/flash/patient.png')
       break;
       case 'Mon activité':
-        buttonImage= require('../../../assets/flash/activité.png')
+        buttonImage= require('../../../assets/flash/activite.png')
       
       break;
       case 'Les solutions':
-        buttonImage= require('../../../assets/flash/les-solutions.png')
+        buttonImage= require('../../../assets/flash/les_solutions.png')
       
       break;
       case 'Actualité & Interviews':
-        buttonImage= require('../../../assets/flash/actualité-et-interviews.png')
+        buttonImage= require('../../../assets/flash/actualite_et_interviews.png')
       
       break;
   

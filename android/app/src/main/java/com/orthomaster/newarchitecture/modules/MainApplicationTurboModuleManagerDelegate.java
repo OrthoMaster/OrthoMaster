@@ -1,4 +1,4 @@
-package com.hugotaieb.OrthoMaster.newarchitecture.modules;
+package com.orthomaster.newarchitecture.modules;
 
 import com.facebook.jni.HybridData;
 import com.facebook.react.ReactPackage;

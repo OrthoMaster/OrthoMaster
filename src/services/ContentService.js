@@ -6,7 +6,7 @@ import { getS3XML } from '../services/S3Service'
 import {logout} from '../actions/auth'
 
 
-let API_URL = "http://orthomasterapi-lb-1130920879.eu-west-1.elb.amazonaws.com/contents"
+let API_URL = "https://api.orthomaster.fr/contents"
 
 export const fetchQa = async (limit = 0) => {
   const config = await restoreLocalConfigAsync()

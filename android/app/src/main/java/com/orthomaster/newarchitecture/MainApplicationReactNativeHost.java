@@ -1,4 +1,4 @@
-package com.hugotaieb.OrthoMaster.newarchitecture;
+package com.orthomaster.newarchitecture;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
@@ -20,9 +20,9 @@ import com.facebook.react.fabric.EmptyReactNativeConfig;
 import com.facebook.react.fabric.FabricJSIModuleProvider;
 import com.facebook.react.fabric.ReactNativeConfig;
 import com.facebook.react.uimanager.ViewManagerRegistry;
-import com.hugotaieb.OrthoMaster.BuildConfig;
-import com.hugotaieb.OrthoMaster.newarchitecture.components.MainComponentsRegistry;
-import com.hugotaieb.OrthoMaster.newarchitecture.modules.MainApplicationTurboModuleManagerDelegate;
+import com.orthomaster.BuildConfig;
+import com.orthomaster.newarchitecture.components.MainComponentsRegistry;
+import com.orthomaster.newarchitecture.modules.MainApplicationTurboModuleManagerDelegate;
 import java.util.ArrayList;
 import java.util.List;
 

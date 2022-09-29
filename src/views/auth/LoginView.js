@@ -60,13 +60,13 @@ export const LoginView = ({ navigation }) => {
                 >
                     <Text style={styles.signInButtonText}>Continue</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={() => {
                         Linking.openURL('mailto:question@orthomaster.fr?subject=Mot de passe oublié')
                     }}
                 >
                     <Text>Mot de passe oublié</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
         </SafeAreaView>
     );

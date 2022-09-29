@@ -4,7 +4,7 @@ import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
 
-let API_URL = "http://orthomasterapi-lb-1130920879.eu-west-1.elb.amazonaws.com/s3"
+let API_URL = "https://api.orthomaster.fr/s3"
 
 
 export const getS3Image = async (path) => {

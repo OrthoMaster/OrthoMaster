@@ -1,4 +1,4 @@
-package com.hugotaieb.OrthoMaster;
+package com.orthomaster;
 
 import android.os.Build;
 import android.os.Bundle;

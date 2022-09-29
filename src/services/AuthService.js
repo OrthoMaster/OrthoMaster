@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = "http://orthomasterapi-lb-1130920879.eu-west-1.elb.amazonaws.com/";
+const API_URL = "https://api.orthomaster.fr/";
 
 class AuthService {
   login(username, password) {

@@ -52,6 +52,7 @@ export const AccountMenu = ({ navigation }) => {
                     icon={require('../../../../assets/settings/profile.png')}
                     text={'Mon profil'}
                     onPress={() => {
+                        console.log('pressed');
                         navigation.navigate('account-profile')
                     }}
                 />
