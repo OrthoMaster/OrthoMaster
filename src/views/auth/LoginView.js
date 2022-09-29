@@ -15,9 +15,6 @@ import { selectAuthMessage } from '../../reducers/auth';
 
 import { login } from '../../actions/auth';
 
-
-
-
 export const LoginView = ({ navigation }) => {
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
@@ -62,6 +59,7 @@ export const LoginView = ({ navigation }) => {
                 </TouchableOpacity>
                 {/* <TouchableOpacity
                     onPress={() => {
+                       
                         Linking.openURL('mailto:question@orthomaster.fr?subject=Mot de passe oublié')
                     }}
                 >

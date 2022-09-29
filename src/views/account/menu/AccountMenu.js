@@ -36,11 +36,7 @@ export const AccountMenu = ({ navigation }) => {
     const store = useStore()
     const dispatch = useDispatch()
 
-    const stateAuth = store.getState().auth
-
-    console.log(stateAuth);
-
-
+    //const stateAuth = store.getState().auth
 
 
     return (

@@ -77,7 +77,7 @@ export const MenuBody = ({ menuIsOpen, onSwipeReturn, onSelect }) => {
         {
             category: {
                 name: 'Main et doigts',
-                tags: ['main', 'doigts', 'main et doigts']
+                tags: ['main', 'doigts', 'pouce']
             },
             position: {
                 top: '53%', left: '5%'

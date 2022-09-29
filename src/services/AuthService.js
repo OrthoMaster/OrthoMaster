@@ -8,7 +8,6 @@ class AuthService {
     return axios
       .post(API_URL + "user/login", { username, password })
       .then((response) => {
-
         let config = { user: response.data, accessToken: null}
         if (response.headers.authorization) {
           config.accessToken = response.headers.authorization.slice(7)
@@ -17,10 +16,9 @@ class AuthService {
           if (error)
             console.log('error: ', error);
         })
-
         return {code: 200,user: config.user, accessToken: config.accessToken};
       }).catch((e)=> {
-        console.log('eeerrrrrr', e.response);
+        throw e
       })
   }
   logout() {
