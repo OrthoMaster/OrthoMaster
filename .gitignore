@@ -62,3 +62,7 @@ web-build/
 dist/
 
 # @end expo-cli
+
+
+keys
+certs
