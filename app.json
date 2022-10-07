@@ -6,22 +6,13 @@
     "orientation": "portrait",
     "icon": "./assets/appicon.png",
     "userInterfaceStyle": "light",
-    "updates": {
-      "fallbackToCacheTimeout": 0,
-      "codeSigningCertificate": "./certs/certificate.pem",
-      "codeSigningMetadata": {
-        "keyid": "main",
-        "alg": "rsa-v1_5-sha256"
-      },
-      "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hugotaieb.OrthoMaster",
-      "buildNumber": "3"
+      "buildNumber": "13"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +20,7 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.hugotaieb.OrthoMaster",
-      "versionCode": 2
+      "versionCode": 5
     },
     "extra": {
       "eas": {
@@ -38,6 +29,9 @@
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
-    }
+    },
+    "plugins": [
+      "sentry-expo"
+    ]
   }
 }
