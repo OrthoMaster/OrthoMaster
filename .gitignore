@@ -66,3 +66,5 @@ dist/
 
 keys
 certs
+package-lock.json
+assets/.DS_Store

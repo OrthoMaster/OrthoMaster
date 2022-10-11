@@ -25,7 +25,7 @@ const DisplayUserInfo = ({ dataType, data }) => {
                 data = 'Titulaire'
                 break;
             case 2:
-                data = 'Collaborateur'
+                data = 'Associé'
                 break;
             default:
                 data = 'inconnue'

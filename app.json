@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "1.0.7",
+    "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/appicon.png",
     "userInterfaceStyle": "light",
@@ -12,7 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hugotaieb.OrthoMaster",
-      "buildNumber": "13"
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,15 +20,12 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.hugotaieb.OrthoMaster",
-      "versionCode": 5
+      "versionCode": 13
     },
     "extra": {
       "eas": {
         "projectId": "276593fa-b663-4367-8b00-3d86821c874a"
       }
-    },
-    "runtimeVersion": {
-      "policy": "sdkVersion"
     },
     "plugins": [
       "sentry-expo"

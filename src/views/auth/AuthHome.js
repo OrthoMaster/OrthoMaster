@@ -13,7 +13,7 @@ import {
 
 import { Page1, Page2, Page3 } from "./Pages";
 
-import Carousel from "react-native-snap-carousel";
+import Carousel from "../../../snap-carousel/src/carousel/Carousel";
 
 
 
