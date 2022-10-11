@@ -15,5 +15,8 @@ export const getOfficeInfos = async (officeId) => {
       })
       .then((response) => {
         return response.data;
+      })
+      .catch((e)=> {
+        Sentry.Native.captureException(e);
       });
   }

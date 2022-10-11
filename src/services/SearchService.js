@@ -25,5 +25,8 @@ export const fetchSearchList = async ({ contentType = null, filters = null, body
     })
     .then((response) => {
       return response.data;
+    })
+    .catch((e)=> {
+      Sentry.Native.captureException(e);
     });
 }

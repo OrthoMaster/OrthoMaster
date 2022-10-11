@@ -51,7 +51,7 @@ export const ModuleProgress = ({
             height: 100,
             borderRadius: 100,
             shadowColor: 'black',
-            shadowRadius: 15,
+            shadowRadius: 12,
             shadowOpacity: moduleState == MODULE_NOT_STARTED ? .0 : .35,
             shadowOffset: {
               height: 10

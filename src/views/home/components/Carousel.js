@@ -6,7 +6,7 @@ import {
     Image,
     TouchableOpacity
 } from 'react-native';
-import Carousel from 'react-native-snap-carousel';
+import Carousel from '../../../../snap-carousel/src/carousel/Carousel';
 import { getS3Image } from '../../../services/S3Service'
 
 

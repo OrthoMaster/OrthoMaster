@@ -19,6 +19,9 @@ export const postUserLessonStatus = async (obj) => {
         })
         .then((response) => {
             return response;
+        })
+        .catch((e)=> {
+          Sentry.Native.captureException(e);
         });
 }
 
@@ -33,6 +36,9 @@ export const getUserProgression = async () => {
       })
       .then((response) => {
         return response.data;
+      })
+      .catch((e)=> {
+        Sentry.Native.captureException(e);
       });
   }
 
@@ -47,6 +53,9 @@ export const getUserProgression = async () => {
       })
       .then((response) => {
         return response.data;
+      })
+      .catch((e)=> {
+        Sentry.Native.captureException(e);
       });
   }
 
@@ -61,6 +70,9 @@ export const getUserProgression = async () => {
       })
       .then((response) => {
         return response.data;
+      })
+      .catch((e)=> {
+        Sentry.Native.captureException(e);
       });
   }
 

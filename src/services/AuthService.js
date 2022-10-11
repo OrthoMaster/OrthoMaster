@@ -18,7 +18,7 @@ class AuthService {
         })
         return {code: 200,user: config.user, accessToken: config.accessToken};
       }).catch((e)=> {
-        throw e
+        Sentry.Native.captureException(e);
       })
   }
   logout() {
@@ -30,11 +30,17 @@ class AuthService {
     const authHeader = 'Bearer ' + config.accessToken ;
 
     return axios.get(API_URL + 'connect', { headers: { Authorization : authHeader} })
+    .catch((e)=> {
+      Sentry.Native.captureException(e);
+    })
   }
 
   changePassword(credentials) {
 
     return axios.post(API_URL + 'user/edit/password', credentials)
+    .catch((e)=> {
+      Sentry.Native.captureException(e);
+    })
   }
 
 }

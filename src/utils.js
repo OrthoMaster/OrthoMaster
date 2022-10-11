@@ -1,7 +1,6 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 export const getCurrentDate = () => {
     var date = new Date()
 
@@ -13,7 +12,7 @@ export const restoreLocalConfigAsync = async () => {
 
     let config = await AsyncStorage.getItem('config', (error, result) => {
       if (error) {
-        console.log(error);
+        Sentry.Native.captureException(error);
         return null
       }
       return result

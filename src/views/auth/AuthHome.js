@@ -13,7 +13,7 @@ import {
 
 import { Page1, Page2, Page3 } from "./Pages";
 
-import Carousel from "react-native-snap-carousel";
+import Carousel from "../../../snap-carousel/src/carousel/Carousel";
 
 
 
@@ -45,7 +45,7 @@ export const AuthHome = ({navigation}) => {
             <View style={styles.buttonsContainer}>
                 <TouchableOpacity style={[styles.button,
                 {
-                    backgroundColor: '#828392'
+                    backgroundColor: '#E75A08'
                 }]}
                 onPress={()=>{
                     navigation.navigate('auth-home')
@@ -54,7 +54,7 @@ export const AuthHome = ({navigation}) => {
                     <Text style={styles.buttonText}>Se connecter</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.button, {
+                {/* <TouchableOpacity style={[styles.button, {
                     backgroundColor: '#E75A08'
                 }]}
                 onPress={()=>{
@@ -68,7 +68,7 @@ export const AuthHome = ({navigation}) => {
                 }}
                 >
                     <Text style={styles.buttonText}>Nous contacter</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
             
         </SafeAreaView>

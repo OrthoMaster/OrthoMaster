@@ -23,7 +23,10 @@ export const saveLogtimeOnLesson = async (log) => {
         )
         .then((response) => {
             return response.data;
-        });
+        })
+        .catch((e)=> {
+            Sentry.Native.captureException(e);
+          });
 }
 
 export const saveLogtimeOnApp = async (log) => {
@@ -42,5 +45,8 @@ export const saveLogtimeOnApp = async (log) => {
         })
         .then((response) => {
             return response.data;
-        });
+        })
+        .catch((e)=> {
+            Sentry.Native.captureException(e);
+          });
 }

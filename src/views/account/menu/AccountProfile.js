@@ -15,6 +15,7 @@ import { useStore } from "react-redux";
 
 const DisplayUserInfo = ({ dataType, data }) => {
 
+
     if (dataType == 'Type de compte') {
         switch (data) {
             case 0:
@@ -24,7 +25,7 @@ const DisplayUserInfo = ({ dataType, data }) => {
                 data = 'Titulaire'
                 break;
             case 2:
-                data = 'Collaborateur'
+                data = 'Associé'
                 break;
             default:
                 data = 'inconnue'
@@ -39,7 +40,7 @@ const DisplayUserInfo = ({ dataType, data }) => {
 
     return (
         <View style={{ paddingVertical: 10 }}>
-            <Text style={{ fontSize: '10', color: '#E75A08', fontWeight: 'bold' }}>{dataType}</Text>
+            <Text style={{ fontSize: 10, color: '#E75A08', fontWeight: 'bold' }}>{dataType}</Text>
             <Text style={{ fontSize: 15 }}>{data}</Text>
         </View>
     )
@@ -49,8 +50,6 @@ const DisplayUserInfo = ({ dataType, data }) => {
 export const AccountProfile = () => {
     const store = useStore()
     const userState = store.getState().auth.userCurrentSession
-
-    console.log(userState);
 
     return (
         <SafeAreaView>
