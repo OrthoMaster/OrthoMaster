@@ -15,6 +15,9 @@ export const getFormationMainQuizStatus = async (id_formation) => {
     })
     .then((response) => {
       return response.data;
+    })
+    .catch((e)=> {
+      Sentry.Native.captureException(e);
     });
 }
 
@@ -28,6 +31,9 @@ export const insertMainQuizStatusByFormation = async (data) => {
     })
     .then((response) => {
       return response.data;
+    })
+    .catch((e)=> {
+      Sentry.Native.captureException(e);
     });
 }
 
@@ -46,5 +52,8 @@ export const valideMainQuizStatusByFormation = async (data) => {
     })
     .then((response) => {
       return response.data;
+    })
+    .catch((e)=> {
+      Sentry.Native.captureException(e);
     });
 }

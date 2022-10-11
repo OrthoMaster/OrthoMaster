@@ -64,6 +64,7 @@ export function ContentDisplayer({ route, navigation }) {
       await mutation.mutateAsync(log)
     } catch (error) {
       console.error(error)
+      Sentry.Native.captureException(e);
     } finally {
       console.log('[ LOG ] lesson:', log)
     }

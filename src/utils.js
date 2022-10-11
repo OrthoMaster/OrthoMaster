@@ -12,7 +12,6 @@ export const restoreLocalConfigAsync = async () => {
 
     let config = await AsyncStorage.getItem('config', (error, result) => {
       if (error) {
-        console.log(error);
         Sentry.Native.captureException(error);
         return null
       }

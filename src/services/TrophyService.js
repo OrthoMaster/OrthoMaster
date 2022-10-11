@@ -32,6 +32,9 @@ export const getUserTrophy = async (id_user) => {
     })
     .then((response) => {
       return response.data;
+    })
+    .catch((e)=> {
+      Sentry.Native.captureException(e);
     });
 }
 
@@ -46,5 +49,8 @@ export const postNewUserTrophy = async (id_trophy) => {
     })
     .then((response) => {
       return response.data;
+    })
+    .catch((e)=> {
+      Sentry.Native.captureException(e);
     });
 }
