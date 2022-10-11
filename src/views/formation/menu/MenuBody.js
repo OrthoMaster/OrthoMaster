@@ -13,7 +13,7 @@ import Device from 'react-native-device-detection';
 const BODY_POS_ON_CLOSE = '0%'
 const BODY_POS_ON_OPEN = '45%'
 
-
+// test
 const MenuBodyButton = ({ button, onSelect, currentSelected, index }) => {
 
     return <TouchableOpacity
