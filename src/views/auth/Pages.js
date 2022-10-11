@@ -44,6 +44,7 @@ export const Page1 = () => {
 
 export const Page2 = () => {
     return (<View style={styles.container}>
+
         <ScrollView contentContainerStyle={{}} style={{ width: '100%' }}>
 
             <Image
@@ -78,6 +79,7 @@ export const Page2 = () => {
 
 export const Page3 = () => {
     return (<View style={styles.container}>
+
         <ScrollView contentContainerStyle={{ alignItems: 'center' }} style={{ width: '100%', marginTop: 30 }}>
             <Text style={[styles.textSecondary, { fontSize: 18, fontWeight: 'bold' }]}>
                 Optimisez votre activité !
@@ -100,7 +102,6 @@ export const Page3 = () => {
 
             <Text style={[styles.textSecondary, { marginTop: 50, fontSize: 15 }]}>Pour en savoir plus, rendez vous sur: <Text style={{color: '#E75A08'}}>www.orthomaster.fr</Text></Text>
         </ScrollView>
-
     </View>)
 }
 
