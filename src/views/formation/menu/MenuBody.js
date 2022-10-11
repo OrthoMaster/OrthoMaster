@@ -3,10 +3,11 @@ import {
     Image,
     TouchableOpacity,
     View,
-    StyleSheet
+    StyleSheet,
 } from 'react-native'
 
 import GestureRecognizer from 'react-native-swipe-gestures';
+import Device from 'react-native-device-detection';
 
 
 const BODY_POS_ON_CLOSE = '0%'
@@ -158,9 +159,9 @@ const styles = StyleSheet.create({
 
     menuContainer: {
         height: '73%',
-        width: '60%',
+        width: Device.isTablet ? '40%' : '60%',
         alignItems: 'center',
-        marginTop: 10
+        marginTop: 10,
     },
     corpseImg: {
         height: '100%',
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
         height: 40,
         position: 'absolute',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'center'
     },
     menuButtonShape: {
         backgroundColor: '#FF9900',
