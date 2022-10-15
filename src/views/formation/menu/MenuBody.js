@@ -29,8 +29,8 @@ const MenuBodyButton = ({ button, onSelect, currentSelected, index }) => {
     >
         <View style={
             currentSelected == index
-            ? styles.menuButtonShapeSelected
-            : styles.menuButtonShape} />
+                ? styles.menuButtonShapeSelected
+                : styles.menuButtonShape} />
     </TouchableOpacity>
 }
 
