@@ -85,7 +85,7 @@ export const Page3 = () => {
                 Optimisez votre activité !
             </Text>
             <Text style={[styles.textSecondary, {marginBottom: 10}]}>
-                retrouvez dans une seule application les <Text style={{color: '#E75A08'}}>ressources</Text> qu'il vous faut au quotidient:
+                retrouvez dans une seule application les <Text style={{color: '#E75A08'}}>ressources</Text> qu'il vous faut au quotidien:
             </Text>
             <Text style={[styles.textSecondary, { marginLeft: 30}]}><Text style={{color: '#E75A08'}}>•</Text> +250 vidéos courtes</Text>
             <Text style={[styles.textSecondary, { marginLeft: 30}]}><Text style={{color: '#E75A08'}}>•</Text> Supports pédagogiques pour vos patients</Text>
@@ -97,7 +97,7 @@ export const Page3 = () => {
             </Text>
             <Text style={[styles.textSecondary]}>les experts ORTHOMASTER vous accompagnent de manière <Text style={{color: '#E75A08'}}>interactive</Text> .</Text>
 
-            <Text style={[styles.textSecondary, { fontSize: 18, marginTop: 40, fontWeight: 'bold' }]}>Afficher votre expertise</Text>
+            <Text style={[styles.textSecondary, { fontSize: 18, marginTop: 40, fontWeight: 'bold' }]}>Affichez votre expertise</Text>
             <Text style={[styles.textSecondary, {}]}>en devenant membre du premier <Text style={{color: '#E75A08'}}>réseau orthopédique</Text> multidisciplinaire.</Text>
 
             <Text style={[styles.textSecondary, { marginTop: 50, fontSize: 15 }]}>Pour en savoir plus, rendez vous sur: <Text style={{color: '#E75A08'}}>www.orthomaster.fr</Text></Text>

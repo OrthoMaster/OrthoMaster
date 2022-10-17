@@ -3,7 +3,7 @@ import { LOGIN_FAIL } from "../actions/types";
 
 import { restoreLocalConfigAsync } from "../utils";
 
-let API_URL = "http://localhost/user"
+let API_URL = "https://api.orthomaster.fr/user"
 
 
 export const changeUserPassword = async (passwords) => {
@@ -28,16 +28,31 @@ export const changeUserPassword = async (passwords) => {
 }
 
 export const resetUserPassword = async (username) => {
+
+  const body = {
+      username: username
+  }
+  return axios
+      .post(API_URL + "/reset/password", body)
+      .then((response) => {
+        console.log(response);
+          return response;
+      })
+      .catch((e)=> {
+        throw new Error(e)
+      });
+}
+
+export const activateUser = async (username) => {
   const config = await restoreLocalConfigAsync()
 
   const body = {
       username: username
   }
   return axios
-      .post(API_URL + "/edit/password", body)
+      .post(API_URL + "/activate", body)
       .then((response) => {
-        console.log(response);
-          return response;
+          return response.data;
       })
       .catch((e)=> {
         throw new Error(e)
