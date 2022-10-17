@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
     View,
     TextInput,
@@ -6,20 +6,67 @@ import {
     StyleSheet,
     SafeAreaView,
     TouchableOpacity,
-    Linking,
-    Image
+    Modal,
+    Image,
+    ActivityIndicator,
+    Alert
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectAuthMessage } from '../../reducers/auth';
+import { useMutation } from 'react-query';
+import { activateUser, resetUserPassword } from '../../services/UserService';
 
 
 import { login } from '../../actions/auth';
 
 export const LoginView = ({ navigation }) => {
-    const [username, setUsername] = React.useState('');
-    const [password, setPassword] = React.useState('');
+    const [verifyingUsername, setVerifyingUsername] = useState(true)
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [displayAccountActivation, setDisplayAccountActivation] = useState(false)
+    const [statusMessage, setStatusMessage] = useState('')
     const authMessage = useSelector(selectAuthMessage)
     const dispatch = useDispatch()
+    const geneartePassword = useMutation('resetUserPassword', resetUserPassword, {
+        onSuccess: (data) => {
+            console.log(data);
+            setDisplayAccountActivation(false)
+            Alert.alert('Activation du compte', data.data)
+        }
+    })
+    const userActivation = useMutation('userActivation', activateUser, {
+        onError: (error) => {
+            if (error.response.data == 'token_not_valid') {
+                dispatch(logout())
+            }
+        },
+        onSuccess: (status) => {
+            switch (status) {
+                case 1:
+                    setVerifyingUsername(false)
+                    break;
+                case 2:
+                    setDisplayAccountActivation(true)
+                    geneartePassword.mutate(username)
+                    break;
+                case 3:
+                    setStatusMessage("Nom d'utilisateur introuvable")
+                    break;
+                default:
+                    setStatusMessage('')
+                    break;
+            }
+        }
+    })
+
+    const handleClick = () => {
+        if (verifyingUsername) {
+            userActivation.mutate(username)
+        } else {
+            dispatch(login(username, password))
+        }
+
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -43,19 +90,36 @@ export const LoginView = ({ navigation }) => {
                     onChangeText={setUsername}
                     autoCapitalize={'none'}
                 />
-                <TextInput
-                    style={styles.intputField}
-                    placeholder="Mot de passe"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                />
+
+
+                {
+                    displayAccountActivation &&
+                    <View style={{ alignItems: 'center' }}>
+                        <Text>Nous activons votre compte...</Text>
+                        <Text>L'activation peut prendre quelques minutes.</Text>
+                    </View>
+                }
+
+                {
+                    !verifyingUsername &&
+                    <TextInput
+                        style={[styles.intputField]}
+                        placeholder="Mot de passe"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
+                }
+
+
+
                 <Text style={styles.authText}>{authMessage}</Text>
+                <Text style={styles.authText}>{statusMessage}</Text>
                 <TouchableOpacity
                     style={styles.signInButton}
-                    onPress={() => dispatch(login(username, password))}
+                    onPress={() => handleClick()}
                 >
-                    <Text style={styles.signInButtonText}>Continue</Text>
+                    <Text style={styles.signInButtonText}>Continuer</Text>
                 </TouchableOpacity>
                 {/* <TouchableOpacity
                     onPress={() => {
