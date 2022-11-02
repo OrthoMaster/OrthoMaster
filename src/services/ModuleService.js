@@ -1,8 +1,9 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
+import {API_URL} from '@env'
 
-let API_URL = "https://api.orthomaster.fr/modules"
+let route = API_URL+"/modules"
 
 
 export const fetchModulesWithUserProgression = async () => {
@@ -11,7 +12,7 @@ export const fetchModulesWithUserProgression = async () => {
 
 
   return axios
-    .get(API_URL+"/user/"+config.user.id_user, {
+    .get(route+"/user/"+config.user.id_user, {
       headers: { Authorization: authHeader },
 
     })

@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "1.0.9",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/appicon.png",
     "userInterfaceStyle": "light",
@@ -20,7 +20,7 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.hugotaieb.OrthoMaster",
-      "versionCode": 13
+      "versionCode": 14
     },
     "extra": {
       "eas": {

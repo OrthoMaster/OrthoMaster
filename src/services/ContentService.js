@@ -3,17 +3,17 @@ import axios from "axios";
 import { restoreLocalConfigAsync } from "../utils";
 import { getS3XML } from '../services/S3Service'
 
-import {logout} from '../actions/auth'
 
+import {API_URL} from '@env'
 
-let API_URL = "https://api.orthomaster.fr/contents"
+let route = API_URL+"/contents"
 
 export const fetchQa = async (limit = 0) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.accessToken;
 
   return axios
-    .get(API_URL + '/qa', {
+    .get(route + '/qa', {
       headers: { Authorization: authHeader },
       params: {
         _limit: limit
@@ -32,7 +32,7 @@ export const fetchFlash = async (filters, limit) => {
   const authHeader = 'Bearer ' + config.accessToken;
 
   return axios
-    .get(API_URL + "/flash", {
+    .get(route + "/flash", {
       headers: { Authorization: authHeader },
       params: {
         _limit: limit,
@@ -52,7 +52,7 @@ export const fetchLessonByModuleWithProgression = async (idModule) => {
   const authHeader = 'Bearer ' + config.accessToken;
 
   return axios
-    .get(API_URL + "/module/" + idModule + "/user/" + config.user.id_user, {
+    .get(route + "/module/" + idModule + "/user/" + config.user.id_user, {
       headers: { Authorization: authHeader }
     })
     .then((response) => {
@@ -84,7 +84,7 @@ export const getUserNextLesson = async () => {
 
   console.log("getting next lesson");
   return axios
-    .get(API_URL + "/user/" + config.user.id_user + "/nextLesson", {
+    .get(route + "/user/" + config.user.id_user + "/nextLesson", {
       headers: { Authorization: authHeader }
     })
     .then((response) => {

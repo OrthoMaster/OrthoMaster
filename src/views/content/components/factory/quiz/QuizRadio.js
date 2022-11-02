@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { Text, View, StyleSheet, TouchableOpacity, Animated } from 'react-native'
-import { QuizBlock } from './quizUtils';
+import { Text, View, StyleSheet, TouchableOpacity, Animated, ActivityIndicator, Image } from 'react-native'
+import { useSelector } from 'react-redux';
+import { selectContent } from '../../../../../reducers/contentReducer';
+
+import { getS3Image } from '../../../../../services/S3Service';
 
 const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
     const [clicked, setclicked] = useState(false)
     const [animation, setAnimation] = useState(new Animated.Value(0));
+    const [answerImage, setAnswerImage] = useState(null)
+    const content = useSelector(selectContent)
     const handleAnimation = () => {
         Animated.timing(animation, {
             toValue: 1,
@@ -23,6 +28,18 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
         ]
     });
 
+    const fetchAnswerImage = async () => {
+        try {
+            let path = content.type + '/' + content.module_num + '/' + content.title + '/' + config.children[0].attributes.src
+            if (content.type != 'lesson') {
+                path = content.type + '/' + content.title + '/' + config.children[0].attributes.src
+            }
+            return await getS3Image(path)
+        } catch (error) {
+            console.log('fetch image quizLineBox error:', error);
+        }
+    }
+
     useEffect(() => {
         if (quizDone) {
             handleAnimation()
@@ -31,13 +48,29 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
         setclicked(false)
     }, [quizDone])
 
+    useEffect(() => {
+        var isMounted = true
+
+        if (config.children.length > 0) {
+            fetchAnswerImage().then((url) => {
+                if (isMounted) {
+                    setAnswerImage(url)
+                }
+            })
+        }
+        return () => {
+            isMounted = false
+        }
+    }, [])
+
 
     return <TouchableOpacity
         style={[
             styles.buttonRadio,
             {
                 backgroundColor: clicked ? '#ED7D32' : '#ffffff',
-                borderColor: clicked ? '#ffffff' : '#ED7D32'
+                borderColor: clicked ? '#ffffff' : '#ED7D32',
+                height: config.children.length > 0 ? 100 : 40
             }]}
         onPress={() => {
             if (!quizDone) {
@@ -47,13 +80,24 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
         }}
     >
         <Animated.View
-            style={[styles.buttonRadio, {
+            style={[{
                 width: '100%',
                 backgroundColor: quizDone && clicked ? boxInterpolation : null,
-                borderColor: clicked ? '#ffffff' : '#ED7D32'
+                borderColor: clicked ? '#ffffff' : '#ED7D32',
             }]}
         >
-            <Text style={styles.textButton}>{config.value}</Text>
+            {
+                config.children.length > 0 ?
+                    answerImage ?
+                        <Image source={{ uri: answerImage }} style={{
+                            resizeMode: 'contain',
+                            height: '100%',
+                            width: '100%',
+                        }} />
+                        : <ActivityIndicator />
+                    : <Text style={styles.textButton}>{config.value}</Text>
+            }
+            
         </Animated.View>
     </TouchableOpacity>
 }
@@ -106,7 +150,7 @@ const styles = StyleSheet.create({
     },
     buttonRadio: {
         width: '90%',
-        height: 40,
+        //height: 90,
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',

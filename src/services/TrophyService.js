@@ -1,8 +1,9 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
+import {API_URL} from '@env'
 
-let API_URL = "https://api.orthomaster.fr/trophy"
+let route = API_URL+"/trophy"
 
 
 export const getTrophyProgressBasedOnModule = async (id_module) => {
@@ -11,7 +12,7 @@ export const getTrophyProgressBasedOnModule = async (id_module) => {
 
 
   return axios
-    .get(API_URL+"/user/"+config.user.id_user+'/trophy-progress/'+ id_module, {
+    .get(route+"/user/"+config.user.id_user+'/trophy-progress/'+ id_module, {
       headers: { Authorization: authHeader },
 
     })
@@ -26,7 +27,7 @@ export const getUserTrophy = async (id_user) => {
   const id = id_user != null ? id_user : config.user.id_user
 
   return axios
-    .get(API_URL+"/user/"+ id, {
+    .get(route+"/user/"+ id, {
       headers: { Authorization: authHeader },
 
     })
@@ -44,7 +45,7 @@ export const postNewUserTrophy = async (id_trophy) => {
 
 
   return axios
-    .post(API_URL+"/user/"+config.user.id_user+"/trophy/"+id_trophy, {}, {
+    .post(route+"/user/"+config.user.id_user+"/trophy/"+id_trophy, {}, {
       headers: { Authorization: authHeader },
     })
     .then((response) => {

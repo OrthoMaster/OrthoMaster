@@ -1,10 +1,11 @@
 import axios from "axios";
-import { LOGIN_FAIL } from "../actions/types";
 
 import { restoreLocalConfigAsync } from "../utils";
+import {API_URL} from '@env'
 
-let API_URL = "https://api.orthomaster.fr/user"
+let route = API_URL+"/user"
 
+console.log(route);
 
 export const changeUserPassword = async (passwords) => {
     const config = await restoreLocalConfigAsync()
@@ -16,7 +17,7 @@ export const changeUserPassword = async (passwords) => {
         username: config.user.username
     }
     return axios
-        .post(API_URL + "/edit/password", body, {
+        .post(route + "/edit/password", body, {
             headers: { Authorization: authHeader },
         })
         .then((response) => {
@@ -33,7 +34,7 @@ export const resetUserPassword = async (username) => {
       username: username
   }
   return axios
-      .post(API_URL + "/reset/password", body)
+      .post(route + "/reset/password", body)
       .then((response) => {
         console.log(response);
           return response;
@@ -50,7 +51,7 @@ export const activateUser = async (username) => {
       username: username
   }
   return axios
-      .post(API_URL + "/activate", body)
+      .post(route + "/activate", body)
       .then((response) => {
           return response.data;
       })

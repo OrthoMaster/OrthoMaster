@@ -48,11 +48,11 @@ const successElements = [
     imgUrl: 'https://media.giphy.com/media/sGBMzyeEzKpySD74qv/giphy.gif'
   },
   {
-    message: "Bravo ! Tu écrase tout sur ton passage !",
+    message: "Bravo ! Tu écrases tout sur ton passage !",
     imgUrl: 'https://media.giphy.com/media/2a5IGQ1n1Ap1e/giphy.gif'
   },
   {
-    message: "Bravo ! Tu déchire tout !",
+    message: "Bravo ! Tu déchires tout !",
     imgUrl: 'https://media.giphy.com/media/x47soJwGwN5AYCSvfJ/giphy.gif'
   },
   {
