@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Text, Dimensions, ActivityIndicator, Image } from 'react-native'
+import { View, Dimensions, ActivityIndicator, Image, TouchableOpacity } from 'react-native'
 
 
 import { getS3Image } from '../../../../services/S3Service'
@@ -7,9 +7,11 @@ import { getS3Image } from '../../../../services/S3Service'
 
 import { useSelector } from "react-redux";
 import { selectContent } from '../../../../reducers/contentReducer';
+import { ImageViewer } from '../../../../component/ImageViewer';
 
 export const ImageFactory = ({ config }) => {
     const [url, seturl] = useState(null);
+    const [isFullscreen, setIsFullscreen] = useState(false)
 
     const contentInfos = useSelector(selectContent)
 
@@ -29,7 +31,6 @@ export const ImageFactory = ({ config }) => {
         }
     }
 
-
     useEffect(() => {
         let isDisplay = true
         fetchImage(contentInfos).then(result => {
@@ -39,7 +40,7 @@ export const ImageFactory = ({ config }) => {
         })
         return () => { isDisplay = false }
     }, [])
-
+    
 
     if (config.attributes.width) {
         if (config.attributes.width.includes('%')) {
@@ -50,20 +51,35 @@ export const ImageFactory = ({ config }) => {
         }
     }
 
+    if (url == null) {
+        return <ActivityIndicator />
+    }
 
     return (
-        url ?
-            <Image
-                width={imgWidth}
-                style={{
-                    alignSelf: 'center',
-                    width: imgWidth,
-                    height: imgWidth,
-                    resizeMode: 'contain'
-                }}
-                source={{
-                    uri: url
-                }} />
-            : <ActivityIndicator />
+        <View>
+            
+            <TouchableOpacity
+                onPress={() => { setIsFullscreen(true) }}
+            >
+                <Image
+                    width={imgWidth}
+                    style={{
+                        alignSelf: 'center',
+                        width: imgWidth,
+                        height: imgWidth,
+                        resizeMode: 'contain'
+                    }}
+                    source={{
+                        uri: url
+                    }} />
+            </TouchableOpacity>
+            {
+                isFullscreen ?
+                    <ImageViewer url={url} visible={isFullscreen} onClose={()=>{setIsFullscreen(false)}} />
+                    : null
+            }
+        </View>
     )
 }
+
+
