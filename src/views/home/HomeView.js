@@ -15,7 +15,7 @@ import { useStore, useDispatch } from 'react-redux';
 import { useQuery } from "react-query"
 import { fetchQa, fetchFlash } from '../../services/ContentService';
 
-import { OrthoCarousel } from './components/Carousel'
+import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 import { LoadingView } from '../LoadingView'
 
