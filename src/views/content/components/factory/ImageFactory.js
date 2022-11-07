@@ -36,7 +36,6 @@ export const ImageFactory = ({ config }) => {
         fetchImage(contentInfos).then(result => {
             if (isDisplay) {
                 seturl(result)
-                console.log(result);
             }
         })
         return () => { isDisplay = false }
