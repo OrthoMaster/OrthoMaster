@@ -1,8 +1,9 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
+import {API_URL} from '@env'
 
-let API_URL = "https://api.orthomaster.fr/logtime"
+let route = API_URL+"/logtime"
 
 
 export const saveLogtimeOnLesson = async (log) => {
@@ -16,7 +17,7 @@ export const saveLogtimeOnLesson = async (log) => {
     }
 
     return axios
-        .post(API_URL + "/lesson/user/" + config.user.id_user, body, {
+        .post(route + "/lesson/user/" + config.user.id_user, body, {
             headers: { Authorization: authHeader },
         },
         
@@ -40,7 +41,7 @@ export const saveLogtimeOnApp = async (log) => {
 
 
     return axios
-        .post(API_URL + "/user/" + config.user.id_user, body, {
+        .post(route + "/user/" + config.user.id_user, body, {
             headers: { Authorization: authHeader },
         })
         .then((response) => {

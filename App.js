@@ -21,7 +21,6 @@ import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingView } from './src/views/LoadingView';
 
-import { LogBox } from 'react-native';
 import * as Sentry from 'sentry-expo';
 
 const queryClient = new QueryClient()

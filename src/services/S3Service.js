@@ -3,8 +3,9 @@ import axios from "axios";
 
 
 import { restoreLocalConfigAsync } from "../utils";
+import {API_URL} from '@env'
 
-let API_URL = "https://api.orthomaster.fr/s3"
+let route = API_URL+"/s3"
 
 
 export const getS3Image = async (path) => {
@@ -12,7 +13,7 @@ export const getS3Image = async (path) => {
   const authHeader = 'Bearer ' + config.accessToken;
 
   return axios
-    .get(API_URL + "/content", {
+    .get(route + "/content", {
       headers: {
         'Access-Control-Allow-Origin': true,
         Authorization: authHeader

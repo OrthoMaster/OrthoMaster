@@ -2,8 +2,9 @@ import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
 
+import {API_URL} from '@env'
 
-const API_URL = "https://api.orthomaster.fr/contents/search";
+const route = API_URL+"/contents/search"
 
 export const fetchSearchList = async ({ contentType = null, filters = null, body = null, searchText = "" }, page) => {
 
@@ -12,7 +13,7 @@ export const fetchSearchList = async ({ contentType = null, filters = null, body
   const authHeader = 'Bearer ' + config.accessToken;
 
   return axios
-    .get(API_URL, {
+    .get(route, {
       headers: { Authorization: authHeader },
       params: {
         pageSize: page ? 10 : null,

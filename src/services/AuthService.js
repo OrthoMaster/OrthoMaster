@@ -1,12 +1,11 @@
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = "https://api.orthomaster.fr/";
+import {API_URL} from '@env'
 
 class AuthService {
   login(username, password) {
     return axios
-      .post(API_URL + "user/login", { username, password })
+      .post(API_URL + "/user/login", { username, password })
       .then((response) => {
         let config = { user: response.data, accessToken: null}
         if (response.headers.authorization) {
@@ -29,7 +28,7 @@ class AuthService {
 
     const authHeader = 'Bearer ' + config.accessToken ;
 
-    return axios.get(API_URL + 'connect', { headers: { Authorization : authHeader} })
+    return axios.get(API_URL + '/connect', { headers: { Authorization : authHeader} })
     .catch((e)=> {
       Sentry.Native.captureException(e);
     })
@@ -37,7 +36,7 @@ class AuthService {
 
   changePassword(credentials) {
 
-    return axios.post(API_URL + 'user/edit/password', credentials)
+    return axios.post(API_URL + '/user/edit/password', credentials)
     .catch((e)=> {
       Sentry.Native.captureException(e);
     })

@@ -1,8 +1,9 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
+import {API_URL} from '@env'
 
-let API_URL = "https://api.orthomaster.fr/office"
+let route = API_URL+"/office"
 
 
 export const getOfficeInfos = async (officeId) => {
@@ -10,7 +11,7 @@ export const getOfficeInfos = async (officeId) => {
     const authHeader = 'Bearer ' + config.accessToken;
   
     return axios
-      .get(API_URL+"/"+officeId, {
+      .get(route+"/"+officeId, {
         headers: { Authorization: authHeader },
       })
       .then((response) => {

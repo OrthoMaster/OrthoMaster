@@ -1,8 +1,9 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
+import {API_URL} from '@env'
 
-let API_URL = "https://api.orthomaster.fr/progress"
+let route = API_URL+"/progress"
 
 
 export const postUserLessonStatus = async (obj) => {
@@ -14,7 +15,7 @@ export const postUserLessonStatus = async (obj) => {
         content_id: obj.id
     }
     return axios
-        .post(API_URL + "/user/" + config.user.id_user, body, {
+        .post(route + "/user/" + config.user.id_user, body, {
             headers: { Authorization: authHeader },
         })
         .then((response) => {
@@ -30,7 +31,7 @@ export const getUserProgression = async () => {
     const authHeader = 'Bearer ' + config.accessToken;
   
     return axios
-      .get(API_URL+"/user/"+config.user.id_user, {
+      .get(route+"/user/"+config.user.id_user, {
         headers: { Authorization: authHeader },
   
       })
@@ -47,7 +48,7 @@ export const getUserProgression = async () => {
     const authHeader = 'Bearer ' + config.accessToken;
   
     return axios
-      .get(API_URL+"/office/" + officeId + "/collaborators", {
+      .get(route+"/office/" + officeId + "/collaborators", {
         headers: { Authorization: authHeader },
   
       })
@@ -64,7 +65,7 @@ export const getUserProgression = async () => {
     const authHeader = 'Bearer ' + config.accessToken;
   
     return axios
-      .get(API_URL+"/office/"+officeId, {
+      .get(route+"/office/"+officeId, {
         headers: { Authorization: authHeader },
   
       })
@@ -75,8 +76,3 @@ export const getUserProgression = async () => {
         Sentry.Native.captureException(e);
       });
   }
-
-
-
-
-         
