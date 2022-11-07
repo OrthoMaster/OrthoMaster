@@ -125,7 +125,7 @@ export function ContentDisplayer({ route, navigation }) {
 
       return () => {
         //lessonState.remove();
-        stateChange.remove();
+        //stateChange.remove();
       }
     }
   }, [])

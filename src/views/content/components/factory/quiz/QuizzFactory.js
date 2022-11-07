@@ -173,7 +173,7 @@ export const QuizFactory = ({ content }) => {
                     return 'Choisis le bon nombre'
                 case 'line':
                     return "Associe les paires ci-dessous en cliquant sur les propositions de droite jusqu'à trouver la bonne couleur"
-                    //return "Clique sur chaque proposition à droite pour qu'elles correspondent avec les couleurs de gauche"
+                //return "Clique sur chaque proposition à droite pour qu'elles correspondent avec les couleurs de gauche"
                 default:
                     return '';
             }
@@ -226,7 +226,13 @@ export const QuizFactory = ({ content }) => {
             />
             : null
         }
-
+        {
+            quizDone ?
+                <Text style={[styles.statusQuizMessage, {
+                    color: quizStatus ? '#70B627' : '#FF0000'
+                }]}>{quizStatus ? 'Bravo !' : 'Dommage...'}</Text>
+                : null
+        }
     </Animated.View>
     )
 }
@@ -258,5 +264,9 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingVertical: 5,
         fontSize: 12
+    },
+    statusQuizMessage: {
+        paddingBottom: 20,
+        fontWeight: 'bold'
     }
 })

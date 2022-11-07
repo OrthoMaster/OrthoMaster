@@ -5,8 +5,6 @@ import {API_URL} from '@env'
 
 let route = API_URL+"/user"
 
-console.log(route);
-
 export const changeUserPassword = async (passwords) => {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.accessToken;
