@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 
 import { NavigationContainer } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import { checkUserConnection } from './src/actions/auth';
 import { selectIsLoggedIn, selectIsLoading } from './src/reducers/auth';
 
 import { restoreLocalConfigAsync } from './src/utils';
+import checkVersion from 'react-native-store-version';
 
 import {
   QueryClientProvider,
@@ -20,6 +21,7 @@ import {
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingView } from './src/views/LoadingView';
+import { AlertVersion } from './src/component/AlertVersion';
 
 import * as Sentry from 'sentry-expo';
 
@@ -30,7 +32,7 @@ export default function App({ navigation }) {
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
   const dispatch = useDispatch()
-  //LogBox.ignoreAllLogs();
+  const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
 
   Sentry.init({
     dsn: 'https://cc1f41ec3e694b7e90ee08d4ed50c9fe@o4503926574153728.ingest.sentry.io/4503926602661888',
@@ -40,12 +42,35 @@ export default function App({ navigation }) {
 
   useEffect(() => {
     const restoreData = async () => {
-      const config = await restoreLocalConfigAsync()
-      dispatch(checkUserConnection(config))
+
     }
 
     restoreData()
   }, []);
+
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const config = await restoreLocalConfigAsync()
+        const check = await checkVersion({
+          version: '1.1.0', // app local version
+          iosStoreURL: 'https://apps.apple.com/us/app/orthomaster/id1644851864',
+          androidStoreURL: 'https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster&pli=1',
+          country: 'jp', // default value is 'jp'
+        });
+        dispatch(checkUserConnection(config))
+        if (check.result === 'new') {
+          setmodalVersionIsVisible(true)
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    init();
+  }, []);
+
 
 
   return (
@@ -61,6 +86,7 @@ export default function App({ navigation }) {
             ) : (
               <AuthStack />
             )}
+      <AlertVersion isVisible={modalVersionIsVisible} onClose={()=>setmodalVersionIsVisible(false)}/>
       </NavigationContainer>
     </QueryClientProvider>
   );
