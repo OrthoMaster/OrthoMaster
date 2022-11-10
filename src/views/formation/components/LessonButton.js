@@ -35,7 +35,9 @@ export const LessonButton = ({ item, onPress }) => {
                 : <LessonFailureIndicator style={styles.statusIdicator} />}
 
         <Text style={[styles.text, {color: item.item.content.published == false ? '#9C9C9C': '#000000'}]}>{item.item.content.title}</Text>
-        <Svg
+        {
+            item.item.content.published == true ?
+            <Svg
             width={20}
             height={20}
             viewBox={`0 0 50 50`}
@@ -43,6 +45,21 @@ export const LessonButton = ({ item, onPress }) => {
         >
             <Path stroke='#000000' strokeWidth={5} strokeLinecap='round' strokeLinejoin='round' d='M20 10 L35 25 L20 40' />
         </Svg>
+        : <View style={{
+            backgroundColor: '#F76F10',
+            padding: 5,
+            marginHorizontal: 10,
+            borderRadius: 5
+        }}>
+            <Text style={{
+                fontSize: 10,
+                color: '#ffffff',
+                fontWeight: 'bold'
+            }}>
+                Bientôt disponible
+                </Text>
+            </View>
+    }
     </TouchableOpacity>
 }
 
