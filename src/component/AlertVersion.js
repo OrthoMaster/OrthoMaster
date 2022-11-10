@@ -23,7 +23,6 @@ export const AlertVersion = ({isVisible, onClose}) => {
                 <View style={styles.modalContainer}>
                     <Text style={styles.textPrimary}>📣 Mise à jour 📣</Text>
                     <Text style={styles.textSecondary}>Une nouvelle version de votre application OrthoMaster est désormait disponible.</Text>
-                    {/* <Text style={styles.textTertiary}></Text> */}
                     <TouchableOpacity
                         style={styles.majButton}
                         onPress={()=>{
