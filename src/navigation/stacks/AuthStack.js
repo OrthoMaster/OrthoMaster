@@ -25,14 +25,14 @@ export const AuthStack = () => {
           headerShown: false
         }}
       />
-      {/* <AuthStackNav.Screen
+      <AuthStackNav.Screen
         name="auth-reset-password"
         component={ResetPassword}
         options={{
           headerBackTitle: 'retour',
-          headerTitle: ''
+          headerTitle: 'Mot de passe oublié'
         }}
-      /> */}
+      />
 
     </AuthStackNav.Navigator>
   );

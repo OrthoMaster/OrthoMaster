@@ -34,7 +34,6 @@ export const resetUserPassword = async (username) => {
   return axios
       .post(route + "/reset/password", body)
       .then((response) => {
-        console.log(response);
           return response;
       })
       .catch((e)=> {
@@ -57,8 +56,3 @@ export const activateUser = async (username) => {
         throw new Error(e)
       });
 }
-
-
-
-
-         

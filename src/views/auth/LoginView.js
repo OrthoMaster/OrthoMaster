@@ -27,14 +27,13 @@ export const LoginView = ({ navigation }) => {
     const [statusMessage, setStatusMessage] = useState('')
     const authMessage = useSelector(selectAuthMessage)
     const dispatch = useDispatch()
-    const geneartePassword = useMutation('resetUserPassword', resetUserPassword, {
+    const generatePassword = useMutation(resetUserPassword, {
         onSuccess: (data) => {
-            console.log(data);
             setDisplayAccountActivation(false)
             Alert.alert('Activation du compte', data.data)
         }
     })
-    const userActivation = useMutation('userActivation', activateUser, {
+    const userActivation = useMutation(activateUser, {
         onError: (error) => {
             if (error.response.data == 'token_not_valid') {
                 dispatch(logout())
@@ -47,7 +46,7 @@ export const LoginView = ({ navigation }) => {
                     break;
                 case 2:
                     setDisplayAccountActivation(true)
-                    geneartePassword.mutate(username)
+                    generatePassword.mutate(username)
                     break;
                 case 3:
                     setStatusMessage("Nom d'utilisateur introuvable")
@@ -121,14 +120,13 @@ export const LoginView = ({ navigation }) => {
                 >
                     <Text style={styles.signInButtonText}>Continuer</Text>
                 </TouchableOpacity>
-                {/* <TouchableOpacity
+                <TouchableOpacity
                     onPress={() => {
-                       
-                        Linking.openURL('mailto:question@orthomaster.fr?subject=Mot de passe oublié')
+                        navigation.push("auth-reset-password")
                     }}
                 >
                     <Text>Mot de passe oublié</Text>
-                </TouchableOpacity> */}
+                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
