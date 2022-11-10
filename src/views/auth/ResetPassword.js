@@ -6,63 +6,70 @@ import {
     TextInput,
     View,
     TouchableOpacity,
-    StatusBar
+    StatusBar,
+    Alert
 } from 'react-native'
 
-import { restoreLocalConfigAsync } from '../../utils'
-import AuthService from '../../services/AuthService'
+
+import { useMutation } from 'react-query'
+import { resetUserPassword } from '../../services/UserService'
 
 export const ResetPassword = () => {
-    const [credentials, setCredentials] = useState({
-        mail: "",
-        oldPassword: "",
-        newPassword: ""
+    const [username, setUsername] = useState('')
+    const [resetStatus, setResetStatus] = useState({
+        status: false,
+        message: ''
     })
 
-    const handleChangePassword = async () => {
+    const resetPasswordMutation = useMutation(resetUserPassword, {
+        onSuccess: (response) => {
+            setResetStatus({
+                status: true,
+                message: response.data
+            })
+        },
+        onError: () => {
+            setResetStatus({
+                status: false,
+                message: "Aucun nom d'utilisateur ne correspond"
+            })
+        }
+    })
 
-        AuthService.changePassword(credentials)
-        .then((response) => {
-            console.log(response);
-        })
-        .catch(error => {
-            console.log('Error retrieving data!');
-        })
-    }
+    useEffect(() => {
+      if (resetStatus.status) {
+        Alert.alert(
+            "Nouveau mot de passe",
+            resetStatus.message
+        )
+      }
+    }, [resetStatus])
+    
 
 
     return <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
-        <View style={styles.headerContainer}>
-            <Text style={styles.headerText}>Modifier mon mot de passe</Text>
-        </View>
+        <Text style={[styles.primaryText, {marginTop: 30}]}>
+            Renseigne ton nom d'utilisateur dans le champ ci-dessous dessous
+        </Text>
+        <Text style={{fontSize: 30, marginVertical: 30}}>⬇️</Text>
         <TextInput
             style={styles.intputField}
-            placeholder="E-mail"
-            value={credentials.mail}
-            onChangeText={(val) => setCredentials((state) => ({ ...state, mail: val }))}
+            placeholder="Nom d'utilisateur"
+            value={username}
+            onChangeText={(val) => setUsername(val)}
             autoCapitalize={'none'}
         />
-        <TextInput
-            style={styles.intputField}
-            placeholder="Ancien mot de passe"
-            value={credentials.oldPassword}
-            onChangeText={(val) => setCredentials((state) => ({ ...state, oldPassword: val }))}
-            autoCapitalize={'none'}
-            secureTextEntry
-        />
-        <TextInput
-            style={styles.intputField}
-            placeholder="Nouveau mot de passe"
-            value={credentials.newPassword}
-            onChangeText={(val) => setCredentials((state) => ({ ...state, newPassword: val }))}
-            autoCapitalize={'none'}
-            secureTextEntry
-        />
+
+        {
+            (resetStatus.status == false && resetStatus.message != '') &&
+            <Text style={{color: '#E72311'}}>{resetStatus.message}</Text>
+            }
+
         <TouchableOpacity
             style={styles.resetInButton}
-            onPress={() => handleChangePassword()}
+            onPress={() => resetPasswordMutation.mutate(username)}
         >
-            <Text style={styles.resetButtonText}>Continue</Text>
+            <Text style={styles.resetButtonText}>Continuer</Text>
         </TouchableOpacity>
     </SafeAreaView>
 }
@@ -74,17 +81,13 @@ const styles = StyleSheet.create({
     },
     container: {
         alignItems: 'center',
-        flex: 1
+        backgroundColor: '#ffffff',
+        display: 'flex',
+        flex: 1,
     },
-    headerContainer: {
-        width: '100%',
-        height: '30%',
-        justifyContent: 'center'
-    },
-    headerText: {
+    primaryText: {
         textAlign: 'center',
-        fontSize: 25,
-        fontWeight: '600',
+        fontSize: 20,
         color: '#1B1C1E'
     },
     buttonContainer: {
@@ -92,7 +95,7 @@ const styles = StyleSheet.create({
     },
     intputField: {
         borderWidth: 1,
-        borderColor: '#BEBEBE',
+        borderColor: '#212525',
         width: '90%',
         height: 60,
         borderRadius: 12,
@@ -106,11 +109,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 12,
-        marginTop: 5,
+        marginTop: 30,
         marginBottom: 30
     },
     resetButtonText: {
-        fontWeight: '600',
+        fontWeight: 'bold',
         fontSize: 18,
         color: '#fffefd'
     },
