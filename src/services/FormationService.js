@@ -1,10 +1,9 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
+import Constants from 'expo-constants';
 
-import {API_URL} from '@env'
-
-let route = API_URL+"/formation"
+let route = Constants.manifest.extra.env.API_URL+"/formation"
 
 export const getFormationMainQuizStatus = async (id_formation) => {
   const config = await restoreLocalConfigAsync()

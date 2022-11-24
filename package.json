@@ -1,11 +1,11 @@
 {
   "name": "orthomaster",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "scripts": {
-    "start": "expo start --dev-client",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web"
+    "api-local": "API_URL=http://localhost npx expo start",
+    "api-distant": "API_URL=https://api.orthomaster.fr npx expo start",
+    "api-local-no-dev": "API_URL=http://localhost npx expo start --no-dev --minify",
+    "api-distant-no-dev": "API_URL=https://api.orthomaster.fr npx expo start --no-dev --minify"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "~1.17.3",
@@ -13,7 +13,6 @@
     "@react-navigation/native": "^6.0.13",
     "@react-navigation/native-stack": "^6.8.0",
     "@reduxjs/toolkit": "^1.8.5",
-    "@sentry/react-native": "4.2.2",
     "axios": "^0.27.2",
     "deprecated-react-native-prop-types": "^2.3.0",
     "expo": "~46.0.13",
@@ -33,7 +32,6 @@
     "react-dom": "18.0.0",
     "react-native": "0.69.6",
     "react-native-device-detection": "^0.2.1",
-    "react-native-dotenv": "^3.3.1",
     "react-native-gesture-handler": "~2.5.0",
     "react-native-hyperlink": "^0.0.22",
     "react-native-image-pan-zoom": "^2.1.12",

@@ -1,9 +1,8 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import {API_URL} from '@env'
-
-let route = API_URL+"/logtime"
+import Constants from 'expo-constants';
+let route = Constants.manifest.extra.env.API_URL+"/logtime"
 
 
 export const saveLogtimeOnLesson = async (log) => {

@@ -1,10 +1,8 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-
-import {API_URL} from '@env'
-
-const route = API_URL+"/contents/search"
+import Constants from 'expo-constants';
+const route = Constants.manifest.extra.env.API_URL+"/contents/search"
 
 export const fetchSearchList = async ({ contentType = null, filters = null, body = null, searchText = "" }, page) => {
 

@@ -1,9 +1,9 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import {API_URL} from '@env'
-
-let route = API_URL+"/office"
+import Constants from 'expo-constants';
+import * as Sentry from 'sentry-expo'
+let route = Constants.manifest.extra.env.API_URL+"/office"
 
 
 export const getOfficeInfos = async (officeId) => {
@@ -12,12 +12,12 @@ export const getOfficeInfos = async (officeId) => {
   
     return axios
       .get(route+"/"+officeId, {
-        headers: { Authorization: authHeader },
+        headers: { Authorization: authHeader+'i' },
       })
       .then((response) => {
         return response.data;
       })
       .catch((e)=> {
-        Sentry.Native.captureException(e);
+        Sentry.Native.captureException(e)
       });
   }

@@ -2,11 +2,9 @@ import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
 import { getS3XML } from '../services/S3Service'
+import Constants from 'expo-constants';
 
-
-import {API_URL} from '@env'
-
-let route = API_URL+"/contents"
+let route = Constants.manifest.extra.env.API_URL+"/contents"
 
 export const fetchQa = async (limit = 0) => {
   const config = await restoreLocalConfigAsync()
@@ -74,7 +72,6 @@ export const fetchLessonContent = async (content) => {
   } else {
     s3key = content.type + '/' + content.title + '/content.xml'
   }
-  console.log('[Getting]:', s3key);
   return await getS3XML(s3key)
 }
 
@@ -82,7 +79,6 @@ export const getUserNextLesson = async () => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.accessToken;
 
-  console.log("getting next lesson");
   return axios
     .get(route + "/user/" + config.user.id_user + "/nextLesson", {
       headers: { Authorization: authHeader }

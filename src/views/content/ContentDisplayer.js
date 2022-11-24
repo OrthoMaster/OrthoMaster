@@ -66,7 +66,7 @@ export function ContentDisplayer({ route, navigation }) {
       console.error(error)
       Sentry.Native.captureException(e);
     } finally {
-      console.log('[ LOG ] lesson:', log)
+      console.log('[ LOG lesson ]:', log)
     }
   };
 
@@ -93,7 +93,8 @@ export function ContentDisplayer({ route, navigation }) {
     if (content.type == 'lesson' && content.title != 'initial' && content.title != 'final') { // tmp handling of main quiz in the formation
       launchDate = getCurrentDate()
 
-      const lessonState = AppState.addEventListener("change", nextAppState => {
+      
+      const appStateListener = AppState.addEventListener("change", nextAppState => {
         if (
           appState.current.match(/inactive|background/) &&
           nextAppState === "active"
@@ -111,7 +112,6 @@ export function ContentDisplayer({ route, navigation }) {
         appState.current = nextAppState;
       })
 
-
       navigation.addListener('blur', (e) => {
         saveLogs({
           login: launchDate,
@@ -124,8 +124,7 @@ export function ContentDisplayer({ route, navigation }) {
       })
 
       return () => {
-        //lessonState.remove();
-        //stateChange.remove();
+        appStateListener.remove()
       }
     }
   }, [])

@@ -1,9 +1,8 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import {API_URL} from '@env'
-
-let route = API_URL+"/user"
+import Constants from 'expo-constants';
+let route = Constants.manifest.extra.env.API_URL+"/user"
 
 export const changeUserPassword = async (passwords) => {
     const config = await restoreLocalConfigAsync()

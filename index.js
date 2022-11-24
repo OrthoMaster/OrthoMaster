@@ -5,8 +5,6 @@ import { Provider } from 'react-redux'
 import store from './src/store'
 
 import App from './App';
-
-
 const WrapApp = () => (
       <Provider store={store}>
         <App />

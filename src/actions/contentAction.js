@@ -12,7 +12,6 @@ import {
 
 
 export const runContent = (content, nbQuiz) => (dispatch) => {
-  console.log('run content');
   dispatch({
     type: CONTENT_START,
     content: content,
@@ -21,7 +20,6 @@ export const runContent = (content, nbQuiz) => (dispatch) => {
 }
 
 export const finishContent = () => (dispatch) => {
-  console.log('finish content');
   dispatch({
     type: CONTENT_FINISH
   })
@@ -35,7 +33,6 @@ export const quizCompleted = (quiz) => (dispatch) => {
 }
 
 export const restartContent = () => (dispatch) => {
-  console.log('restart content');
   dispatch({
     type: CONTENT_RESTART
   })
@@ -44,14 +41,12 @@ export const restartContent = () => (dispatch) => {
 
 
 export const exitContent = () => (dispatch) => {
-  console.log('exit content');
   dispatch({
     type: CONTENT_EXIT
   })
 }
 
 export const nextContent = (content) => (dispatch) => {
-  console.log('next content');
   dispatch({
     type: CONTENT_NEXT,
     content: content

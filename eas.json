@@ -14,7 +14,10 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "API_URL": "https://api.orthomaster.fr"
+      }
     }
   },
   "submit": {
