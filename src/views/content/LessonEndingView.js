@@ -20,7 +20,6 @@ import { getTrophyProgressBasedOnModule } from "../../services/TrophyService";
 
 import { getUserNextLesson } from "../../services/ContentService";
 import { exitContent, restartContent, nextContent } from "../../actions/contentAction";
-import { logout } from "../../actions/auth";
 
 const successElements = [
   {
@@ -123,9 +122,7 @@ export const LessonEndingView = ({ navigation, route }) => {
   const dispatch = useDispatch()
   const saveContentMutation = useMutation(postUserLessonStatus, {
     onError: (error) => {
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     },
     onSuccess: () => {
       trophyProgression.refetch()
@@ -133,9 +130,7 @@ export const LessonEndingView = ({ navigation, route }) => {
   });
   const valideMainQuiz = useMutation(valideMainQuizStatusByFormation, {
     onError: (error) => {
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     }
   });
   const [status, setStatus] = useState(false)
@@ -144,7 +139,7 @@ export const LessonEndingView = ({ navigation, route }) => {
     try {
       saveContentMutation.mutateAsync({ status: data.status, id: data.id })
     } catch (error) {
-      console.log(error);
+      throw error
     }
   };
 
@@ -163,9 +158,7 @@ export const LessonEndingView = ({ navigation, route }) => {
       }
     },
     onError: (error) => {
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     }
   });
 

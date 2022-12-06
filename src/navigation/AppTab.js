@@ -16,20 +16,15 @@ import { ProductStack } from './stacks/ProductStack';
 import { ProfilStack } from './stacks/ProfilStack';
 
 import { getCurrentDate } from "../utils";
-import { useDispatch } from 'react-redux';
-import { logout } from '../actions/auth';
 
 const Tab = createBottomTabNavigator();
 
 
 export const AppTab = ({}) => {
   const appState = useRef(AppState.currentState);
-  const dispatch = useDispatch()
   const mutation = useMutation(saveLogtimeOnApp, {
     onError: (error) => {
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     }
   });
 
@@ -60,7 +55,7 @@ export const AppTab = ({}) => {
     try {
       await mutation.mutateAsync(log)
     } catch (error) {
-      console.error(error)
+      throw error
     } finally {
       console.log('[ LOG App ]:', log)
     }

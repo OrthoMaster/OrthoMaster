@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   StatusBar
 } from 'react-native';
-import { useStore, useDispatch } from 'react-redux';
+import { useStore } from 'react-redux';
 
 import { useQuery } from "react-query"
 import { fetchQa, fetchFlash } from '../../services/ContentService';
@@ -19,27 +19,20 @@ import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 import { LoadingView } from '../LoadingView'
 
-import { logout } from '../../actions/auth';
-
 import { LinearGradient } from 'expo-linear-gradient';
 
 
 export const HomeView = ({ navigation }) => {
   const store = useStore()
   const authState = store.getState().auth
-  const dispatch = useDispatch()
   const qaPreview = useQuery("homeQaPreview", () => fetchQa(5), {
     onError: (error) => {
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     }
   });
   const flashPreview = useQuery("homeFlashPreview", () => fetchFlash(null, 5), {
     onError: (error) => {
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     }
   });
 

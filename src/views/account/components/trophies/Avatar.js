@@ -7,7 +7,8 @@ import {
 } from 'react-native'
 
 import { getS3Image } from '../../../../services/S3Service'
-
+import { useDispatch } from 'react-redux'
+import { logout } from '../../../../actions/auth'
 
 const AvatarTrophy = ({ trophy }) => {
     const [trophyImgUrl, setTrophyImgUrl] = useState(null)
@@ -17,7 +18,7 @@ const AvatarTrophy = ({ trophy }) => {
             const imageUrl = await getS3Image(path)
             return imageUrl
         } catch (error) {
-            console.error('ImageFactory: ' + error);
+            throw error
         }
     }
 

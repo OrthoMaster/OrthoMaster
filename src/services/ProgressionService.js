@@ -21,7 +21,7 @@ export const postUserLessonStatus = async (obj) => {
             return response;
         })
         .catch((e)=> {
-          Sentry.Native.captureException(e);
+          throw e
         });
 }
 
@@ -38,7 +38,7 @@ export const getUserProgression = async () => {
         return response.data;
       })
       .catch((e)=> {
-        Sentry.Native.captureException(e);
+        throw e
       });
   }
 
@@ -55,7 +55,7 @@ export const getUserProgression = async () => {
         return response.data;
       })
       .catch((e)=> {
-        Sentry.Native.captureException(e);
+        throw e
       });
   }
 
@@ -72,6 +72,6 @@ export const getUserProgression = async () => {
         return response.data;
       })
       .catch((e)=> {
-        Sentry.Native.captureException(e);
+        throw e
       });
   }

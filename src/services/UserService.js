@@ -21,7 +21,7 @@ export const changeUserPassword = async (passwords) => {
             return response.data;
         })
         .catch((e)=> {
-          throw new Error(e)
+          throw e
         });
 }
 
@@ -36,7 +36,7 @@ export const resetUserPassword = async (username) => {
           return response;
       })
       .catch((e)=> {
-        throw new Error(e)
+        throw e
       });
 }
 
@@ -52,6 +52,6 @@ export const activateUser = async (username) => {
           return response.data;
       })
       .catch((e)=> {
-        throw new Error(e)
+        throw e
       });
 }

@@ -13,19 +13,14 @@ import { HomeHeaderButton } from './components/HomeHeaderButton';
 
 import { useQuery } from 'react-query';
 import { getUserNextLesson } from '../../services/ContentService';
-import { logout } from '../../actions/auth';
-import { useDispatch } from 'react-redux';
 
 
 export const HomeHeader = ({ navigation, userName }) => {
-    const dispatch = useDispatch()
     const nextLesson = useQuery('getUserNextLesson', getUserNextLesson, {
         refetchOnWindowFocus: false,
         enabled: false,
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-              dispatch(logout())
-            }
+            throw error
           }
     })
 

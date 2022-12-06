@@ -35,9 +35,7 @@ export const LoginView = ({ navigation }) => {
     })
     const userActivation = useMutation(activateUser, {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-                dispatch(logout())
-            }
+            throw error
         },
         onSuccess: (status) => {
             switch (status) {

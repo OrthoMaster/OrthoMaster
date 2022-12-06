@@ -18,14 +18,11 @@ import { fetchSearchList } from '../../services/SearchService';
 import { LoadingView } from '../LoadingView'
 
 import { HomeHeaderButton } from './components/HomeHeaderButton';
-import { useDispatch } from 'react-redux';
-import { logout } from '../../actions/auth';
 
 
 export const QaLayout = ({ navigation, route }) => {
 
   const [filters, setFilters] = useState(null)
-  const dispatch = useDispatch()
 
   const qaList = useQuery("qaList", () => fetchSearchList({
     contentType: 'qa',
@@ -36,9 +33,7 @@ export const QaLayout = ({ navigation, route }) => {
     , null
   ), {
     onError: (error) => {
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     }
   })
 

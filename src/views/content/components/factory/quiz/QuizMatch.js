@@ -15,7 +15,6 @@ import { selectContent } from '../../../../../reducers/contentReducer';
 
 import { getS3Image } from '../../../../../services/S3Service';
 
-
 // const buttonColor = [
 //     { index: 0, color: '#7D7D7D', txt: 'grey' },
 //     { index: 1, color: '#FCA200', txt: 'orange' },
@@ -48,7 +47,7 @@ const QuizFixedBox = ({ item, index }) => {
             }
             return await getS3Image(path)
         } catch (error) {
-            console.log('fetch image quizLineBox error:', error);
+            throw error
         }
     }
 
@@ -120,7 +119,7 @@ const QuizAnswerBox = ({ config, onColorChange, quizDone }) => {
             }
             return await getS3Image(path)
         } catch (error) {
-            console.log('fetch image quizLineBox error:', error);
+            throw error
         }
     }
     const handleClick = () => {

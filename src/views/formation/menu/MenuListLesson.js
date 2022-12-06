@@ -13,8 +13,6 @@ import {
 import { useQuery } from 'react-query';
 import { fetchSearchList } from '../../../services/SearchService';
 import { getS3Image } from '../../../services/S3Service';
-import { logout } from '../../../actions/auth';
-import { useDispatch } from 'react-redux';
 
 
 const MenuButton = ({ item, navigation }) => {
@@ -26,7 +24,7 @@ const MenuButton = ({ item, navigation }) => {
             const imageUrl = await getS3Image(path)
             return imageUrl
         } catch (error) {
-            console.error('ImageFactory: ' + error);
+            throw error
         }
     }
 
@@ -74,12 +72,9 @@ const MenuButton = ({ item, navigation }) => {
 
 
 export const MenuListLesson = ({ navigation, category, filters }) => {
-    const dispatch = useDispatch()
     const lessons = useQuery('searchLessonInMenu', () => fetchSearchList({ contentType: 'lesson', filters: filters, body: category.tags }), {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-              dispatch(logout())
-            }
+            throw error
           }
     })
 

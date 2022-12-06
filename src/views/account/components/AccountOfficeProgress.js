@@ -83,16 +83,12 @@ export const AccountOfficeProgress = ({ officeId }) => {
     const dispatch = useDispatch()
     const collaborators = useQuery('fetchOfficeCollaboratorsProgress', () => getCollaboratorsProgression(officeId), {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-                dispatch(logout())
-            }
+            throw error
         }
     })
     const office = useQuery('fetchOfficeProgress', () => getOfficeProgression(officeId), {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-                dispatch(logout())
-            }
+            throw error
         }
     })
 

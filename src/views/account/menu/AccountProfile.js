@@ -64,9 +64,7 @@ export const AccountProfile = () => {
 
     const changePasswordMutation = useMutation('changePassword', changeUserPassword, {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-                dispatch(logout())
-            }
+            throw error
         },
         onSuccess: (msg) => {
             setStatusText(msg)

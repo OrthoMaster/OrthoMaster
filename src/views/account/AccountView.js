@@ -56,16 +56,17 @@ export const AccountView = ({ navigation }) => {
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
   const dispatch = useDispatch()
-  const infos = useQuery('getOfficeInfo', ()=>getOfficeInfos(user.office_id), {
-      onError: (error) => {
-          if (error.response.data == 'token_not_valid') {
-            dispatch(logout())
-          }
-        }
+  const [isLoading, setIsLoading] = useState(true)
+  const infos = useQuery('getOfficeInfo', ()=>getOfficeInfos(user.office_id),{
+    onSuccess: (data) => {
+      setIsLoading(false)
+    },
+    onError: (e)=>{
+      throw e
+    }
   })
 
-  if (infos.isLoading || infos.error) return null
-
+  if (isLoading || infos.error) return null
   return (
     <View style={{flex: 1}}>
       <AccountHeader

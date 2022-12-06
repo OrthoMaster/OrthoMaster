@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
 
+import React, { useEffect, useState } from 'react';
 
 import { NavigationContainer } from '@react-navigation/native';
 
@@ -22,24 +22,27 @@ import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingView } from './src/views/LoadingView';
 import { AlertVersion } from './src/component/AlertVersion';
+import { ErrorHandler } from './src/component/ErrorHandler';
 
-import * as Sentry from 'sentry-expo';
+import Bugsnag from '@bugsnag/expo';
+Bugsnag.start();
+
+import NetInfo from '@react-native-community/netinfo';
 
 const queryClient = new QueryClient()
 
 export default function App({ navigation }) {
 
+  //console.log(netInfo);
+  const getNetwork = NetInfo.addEventListener(state => {
+    console.log("Connection type", state.type);
+    console.log("Is connected?", state.isConnected);
+  });
+  getNetwork()
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
   const dispatch = useDispatch()
   const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
-  Sentry.init({
-    dsn: 'https://cc1f41ec3e694b7e90ee08d4ed50c9fe@o4503926574153728.ingest.sentry.io/4503926602661888',
-    enableInExpoDevelopment: true,
-    debug: true, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
-  });
-
-
 
   useEffect(() => {
     const init = async () => {
@@ -56,30 +59,32 @@ export default function App({ navigation }) {
           setmodalVersionIsVisible(true)
         }
       } catch (e) {
-        console.log(e);
+        console.log('Errrr');
+        throw e
       }
     };
-
     init();
   }, []);
 
 
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
+    <ErrorHandler>
+      <QueryClientProvider client={queryClient}>
+        <NavigationContainer>
 
-        {
-          isLoggedIn ? (
-            <AppTab />
-          ) : isLoading
-            ? (
-              <LoadingView />
-            ) : (
-              <AuthStack />
-            )}
-      <AlertVersion isVisible={modalVersionIsVisible} onClose={()=>setmodalVersionIsVisible(false)}/>
-      </NavigationContainer>
-    </QueryClientProvider>
+          {
+            isLoggedIn ? (
+              <AppTab />
+            ) : isLoading
+              ? (
+                <LoadingView />
+              ) : (
+                <AuthStack />
+              )}
+        <AlertVersion isVisible={modalVersionIsVisible} onClose={()=>setmodalVersionIsVisible(false)}/>
+        </NavigationContainer>
+      </QueryClientProvider>
+    </ErrorHandler>
   );
 }

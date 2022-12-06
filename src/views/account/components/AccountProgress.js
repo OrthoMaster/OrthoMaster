@@ -16,9 +16,7 @@ export const AccountProgress = ({ userId }) => {
     const dispatch = useDispatch()
     const progress = useQuery('getUserProgress', () => getUserProgression(), {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-              dispatch(logout())
-            }
+            throw error
           }
     })
 

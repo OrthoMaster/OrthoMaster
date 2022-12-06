@@ -6,14 +6,14 @@ import {
     Text
 } from 'react-native'
 
-import NumericInput from 'react-native-numeric-input'
+import InputSpinner from "react-native-input-spinner";
 
 
 export const QuizNumber = ({ quizPossibilities, quizDone, quizAnswer, onSelect }) => {
-    const [response, setResponse] = useState(0);
     const [minVal, setminVal] = useState(0)
     const [maxVal, setmaxVal] = useState(30)
     const [jump, setJump] = useState(1)
+    const [number, setNumber] = useState(1)
 
     useEffect(() => {
         const attributes = quizPossibilities[0].attributes
@@ -21,19 +21,19 @@ export const QuizNumber = ({ quizPossibilities, quizDone, quizAnswer, onSelect }
         if (attributes.min) {
             const val = parseInt(attributes.min)
             setminVal(val)
-            setResponse(val)
+            setNumber(val)
         }
         if (attributes.max)
             setmaxVal(parseInt(attributes.max))
-        if (attributes.jump) {
-            setJump(parseInt(attributes.jump))
+        if (attributes.step) {
+            setJump(parseInt(attributes.step))
         }
 
     }, [])
 
     const handleUserAnswer = () => {
 
-        if (response == quizAnswer) {
+        if (number == quizAnswer) {
             onSelect(true)
         } else {
             onSelect(false)
@@ -42,27 +42,19 @@ export const QuizNumber = ({ quizPossibilities, quizDone, quizAnswer, onSelect }
 
     return (
         <View>
-            <NumericInput
-                containerStyle={styles.container}
-                value={response}
-                onChange={(value) => {
-                    if (!quizDone)
-                        setResponse(value)
-                }}
-                totalWidth={250}
-                totalHeight={80}
-                iconSize={25}
+            <InputSpinner
+                style={styles.container}
+                max={maxVal}
+                min={minVal}
                 step={jump}
-                minValue={minVal}
-                maxValue={maxVal}
-                valueType='real'
-                rounded
-                editable={false}
-                textColor='#000000'
-                iconStyle={{ color: 'white' }}
-                rightButtonBackgroundColor='#F7700D'
-                leftButtonBackgroundColor='#F7700D'
-
+                colorMax={"#D5D4D4"}
+                colorMin={"#D5D4D4"}
+                value={number}
+                skin='clean'
+                onChange={(num) => {
+                    if (!quizDone)
+                        setNumber(num)
+                }}
             />
             <TouchableOpacity style={styles.submitButton}
                 onPress={() => handleUserAnswer()}
@@ -76,7 +68,8 @@ export const QuizNumber = ({ quizPossibilities, quizDone, quizAnswer, onSelect }
 const styles = StyleSheet.create({
     container: {
         marginVertical: 20,
-        backgroundColor: '#fffefd'
+        width: '60%'
+        //backgroundColor: '#fffefd'
     },
     submitButton: {
         borderRadius: 50,

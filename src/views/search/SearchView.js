@@ -99,15 +99,11 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
 
     }
 
-    if (contentModel.error) {
-        console.log(contentModel.error);
-        if (contentModel.error == 'token_not_valid') {
-            dispatch({
-                type: API_SEARCH_CLEAN
-            })
-            dispatch(logout())
-        }
-    }
+    // if (contentModel.error) {
+    //     dispatch({
+    //         type: API_SEARCH_CLEAN
+    //     })
+    // }
 
     return <View style={styles.container}>
         <SearchHeader

@@ -16,7 +16,7 @@ export const TrophyCard = ({ item }) => {
             const imageUrl = await getS3Image(path)
             return imageUrl
         } catch (error) {
-            console.error('ImageFactory: ' + error);
+            throw error
         }
     }
 

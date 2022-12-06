@@ -17,17 +17,12 @@ import { fetchLessonByModuleWithProgression } from '../../services/ContentServic
 import { getS3Image } from '../../services/S3Service';
 import { LessonButton } from './components/LessonButton';
 import { LoadingView } from '../LoadingView';
-import { logout } from '../../actions/auth';
-import { useDispatch } from 'react-redux';
 
 export function LessonsView({ route, navigation }) {
     let moduleInfos = route.params.module
-    const dispatch = useDispatch()
     const modules = useQuery('lessonProgress', () => fetchLessonByModuleWithProgression(moduleInfos.module.module_num), {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-              dispatch(logout())
-            }
+            throw error
           }
     })
     const [moduleLogo, setModuleLogo] = useState(null)
@@ -39,7 +34,7 @@ export function LessonsView({ route, navigation }) {
             const imageUrl = await getS3Image(path)
             return (imageUrl)
         } catch (error) {
-            console.error('ImageFactory: ' + error);
+            throw error
         }
     }
 

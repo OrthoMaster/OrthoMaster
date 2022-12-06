@@ -13,11 +13,11 @@ class AuthService {
         }
         AsyncStorage.setItem('config', JSON.stringify(config), (error) => {
           if (error)
-            console.log('error: ', error);
+            throw error
         })
         return {code: 200,user: config.user, accessToken: config.accessToken};
       }).catch((e)=> {
-        Sentry.Native.captureException(e);
+        throw e
       })
   }
   logout() {
@@ -30,7 +30,7 @@ class AuthService {
 
     return axios.get(Constants.manifest.extra.env.API_URL + '/connect', { headers: { Authorization : authHeader} })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     })
   }
 
@@ -38,7 +38,7 @@ class AuthService {
 
     return axios.post(Constants.manifest.extra.env.API_URL + '/user/edit/password', credentials)
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     })
   }
 
