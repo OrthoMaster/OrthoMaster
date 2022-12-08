@@ -27,7 +27,7 @@ export const ImageFactory = ({ config }) => {
             return await getS3Image(path)
 
         } catch (error) {
-            console.log('fetch image lesson error:', contentInfos, error);
+            throw error
         }
     }
 

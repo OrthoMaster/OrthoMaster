@@ -15,7 +15,6 @@ import {
     MODULE_FINISHED
 } from './ModuleProgress';
 
-
 export const ModuleButton = ({ item, onPress }) => {
     const [logo, setLogo] = useState(null)
     const [isActivate, setIsActivate] = useState(false)
@@ -56,7 +55,7 @@ export const ModuleButton = ({ item, onPress }) => {
             const imageUrl = await getS3Image(path)
             return imageUrl
         } catch (error) {
-            console.error('ImageFactory: ' + error);
+            throw error
         }
     }
 

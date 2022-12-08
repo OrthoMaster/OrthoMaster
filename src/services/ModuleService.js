@@ -19,6 +19,6 @@ export const fetchModulesWithUserProgression = async () => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }

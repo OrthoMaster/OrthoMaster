@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { selectContent } from '../../../../../reducers/contentReducer';
 
 import { getS3Image } from '../../../../../services/S3Service';
+import { logout } from '../../../../../actions/auth';
 
 const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
     const [clicked, setclicked] = useState(false)
@@ -36,7 +37,7 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
             }
             return await getS3Image(path)
         } catch (error) {
-            console.log('fetch image quizLineBox error:', error);
+            throw error
         }
     }
 

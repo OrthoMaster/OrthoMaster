@@ -17,8 +17,13 @@ export const getTrophyProgressBasedOnModule = async (id_module) => {
     })
     .then((response) => {
       return response.data;
+    })
+    .catch((e)=> {
+      throw e
     });
 }
+
+
 export const getUserTrophy = async (id_user) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.accessToken;
@@ -34,7 +39,7 @@ export const getUserTrophy = async (id_user) => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }
 
@@ -51,6 +56,6 @@ export const postNewUserTrophy = async (id_trophy) => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }

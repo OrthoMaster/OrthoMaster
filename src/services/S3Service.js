@@ -25,7 +25,7 @@ export const getS3Image = async (path) => {
       return response.data.url;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }
 

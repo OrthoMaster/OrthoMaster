@@ -48,7 +48,7 @@ const QuizCheckBoxButton = ({
             }
             return await getS3Image(path)
         } catch (error) {
-            console.log('error', error);
+            throw error
         }
     }
 

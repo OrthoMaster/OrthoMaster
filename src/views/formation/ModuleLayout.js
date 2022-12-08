@@ -18,8 +18,6 @@ import { useIsFocused } from '@react-navigation/native';
 import { useQuery } from 'react-query';
 import { fetchModulesWithUserProgression } from '../../services/ModuleService';
 import { getFormationMainQuizStatus } from '../../services/FormationService';
-import { logout } from '../../actions/auth';
-import { useDispatch } from 'react-redux';
 
 
 
@@ -73,15 +71,12 @@ const MainQuizButton = ({
 
 
 export const ModuleLayout = ({ navigation, route }) => {
-    const dispatch = useDispatch()
     const isFocused = useIsFocused();
     const [modalVisible, setModalVisible] = useState(true)
     const [formationPercentage, setFormationPercentage] = useState(0)
     const modules = useQuery('modulesProgress', () => fetchModulesWithUserProgression(), {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-                dispatch(logout())
-            }
+            throw error
         },
         onSuccess: (modules) => {
             let totalLesson = 0
@@ -93,15 +88,12 @@ export const ModuleLayout = ({ navigation, route }) => {
 
             setFormationPercentage(finishLesson * 100 / totalLesson)
             setModalVisible(true)
-            //console.log('module getted');
         }
     })
 
     const formationMainQuiz = useQuery('getFormationMainQuiz', () => getFormationMainQuizStatus(1), {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-                dispatch(logout())
-            }
+            throw error
         }
     })
 

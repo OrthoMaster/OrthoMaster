@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
 
+import React, { useEffect, useState } from 'react';
 
 import { NavigationContainer } from '@react-navigation/native';
 
@@ -16,14 +16,16 @@ import {
   QueryClient
 } from 'react-query'
 
-
+import { Alert } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingView } from './src/views/LoadingView';
 import { AlertVersion } from './src/component/AlertVersion';
+import { ErrorHandler } from './src/component/ErrorHandler';
 
-import * as Sentry from 'sentry-expo';
+import Bugsnag from '@bugsnag/expo';
+Bugsnag.start();
 
 const queryClient = new QueryClient()
 
@@ -33,13 +35,6 @@ export default function App({ navigation }) {
   const isLoading = useSelector(selectIsLoading)
   const dispatch = useDispatch()
   const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
-  Sentry.init({
-    dsn: 'https://cc1f41ec3e694b7e90ee08d4ed50c9fe@o4503926574153728.ingest.sentry.io/4503926602661888',
-    enableInExpoDevelopment: true,
-    debug: true, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
-  });
-
-
 
   useEffect(() => {
     const init = async () => {
@@ -47,6 +42,7 @@ export default function App({ navigation }) {
         const config = await restoreLocalConfigAsync()
         const check = await checkVersion({
           version: Constants.manifest.version, // app local version
+          //version: '1.1.0', // app local version
           iosStoreURL: 'https://apps.apple.com/us/app/orthomaster/id1644851864',
           androidStoreURL: 'https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster&pli=1',
           country: 'jp', // default value is 'jp'
@@ -56,30 +52,32 @@ export default function App({ navigation }) {
           setmodalVersionIsVisible(true)
         }
       } catch (e) {
-        console.log(e);
+        Alert.alert('Oups...', "Nous n'arrivons pas à accéder à internet." )
+        //throw e
       }
     };
-
     init();
   }, []);
 
 
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
+    <ErrorHandler>
+      <QueryClientProvider client={queryClient}>
+        <NavigationContainer>
 
-        {
-          isLoggedIn ? (
-            <AppTab />
-          ) : isLoading
-            ? (
-              <LoadingView />
-            ) : (
-              <AuthStack />
-            )}
-      <AlertVersion isVisible={modalVersionIsVisible} onClose={()=>setmodalVersionIsVisible(false)}/>
-      </NavigationContainer>
-    </QueryClientProvider>
+          {
+            isLoggedIn ? (
+              <AppTab />
+            ) : isLoading
+              ? (
+                <LoadingView />
+              ) : (
+                <AuthStack />
+              )}
+        <AlertVersion isVisible={modalVersionIsVisible} onClose={()=>setmodalVersionIsVisible(false)}/>
+        </NavigationContainer>
+      </QueryClientProvider>
+    </ErrorHandler>
   );
 }

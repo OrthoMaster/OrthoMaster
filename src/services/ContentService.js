@@ -21,7 +21,7 @@ export const fetchQa = async (limit = 0) => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }
 
@@ -41,7 +41,7 @@ export const fetchFlash = async (filters, limit) => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }
 
@@ -57,7 +57,7 @@ export const fetchLessonByModuleWithProgression = async (idModule) => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }
 
@@ -87,6 +87,6 @@ export const getUserNextLesson = async () => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }

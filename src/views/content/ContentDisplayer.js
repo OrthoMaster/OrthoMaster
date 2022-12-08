@@ -8,7 +8,6 @@ import { fetchLessonContent } from "../../services/ContentService";
 import { saveLogtimeOnLesson } from "../../services/LogsService";
 
 import { exitContent, runContent } from "../../actions/contentAction";
-import { logout } from "../../actions/auth";
 
 import { getCurrentDate } from "../../utils";
 import { ContentFactory } from './components/ContentFactory'
@@ -44,18 +43,13 @@ export function ContentDisplayer({ route, navigation }) {
       initContent(xml)
     },
     onError: (error) => {
-      console.log(error);
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     }
   });
 
   const mutation = useMutation(saveLogtimeOnLesson, {
     onError: (error) => {
-      if (error.response.data == 'token_not_valid') {
-        dispatch(logout())
-      }
+      throw error
     }
   });
 
@@ -63,8 +57,7 @@ export function ContentDisplayer({ route, navigation }) {
     try {
       await mutation.mutateAsync(log)
     } catch (error) {
-      console.error(error)
-      Sentry.Native.captureException(e);
+      throw error
     } finally {
       console.log('[ LOG lesson ]:', log)
     }

@@ -17,13 +17,14 @@ export const getFormationMainQuizStatus = async (id_formation) => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }
 
 export const insertMainQuizStatusByFormation = async (data) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.accessToken;
+  console.log('insert');
 
   return axios
     .post(route+"/"+ data.formation_id +"/user/"+config.user.id_user+"/new/"+data.quiz_type, null, {
@@ -33,7 +34,8 @@ export const insertMainQuizStatusByFormation = async (data) => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      console.log(e.response.data);
+      throw e
     });
 }
 
@@ -54,6 +56,6 @@ export const valideMainQuizStatusByFormation = async (data) => {
       return response.data;
     })
     .catch((e)=> {
-      Sentry.Native.captureException(e);
+      throw e
     });
 }

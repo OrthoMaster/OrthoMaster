@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 
 import {
     Modal,
@@ -9,7 +9,7 @@ import {
     StyleSheet
 } from "react-native";
 
-import { useMutation, useQuery } from "react-query";
+import { useMutation } from "react-query";
 import { insertMainQuizStatusByFormation } from "../../../services/FormationService";
 
 export const MainQuizUnlockModal = ({
@@ -21,9 +21,7 @@ export const MainQuizUnlockModal = ({
 
     const mainQuizStatus = useMutation('insertInitialQuizStatus', insertMainQuizStatusByFormation, {
         onError: (error) => {
-            if (error.response.data == 'token_not_valid') {
-                dispatch(logout())
-            }
+            throw error
         }
     })
 

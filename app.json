@@ -12,7 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hugotaieb.OrthoMaster",
-      "buildNumber": "5"
+      "buildNumber": "8"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,10 +25,13 @@
     "extra": {
       "eas": {
         "projectId": "276593fa-b663-4367-8b00-3d86821c874a"
+      },
+      "bugsnag": {
+        "apiKey": "cca81158d4e6406408911e2fa54edadc"
       }
     },
     "plugins": [
-      "sentry-expo"
+      "@bugsnag/plugin-expo-eas-sourcemaps"
     ]
   }
 }

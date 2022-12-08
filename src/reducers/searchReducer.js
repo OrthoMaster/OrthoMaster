@@ -4,7 +4,6 @@ import {
     API_SEARCH_FAILURE,
     API_SEARCH_LIST_END,
     API_SEARCH_CLEAN,
-    API_SEARCH_TEXT
 } from "../actions/types";
 
 

@@ -88,8 +88,6 @@ export const VideoFullScreenModal = ({
                   modestbranding: 1
                 }}
                 play={isPlaying}
-                webViewStyle={{
-                }}
               />
             </View>
           </Pressable>
