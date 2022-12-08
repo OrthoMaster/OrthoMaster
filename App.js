@@ -16,7 +16,7 @@ import {
   QueryClient
 } from 'react-query'
 
-
+import { Alert } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
@@ -27,18 +27,10 @@ import { ErrorHandler } from './src/component/ErrorHandler';
 import Bugsnag from '@bugsnag/expo';
 Bugsnag.start();
 
-import NetInfo from '@react-native-community/netinfo';
-
 const queryClient = new QueryClient()
 
 export default function App({ navigation }) {
 
-  //console.log(netInfo);
-  const getNetwork = NetInfo.addEventListener(state => {
-    console.log("Connection type", state.type);
-    console.log("Is connected?", state.isConnected);
-  });
-  getNetwork()
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
   const dispatch = useDispatch()
@@ -50,6 +42,7 @@ export default function App({ navigation }) {
         const config = await restoreLocalConfigAsync()
         const check = await checkVersion({
           version: Constants.manifest.version, // app local version
+          //version: '1.1.0', // app local version
           iosStoreURL: 'https://apps.apple.com/us/app/orthomaster/id1644851864',
           androidStoreURL: 'https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster&pli=1',
           country: 'jp', // default value is 'jp'
@@ -59,8 +52,8 @@ export default function App({ navigation }) {
           setmodalVersionIsVisible(true)
         }
       } catch (e) {
-        console.log('Errrr');
-        throw e
+        Alert.alert('Oups...', "Nous n'arrivons pas à accéder à internet." )
+        //throw e
       }
     };
     init();

@@ -12,6 +12,7 @@ const myErrorHandler = (error, info) => {
     if (error == 'token_not_valid') {
         store.dispatch(logout())
     } else {
+        console.log('Error Handler:',error.response);
         Bugsnag.notify(error)
     }
     
@@ -41,6 +42,7 @@ export const ErrorHandler = ({ children }) => (
 
 
 const errorHandler = (e, isFatal) => {
+    //console.log('Exception handler:', e.response);
     if (isFatal) {
         if (e.response.data == 'token_not_valid') {
             Alert.alert(
@@ -56,11 +58,16 @@ const errorHandler = (e, isFatal) => {
             
         } else {
             
-            Bugsnag.notify(e)
-            console.log(e.response.data);
+            let txt = ""
+            if (e.response._response == "The Internet connection appears to be offline.") {
+                txt = "Nous n'arrivons pas à accéder à internet."
+            } else {
+                txt = "Vous pouvez nous laisser un message pour nous expliquer ce qu'il s'est passé"
+                Bugsnag.notify(e)
+            }
             Alert.alert(
-                'Une erreur est survenue',
-                "Vous pouvez nous laisser un message pour nous expliquer ce qu'il s'est passé",
+                'Oups...',
+                txt,
                 [{
                     text: 'Signaler un problème',
                     onPress: () => {
@@ -78,6 +85,7 @@ const errorHandler = (e, isFatal) => {
             );
         }
     } else {
+        console.log("[ NOT fatal error]:",e.response);
         Bugsnag.notify(e)
     }
 };
