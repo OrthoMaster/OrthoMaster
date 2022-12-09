@@ -14,6 +14,9 @@
       "distribution": "internal",
       "ios": {
         "simulator": true
+      },
+      "env": {
+        "API_URL": "https://api.orthomaster.fr"
       }
     },
     "production": {

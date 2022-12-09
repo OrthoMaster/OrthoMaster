@@ -10,14 +10,14 @@ import {
 
 export const Page1 = () => {
     return (<View style={styles.container}>
-        <ScrollView contentContainerStyle={{ alignItems: 'center' }} style={{ width: '100%' }}>
+        <ScrollView contentContainerStyle={[styles.containerScroll, { alignItems: 'center' }]} style={{ width: '100%'}}>
             <Image
                 source={require('../../../assets/logo-text.png')}
                 style={{
                     width: '90%',
                     height: '30%',
                     resizeMode: 'contain',
-                    marginBottom: 30
+                    marginBottom: 30,
                 }}
             />
 
@@ -25,12 +25,12 @@ export const Page1 = () => {
                 source={require('../../../assets/auth/client.jpeg')}
                 style={{
                     width: '100%',
-                    height: '80%',
+                    height: '30%',
                     resizeMode: 'contain',
                 }}
             />
 
-            <Text style={[styles.textSecondary, { marginTop: 40, marginBottom: 50, textAlign: 'center' }]}>
+            <Text style={[styles.textSecondary, {marginBottom: 50, textAlign: 'center' }]}>
                 <Text style={{ color: '#E05808' }}>OrthoMaster </Text>
                 vous accompagne pour mieux prendre en charge vos patients en orthopédie.
             </Text>
@@ -45,13 +45,13 @@ export const Page1 = () => {
 export const Page2 = () => {
     return (<View style={styles.container}>
 
-        <ScrollView contentContainerStyle={{}} style={{ width: '100%' }}>
+        <ScrollView contentContainerStyle={styles.containerScroll} style={{ width: '100%' }}>
 
             <Image
                 source={require('../../../assets/auth/app.png')}
                 style={{
                     width: '100%',
-                    height: '100%',
+                    height: '30%',
                     resizeMode: 'contain',
                     marginBottom: 20
                 }}
