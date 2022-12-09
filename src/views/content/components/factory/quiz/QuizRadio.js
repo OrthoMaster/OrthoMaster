@@ -81,10 +81,10 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
         }}
     >
         <Animated.View
-            style={[{
-                width: '100%',
+            style={[ styles.buttonRadio, {
+                width: '100%', height: '100%',
                 backgroundColor: quizDone && clicked ? boxInterpolation : null,
-                borderColor: clicked ? '#ffffff' : '#ED7D32',
+                borderColor: clicked ? '#ffffff' : '#ED7D32'
             }]}
         >
             {
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 2,
+        borderWidth: 1,
         marginVertical: 5
 
 
