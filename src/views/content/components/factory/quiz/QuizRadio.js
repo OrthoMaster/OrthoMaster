@@ -4,9 +4,8 @@ import { useSelector } from 'react-redux';
 import { selectContent } from '../../../../../reducers/contentReducer';
 
 import { getS3Image } from '../../../../../services/S3Service';
-import { logout } from '../../../../../actions/auth';
 
-const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
+const QuizRadioButton = ({ config, quizDone, onPress, answer, currentResponse }) => {
     const [clicked, setclicked] = useState(false)
     const [animation, setAnimation] = useState(new Animated.Value(0));
     const [answerImage, setAnswerImage] = useState(null)
@@ -75,13 +74,20 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
             }]}
         onPress={() => {
             if (!quizDone) {
-                setclicked(!clicked)
-                onPress(config.attributes.ref)
+                if (currentResponse == 0) {
+                    setclicked(true)
+                    onPress(config.attributes.ref)
+                } else {
+                    if (currentResponse == config.attributes.ref) {
+                        setclicked(false)
+                        onPress(0)
+                    }
+                }
             }
         }}
     >
         <Animated.View
-            style={[ styles.buttonRadio, {
+            style={[styles.buttonRadio, {
                 width: '100%', height: '100%',
                 backgroundColor: quizDone && clicked ? boxInterpolation : null,
                 borderColor: clicked ? '#ffffff' : '#ED7D32'
@@ -98,7 +104,7 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
                         : <ActivityIndicator />
                     : <Text style={styles.textButton}>{config.value}</Text>
             }
-            
+
         </Animated.View>
     </TouchableOpacity>
 }
@@ -108,7 +114,7 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer }) => {
 
 
 export const QuizRadio = ({ quizPossibilities, quizDone, quizAnswer, onSelect }) => {
-    const [userResponse, setUserResponse] = useState(null)
+    const [userResponse, setUserResponse] = useState(0)
 
 
     const handleUserAnswer = () => {
@@ -130,6 +136,7 @@ export const QuizRadio = ({ quizPossibilities, quizDone, quizAnswer, onSelect })
                 key={index}
                 quizDone={quizDone}
                 answer={quizAnswer}
+                currentResponse={userResponse}
                 config={elem}
                 onPress={(value) => {
                     setUserResponse(value)
