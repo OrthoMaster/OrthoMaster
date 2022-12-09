@@ -12,7 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hugotaieb.OrthoMaster",
-      "buildNumber": "14"
+      "buildNumber": "16"
     },
     "android": {
       "adaptiveIcon": {

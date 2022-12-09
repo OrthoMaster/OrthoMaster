@@ -1,7 +1,5 @@
 
-import { configureStore } from '@reduxjs/toolkit'
-import { combineReducers } from 'redux'
-
+import { configureStore, combineReducers } from '@reduxjs/toolkit'
 
 import {authReducer} from "./reducers/auth";
 import {searchReducer} from './reducers/searchReducer';
