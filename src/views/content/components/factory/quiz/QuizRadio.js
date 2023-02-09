@@ -56,6 +56,8 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer, currentResponse })
                 if (isMounted) {
                     setAnswerImage(url)
                 }
+            }).catch((error)=>{
+                throw error
             })
         }
         return () => {

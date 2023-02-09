@@ -2,9 +2,9 @@
   "name": "orthomaster",
   "version": "1.2.0",
   "scripts": {
-    "api-local": "API_URL=http://10.1.10.133 npx expo start",
+    "api-local": "API_URL=http://localhost npx expo start",
     "api-distant": "API_URL=https://api.orthomaster.fr npx expo start",
-    "api-local-no-dev": "API_URL=http://10.1.10.133 npx expo start --no-dev --minify",
+    "api-local-no-dev": "API_URL=http://localhost npx expo start --no-dev --minify",
     "api-distant-no-dev": "API_URL=https://api.orthomaster.fr npx expo start --no-dev --minify",
     "start": "expo start --dev-client",
     "android": "expo run:android",

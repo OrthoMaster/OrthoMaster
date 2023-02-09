@@ -10,26 +10,18 @@ import InputSpinner from "react-native-input-spinner";
 
 
 export const QuizNumber = ({ quizPossibilities, quizDone, quizAnswer, onSelect }) => {
-    const [minVal, setminVal] = useState(0)
-    const [maxVal, setmaxVal] = useState(30)
+    const [minVal, setminVal] = useState(parseInt(quizPossibilities[0].attributes.min))
+    const [maxVal, setmaxVal] = useState(parseInt(quizPossibilities[0].attributes.max))
     const [jump, setJump] = useState(1)
-    const [number, setNumber] = useState(1)
+    const [number, setNumber] = useState(parseInt(quizPossibilities[0].attributes.min))
 
     useEffect(() => {
-        const attributes = quizPossibilities[0].attributes
-
-        if (attributes.min) {
-            const val = parseInt(attributes.min)
-            setminVal(val)
-            setNumber(val)
+        if (parseInt(quizPossibilities[0].attributes.step)) {
+            setJump(parseInt(quizPossibilities[0].attributes.step))
         }
-        if (attributes.max)
-            setmaxVal(parseInt(attributes.max))
-        if (attributes.step) {
-            setJump(parseInt(attributes.step))
-        }
-
     }, [])
+
+    console.log(quizPossibilities[0].attributes);
 
     const handleUserAnswer = () => {
 
@@ -44,8 +36,8 @@ export const QuizNumber = ({ quizPossibilities, quizDone, quizAnswer, onSelect }
         <View>
             <InputSpinner
                 style={styles.container}
-                max={maxVal}
                 min={minVal}
+                max={maxVal}
                 step={jump}
                 colorMax={"#D5D4D4"}
                 colorMin={"#D5D4D4"}
