@@ -13,7 +13,8 @@ import {
 import { useStore } from 'react-redux';
 
 import { useQuery } from "react-query"
-import { fetchQa, fetchFlash } from '../../services/ContentService';
+import { fetchFlashContent } from '../../services/FlashService';
+import { fetchQa } from '../../services/QaService';
 
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
@@ -30,7 +31,7 @@ export const HomeView = ({ navigation }) => {
       throw error
     }
   });
-  const flashPreview = useQuery("homeFlashPreview", () => fetchFlash(null, 5), {
+  const flashPreview = useQuery("homeFlashPreview", () => fetchFlashContent(0, 5), {
     onError: (error) => {
       throw error
     }
@@ -58,15 +59,6 @@ export const HomeView = ({ navigation }) => {
             source={require('../../../assets/home/header/logo.png')}
           />
           <View style={styles.headerButtonGroup}>
-            {/* <TouchableOpacity
-              style={styles.headerButton}
-            >
-              <Image
-
-                source={require('../../../assets/home/header/notification_icon.png')}
-              />
-
-            </TouchableOpacity> */}
 
             <TouchableOpacity
               style={styles.headerButton}

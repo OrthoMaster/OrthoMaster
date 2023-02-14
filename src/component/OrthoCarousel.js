@@ -6,12 +6,15 @@ import {
     Image,
     TouchableOpacity
 } from 'react-native';
+import { useQuery } from 'react-query';
 import Carousel from '../../snap-carousel/src/carousel/Carousel';
 import { getS3Image } from '../services/S3Service'
+import { S3ContentPathGenerator } from '../utils';
 
 
 
-const renderItem = ({ item }, navigation) => {
+const CarousselCard = ({ item, navigation }) => {
+    const imageUrl = useQuery(['fetchHomeContentThumbnail', item.id_content], () => getS3Image(S3ContentPathGenerator(item)+'logo.png'))
 
     return (
         <TouchableOpacity style={styles.card}
@@ -22,7 +25,7 @@ const renderItem = ({ item }, navigation) => {
 
             <Image
                 style={styles.thumbnail}
-                source={{ uri: item.logo }}
+                source={{ uri: imageUrl.data }}
             />
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.description}>{item.description}</Text>
@@ -32,35 +35,11 @@ const renderItem = ({ item }, navigation) => {
 
 
 export const OrthoCarousel = ({ entries, navigation }) => {
-    const [items, setitem] = useState([])
-
-    const prepareItem = (entries) => {
-        entries.forEach(async (element) => {
-            let path = element.type + '/' + element.title + '/logo.png'
-            const response = await getS3Image(path)
-            let item = {
-                id_content: element.id_content,
-                title: element.title,
-                description: element.description,
-                logo: response,
-                type: element.type
-            }
-
-            setitem((items) => items.concat(item))
-
-        });
-
-
-    }
-
-    useEffect(() => {
-        prepareItem(entries)
-    }, [entries])
 
 
     return <Carousel
-        data={items}
-        renderItem={item => renderItem(item, navigation)}
+        data={entries}
+        renderItem={item => <CarousselCard item={item.item} navigation={navigation} />}
         sliderWidth={Dimensions.get('screen').width}
         itemWidth={300}
     />
