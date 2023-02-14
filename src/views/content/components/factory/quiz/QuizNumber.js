@@ -21,7 +21,6 @@ export const QuizNumber = ({ quizPossibilities, quizDone, quizAnswer, onSelect }
         }
     }, [])
 
-    console.log(quizPossibilities[0].attributes);
 
     const handleUserAnswer = () => {
 

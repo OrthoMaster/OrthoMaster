@@ -6,9 +6,7 @@ import {
     StyleSheet,
     SafeAreaView,
     TouchableOpacity,
-    Modal,
     Image,
-    ActivityIndicator,
     Alert
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
@@ -48,6 +46,9 @@ export const LoginView = ({ navigation }) => {
                     break;
                 case 3:
                     setStatusMessage("Nom d'utilisateur introuvable")
+                    break;
+                case 4:
+                    setStatusMessage("Compte désactivé")
                     break;
                 default:
                     setStatusMessage('')

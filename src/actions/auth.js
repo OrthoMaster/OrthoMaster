@@ -18,15 +18,13 @@ export const login = (username, password) => (dispatch) => {
         payload: { user: data.user, accessToken: data.accessToken },
       });
       return Promise.resolve();
-    },
-    (error) => {
-      dispatch({
-        type: LOGIN_FAIL,
-        payload: { msg: error.response.data.msg}
-      });
-      return Promise.reject();
     }
-  );
+  ).catch((e)=>{
+    dispatch({
+          type: LOGIN_FAIL,
+          payload: { msg: e.response.data.msg}
+        });
+  })
 };
 
 
