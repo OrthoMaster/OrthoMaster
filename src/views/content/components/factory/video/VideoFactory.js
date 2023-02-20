@@ -31,6 +31,9 @@ export const VideoFactory = ({ video }) => {
         }}>
         <View pointerEvents={'none'}>
             <YoutubePlayer
+                webViewProps={{
+                    androidLayerType: 'none'
+                }}
                 ref={playerRef}
                 height={Dimensions.get('screen').width * 9 / 16}
                 videoId={video.attributes['src']}

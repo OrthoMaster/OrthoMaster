@@ -38,7 +38,7 @@ export function ContentDisplayer({ route, navigation }) {
 
   };
  
-  const xmlContent = useQuery('fetchLessonContent', () => fetchLessonContent(S3ContentPathGenerator(content)+'content.xml'), {
+  const xmlContent = useQuery(['fetchLessonContent', content.id_content], () => fetchLessonContent(S3ContentPathGenerator(content)+'content.xml'), {
     onSuccess: (xml) => {
       initContent(xml)
     },

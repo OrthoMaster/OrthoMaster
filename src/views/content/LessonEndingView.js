@@ -255,7 +255,7 @@ export const LessonEndingView = ({ navigation, route }) => {
           />
           : <View>
             <Text style={{fontSize: 30, color: '#ffffff', alignSelf: 'center'}}>Ta note est de</Text>
-            <Text style={{fontSize: 80, fontWeight: 'bold', color: '#ffffff', alignSelf: 'center'}}>{nbQuizValidated + "/" + stateContent.content.nbQuiz}</Text>
+            <Text style={{fontSize: 80, fontWeight: 'bold', color: '#ffffff', alignSelf: 'center'}}>{nbQuizValidated + "/" + stateContent.nbQuiz}</Text>
           </View>
       }
 

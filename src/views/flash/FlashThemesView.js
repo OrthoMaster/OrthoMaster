@@ -27,8 +27,8 @@ const FlashButton = ({ label, onPress, buttonColor }) => {
         buttonImage= require('../../../assets/flash/les_solutions.png')
       
       break;
-      case 'Medflix':
-        buttonImage= require('../../../assets/flash/medflix.png')
+      case 'Ressources':
+        buttonImage= require('../../../assets/flash/ressources.png')
       
       break;
   
@@ -65,7 +65,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           onPress={() => navigation.navigate('flash-categories', {
             theme_id: 2,
             theme_title: 'Mon activié',
-            theme_color: '#E38D4D'
+            theme_color: '#E6E6E6'
           })}
         />
         <FlashButton
@@ -73,7 +73,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           onPress={() => navigation.navigate('flash-categories', {
             theme_id: 1,
             theme_title: 'Mon patient',
-            theme_color: '#7AA5C3'
+            theme_color: '#E6E6E6'
           })}
         />
         
@@ -84,15 +84,15 @@ export const FlashThemesView = ({ navigation, route }) => {
           onPress={() => navigation.navigate('flash-categories', {
             theme_id: 3,
             theme_title: 'Les solutions',
-            theme_color: '#7AA5C3'
+            theme_color: '#E6E6E6'
           })}
         />
         <FlashButton
-          label={"Medflix"}
+          label={"Ressources"}
           onPress={() => navigation.navigate('flash-categories', {
             theme_id: 4,
-            theme_title: "Medflix",
-            theme_color: '#E38D4D'
+            theme_title: "Ressources",
+            theme_color: '#E6E6E6'
           })}
         />
       </View>

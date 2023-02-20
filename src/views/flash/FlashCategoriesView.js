@@ -67,15 +67,15 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         flex: 1,
         alignItems: 'center',
+        //justifyContent: 'center'
     },
     list: {
         width: '100%',
-
+        backgroundColor: '#fff000',
     },
     buttonBox: {
         width: '90%',
         height: Dimensions.get('screen').width * 0.2,
-        backgroundColor: '#FDB26D',
         alignSelf: 'center',
         borderRadius: 10,
         alignItems: 'center',

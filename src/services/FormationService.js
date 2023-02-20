@@ -24,7 +24,6 @@ export const getFormationMainQuizStatus = async (id_formation) => {
 export const insertMainQuizStatusByFormation = async (data) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.accessToken;
-  console.log('insert');
 
   return axios
     .post(route+"/"+ data.formation_id +"/user/"+config.user.id_user+"/new/"+data.quiz_type, null, {

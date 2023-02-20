@@ -8,39 +8,18 @@ import { getS3Image } from '../../../../services/S3Service'
 import { useSelector } from "react-redux";
 import { selectContent } from '../../../../reducers/contentReducer';
 import { ImageViewer } from '../../../../component/ImageViewer';
+import { S3ContentPathGenerator } from '../../../../utils';
+import { useQuery } from 'react-query';
+
 
 export const ImageFactory = ({ config }) => {
-    const [url, seturl] = useState(null);
+    const imgUrl = useQuery(["getContentImage", config.attributes['src']], ()=>getS3Image(S3ContentPathGenerator(contentInfos)+ config.attributes['src']))
+
     const [isFullscreen, setIsFullscreen] = useState(false)
 
     const contentInfos = useSelector(selectContent)
 
     var imgWidth = Dimensions.get('window').width
-
-
-    const fetchImage = async (contentInfos) => {
-        try {
-            let path = contentInfos.type + '/' + contentInfos.module_num + '/' + contentInfos.title + '/' + config.attributes['src']
-            if (contentInfos.type != 'lesson' || contentInfos.title == "initial" || contentInfos.title == 'final') {
-                path = contentInfos.type + '/' + contentInfos.title + '/' + config.attributes['src']
-            }
-            return await getS3Image(path)
-
-        } catch (error) {
-            throw error
-        }
-    }
-
-    useEffect(() => {
-        let isDisplay = true
-        fetchImage(contentInfos).then(result => {
-            if (isDisplay) {
-                seturl(result)
-            }
-        })
-        return () => { isDisplay = false }
-    }, [])
-    
 
     if (config.attributes.width) {
         if (config.attributes.width.includes('%')) {
@@ -51,7 +30,7 @@ export const ImageFactory = ({ config }) => {
         }
     }
 
-    if (url == null) {
+    if (imgUrl.isLoading) {
         return <ActivityIndicator />
     }
 
@@ -63,6 +42,7 @@ export const ImageFactory = ({ config }) => {
             >
                 <Image
                     width={imgWidth}
+                    
                     style={{
                         alignSelf: 'center',
                         width: imgWidth,
@@ -70,12 +50,12 @@ export const ImageFactory = ({ config }) => {
                         resizeMode: 'contain'
                     }}
                     source={{
-                        uri: url
+                        uri: imgUrl.data
                     }} />
             </TouchableOpacity>
             {
                 isFullscreen ?
-                    <ImageViewer url={url} visible={isFullscreen} onClose={()=>{setIsFullscreen(false)}} />
+                    <ImageViewer url={imgUrl.data} visible={isFullscreen} onClose={()=>{setIsFullscreen(false)}} />
                     : null
             }
         </View>

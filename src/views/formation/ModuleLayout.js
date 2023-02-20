@@ -36,7 +36,7 @@ const MainQuizButton = ({
 
             }]}
             onPress={() => {
-                if (quizIsDone == 0) {
+                if (quizIsDone == 0 || quizType == 'final') {
                     onClick()
                 }
             }}
