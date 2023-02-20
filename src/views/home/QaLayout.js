@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 
 import {
   Text,
-  TouchableOpacity,
+  Alert,
   StyleSheet,
   Image,
   View,
@@ -72,7 +72,15 @@ export const QaLayout = ({ navigation, route }) => {
       icon={require('../../../assets/home/header/header_button_question.png')}
       style={styles.askQuestionButton}
       onPress={() => {
-        Linking.openURL('mailto:question@orthomaster.fr')
+        Linking.canOpenURL('mailto:question@orthomaster.fr')
+          .then((supported) => {
+            if (supported) {
+              Linking.openURL('mailto:question@orthomaster.fr')
+            } else {
+              Alert.alert(`Impossible d'ouvrir: question@orthomaster.fr`);
+            }
+          })
+
       }}
     />
 

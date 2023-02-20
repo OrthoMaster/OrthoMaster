@@ -16,8 +16,6 @@ class AuthService {
             throw error
         })
         return {code: 200,user: config.user, accessToken: config.accessToken};
-      }).catch((e)=> {
-        throw e
       })
   }
   logout() {

@@ -5,7 +5,7 @@ import {
     Text,
     StyleSheet,
     SafeAreaView,
-    TouchableOpacity,
+    Alert,
     Linking,
     StatusBar, ImageBackground
 } from 'react-native';
@@ -14,14 +14,13 @@ import { HomeHeaderButton } from './components/HomeHeaderButton';
 import { useQuery } from 'react-query';
 import { getUserNextLesson } from '../../services/ContentService';
 
-
 export const HomeHeader = ({ navigation, userName }) => {
     const nextLesson = useQuery('getUserNextLesson', getUserNextLesson, {
         refetchOnWindowFocus: false,
         enabled: false,
         onError: (error) => {
             throw error
-          }
+        }
     })
 
 
@@ -78,7 +77,15 @@ export const HomeHeader = ({ navigation, userName }) => {
                         icon={require('../../../assets/home/header/header_button_question.png')}
                         style={styles.secondaryButton}
                         onPress={() => {
-                            Linking.openURL('mailto:question@orthomaster.fr')
+                            Linking.canOpenURL('mailto:question@orthomaster.fr')
+                            .then((supported)=> {
+                                if (supported) {
+                                    Linking.openURL('mailto:question@orthomaster.fr')
+                                } else {
+                                    Alert.alert(`Impossible d'ouvrir: question@orthomaster.fr`);
+                                }
+                            })
+
                         }}
                     />
                     <HomeHeaderButton
@@ -112,7 +119,7 @@ var styles = StyleSheet.create({
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30
     },
-    
+
     secondaryButton: {
         marginTop: 20
     },

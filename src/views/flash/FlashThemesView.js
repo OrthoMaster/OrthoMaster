@@ -27,8 +27,8 @@ const FlashButton = ({ label, onPress, buttonColor }) => {
         buttonImage= require('../../../assets/flash/les_solutions.png')
       
       break;
-      case 'Actualité & Interviews':
-        buttonImage= require('../../../assets/flash/actualite_et_interviews.png')
+      case 'Ressources':
+        buttonImage= require('../../../assets/flash/ressources.png')
       
       break;
   
@@ -54,7 +54,7 @@ const FlashButton = ({ label, onPress, buttonColor }) => {
     )
 }
 
-export const FlashView = ({ navigation, route }) => {
+export const FlashThemesView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
@@ -62,16 +62,18 @@ export const FlashView = ({ navigation, route }) => {
       <View style={styles.rowContainer}>
       <FlashButton
           label={'Mon activité'}
-          onPress={() => navigation.navigate('flash-selection', {
-            category: 'officine',
-            title: 'Mon activié'
+          onPress={() => navigation.navigate('flash-categories', {
+            theme_id: 2,
+            theme_title: 'Mon activié',
+            theme_color: '#E6E6E6'
           })}
         />
         <FlashButton
           label={'Mon patient'}
-          onPress={() => navigation.navigate('flash-selection', {
-            category: 'patient',
-            title: 'Mon patient'
+          onPress={() => navigation.navigate('flash-categories', {
+            theme_id: 1,
+            theme_title: 'Mon patient',
+            theme_color: '#E6E6E6'
           })}
         />
         
@@ -79,16 +81,18 @@ export const FlashView = ({ navigation, route }) => {
       <View style={styles.rowContainer}>
         <FlashButton
           label={'Les solutions'}
-          onPress={() => navigation.navigate('flash-selection', {
-            category: 'produit',
-            title: 'Les solutions'
+          onPress={() => navigation.navigate('flash-categories', {
+            theme_id: 3,
+            theme_title: 'Les solutions',
+            theme_color: '#E6E6E6'
           })}
         />
         <FlashButton
-          label={"Actualité & Interviews"}
-          onPress={() => navigation.navigate('flash-selection', {
-            category: 'actualité',
-            title: "Actualité & Interviews"
+          label={"Ressources"}
+          onPress={() => navigation.navigate('flash-categories', {
+            theme_id: 4,
+            theme_title: "Ressources",
+            theme_color: '#E6E6E6'
           })}
         />
       </View>
