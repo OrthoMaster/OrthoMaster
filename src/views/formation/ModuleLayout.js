@@ -27,7 +27,6 @@ const MainQuizButton = ({
     quizIsDone
 }) => {
 
-
     return (
         <TouchableOpacity
             style={[styles.mainQuizButtonContainer, {
@@ -36,7 +35,7 @@ const MainQuizButton = ({
 
             }]}
             onPress={() => {
-                if (quizIsDone == 0 || quizType == 'final') {
+                if (quizIsDone == 0 || (quizIsDone == 1 && quizType == 'final')) {
                     onClick()
                 }
             }}
@@ -111,7 +110,6 @@ export const ModuleLayout = ({ navigation, route }) => {
 
     if (modules.isLoading || formationMainQuiz.isLoading) return <LoadingView />
     if (modules.error || formationMainQuiz.error) return <Text>Error</Text>
-
 
     return (
         <View style={styles.container}>
