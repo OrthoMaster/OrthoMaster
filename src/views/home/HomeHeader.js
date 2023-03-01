@@ -77,14 +77,17 @@ export const HomeHeader = ({ navigation, userName }) => {
                         icon={require('../../../assets/home/header/header_button_question.png')}
                         style={styles.secondaryButton}
                         onPress={() => {
-                            Linking.canOpenURL('mailto:question@orthomaster.fr')
-                            .then((supported)=> {
-                                if (supported) {
-                                    Linking.openURL('mailto:question@orthomaster.fr')
-                                } else {
-                                    Alert.alert(`Impossible d'ouvrir: question@orthomaster.fr`);
-                                }
-                            })
+                            Linking.openURL('mailto:question@orthomaster.fr')
+
+                            // Not supported on Android 30
+                            
+                            // Linking.canOpenURL('mailto:question@orthomaster.fr')
+                            // .then((supported)=> {
+                            //     if (supported) {
+                            //     } else {
+                            //         Alert.alert(`Impossible d'ouvrir: question@orthomaster.fr`);
+                            //     }
+                            // })
 
                         }}
                     />

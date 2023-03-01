@@ -15,6 +15,9 @@
       "ios": {
         "simulator": true
       },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "API_URL": "https://api.orthomaster.fr"
       }

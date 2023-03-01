@@ -72,14 +72,15 @@ export const QaLayout = ({ navigation, route }) => {
       icon={require('../../../assets/home/header/header_button_question.png')}
       style={styles.askQuestionButton}
       onPress={() => {
-        Linking.canOpenURL('mailto:question@orthomaster.fr')
-          .then((supported) => {
-            if (supported) {
-              Linking.openURL('mailto:question@orthomaster.fr')
-            } else {
-              Alert.alert(`Impossible d'ouvrir: question@orthomaster.fr`);
-            }
-          })
+        Linking.openURL('mailto:question@orthomaster.fr')
+        // Linking.canOpenURL('mailto:question@orthomaster.fr')
+        //   .then((supported) => {
+        //     if (supported) {
+              
+        //     } else {
+        //       Alert.alert(`Impossible d'ouvrir: question@orthomaster.fr`);
+        //     }
+        //   })
 
       }}
     />
