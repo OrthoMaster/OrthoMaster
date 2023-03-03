@@ -18,13 +18,15 @@ import { logout } from '../../../actions/auth'
 import { getUserTrophy } from '../../../services/TrophyService'
 import { TrophyCard } from './trophies/TrophieCard'
 
-const UserProgressDetails = ({ user }) => {
+const UserProgressDetails = ({ user, refreshing }) => {
     const [isToggle, setIsToggle] = useState(false)
     const userTrophy = useQuery('getCollaboratorTrophies', () => getUserTrophy(user.id_user))
 
-
-    if (userTrophy.isLoading) return <ActivityIndicator />
-    if (userTrophy.error) return <Text>Error</Text>
+    useEffect(() => {
+        if (refreshing) {
+          userTrophy.refetch()
+        }
+      }, [refreshing])
 
     return (
         <View style={styles.userProgressContainer}>
@@ -79,8 +81,7 @@ const UserProgressDetails = ({ user }) => {
 }
 
 
-export const AccountOfficeProgress = ({ officeId }) => {
-    const dispatch = useDispatch()
+export const AccountOfficeProgress = ({ officeId, refreshing }) => {
     const collaborators = useQuery('fetchOfficeCollaboratorsProgress', () => getCollaboratorsProgression(officeId), {
         onError: (error) => {
             throw error
@@ -92,8 +93,14 @@ export const AccountOfficeProgress = ({ officeId }) => {
         }
     })
 
-    if (collaborators.isLoading || office.isLoading) return <Text>Loading</Text>
-    if (collaborators.error || office.error) return <Text>Error</Text>
+    useEffect(() => {
+        if (refreshing) {
+          collaborators.refetch()
+          office.refetch()
+        }
+      }, [refreshing])
+
+    if (!collaborators.data || !office.data) return null
 
     return (
         <View style={styles.container}>
@@ -102,7 +109,7 @@ export const AccountOfficeProgress = ({ officeId }) => {
                 <Text style={[styles.officeStatText, { color: '#fffefd' }]}>Total formation complété</Text>
             </View>
             {collaborators.data.map((value, key) => {
-                return <UserProgressDetails user={value} key={key} />
+                return <UserProgressDetails user={value} key={key} refreshing={refreshing}/>
             })}
         </View>
     )

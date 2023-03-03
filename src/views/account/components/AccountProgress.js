@@ -12,17 +12,22 @@ import { useDispatch } from 'react-redux'
 import { logout } from '../../../actions/auth'
 import { LoadingView } from '../../LoadingView'
 
-export const AccountProgress = ({ userId }) => {
-    const dispatch = useDispatch()
+export const AccountProgress = ({ userId, refreshing }) => {
     const progress = useQuery('getUserProgress', () => getUserProgression(), {
         onError: (error) => {
             throw error
           }
     })
+    useEffect(() => {
+      if (refreshing) {
+        progress.refetch()
+      }
+    }, [refreshing])
+    
 
-
-    if (progress.isLoading) return <LoadingView />
-    if (progress.error) return <Text>Error</Text>
+    if (!progress.data) {
+        return null
+    }
 
     return (
         <View style={styles.container}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   SafeAreaView,
   Text,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Image,
+  RefreshControl
 } from 'react-native';
 import { useStore } from 'react-redux';
 
@@ -21,83 +22,96 @@ import { useQuery } from 'react-query'
 import { useDispatch } from 'react-redux'
 import { getOfficeInfos } from '../../services/OfficeService'
 import { logout } from '../../actions/auth'
+import { LoadingView } from '../LoadingView';
 
-const AccountHeader = ({user, menuActive, toggleMenu, officeInfo}) => {
+const AccountHeader = ({ user, menuActive, toggleMenu, officeInfo }) => {
 
   return (
     <SafeAreaView style={[styles.header]} >
-        <View style={styles.headerText}>
-          <Text style={styles.profilName}>{user.name + ' ' + user.lastname}</Text>
-          <Text style={styles.officeName}>{officeInfo.data.name}</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.headerLogoutButton}
-          onPress={() => {
-            toggleMenu()
+      <View style={styles.headerText}>
+        <Text style={styles.profilName}>{user.name + ' ' + user.lastname}</Text>
+        <Text style={styles.officeName}>{officeInfo.data.name}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.headerLogoutButton}
+        onPress={() => {
+          toggleMenu()
+        }}
+      >
+        <Image
+
+          style={{
+            width: 30, height: 30,
+            alignSelf: 'center',
+            transform: [{ rotateZ: menuActive ? '90deg' : '0deg' }]
           }}
-        >
-          <Image
+          source={require('../../../assets/navigation/menu.png')}
+        />
 
-            style={{
-              width: 30, height: 30,
-              alignSelf: 'center',
-              transform: [{ rotateZ: menuActive ? '90deg' : '0deg' }]
-            }}
-            source={require('../../../assets/navigation/menu.png')}
-          />
-
-        </TouchableOpacity>
-      </SafeAreaView>
+      </TouchableOpacity>
+    </SafeAreaView>
   )
 }
 
 export const AccountView = ({ navigation }) => {
+  const [refreshing, setRefreshing] = useState(false)
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
   const dispatch = useDispatch()
   const [isLoading, setIsLoading] = useState(true)
-  const infos = useQuery('getOfficeInfo', ()=>getOfficeInfos(user.office_id),{
-    onSuccess: (data) => {
-      setIsLoading(false)
-    },
-    onError: (e)=>{
+  const infos = useQuery('getOfficeInfo', () => getOfficeInfos(user.office_id), {
+    onError: (e) => {
       throw e
     }
   })
 
-  if (isLoading || infos.error) return null
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    infos.refetch(user.officeId)
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
+
+
+  if (!infos.data) return <LoadingView />
+
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <AccountHeader
         user={user}
         menuActive={menuIsActive}
-        toggleMenu={()=> {
+        toggleMenu={() => {
           setMenuIsActive(!menuIsActive)
         }}
         officeInfo={infos}
       />
       <View>
-        <ScrollView contentContainerStyle={[styles.container, styles.AndroidSafeArea]}>
+        <ScrollView
+          contentContainerStyle={[styles.container, styles.AndroidSafeArea]}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
           <Text style={styles.sectionTitle}>Ma progression</Text>
-          <AccountProgress userId={user.id_user} />
-          
+          <AccountProgress userId={user.id_user} refreshing={refreshing}/>
+
           <Text style={[styles.sectionTitle]}>Mes trophées</Text>
 
-          <Trophies />
+          <Trophies refreshing={refreshing}/>
 
           {user.user_type_id == 1
             ? <View style={styles.officeProgress}>
               <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mon office et collaborateur</Text>
-              <AccountOfficeProgress officeId={user.office_id} />
+              <AccountOfficeProgress officeId={user.office_id} refreshing={refreshing}/>
             </View>
             : <View />
           }
-          <View style={{height: 200}}/>
+          <View style={{ height: 200 }} />
         </ScrollView>
         {
           menuIsActive ?
-            <AccountMenu navigation={navigation}/>
+            <AccountMenu navigation={navigation} />
             : null
         }
       </View>

@@ -13,18 +13,18 @@ import { useQuery } from 'react-query'
 import { getUserTrophy } from '../../../../services/TrophyService'
 import { TrophyCard } from './TrophieCard'
 
-export const Trophies = () => {
-    const isFocused = useIsFocused()
+export const Trophies = ({refreshing}) => {
     const userTrophy = useQuery('getUserTrophy', ()=> getUserTrophy(null))
+    
 
     useEffect(() => {
-        if (isFocused) {
-            userTrophy.refetch()
+        if (refreshing) {
+          userTrophy.refetch()
         }
-    }, [isFocused])
-    
-    
-    if (userTrophy.isLoading) return <ActivityIndicator />
+      }, [refreshing])
+
+
+    if (!userTrophy.data) return null
     
     return (
         <View style={styles.container}>
