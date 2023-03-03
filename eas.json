@@ -8,12 +8,16 @@
       "distribution": "internal",
       "env": {
         "API_URL": "http://"
+      },
+      "ios": {
+        "resourceClass": "m1-medium"
       }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "resourceClass": "m1-medium"
       },
       "android": {
         "buildType": "apk"
@@ -26,6 +30,9 @@
       "autoIncrement": true,
       "env": {
         "API_URL": "https://api.orthomaster.fr"
+      },
+      "ios": {
+        "resourceClass": "m1-medium"
       }
     }
   },

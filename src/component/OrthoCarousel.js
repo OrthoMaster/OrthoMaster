@@ -14,7 +14,8 @@ import { S3ContentPathGenerator } from '../utils';
 
 
 const CarousselCard = ({ item, navigation }) => {
-    const imageUrl = useQuery(['fetchHomeContentThumbnail', item.id_content], () => getS3Image(S3ContentPathGenerator(item)+'logo.png'))
+    const imageUrl = useQuery(['fetchHomeContentThumbnail', item.id_content, item.title], () => getS3Image(S3ContentPathGenerator(item)+'logo.png'))
+    
 
     return (
         <TouchableOpacity style={styles.card}
@@ -36,6 +37,9 @@ const CarousselCard = ({ item, navigation }) => {
 
 export const OrthoCarousel = ({ entries, navigation }) => {
 
+    if (!entries) {
+        return null
+    }
 
     return <Carousel
         data={entries}

@@ -33,7 +33,6 @@ export const insertMainQuizStatusByFormation = async (data) => {
       return response.data;
     })
     .catch((e)=> {
-      console.log(e.response.data);
       throw e
     });
 }

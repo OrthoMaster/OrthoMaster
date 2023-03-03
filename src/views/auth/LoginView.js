@@ -58,6 +58,7 @@ export const LoginView = ({ navigation }) => {
     })
 
     const handleClick = () => {
+        setStatusMessage('')
         if (verifyingUsername) {
             userActivation.mutate(username)
         } else {
@@ -124,8 +125,21 @@ export const LoginView = ({ navigation }) => {
                         navigation.push("auth-reset-password")
                     }}
                 >
-                    <Text>Mot de passe oublié</Text>
+                    <Text style={{ color: '#EA6910', fontSize: 18 }}>Mot de passe oublié</Text>
                 </TouchableOpacity>
+                {
+                    !verifyingUsername
+                    && <TouchableOpacity
+                        style={{ marginTop: 10, alignItems: 'center'}}
+                        onPress={() => {
+                            setVerifyingUsername(true)
+                        }}
+                    >
+                            <Text style={{marginTop: 10, }}>Vous n'avez pas de mot de passe ?</Text>
+                            <Text style={{color: '#EA6910'}}>Activer votre compte</Text>
+                    </TouchableOpacity>
+                }
+
             </View>
         </SafeAreaView>
     );

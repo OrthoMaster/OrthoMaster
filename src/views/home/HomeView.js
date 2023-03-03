@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -8,7 +8,8 @@ import {
   SafeAreaView,
   Image,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
+  RefreshControl
 } from 'react-native';
 import { useStore } from 'react-redux';
 
@@ -24,21 +25,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 
 export const HomeView = ({ navigation }) => {
+  const [refreshing, setRefreshing] = useState(false);
   const store = useStore()
   const authState = store.getState().auth
   const qaPreview = useQuery("homeQaPreview", () => fetchQa(5), {
     onError: (error) => {
       throw error
+
     }
   });
   const flashPreview = useQuery("homeFlashPreview", () => fetchFlashContent(0, 5), {
     onError: (error) => {
       throw error
-    }
+    },
+
   });
 
-  if (qaPreview.isLoading || flashPreview.isLoading) return <LoadingView />
-  if (qaPreview.error || flashPreview.error) return (<Text>Error</Text>);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    flashPreview.refetch(0, 5)
+    qaPreview.refetch(5)
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
+  
 
   return (
     <View>
@@ -78,14 +90,16 @@ export const HomeView = ({ navigation }) => {
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView style={{ backgroundColor: 'white' }}>
+      <ScrollView style={{ backgroundColor: 'white' }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <HomeHeader navigation={navigation} userName={authState.userCurrentSession.name} />
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
             <Text style={styles.carouselHeaderTitle}>
               Questions / réponses
             </Text>
-            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('home-qa')}>
+            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('hom-qa')}>
               <Text style={styles.carouselHeaderButtonText}>Voir toutes</Text>
             </Pressable>
           </View>
@@ -142,8 +156,7 @@ const styles = StyleSheet.create({
   containerHeader: {
     width: '100%',
     flexDirection: 'row',
-    alignItems: 'center',
-    //backgroundColor: 'blue'
+    alignItems: 'center'
   },
   logo: {
     resizeMode: 'contain',

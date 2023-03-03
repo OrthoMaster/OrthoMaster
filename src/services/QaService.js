@@ -7,6 +7,7 @@ import Constants from 'expo-constants';
 let route = Constants.manifest.extra.env.API_URL+"/contents"
 
 export const fetchQa = async (limit = 0) => {
+
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.accessToken;
 
@@ -20,7 +21,8 @@ export const fetchQa = async (limit = 0) => {
     .then((response) => {
       return response.data;
     })
-    .catch((e)=> {
-      throw e
-    });
+    // .catch((e)=> {
+    //   //throw e
+    //   console.log('FetchQa ERROR', e);
+    // });
 }

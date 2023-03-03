@@ -41,7 +41,6 @@ export const resetUserPassword = async (username) => {
 }
 
 export const activateUser = async (username) => {
-  const config = await restoreLocalConfigAsync()
 
   const body = {
       username: username

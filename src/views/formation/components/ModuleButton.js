@@ -22,9 +22,11 @@ export const ModuleButton = ({ item, onPress }) => {
     useEffect(() => {
       if (item.item.lesson_succeed > 0) {
         setIsActivate(true)
+      } else {
+        setIsActivate(false)
       }
     }, [item.item.lesson_succeed])
-    
+
 
     useEffect(() => {
         var isDisplayed = true
@@ -58,7 +60,6 @@ export const ModuleButton = ({ item, onPress }) => {
             throw error
         }
     }
-
     return (
         <TouchableOpacity
             style={[styles.button, { alignSelf: (item.index % 2) == 0 ? 'flex-start' : 'flex-end' }]}

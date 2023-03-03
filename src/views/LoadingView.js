@@ -4,11 +4,14 @@ import {
     SafeAreaView,
     Text,
     Dimensions,
-    Image
+    Image,
+    TouchableOpacity
 } from "react-native";
 
 
-export const LoadingView = () => {
+export const LoadingView = ({state, onRetry}) => {
+
+    console.log(state);
     return (
         <SafeAreaView style={{
             flex:1,
@@ -19,17 +22,31 @@ export const LoadingView = () => {
             <Image
                 source={require('../../assets/logo.png')}
                 style={{
-                    width: 250,
-                    height: 250,
+                    width: state == 'error' ? 100 : 200,
+                    height: state == 'error' ? 100 : 200,
                     resizeMode: 'contain'
             }}
             />
             <Text style={{
                 fontWeight: '700',
-                fontSize: 20
+                fontSize: 20,
+                marginTop: 15
             }}>
-                Chargement ...
+                {
+                    state == 'error'
+                    ? "Une erreur est survenue"
+                    : "Chargement ..."
+                }
             </Text>
+
+            {
+                state == 'error'
+                && <TouchableOpacity style={{padding: 10, backgroundColor: 'orange'}}
+                onPress={onRetry}
+                >
+                    <Text style={{color: '#ffffff', fontWeight: 'bold'}}>Rééssayer</Text>
+                </TouchableOpacity>
+            }
         </SafeAreaView>
     )
 }

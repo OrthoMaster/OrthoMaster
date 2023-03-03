@@ -136,11 +136,7 @@ export const LessonEndingView = ({ navigation, route }) => {
   const [status, setStatus] = useState(false)
 
   const saveUserAnswer = async (data) => {
-    try {
       saveContentMutation.mutateAsync({ status: data.status, id: data.id })
-    } catch (error) {
-      throw error
-    }
   };
 
   const nextLesson = useQuery('getNextLesson', () => getUserNextLesson(), {
@@ -167,8 +163,6 @@ export const LessonEndingView = ({ navigation, route }) => {
   })
 
   const handleLessonEnding = async (handleType) => {
-
-
     switch (handleType) {
       case 'next':
         nextLesson.refetch()
@@ -216,13 +210,6 @@ export const LessonEndingView = ({ navigation, route }) => {
       })
     }
   }, [])
-
-  useEffect(() => {
-    
-
-  }, [status])
-
-
 
 
 

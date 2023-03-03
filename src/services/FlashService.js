@@ -17,15 +17,15 @@ export const fetchFlashContent = async (subcategory_id = 0, limit = 0) => {
 
   return axios
     .get(route + "/content", {
-      headers: { Authorization: authHeader },
+      headers: {
+        Authorization: authHeader
+      },
       params: params
     })
     .then((response) => {
       return response.data;
     })
-    .catch((e) => {
-      throw e
-    });
+
 }
 
 export const fetchFlashCategoriesByTheme = async (theme_id) => {

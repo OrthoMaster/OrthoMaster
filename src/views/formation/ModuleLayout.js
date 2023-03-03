@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import {
     Text,
     StyleSheet,
@@ -6,18 +6,18 @@ import {
     View,
     Image,
     TouchableOpacity,
-    Modal
+    RefreshControl
 } from 'react-native'
 
 import { LessonHeader } from './LessonHeader'
 import { ModuleButton } from './components/ModuleButton';
-import { LoadingView } from '../LoadingView'
 import { MainQuizUnlockModal } from './modal/MainQuizUnlockModal';
 
 import { useIsFocused } from '@react-navigation/native';
-import { useQuery } from 'react-query';
+import { isError, useQuery } from 'react-query';
 import { fetchModulesWithUserProgression } from '../../services/ModuleService';
 import { getFormationMainQuizStatus } from '../../services/FormationService';
+import { LoadingView } from '../LoadingView';
 
 
 
@@ -70,6 +70,7 @@ const MainQuizButton = ({
 
 
 export const ModuleLayout = ({ navigation, route }) => {
+    const [refreshing, setRefreshing] = useState(false)
     const isFocused = useIsFocused();
     const [modalVisible, setModalVisible] = useState(true)
     const [formationPercentage, setFormationPercentage] = useState(0)
@@ -96,7 +97,17 @@ export const ModuleLayout = ({ navigation, route }) => {
         }
     })
 
-    //const mainQuiz
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        modules.refetch()
+        formationMainQuiz.refetch()
+        setTimeout(() => {
+          setRefreshing(false);
+        }, 2000);
+      }, []);
+      
+
 
     useEffect(() => {
         if (isFocused) {
@@ -108,9 +119,6 @@ export const ModuleLayout = ({ navigation, route }) => {
     }, [isFocused])
 
 
-    if (modules.isLoading || formationMainQuiz.isLoading) return <LoadingView />
-    if (modules.error || formationMainQuiz.error) return <Text>Error</Text>
-
     return (
         <View style={styles.container}>
             <LessonHeader
@@ -118,57 +126,62 @@ export const ModuleLayout = ({ navigation, route }) => {
                 title={"Se former"}
                 navigation={navigation}
             />
-
-            <FlatList
-                data={modules.data}
-                renderItem={(item) => <ModuleButton
-                    item={item}
-                    onPress={(item) => navigation.navigate('formation-lessons', {
-                        module: item
-                    })}
-                />}
-                style={styles.listContainer}
-                keyExtractor={(item, index) => index}
-                showsVerticalScrollIndicator={false}
-                ListHeaderComponent={
-                    <MainQuizButton
-                        quizType={'initial'}
-                        quizIsDone={formationMainQuiz.data.quiz_initial_status}
-                        onClick={() => {
-                            navigation.navigate('formation-content', {
-                                content: {
-                                    type: 'lesson',
-                                    title: 'initial'
-                                }
-                            })
-                        }}
-                    />
-                }
-                ListFooterComponent={
-                    <MainQuizButton
-                        quizType={'final'}
-                        quizIsDone={formationMainQuiz.data.quiz_final_status}
-                        onClick={() => {
-                            navigation.navigate('formation-content', {
-                                content: {
-                                    type: 'lesson',
-                                    title: 'final'
-                                }
-                            })
-                        }}
-                    />
-                }
-            />
             {
-                formationMainQuiz.data.quiz_initial_status == null ?
+                formationMainQuiz.data && modules.data
+                    ? <FlatList
+                        data={modules.data}
+                        renderItem={(item) => <ModuleButton
+                            item={item}
+                            onPress={(item) => navigation.navigate('formation-lessons', {
+                                module: item
+                            })}
+                        />}
+                        style={styles.listContainer}
+                        keyExtractor={(item, index) => index}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                        ListHeaderComponent={
+                            <MainQuizButton
+                                quizType={'initial'}
+                                quizIsDone={formationMainQuiz.data.quiz_initial_status}
+                                onClick={() => {
+                                    navigation.navigate('formation-content', {
+                                        content: {
+                                            type: 'lesson',
+                                            title: 'initial'
+                                        }
+                                    })
+                                }}
+                            />
+                        }
+                        ListFooterComponent={
+                            <MainQuizButton
+                                quizType={'final'}
+                                quizIsDone={formationMainQuiz.data.quiz_final_status}
+                                onClick={() => {
+                                    navigation.navigate('formation-content', {
+                                        content: {
+                                            type: 'lesson',
+                                            title: 'final'
+                                        }
+                                    })
+                                }}
+                            />
+                        }
+                    />
+                    : <LoadingView />
+            }
+
+            {
+                formationMainQuiz.data && formationMainQuiz.data.quiz_initial_status == null ?
                     <MainQuizUnlockModal
                         visible={modalVisible}
-                        onExit={()=>{
+                        onExit={() => {
                             setModalVisible(false)
                             formationMainQuiz.refetch()
                         }}
                         quizType='initial'
-                        onQuiz={()=>{
+                        onQuiz={() => {
                             setModalVisible(false)
                             navigation.navigate('formation-content', {
                                 content: {
@@ -181,15 +194,15 @@ export const ModuleLayout = ({ navigation, route }) => {
                     : null
             }
             {
-                formationPercentage > 80 && formationMainQuiz.data.quiz_final_status == null ?
-                <MainQuizUnlockModal
+                formationPercentage > 60 && formationMainQuiz.data && formationMainQuiz.data.quiz_final_status == null ?
+                    <MainQuizUnlockModal
                         visible={modalVisible}
-                        onExit={()=>{
+                        onExit={() => {
                             setModalVisible(false)
                             formationMainQuiz.refetch()
                         }}
                         quizType='final'
-                        onQuiz={()=>{
+                        onQuiz={() => {
                             setModalVisible(false)
                             navigation.navigate('formation-content', {
                                 content: {

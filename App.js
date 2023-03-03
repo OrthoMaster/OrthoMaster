@@ -6,7 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux'
 import { checkUserConnection } from './src/actions/auth';
 
-import { selectIsLoggedIn, selectIsLoading } from './src/reducers/auth';
+import { selectIsLoggedIn, selectIsLoading, selectUserCurrentSession } from './src/reducers/auth';
 
 import { restoreLocalConfigAsync } from './src/utils';
 import checkVersion from 'react-native-store-version';
@@ -24,15 +24,21 @@ import { LoadingView } from './src/views/LoadingView';
 import { AlertVersion } from './src/component/AlertVersion';
 import { ErrorHandler } from './src/component/ErrorHandler';
 
-import Bugsnag from '@bugsnag/expo';
-Bugsnag.start();
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retryDelay: 3000,
+      retry: 3
+    },
+  },
+})
 
 export default function App({ navigation }) {
 
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
+  const user = useSelector(selectUserCurrentSession)
   const dispatch = useDispatch()
   const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
 
@@ -52,8 +58,7 @@ export default function App({ navigation }) {
           setmodalVersionIsVisible(true)
         }
       } catch (e) {
-        Alert.alert('Oups...', "Nous n'arrivons pas à accéder à internet." )
-        //throw e
+        Alert.alert('Oups...', "Nous n'arrivons pas à accéder à internet.")
       }
     };
     init();
@@ -62,22 +67,22 @@ export default function App({ navigation }) {
 
 
   return (
-    <ErrorHandler>
-      <QueryClientProvider client={queryClient}>
-        <NavigationContainer>
+      <ErrorHandler>
+        <QueryClientProvider client={queryClient}>
+          <NavigationContainer>
 
-          {
-            isLoggedIn ? (
-              <AppTab />
-            ) : isLoading
-              ? (
-                <LoadingView />
-              ) : (
-                <AuthStack />
-              )}
-        <AlertVersion isVisible={modalVersionIsVisible} onClose={()=>setmodalVersionIsVisible(false)}/>
-        </NavigationContainer>
-      </QueryClientProvider>
-    </ErrorHandler>
+            {
+              isLoggedIn && user.enabled == 1 ? (
+                <AppTab />
+              ) : isLoading
+                ? (
+                  <LoadingView />
+                ) : (
+                  <AuthStack />
+                )}
+            <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
+          </NavigationContainer>
+        </QueryClientProvider>
+      </ErrorHandler>
   );
 }

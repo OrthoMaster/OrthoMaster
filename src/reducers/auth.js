@@ -32,6 +32,7 @@ export const selectIsLoggedIn = state => state.auth.isLoggedIn
 export const selectIsLoading = state => state.auth.isLoading
 export const selectAccessToken = state => state.auth.accessToken
 export const selectAuthMessage = state => state.auth.authMessage
+export const selectUserCurrentSession = state => state.auth.userCurrentSession
 
 
 export const authReducer = (state = initialState, action) => {

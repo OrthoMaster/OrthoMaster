@@ -1,24 +1,27 @@
 import { ErrorBoundary } from 'react-error-boundary'
-import * as React from "react";
-import { View, StyleSheet, Button, Text, Alert, Linking } from "react-native";
-import {setJSExceptionHandler} from 'react-native-exception-handler';
+import React, { useState, useEffect, useCallback } from "react";
+import { View, StyleSheet, Button, Text, Alert, Linking, SafeAreaView } from "react-native";
+import { setJSExceptionHandler } from 'react-native-exception-handler';
 import { logout } from "../actions/auth";
 import store from "../store";
 import Bugsnag from '@bugsnag/expo';
-import { reloadAsync } from 'expo-updates';
+import axios from 'axios';
+import { restoreLocalConfigAsync } from '../utils';
+import { useStore } from 'react-redux';
+
+
 
 
 const myErrorHandler = (error, info) => {
     if (error == 'token_not_valid') {
         store.dispatch(logout())
     } else {
-        console.log('Error Handler:',error.response);
         Bugsnag.notify(error)
     }
-    
+
 };
 
-function ErrorFallback({error, resetErrorBoundary }) {
+function ErrorFallback({ error, resetErrorBoundary }) {
     return (
         <View style={[styles.container]}>
             <View>
@@ -29,80 +32,136 @@ function ErrorFallback({error, resetErrorBoundary }) {
         </View>
     );
 }
-export const ErrorHandler = ({ children }) => (
-    <ErrorBoundary
-        FallbackComponent={ErrorFallback}
-        onError={myErrorHandler}
-    >
-        {children}
-    </ErrorBoundary>
-);
 
 
 
+export const ErrorHandler = ({ children }) => {
 
-const errorHandler = (e, isFatal) => {
-    //console.log('Exception handler:', e.response);
-    if (isFatal) {
-        if (e.response.data == 'token_not_valid') {
-            Alert.alert(
-                'Votre session à expiré',
-                "Veuillez vous reconnecter",
-                [{
-                    text: 'OK',
-                    onPress: () => {
-                        store.dispatch(logout())
+    const [isError, setIsError] = useState(false)
+    const [errorMsg, setErrorMsg] = useState("")
+    const store = useStore()
+
+    const errorHandler = (e, isFatal) => {
+        if (axios.isAxiosError(e)) {
+
+            switch (e.code) {
+                case 'ERR_BAD_REQUEST':
+                    if (e.response.status == 401 && e.response.data == 'token_not_valid') {
+                        Alert.alert(
+                            'Votre connexion à Orthomaster à expiré',
+                            "Veuillez vous reconnecter",
+                            [{
+                                text: 'OK',
+                                onPress: () => {
+                                    store.dispatch(logout())
+                                }
+                            }]
+                        );
+                    } else {
+                        if (isFatal) {
+                            alertAboutFatalError()
+                        }
+                        Bugsnag.notify(e)
                     }
-                }]
-            );
-            
-        } else {
-            
-            let txt = ""
-            if (e.response._response == "The Internet connection appears to be offline.") {
-                txt = "Nous n'arrivons pas à accéder à internet."
-            } else {
-                txt = "Vous pouvez nous laisser un message pour nous expliquer ce qu'il s'est passé"
-                Bugsnag.notify(e)
+                    break;
+                case 'ERR_NETWORK':
+                    onError('Nous rencontrons des problèmes de connexion...')
+                    break;
+                default:
+                    if (isFatal) {
+                        alertAboutFatalError()
+                    }
+                    Bugsnag.notify(e)
+                    break;
             }
-            Alert.alert(
-                'Oups...',
-                txt,
-                [{
-                    text: 'Signaler un problème',
-                    onPress: () => {
-                        Linking.openURL('mailto:question@orthomaster.fr')
-                        reloadAsync()
-                    }
-                },
-                {
-                    text: "Relancer l'app",
-                    onPress: () => {
-                        reloadAsync()
-                    },
-                    style: 'cancel'
-                }]
-            );
         }
-    } else {
-        console.log("[ NOT fatal error]:",e.response);
-        Bugsnag.notify(e)
+    };
+
+    useEffect(() => {
+        setJSExceptionHandler(errorHandler, true);
+    }, [])
+
+
+
+    const onError = useCallback((msg) => {
+        setIsError(true)
+        setErrorMsg(msg)
+        setTimeout(() => {
+            setIsError(false);
+            setErrorMsg(false);
+        }, 5000);
+    }, []);
+
+
+    const alertAboutFatalError = () => {
+        Alert.alert(
+            'Un problème survenu',
+            "Vous pouvez nous laisser un message pour nous expliquer ce qu'il s'est passé",
+            [{
+                text: 'Signaler un problème',
+                onPress: () => {
+                    Linking.openURL('mailto:question@orthomaster.fr')
+                    reloadAsync()
+                }
+            },
+            {
+                text: "Relancer l'app",
+                onPress: () => {
+                    reloadAsync()
+                },
+                style: 'cancel'
+            }]
+        );
     }
+
+    useEffect(() => {
+        Bugsnag.start({
+            onError: function (event) {
+                const user = store.getState().auth.userCurrentSession
+                if (user) {
+                    event.setUser(user.id_user, user.email, user.name + ' ' + user.lastname)
+                }
+            }
+        });
+    }, [])
+
+
+
+
+    return (
+        <View style={styles.errorHandlerContainer}>
+            <ErrorBoundary
+                FallbackComponent={ErrorFallback}
+                onError={myErrorHandler}
+            >
+                {children}
+                {isError ?
+                    <SafeAreaView style={styles.errorNotifContainer}>
+                        <Text style={styles.errorNotifText}>{errorMsg}</Text>
+                    </SafeAreaView>
+                    : null
+                }
+            </ErrorBoundary>
+        </View>
+    )
 };
-  
-  setJSExceptionHandler(errorHandler, true);
 
 
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        flexDirection: "column",
-        alignItems: "stretch",
-        justifyContent: "center",
-        alignContent: "center",
-        paddingHorizontal: 12,
+    errorHandlerContainer: {
+        flex: 1
     },
+    errorNotifContainer: {
+        backgroundColor: 'red',
+        alignItems: 'center'
+    },
+    errorNotifText: {
+        color: '#ffffff',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginTop: 5
+    }
 });
 
 
