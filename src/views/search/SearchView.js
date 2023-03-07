@@ -16,7 +16,7 @@ import { logout } from '../../actions/auth';
 import { SearchFilters } from './components/SearchFilters'
 import { ContentSelection } from './components/ContentSelection'
 import { SearchHeader } from './SearchHeader'
-import { LoadingView } from '../LoadingView'
+import { LoadingContent } from '../../component/LoadingContent'
 import { API_SEARCH_CLEAN } from '../../actions/types';
 
 const SearchView = ({ contentModel, dispatch, navigation, route }) => {
@@ -126,7 +126,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             onSelect={(filters) => searchWithFiltersArray(filters)}
         />
         {contentModel.loading ?
-            <LoadingView /> :
+            <LoadingContent /> :
             <ContentSelection
                 content={contentModel.data}
                 onSelect={(card) => handleNavigation(card)}

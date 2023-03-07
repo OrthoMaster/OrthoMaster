@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     StyleSheet,
     Text,
@@ -6,7 +6,8 @@ import {
     View,
     TouchableOpacity,
     SafeAreaView,
-    Image
+    Image,
+    RefreshControl
 } from 'react-native';
 import Svg, {
     Path
@@ -16,15 +17,16 @@ import { fetchLessonByModuleWithProgression } from '../../services/ContentServic
 
 import { getS3Image } from '../../services/S3Service';
 import { LessonButton } from './components/LessonButton';
-import { LoadingView } from '../LoadingView';
+import { LoadingContent } from '../../component/LoadingContent';
 
 export function LessonsView({ route, navigation }) {
     let moduleInfos = route.params.module
-    const modules = useQuery('lessonProgress', () => fetchLessonByModuleWithProgression(moduleInfos.module.module_num), {
+    const modules = useQuery(['lessonProgress', moduleInfos.module.module_num], () => fetchLessonByModuleWithProgression(moduleInfos.module.module_num), {
         onError: (error) => {
             throw error
-          }
+        }
     })
+    const [refreshing, setRefreshing] = useState(false)
     const [moduleLogo, setModuleLogo] = useState(null)
 
 
@@ -37,6 +39,17 @@ export function LessonsView({ route, navigation }) {
             throw error
         }
     }
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        modules.refetch()
+        getModuleLogo().then((value) => {
+            setModuleLogo(value)
+        })
+        setTimeout(() => {
+            setRefreshing(false);
+        }, 2000);
+    }, []);
 
 
     useEffect(() => {
@@ -54,8 +67,7 @@ export function LessonsView({ route, navigation }) {
 
 
 
-    if (modules.isLoading) return <LoadingView />
-    if (modules.error) return <Text>Error</Text>
+
 
     return <View style={styles.container}>
         <SafeAreaView style={[styles.headerContainer, { backgroundColor: moduleInfos.module.theme_color }]}>
@@ -66,7 +78,7 @@ export function LessonsView({ route, navigation }) {
                 <Svg
                     height={25} width={15}
                     viewBox={`0 0 30 40`}
-                    style={{marginLeft: 30}}
+                    style={{ marginLeft: 30 }}
                 >
                     <Path d='M20 5 L5 20 L20 35' stroke='white' strokeWidth={5} strokeLinejoin='round' strokeLinecap='round' />
                 </Svg>
@@ -98,7 +110,8 @@ export function LessonsView({ route, navigation }) {
             <FlatList
                 data={modules.data}
                 showsVerticalScrollIndicator={false}
-                ListFooterComponent={<View style={{height: 100}}/>}
+                ListFooterComponent={<View style={{ height: 100 }} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 renderItem={(item) => <LessonButton
                     item={item}
                     onPress={() => {

@@ -18,9 +18,6 @@ export const getTrophyProgressBasedOnModule = async (id_module) => {
     .then((response) => {
       return response.data;
     })
-    .catch((e)=> {
-      throw e
-    });
 }
 
 
@@ -38,9 +35,6 @@ export const getUserTrophy = async (id_user) => {
     .then((response) => {
       return response.data;
     })
-    .catch((e)=> {
-      throw e
-    });
 }
 
 export const postNewUserTrophy = async (id_trophy) => {
@@ -55,7 +49,4 @@ export const postNewUserTrophy = async (id_trophy) => {
     .then((response) => {
       return response.data;
     })
-    .catch((e)=> {
-      throw e
-    });
 }

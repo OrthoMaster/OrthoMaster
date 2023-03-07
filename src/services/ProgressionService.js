@@ -20,9 +20,6 @@ export const postUserLessonStatus = async (obj) => {
         .then((response) => {
             return response;
         })
-        .catch((e)=> {
-          throw e
-        });
 }
 
 export const getUserProgression = async () => {
@@ -37,9 +34,7 @@ export const getUserProgression = async () => {
       .then((response) => {
         return response.data;
       })
-      .catch((e)=> {
-        throw e
-      });
+      
   }
 
   export const getCollaboratorsProgression = async (officeId) => {
@@ -54,9 +49,7 @@ export const getUserProgression = async () => {
       .then((response) => {
         return response.data;
       })
-      .catch((e)=> {
-        throw e
-      });
+      
   }
 
   export const getOfficeProgression = async (officeId) => {
@@ -71,7 +64,5 @@ export const getUserProgression = async () => {
       .then((response) => {
         return response.data;
       })
-      .catch((e)=> {
-        throw e
-      });
+      
   }

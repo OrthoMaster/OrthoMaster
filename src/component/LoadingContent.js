@@ -1,7 +1,7 @@
 import { resizeMode } from 'deprecated-react-native-prop-types/DeprecatedImagePropType';
 import React from 'react'
 import {
-    SafeAreaView,
+    View,
     Text,
     Dimensions,
     Image,
@@ -9,15 +9,13 @@ import {
 } from "react-native";
 
 
-export const LoadingView = ({state, onRetry}) => {
+export const LoadingContent = ({state, onRetry}) => {
 
-    console.log(state);
     return (
-        <SafeAreaView style={{
+        <View style={{
             flex:1,
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: '#FFFEFD'
         }}>
             <Image
                 source={require('../../assets/logo.png')}
@@ -39,14 +37,14 @@ export const LoadingView = ({state, onRetry}) => {
                 }
             </Text>
 
-            {
+            {/* {
                 state == 'error'
                 && <TouchableOpacity style={{padding: 10, backgroundColor: 'orange'}}
                 onPress={onRetry}
                 >
                     <Text style={{color: '#ffffff', fontWeight: 'bold'}}>Rééssayer</Text>
                 </TouchableOpacity>
-            }
-        </SafeAreaView>
+            } */}
+        </View>
     )
 }

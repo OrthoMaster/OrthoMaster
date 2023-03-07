@@ -53,7 +53,4 @@ export const valideMainQuizStatusByFormation = async (data) => {
     .then((response) => {
       return response.data;
     })
-    .catch((e)=> {
-      throw e
-    });
 }

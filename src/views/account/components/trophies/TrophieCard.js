@@ -8,7 +8,7 @@ import {
 } from 'react-native'
 import { getS3Image } from '../../../../services/S3Service'
 
-export const TrophyCard = ({ item }) => {
+export const TrophyCard = ({ item, refreshing }) => {
     const [trophyImgUrl, setTrophyImgUrl] = useState(null)
     const fetchTrophyImg = async () => {
         const path = 'trophies/trophy/' + item.trophy.title + '.png'
@@ -29,7 +29,7 @@ export const TrophyCard = ({ item }) => {
       return () => {
         isMounted = false
       }
-    }, [])
+    }, [refreshing])
     
     if (trophyImgUrl == null) return <ActivityIndicator />
 

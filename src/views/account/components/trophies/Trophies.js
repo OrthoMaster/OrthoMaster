@@ -31,7 +31,7 @@ export const Trophies = ({refreshing}) => {
             <Avatar trophies={userTrophy.data}/>
             <FlatList
                 data={userTrophy.data}
-                renderItem={(item) => <TrophyCard item={item.item} />}
+                renderItem={(item) => <TrophyCard item={item.item} refreshing={refreshing}/>}
                 keyExtractor={(item, index) => index}
                 horizontal={true}
                 showsHorizontalScrollIndicator={false}

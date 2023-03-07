@@ -65,7 +65,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           onPress={() => navigation.navigate('flash-categories', {
             theme_id: 2,
             theme_title: 'Mon activié',
-            theme_color: '#E6E6E6'
+            theme_color: '#ffffff'
           })}
         />
         <FlashButton
@@ -73,7 +73,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           onPress={() => navigation.navigate('flash-categories', {
             theme_id: 1,
             theme_title: 'Mon patient',
-            theme_color: '#E6E6E6'
+            theme_color: '#ffffff'
           })}
         />
         
@@ -84,7 +84,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           onPress={() => navigation.navigate('flash-categories', {
             theme_id: 3,
             theme_title: 'Les solutions',
-            theme_color: '#E6E6E6'
+            theme_color: '#ffffff'
           })}
         />
         <FlashButton
@@ -92,7 +92,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           onPress={() => navigation.navigate('flash-categories', {
             theme_id: 4,
             theme_title: "Ressources",
-            theme_color: '#E6E6E6'
+            theme_color: '#ffffff'
           })}
         />
       </View>

@@ -39,7 +39,7 @@ const successElements = [
     imgUrl: 'https://media.giphy.com/media/1yjZXySg7tSohpcmUM/giphy.gif'
   },
   {
-    message: "Bravo ! Personne ne peu t'arreter !",
+    message: "Bravo ! Personne ne peut arrêter !",
     imgUrl: 'https://thumbs.gfycat.com/DizzyInnocentIberianmole-size_restricted.gif'
   },
   {
@@ -116,7 +116,7 @@ const failureElements = [
 
 export const LessonEndingView = ({ navigation, route }) => {
   const store = useStore()
-  const successMessageIndex = Math.floor(Math.random() * successElements.length);
+  const [successMessageIndex, setsuccessMessageIndex] = useState(Math.floor(Math.random() * successElements.length))
   const stateContent = store.getState().content
   const [nbQuizValidated, setnbQuizValidated] = useState(0)
   const dispatch = useDispatch()
@@ -125,18 +125,34 @@ export const LessonEndingView = ({ navigation, route }) => {
       throw error
     },
     onSuccess: () => {
-      trophyProgression.refetch()
-    }
+      //trophyProgression.refetch()
+
+    },
+    retry: 10,
+    retryDelay: 3000
   });
+
+  const trophyProgression = useQuery('getTrophyProgressBasedOnModule', () => getTrophyProgressBasedOnModule(stateContent.content.module_num), {
+    //enabled: false,
+    onError: (error) => {
+      throw error
+    },
+    retry: 10,
+    retryDelay: 3000
+  })
+
+
   const valideMainQuiz = useMutation(valideMainQuizStatusByFormation, {
     onError: (error) => {
       throw error
-    }
+    },
+    retry: 10,
+    retryDelay: 3000
   });
   const [status, setStatus] = useState(false)
 
   const saveUserAnswer = async (data) => {
-      saveContentMutation.mutateAsync({ status: data.status, id: data.id })
+    saveContentMutation.mutateAsync({ status: data.status, id: data.id })
   };
 
   const nextLesson = useQuery('getNextLesson', () => getUserNextLesson(), {
@@ -155,12 +171,11 @@ export const LessonEndingView = ({ navigation, route }) => {
     },
     onError: (error) => {
       throw error
-    }
+    },
+    retry: 10,
+    retryDelay: 3000
   });
 
-  const trophyProgression = useQuery('getTrophyProgressBasedOnModule', () => getTrophyProgressBasedOnModule(stateContent.content.module_num), {
-    enabled: false
-  })
 
   const handleLessonEnding = async (handleType) => {
     switch (handleType) {
@@ -187,6 +202,7 @@ export const LessonEndingView = ({ navigation, route }) => {
   useEffect(() => {
 
     var lessonStatus = false
+
 
     if (stateContent.quizPassed.length === stateContent.nbQuiz) {
       lessonStatus = true
@@ -219,9 +235,9 @@ export const LessonEndingView = ({ navigation, route }) => {
   >
     <View style={[styles.resultContainer, {
       backgroundColor: stateContent.content.title == 'initial' || stateContent.content.title == 'final' ?
-      'grey'
-      : status ? '#0474BB' : '#BB090A'
-      }]}>
+        'grey'
+        : status ? '#0474BB' : '#BB090A'
+    }]}>
       <Text style={styles.lessonStatusMessage}>{
         stateContent.content.title == 'initial' || stateContent.content.title == 'final' ?
           "Merci d'avoir complété le quiz " + stateContent.content.title
@@ -241,8 +257,8 @@ export const LessonEndingView = ({ navigation, route }) => {
             }]}
           />
           : <View>
-            <Text style={{fontSize: 30, color: '#ffffff', alignSelf: 'center'}}>Ta note est de</Text>
-            <Text style={{fontSize: 80, fontWeight: 'bold', color: '#ffffff', alignSelf: 'center'}}>{nbQuizValidated + "/" + stateContent.nbQuiz}</Text>
+            <Text style={{ fontSize: 30, color: '#ffffff', alignSelf: 'center' }}>Ta note est de</Text>
+            <Text style={{ fontSize: 80, fontWeight: 'bold', color: '#ffffff', alignSelf: 'center' }}>{nbQuizValidated + "/" + stateContent.nbQuiz}</Text>
           </View>
       }
 

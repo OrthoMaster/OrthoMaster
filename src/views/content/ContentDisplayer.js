@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { StyleSheet, Text, AppState, ScrollView, View, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { StyleSheet, Text, AppState, ScrollView, View, RefreshControl } from 'react-native';
 import { ContentHeader } from "./ContentHeader";
 
 import { useQuery, useMutation } from "react-query";
@@ -11,7 +11,7 @@ import { exitContent, runContent } from "../../actions/contentAction";
 
 import { getCurrentDate, S3ContentPathGenerator } from "../../utils";
 import { ContentFactory } from './components/ContentFactory'
-import { LoadingView } from "../LoadingView";
+import { LoadingContent } from "../../component/LoadingContent";
 
 
 import { useDispatch, useSelector } from "react-redux";
@@ -25,6 +25,8 @@ export function ContentDisplayer({ route, navigation }) {
   var launchDate = null;
   const routes = navigation.getState()?.routes;
 
+  const [refreshing, setRefreshing] = useState(false)
+
   const lessonIsFinish = useSelector(selectIsFinish)
   const contentIsRunning = useSelector(selectIsRunning)
 
@@ -37,8 +39,8 @@ export function ContentDisplayer({ route, navigation }) {
     dispatch(runContent(content, nbQuiz))
 
   };
- 
-  const xmlContent = useQuery(['fetchLessonContent', content.id_content], () => fetchLessonContent(S3ContentPathGenerator(content)+'content.xml'), {
+
+  const xmlContent = useQuery(['fetchLessonContent', content.id_content], () => fetchLessonContent(S3ContentPathGenerator(content) + 'content.xml'), {
     onSuccess: (xml) => {
       initContent(xml)
     },
@@ -54,13 +56,8 @@ export function ContentDisplayer({ route, navigation }) {
   });
 
   const saveLogs = async (log) => {
-    try {
-      await mutation.mutateAsync(log)
-    } catch (error) {
-      throw error
-    } finally {
-      console.log('[ LOG lesson ]:', log)
-    }
+    await mutation.mutateAsync(log)
+    console.log('[ LOG lesson ]:', log)
   };
 
 
@@ -86,7 +83,7 @@ export function ContentDisplayer({ route, navigation }) {
     if (content.type == 'lesson' && content.title != 'initial' && content.title != 'final') { // tmp handling of main quiz in the formation
       launchDate = getCurrentDate()
 
-      
+
       const appStateListener = AppState.addEventListener("change", nextAppState => {
         if (
           appState.current.match(/inactive|background/) &&
@@ -125,41 +122,52 @@ export function ContentDisplayer({ route, navigation }) {
   useEffect(() => {
     xmlContent.refetch()
   }, [content])
-  
 
-  if (xmlContent.isLoading) return <LoadingView />
-  if (xmlContent.error) return <Text>Error</Text>
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    xmlContent.refetch()
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
+
+
+
+  return (
+    <View style={styles.container}>
+      <ContentHeader
+        title={content.title}
+        onReturn={() => {
+          dispatch(exitContent())
+          if (routes.length > 3) {
+            navigation.pop(routes.length - 2)
+          } else {
+            navigation.goBack()
+          }
+        }}
+      />
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        ref={contentScrollRef}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {xmlContent.isLoading ? <LoadingContent /> : <ContentFactory component={xmlContent.data} />}
+
+      </ScrollView>
+
+    </View>
+  )
   if (contentIsRunning) {
-    return (
-      <View style={styles.container}>
-        <ContentHeader
-          title={content.title}
-          onReturn={() => {
-            dispatch(exitContent())
-            if (routes.length > 3) {
-              navigation.pop(routes.length - 2)
-            } else {
-              navigation.goBack()
-            }
-          }}
-        />
-        <ScrollView contentContainerStyle={styles.scrollContainer} ref={contentScrollRef} >
-          <ContentFactory component={xmlContent.data} />
-        </ScrollView>
-
-      </View>
-    )
   } else {
-    return <LoadingView />
+    return <LoadingContent />
   }
 }
 
 var styles = StyleSheet.create({
   container: {
-    width: '100%',
     backgroundColor: '#ffffff',
-    paddingBottom: 100
+    flex: 1
   },
   scrollContainer: {
 

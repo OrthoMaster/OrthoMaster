@@ -13,26 +13,19 @@ import checkVersion from 'react-native-store-version';
 import Constants from 'expo-constants';
 import {
   QueryClientProvider,
-  QueryClient
 } from 'react-query'
+import { OmQueryClient } from './src/component/OmQueryClient';
 
 import { Alert } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
-import { LoadingView } from './src/views/LoadingView';
+import { LoadingContent } from './src/component/LoadingContent';
 import { AlertVersion } from './src/component/AlertVersion';
 import { ErrorHandler } from './src/component/ErrorHandler';
 
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retryDelay: 3000,
-      retry: 3
-    },
-  },
-})
+
 
 export default function App({ navigation }) {
 
@@ -68,7 +61,7 @@ export default function App({ navigation }) {
 
   return (
       <ErrorHandler>
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={OmQueryClient}>
           <NavigationContainer>
 
             {
@@ -76,7 +69,7 @@ export default function App({ navigation }) {
                 <AppTab />
               ) : isLoading
                 ? (
-                  <LoadingView />
+                  <LoadingContent />
                 ) : (
                   <AuthStack />
                 )}

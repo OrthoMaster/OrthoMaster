@@ -10,7 +10,7 @@ import { useQuery } from 'react-query'
 import { getUserProgression } from '../../../services/ProgressionService'
 import { useDispatch } from 'react-redux'
 import { logout } from '../../../actions/auth'
-import { LoadingView } from '../../LoadingView'
+import { LoadingContent } from '../../../component/LoadingContent'
 
 export const AccountProgress = ({ userId, refreshing }) => {
     const progress = useQuery('getUserProgress', () => getUserProgression(), {

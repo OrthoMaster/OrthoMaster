@@ -38,7 +38,4 @@ export const getUserNextLesson = async () => {
     .then((response) => {
       return response.data;
     })
-    .catch((e)=> {
-      throw e
-    });
 }

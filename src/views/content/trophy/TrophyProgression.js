@@ -15,12 +15,15 @@ import { getUserTrophy } from "../../../services/TrophyService";
 const TrophyDisplay = ({ trophy }) => {
     const [trophyImgUrl, setTrophyImgUrl] = useState(null)
     const [trophyAlreadyUnlock, setTrophyAlreadyUnlock] = useState(false)
-    const userTrophy = useQuery('getUserTrophy', ()=> getUserTrophy(null), {
+    const userTrophy = useQuery(['getUserTrophy', trophy.trophy.id_trophy], ()=> getUserTrophy(null), {
         onSuccess: (data) => {
             const found = data.find(element => element.trophy.id_trophy == trophy.trophy.id_trophy && element.unlock != null);
             if (found) {
                 setTrophyAlreadyUnlock(true)
             }
+        },
+        onError: (err) => {
+            throw err
         }
     })
     const fetchTrophyImg = async () => {

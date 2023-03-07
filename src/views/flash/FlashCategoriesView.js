@@ -9,6 +9,7 @@ import {
     Dimensions
 } from 'react-native'
 import { useQuery } from 'react-query'
+import { LoadingContent } from '../../component/LoadingContent'
 import { fetchFlashCategoriesByTheme } from '../../services/FlashService'
 
 
@@ -16,7 +17,7 @@ import { fetchFlashCategoriesByTheme } from '../../services/FlashService'
 const FlashCategoryButton = ({ item, onPress, theme_color }) => {
     return (
         <TouchableOpacity
-            style={[styles.buttonBox, {backgroundColor: theme_color}]}
+            style={[styles.buttonBox, { backgroundColor: theme_color }]}
             onPress={() => onPress(item)}
         >
             <Text style={styles.textButton}>{item.name}</Text>
@@ -46,28 +47,34 @@ export const FlashCategoriesView = ({ navigation, route }) => {
         })
     }
 
-    if (categories.isLoading) return <ActivityIndicator />;
-    if (categories.isError) return
 
     return (
         <View style={styles.container}>
-            <FlatList
+            {/* <FlatList
                 data={categories.data}
                 renderItem={(item) => <FlashCategoryButton item={item.item} onPress={navigateToSubategory} theme_color={route.params.theme_color}/>}
                 keyExtractor={(item, index) => index}
                 showsVerticalScrollIndicator={false}
-                style={{ width: '100%' }}
-            />
+                style={{ width: '100%', backgroundColor: 'red' }}
+            /> */}
+
+            {
+                categories.data ?
+                categories.data.map((category, index) => 
+                    <FlashCategoryButton key={index} item={category} onPress={navigateToSubategory} theme_color={route.params.theme_color} />
+                )
+                :<LoadingContent />
+            }
         </View>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#F76F11',
         flex: 1,
         alignItems: 'center',
-        //justifyContent: 'center'
+        justifyContent: 'center'
     },
     list: {
         width: '100%',
@@ -75,16 +82,17 @@ const styles = StyleSheet.create({
     },
     buttonBox: {
         width: '90%',
+        //flex: 1,
         height: Dimensions.get('screen').width * 0.2,
         alignSelf: 'center',
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        marginVertical: 5
+        marginVertical: 5,
+        borderWidth: 3,
+        borderColor: '#396CDA'
     },
     textButton: {
-        fontWeight: 'bold',
-        fontSize: 16
-
+        fontSize: 16,
     }
 })

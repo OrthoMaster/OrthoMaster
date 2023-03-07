@@ -17,16 +17,28 @@ import { useIsFocused } from '@react-navigation/native';
 import { isError, useQuery } from 'react-query';
 import { fetchModulesWithUserProgression } from '../../services/ModuleService';
 import { getFormationMainQuizStatus } from '../../services/FormationService';
-import { LoadingView } from '../LoadingView';
+import { LoadingContent } from '../../component/LoadingContent';
 
 
 
 const MainQuizButton = ({
     quizType,
     onClick,
-    quizIsDone
+    quizData
 }) => {
+    const [quizIsDone, setquizIsDone] = useState(false)
 
+    useEffect(() => {
+      if (quizData) {
+        if (quizData.quiz_initial_status && quizType == 'initial') {
+            setquizIsDone(quizData.quiz_initial_status)
+        }
+        if (quizData.quiz_final_status && quizType == 'final') {
+            setquizIsDone(quizData.quiz_final_status)
+        }
+      }
+    }, [quizData])
+    
     return (
         <TouchableOpacity
             style={[styles.mainQuizButtonContainer, {
@@ -103,10 +115,10 @@ export const ModuleLayout = ({ navigation, route }) => {
         modules.refetch()
         formationMainQuiz.refetch()
         setTimeout(() => {
-          setRefreshing(false);
+            setRefreshing(false);
         }, 2000);
-      }, []);
-      
+    }, []);
+
 
 
     useEffect(() => {
@@ -126,51 +138,48 @@ export const ModuleLayout = ({ navigation, route }) => {
                 title={"Se former"}
                 navigation={navigation}
             />
-            {
-                formationMainQuiz.data && modules.data
-                    ? <FlatList
-                        data={modules.data}
-                        renderItem={(item) => <ModuleButton
-                            item={item}
-                            onPress={(item) => navigation.navigate('formation-lessons', {
-                                module: item
-                            })}
-                        />}
-                        style={styles.listContainer}
-                        keyExtractor={(item, index) => index}
-                        showsVerticalScrollIndicator={false}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                        ListHeaderComponent={
-                            <MainQuizButton
-                                quizType={'initial'}
-                                quizIsDone={formationMainQuiz.data.quiz_initial_status}
-                                onClick={() => {
-                                    navigation.navigate('formation-content', {
-                                        content: {
-                                            type: 'lesson',
-                                            title: 'initial'
-                                        }
-                                    })
-                                }}
-                            />
-                        }
-                        ListFooterComponent={
-                            <MainQuizButton
-                                quizType={'final'}
-                                quizIsDone={formationMainQuiz.data.quiz_final_status}
-                                onClick={() => {
-                                    navigation.navigate('formation-content', {
-                                        content: {
-                                            type: 'lesson',
-                                            title: 'final'
-                                        }
-                                    })
-                                }}
-                            />
-                        }
+
+            <FlatList
+                data={modules.data}
+                renderItem={(item) => <ModuleButton
+                    item={item}
+                    onPress={(item) => navigation.navigate('formation-lessons', {
+                        module: item
+                    })}
+                />}
+                style={styles.listContainer}
+                keyExtractor={(item, index) => index}
+                showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                ListHeaderComponent={
+                    <MainQuizButton
+                        quizType={'initial'}
+                        quizData={formationMainQuiz.data}
+                        onClick={() => {
+                            navigation.navigate('formation-content', {
+                                content: {
+                                    type: 'lesson',
+                                    title: 'initial'
+                                }
+                            })
+                        }}
                     />
-                    : <LoadingView />
-            }
+                }
+                ListFooterComponent={
+                    <MainQuizButton
+                        quizType={'final'}
+                        quizData={formationMainQuiz.data}
+                        onClick={() => {
+                            navigation.navigate('formation-content', {
+                                content: {
+                                    type: 'lesson',
+                                    title: 'final'
+                                }
+                            })
+                        }}
+                    />
+                }
+            />
 
             {
                 formationMainQuiz.data && formationMainQuiz.data.quiz_initial_status == null ?

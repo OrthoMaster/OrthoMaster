@@ -15,7 +15,7 @@ import { ContentSelection } from '../search/components/ContentSelection';
 import { useQuery } from "react-query"
 import { fetchSearchList } from '../../services/SearchService';
 
-import { LoadingView } from '../LoadingView'
+import { LoadingContent } from '../../component/LoadingContent'
 
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 
@@ -44,7 +44,7 @@ export const QaLayout = ({ navigation, route }) => {
     }
   }, [filters]);
 
-  if (qaList.isLoading) return <LoadingView />
+  if (qaList.isLoading) return <LoadingContent />
   if (qaList.error) return <Text>Error</Text>
 
 

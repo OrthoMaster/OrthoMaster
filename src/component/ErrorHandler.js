@@ -6,13 +6,12 @@ import { logout } from "../actions/auth";
 import store from "../store";
 import Bugsnag from '@bugsnag/expo';
 import axios from 'axios';
-import { restoreLocalConfigAsync } from '../utils';
 import { useStore } from 'react-redux';
 
 
 
-
 const myErrorHandler = (error, info) => {
+
     if (error == 'token_not_valid') {
         store.dispatch(logout())
     } else {
@@ -101,16 +100,10 @@ export const ErrorHandler = ({ children }) => {
                 text: 'Signaler un problème',
                 onPress: () => {
                     Linking.openURL('mailto:question@orthomaster.fr')
-                    reloadAsync()
+                    //reloadAsync()
                 }
             },
-            {
-                text: "Relancer l'app",
-                onPress: () => {
-                    reloadAsync()
-                },
-                style: 'cancel'
-            }]
+        ]
         );
     }
 
@@ -121,7 +114,8 @@ export const ErrorHandler = ({ children }) => {
                 if (user) {
                     event.setUser(user.id_user, user.email, user.name + ' ' + user.lastname)
                 }
-            }
+            },
+            autoDetectErrors: false
         });
     }, [])
 

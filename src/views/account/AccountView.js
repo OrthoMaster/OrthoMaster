@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   SafeAreaView,
   Text,
@@ -21,16 +21,17 @@ import { AccountMenu } from './menu/AccountMenu';
 import { useQuery } from 'react-query'
 import { useDispatch } from 'react-redux'
 import { getOfficeInfos } from '../../services/OfficeService'
-import { logout } from '../../actions/auth'
-import { LoadingView } from '../LoadingView';
+
 
 const AccountHeader = ({ user, menuActive, toggleMenu, officeInfo }) => {
+
+
 
   return (
     <SafeAreaView style={[styles.header]} >
       <View style={styles.headerText}>
-        <Text style={styles.profilName}>{user.name + ' ' + user.lastname}</Text>
-        <Text style={styles.officeName}>{officeInfo.data.name}</Text>
+        <Text style={styles.profilName}>{user ? user.name + ' ' + user.lastname : ''}</Text>
+        <Text style={styles.officeName}>{officeInfo.data ? officeInfo.data.name : ''}</Text>
       </View>
       <TouchableOpacity
         style={styles.headerLogoutButton}
@@ -58,8 +59,6 @@ export const AccountView = ({ navigation }) => {
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
-  const dispatch = useDispatch()
-  const [isLoading, setIsLoading] = useState(true)
   const infos = useQuery('getOfficeInfo', () => getOfficeInfos(user.office_id), {
     onError: (e) => {
       throw e
@@ -76,7 +75,7 @@ export const AccountView = ({ navigation }) => {
   }, []);
 
 
-  if (!infos.data) return <LoadingView />
+  //if (!infos.data) return <LoadingView />
 
   return (
     <View style={{ flex: 1 }}>

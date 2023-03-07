@@ -19,7 +19,7 @@ import { fetchQa } from '../../services/QaService';
 
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
-import { LoadingView } from '../LoadingView'
+import { LoadingContent } from '../../component/LoadingContent'
 
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -99,7 +99,7 @@ export const HomeView = ({ navigation }) => {
             <Text style={styles.carouselHeaderTitle}>
               Questions / réponses
             </Text>
-            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('hom-qa')}>
+            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('home-qa')}>
               <Text style={styles.carouselHeaderButtonText}>Voir toutes</Text>
             </Pressable>
           </View>
