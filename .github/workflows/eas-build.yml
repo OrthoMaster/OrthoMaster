@@ -22,5 +22,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build on EAS
-        run: eas build --platform all --non-interactive --local
+        run: eas build --platform android --non-interactive --local
         
