@@ -51,7 +51,8 @@
     "react-native-youtube-iframe": "^2.2.2",
     "react-query": "^3.39.2",
     "react-redux": "^8.0.5",
-    "react-xml-parser": "^1.1.8"
+    "react-xml-parser": "^1.1.8",
+    "react-native-gesture-handler": "~2.5.0"
   },
   "private": true,
   "devDependencies": {

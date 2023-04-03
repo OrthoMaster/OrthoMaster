@@ -12,7 +12,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeStack } from './stacks/HomeStack';
 import { LessonStack } from './stacks/LessonStack';
 import { FlashStack } from './stacks/FlashStack';
-import { ProductStack } from './stacks/ProductStack';
+import { ToolsStack } from './stacks/ToolsStack';
 import { ProfilStack } from './stacks/ProfilStack';
 
 import { getCurrentDate } from "../utils";
@@ -85,7 +85,7 @@ export const AppTab = ({}) => {
                 ? require('../../assets/navigation/navigation_flash_hover.png')
                 : require('../../assets/navigation/navigation_flash.png')
               break;
-            case 'Que choisir ?':
+            case 'Outils':
               iconName = focused
                 ? require('../../assets/navigation/navigation_que_choisir_hover.png')
                 : require('../../assets/navigation/navigation_que_choisir.png')
@@ -132,19 +132,11 @@ export const AppTab = ({}) => {
         options={{ headerShown: false }}
 
       />
-      {/* <Tab.Screen
-        name="Que choisir"
-        component={ProductStack}
-        options={{
-          title: 'Que choisir ?',
-          headerStyle: {
-            backgroundColor: '#E75A08',
-          },
-          headerTitleStyle: {
-            color: '#ffffff'
-          }
-        }}
-      /> */}
+      <Tab.Screen
+        name="Outils"
+        component={ToolsStack}
+        options={{headerShown: false}}
+      />
       <Tab.Screen name="Compte"
         component={ProfilStack}
         options={{ headerShown: false }}
