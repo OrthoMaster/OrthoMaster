@@ -16,9 +16,7 @@ import React, { useEffect, useState, useCallback } from "react"
 import { useQuery } from "react-query"
 import { TapGestureHandler, PanGestureHandler } from 'react-native-gesture-handler';
 import { getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
-import { LoadingContent } from "../../../component/LoadingContent";
 import { TextGame } from "../../../component/TextGame";
-import { style } from "deprecated-react-native-prop-types/DeprecatedImagePropType";
 import { getS3Image } from "../../../services/S3Service";
 
 
@@ -100,8 +98,6 @@ const ResponseButton = ({ element, onPress, history }) => {
         if (element.display_if) {
             evaluateExpression(element.display_if, history)
                 .then((val) => {
-                    //console.log('ELEM:',element);
-                    //console.log('display ?:',val);
                     setIsDisplay(val)
                 })
 
@@ -268,7 +264,7 @@ const styles = StyleSheet.create({
     },
     questionContainer: {
         flex: 1,
-        flexGrow: 0.8,
+        flexGrow: 1.2,
     },
     captainBackgroundContainer: {
         flex: 1,
