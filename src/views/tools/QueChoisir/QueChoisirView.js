@@ -93,8 +93,6 @@ const ResponseButton = ({ element, onPress, history }) => {
         if (element.display_if) {
             evaluateExpression(element.display_if, history)
                 .then((val) => {
-                    //console.log('ELEM:',element);
-                    //console.log('display ?:',val);
                     setIsDisplay(val)
                 })
 
