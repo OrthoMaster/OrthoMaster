@@ -35,7 +35,7 @@
     "react-addons-shallow-compare": "^15.6.3",
     "react-dom": "18.0.0",
     "react-error-boundary": "^3.1.4",
-    "react-native": "0.69.6",
+    "react-native": "0.69.9",
     "react-native-device-detection": "^0.2.1",
     "react-native-exception-handler": "^2.10.10",
     "react-native-hyperlink": "^0.0.22",
