@@ -6,19 +6,19 @@ import Constants from 'expo-constants';
 
 let route = Constants.manifest.extra.env.API_URL + "/tools/queChoisir"
 
-export const getAPIqueChoisirStep = async (id_question = 0) => {
+export const getAPIqueChoisirStep = async (questionRef, tool) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.accessToken;
-
-  let myParams = {}
-  id_question > 0 ? myParams.id_question = id_question : myParams
 
   return axios
     .get(route + "/step", {
       headers: {
         Authorization: authHeader
       },
-      params: myParams
+      params: {
+        ref: questionRef,
+        tool: tool
+      }
     })
     .then((response) => {
       return response.data;

@@ -1,8 +1,25 @@
-import { StyleSheet, Text, TouchableOpacity, View, Animated, PanResponder, FlatList, ScrollView, SafeAreaView } from "react-native"
+import {
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    Animated,
+    PanResponder,
+    FlatList,
+    ScrollView,
+    SafeAreaView,
+    Image,
+    ImageBackground,
+    ActivityIndicator
+} from "react-native"
 import React, { useEffect, useState, useCallback } from "react"
 import { useQuery } from "react-query"
 import { TapGestureHandler, PanGestureHandler } from 'react-native-gesture-handler';
 import { getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
+import { LoadingContent } from "../../../component/LoadingContent";
+import { TextGame } from "../../../component/TextGame";
+import { style } from "deprecated-react-native-prop-types/DeprecatedImagePropType";
+import { getS3Image } from "../../../services/S3Service";
 
 
 const isLetter = (char) => {
@@ -38,7 +55,7 @@ const evaluateExpression = async (exp, userHistory) => {
 
 
     while (i < exp.length) {
-        
+
         if (isLetter(exp[i])) {
             refToCheck += exp[i]
         }
@@ -71,10 +88,20 @@ const ResponseButton = ({ element, onPress, history }) => {
     const [pressed, setPressed] = useState(false)
     const [isDisplay, setIsDisplay] = useState(true)
 
+    const styleUnpressed = {
+        backgroundColor: '#FFC49E',
+        borderColor: '#F48225'
+    }
+    const stylePressed = {
+        backgroundColor: '#FF8435',
+        borderColor: '#F48225'
+    }
     useEffect(() => {
         if (element.display_if) {
             evaluateExpression(element.display_if, history)
                 .then((val) => {
+                    //console.log('ELEM:',element);
+                    //console.log('display ?:',val);
                     setIsDisplay(val)
                 })
 
@@ -85,8 +112,9 @@ const ResponseButton = ({ element, onPress, history }) => {
     if (!isDisplay) return null
     return (
         <TouchableOpacity
-            style={[styles.responseBox, { backgroundColor: pressed ? 'green' : 'grey' }]}
+            style={[styles.responseBox, pressed ? stylePressed : styleUnpressed]}
             onPress={() => {
+
                 onPress({
                     response: element,
                     status: !pressed
@@ -101,115 +129,169 @@ const ResponseButton = ({ element, onPress, history }) => {
 
 
 export const QueChoisirView = ({ navigation, route }) => {
-    const [nextQuestionId, setNextQuestionId] = useState()
+    const tool = 'Ceinture lombaire'
+    const [nextQuestionRef, setNextQuestionRef] = useState('A')
     const [currentQuestion, setCurrentQuestion] = useState(null)
     const [currentResponses, setCurrentResponses] = useState(null)
     const [userHistory, setUserHistory] = useState([])
-
     const [userSelection, setUserSelection] = useState([])
+    const [isLoading, setIsLoading] = useState(false)
 
+    const imgUrl = useQuery(['getQCs3IMG', nextQuestionRef], () => getS3Image(currentQuestion.image_path), {
+        enabled: currentQuestion != null,
+        onSuccess: () => {
+            setIsLoading(false)
+        }
+    })
 
-    const getStep = useQuery(['getQueChoisirStep', nextQuestionId], () => getAPIqueChoisirStep(nextQuestionId), {
+    useQuery(['getQueChoisirStep', nextQuestionRef], () => getAPIqueChoisirStep(nextQuestionRef, tool), {
         onError: (e) => {
             throw e
         },
         onSuccess: (data) => {
             setCurrentQuestion(data.question)
             setCurrentResponses(data.responses)
+        },
+        onSettled: () => {
+            setIsLoading(true)
         }
     })
 
-
-
     return (<SafeAreaView style={styles.container}>
-        <View style={{ backgroundColor: 'green' }}>
-            {userHistory.map((element, index) => {
-                return <Text key={index}>{element.question.ref}</Text>
-            })}
+        <SafeAreaView>
+            <TouchableOpacity style={styles.closeButtonContainer}
+                onPress={() => navigation.goBack()}>
+                <Image source={require('../../../../assets/navigation/close_black.png')} style={styles.closeButtonImg} />
+            </TouchableOpacity>
+
+        </SafeAreaView>
+        <View style={styles.historyContainer}>
+            <Text style={{ textAlign: 'center', fontSize: 18 }}>Historique</Text>
         </View>
 
-        <Text style={styles.questionText}>{currentQuestion ? currentQuestion.question : ""}</Text>
-        <View style={styles.responseContainer}>
-            <FlatList
-                data={currentResponses}
-                renderItem={(item) => <ResponseButton element={item.item} key={item.index} history={userHistory}
-                    onPress={(value) => {
-                        if (value.status) {
-                            setUserSelection(userSelection => [...userSelection, value])
-                        } else {
+        <View style={styles.questionContainer}>
+            {!isLoading ?
+                <ImageBackground source={{ uri: imgUrl.data }} resizeMode="contain" style={styles.captainBackgroundContainer}>
+                    <TextGame text={currentQuestion ? currentQuestion.question : ""} speaker={'Captaine ortho'} />
+                </ImageBackground>
+                : <ActivityIndicator style={{alignSelf: 'center'}}/>
+            }
+        </View>
+        <View style={styles.bottomContainer}>
 
-                            var newSelection = userSelection.filter(function (obj) {
-                                return obj.response.id !== value.response.id;
-                            });
-                            setUserSelection(newSelection)
-
-                        }
-                    }}
-                />}
-            />
-
-
-            <TouchableOpacity style={{ backgroundColor: 'grey' }}
-                onPress={() => {
-                    if (userSelection.length > 0) {
-                        let exp = userSelection[userSelection.length - 1].response.skip_to_if
-
-                        setUserHistory(userHistory => [...userHistory, {
-                            question: currentQuestion,
-                            responses: userSelection
-                        }])
-                        if (exp) {
-                            var splitedExp = exp.split(':')
-                            evaluateExpression(splitedExp[1], userHistory)
-                                .then((val) => {
-                                    if (val) {
-                                        setNextQuestionId(splitedExp[0])
+            <View style={styles.responseContainer}>
+                {
+                    currentResponses ?
+                        currentResponses.map((item, index) => {
+                            return <ResponseButton element={item} key={index} history={userHistory}
+                                onPress={(value) => {
+                                    if (value.status) {
+                                        setUserSelection(userSelection => [...userSelection, value])
                                     } else {
-                                        setNextQuestionId(userSelection[userSelection.length - 1].response.next_q_id);
-                                    }
-                                })
-                        } else {
-                            setNextQuestionId(userSelection[userSelection.length - 1].response.next_q_id);
-                        }
 
-                        setUserSelection([])
+                                        var newSelection = userSelection.filter(function (obj) {
+                                            return obj.response.id !== value.response.id;
+                                        });
+                                        setUserSelection(newSelection)
+                                    }
+                                }}
+                            />
+                        })
+                        : null
+                }
+            </View>
+        </View>
+        <TouchableOpacity style={{ borderWidth: 3, borderColor: 'red', height: '10%', width: '100%', position: 'absolute', bottom: 0 }}
+            onPress={() => {
+                if (userSelection.length > 0) {
+                    let exp = userSelection[userSelection.length - 1].response.skip_to_if
+
+                    setUserHistory(userHistory => [...userHistory, {
+                        question: currentQuestion,
+                        responses: userSelection
+                    }])
+                    if (exp) {
+                        var splitedExp = exp.split(':')
+                        evaluateExpression(splitedExp[1], userHistory)
+                            .then((val) => {
+                                if (val) {
+                                    setNextQuestionRef(splitedExp[0])
+                                } else {
+                                    setNextQuestionRef(userSelection[userSelection.length - 1].response.next_q_ref);
+                                }
+                            })
+                    } else {
+                        setNextQuestionRef(userSelection[userSelection.length - 1].response.next_q_ref);
                     }
 
-                }}
-            >
-                <Text>Valider</Text>
-            </TouchableOpacity>
-        </View>
+                    setUserSelection([])
+                    setCurrentQuestion(null)
+                    setCurrentResponses(null)
+                }
+
+            }}
+        >
+            <Text>Glisser vers le haut pour valider la réponse</Text>
+        </TouchableOpacity>
+
     </SafeAreaView>)
 }
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
+        flex: 1,
+        backgroundColor: '#99DAFF'
+    },
+    closeButtonContainer: {
+        width: 50,
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'absolute',
+    },
+    closeButtonImg: {
+        width: '50%',
+        height: '50%',
+        resizeMode: 'contain',
+    },
+    historyContainer: {
+        backgroundColor: 'green',
+        width: '50%',
+        alignSelf: 'center',
+        alignItems: 'center',
+        paddingVertical: 5
+    },
+
+    bottomContainer: {
+        backgroundColor: '#FFA14D',
         flex: 1
     },
-    questionText: {
-        fontSize: 25,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        height: '30%'
+    questionContainer: {
+        flex: 1,
+        flexGrow: 0.8,
+    },
+    captainBackgroundContainer: {
+        flex: 1,
+        marginTop: 20,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingBottom: 15
     },
     responseContainer: {
-        backgroundColor: "red",
-        flex: 1,
-        borderTopLeftRadius: 15,
-        borderTopRightRadius: 15,
-        alignItems: 'center',
-        paddingVertical: 20
-
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        padding: 10,
+        alignContent: 'flex-end'
     },
     responseBox: {
         alignItems: 'center',
-        paddingVertical: 10,
-        backgroundColor: 'grey',
-        marginVertical: 5,
-        width: '80%'
+        paddingVertical: 30,
+        paddingHorizontal: 30,
+        margin: 2,
+        //borderWidth: 2,
+        flexGrow: 1
     },
     responseText: {
+        fontSize: 15
     }
 })
