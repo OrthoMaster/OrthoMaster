@@ -46,7 +46,7 @@ export const Avatar = ({ trophies }) => {
 
     return (<View style={styles.container}>
         <Image
-            source={require('../../../../../assets/trophies/base.png')}
+            source={require('../../../../../assets/account/trophies/base.png')}
             style={styles.avatar}
         />
 
