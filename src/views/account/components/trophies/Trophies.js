@@ -8,7 +8,6 @@ import {
     Image
 } from 'react-native'
 import { Avatar } from './Avatar'
-import { useIsFocused } from '@react-navigation/native'
 import { useQuery } from 'react-query'
 import { getUserTrophy } from '../../../../services/TrophyService'
 import { TrophyCard } from './TrophieCard'
