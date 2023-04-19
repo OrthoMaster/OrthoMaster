@@ -3,10 +3,6 @@ import {
     Text,
     TouchableOpacity,
     View,
-    Animated,
-    PanResponder,
-    FlatList,
-    ScrollView,
     SafeAreaView,
     Image,
     ImageBackground,
@@ -14,8 +10,7 @@ import {
 } from "react-native"
 import React, { useEffect, useState, useCallback } from "react"
 import { useQuery } from "react-query"
-import { TapGestureHandler, PanGestureHandler } from 'react-native-gesture-handler';
-import { getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
+import { getAPIqueChoisirRedFlags, getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
 import { TextGame } from "../../../component/TextGame";
 import { getS3Image } from "../../../services/S3Service";
 
@@ -139,6 +134,26 @@ export const QueChoisirView = ({ navigation, route }) => {
             setIsLoading(false)
         }
     })
+    const redFlags = useQuery('getQueChoisirRedFlags', () => getAPIqueChoisirRedFlags(tool),
+        {
+            onError: (e) => { throw e }
+        })
+
+    const detectRedFlag = async (userHistory) => {
+        var flagsToDisplay = []
+        if (redFlags.data) {
+            redFlags.data.forEach(element => {
+                evaluateExpression(element.display_if, userHistory)
+                    .then((val) => {
+                        if (val) {
+                            flagsToDisplay.push(element)
+                        }
+                        console.log(`${element.display_if} : ${val}`);
+                    })
+            });
+        }
+        return flagsToDisplay
+    }
 
     useQuery(['getQueChoisirStep', nextQuestionRef], () => getAPIqueChoisirStep(nextQuestionRef, tool), {
         onError: (e) => {
@@ -152,6 +167,15 @@ export const QueChoisirView = ({ navigation, route }) => {
             setIsLoading(true)
         }
     })
+
+
+    useEffect(() => {
+        detectRedFlag(userHistory)
+            .then((val) => {
+                console.log('Final:', val);
+            })
+    }, [userHistory])
+
 
     return (<SafeAreaView style={styles.container}>
         <SafeAreaView>
@@ -170,7 +194,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                 <ImageBackground source={{ uri: imgUrl.data }} resizeMode="contain" style={styles.captainBackgroundContainer}>
                     <TextGame text={currentQuestion ? currentQuestion.question : ""} speaker={'Captaine ortho'} />
                 </ImageBackground>
-                : <ActivityIndicator style={{alignSelf: 'center'}}/>
+                : <ActivityIndicator style={{ alignSelf: 'center' }} />
             }
         </View>
         <View style={styles.bottomContainer}>

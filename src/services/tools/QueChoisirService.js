@@ -26,3 +26,22 @@ export const getAPIqueChoisirStep = async (questionRef, tool) => {
 
 }
 
+export const getAPIqueChoisirRedFlags = async (tool) => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.accessToken;
+
+  return axios
+    .get(route + "/redflags", {
+      headers: {
+        Authorization: authHeader
+      },
+      params: {
+        tool: tool
+      }
+    })
+    .then((response) => {
+      return response.data;
+    })
+
+}
+
