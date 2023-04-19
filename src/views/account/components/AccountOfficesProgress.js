@@ -11,16 +11,17 @@ import {
 } from 'react-native'
 
 import { useQuery } from 'react-query'
-import { getOfficesProgression, getCollaboratorsProgression } from '../../../services/ProgressionService'
-import { useDispatch } from 'react-redux'
-import { logout } from '../../../actions/auth'
+import { getCollaboratorsProgression, getOfficesProgressionForManager } from '../../../services/ProgressionService'
+
 
 import { getUserTrophy } from '../../../services/TrophyService'
 import { TrophyCard } from './trophies/TrophieCard'
 
-const UserProgressDetails = ({ user, refreshing }) => {
+const UserProgress = ({ user, refreshing }) => {
     const [isToggle, setIsToggle] = useState(false)
-    const userTrophy = useQuery('getCollaboratorTrophies', () => getUserTrophy(user.id_user))
+    const userTrophy = useQuery(['getCollaboratorTrophies', user.id_user], () => getUserTrophy(user.id_user), {
+        enabled: false
+    })
 
     useEffect(() => {
         if (refreshing) {
@@ -28,25 +29,18 @@ const UserProgressDetails = ({ user, refreshing }) => {
         }
     }, [refreshing])
 
+    useEffect(() => {
+      if (isToggle) {
+        userTrophy.refetch()
+      }
+    }, [isToggle])
+    
+
     return (
         <View style={styles.userProgressContainer}>
-            <TouchableOpacity style={styles.progressButtonContainer}
-                onPress={() => setIsToggle(!isToggle)}
-            >
-                <View style={styles.progressButton}>
-                    <Text style={styles.progressButtonText}>{user.name + ' ' + user.lastname}</Text>
-                    <View style={styles.progressBar} >
-                        <View style={[styles.formationProgress, { width: user.progress.formation_progress + '%' }]} />
-                    </View>
-                </View>
-                <Image
-                    style={[styles.progressButtonIcon, { transform: [{ rotate: isToggle ? '90deg' : '0deg' }] }]}
-                    source={require('../../../../assets/navigation/right-arrow.png')}
-                />
-            </TouchableOpacity>
-            {
-                isToggle ?
-                    <View style={[styles.userProgressDetailsContainer, { paddingVertical: 20 }]}>
+            <Text style={styles.progressButtonText}>{user.name + ' ' + user.lastname}</Text>
+
+            <View style={[styles.userProgressContainer, { paddingVertical: 20 }]}>
                         <View style={styles.statsContainer}>
                             <View style={styles.statBox}>
                                 <Text style={styles.stat}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.formation_progress)}</Text>%</Text>
@@ -64,6 +58,18 @@ const UserProgressDetails = ({ user, refreshing }) => {
                             </View>
                         </View>
 
+                    </View>
+
+            
+            <TouchableOpacity style={{ backgroundColor: "red" }}
+                onPress={() => setIsToggle(!isToggle)}
+            >
+                <Text>
+                    Voir les trophées
+                </Text>
+            </TouchableOpacity>
+            {
+                isToggle ?
                         <FlatList
                             data={userTrophy.data}
                             renderItem={(item) => <TrophyCard item={item.item} />}
@@ -72,7 +78,6 @@ const UserProgressDetails = ({ user, refreshing }) => {
                             showsHorizontalScrollIndicator={false}
                             style={{ width: '90%', alignSelf: 'center', marginTop: 30 }}
                         />
-                    </View>
                     : null
             }
 
@@ -86,18 +91,15 @@ const OfficeButton = ({ office }) => {
         onError: (error) => {
             throw error
         },
-        enabled: false,
-        onSuccess: (data) => {
-            console.log(data);
-        }
+        enabled: false
     })
 
     useEffect(() => {
-      if (isToggle) {
-        collaborators.refetch()
-      }
+        if (isToggle) {
+            collaborators.refetch()
+        }
     }, [isToggle])
-    
+
 
     return <View>
         <TouchableOpacity style={styles.progressButtonContainer}
@@ -115,22 +117,22 @@ const OfficeButton = ({ office }) => {
             />
         </TouchableOpacity>
         {isToggle ?
-        <View style={{backgroundColor: '#ffffff'}}>
-            {!collaborators.data ?
-            <ActivityIndicator />
-            : collaborators.data.map((value, index) => {
-                return <UserProgressDetails user={value} />
-            })
+            <View style={{ backgroundColor: '#ffffff' }}>
+                {!collaborators.data ?
+                    <ActivityIndicator />
+                    : collaborators.data.map((value, index) => {
+                        return <UserProgress user={value} key={index}/>
+                    })
+                }
+            </View>
+            : null
         }
-        </View>
-        : null
-    }
     </View>
 
 }
 
-export const AccountOfficesProgress = ({ officeId, refreshing }) => {
-    const office = useQuery('fetchOfficeProgress', () => getOfficesProgression(), {
+export const AccountOfficesProgress = ({ managerId, refreshing }) => {
+    const office = useQuery('fetchOfficeProgress', () => getOfficesProgressionForManager(managerId), {
         onError: (error) => {
             throw error
         }
@@ -138,12 +140,11 @@ export const AccountOfficesProgress = ({ officeId, refreshing }) => {
 
     useEffect(() => {
         if (refreshing) {
-            collaborators.refetch()
             office.refetch()
         }
     }, [refreshing])
 
-    if (!office.data) return null
+    if (!office.data || office.data.length == 0) return null
 
     return (
         <View style={styles.container}>
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginLeft: 20
     },
-    userProgressDetailsContainer: {
+    userProgressContainer: {
         backgroundColor: '#fffefd',
     },
     statsContainer: {
