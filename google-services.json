@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "652344787497",
+    "project_id": "orthomaster-bde28",
+    "storage_bucket": "orthomaster-bde28.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:652344787497:android:f31f40074c28d6e4d2d238",
+        "android_client_info": {
+          "package_name": "com.hugotaieb.OrthoMaster"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "652344787497-3mnvru7plupp5d0roct7a0amf37fbl6o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1a_SMmxLOOIjaKmUocsfudUazSxwRzbI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "652344787497-3mnvru7plupp5d0roct7a0amf37fbl6o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "652344787497-956bnvdibbeknek40b75gvdd7b4l2gc0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.hugotaieb.OrthoMaster",
+                "app_store_id": "1644851864"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
