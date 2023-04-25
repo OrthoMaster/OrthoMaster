@@ -13,7 +13,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.hugotaieb.OrthoMaster",
       "buildNumber": "22",
-      "googleServicesFile": "./google-services-Info.plist",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": [
           "fetch",
