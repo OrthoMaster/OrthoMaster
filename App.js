@@ -141,7 +141,7 @@ async function registerForPushNotificationsAsync() {
       alert('Failed to get push token for push notification!');
       return;
     }
-    token = (await Notifications.getExpoPushTokenAsync()).data;
+    token = (await Notifications.getDevicePushTokenAsync()).data;
     console.log(token);
   } else {
     alert('Must use physical device for Push Notifications');
@@ -156,9 +156,10 @@ async function registerForPushNotificationsAsync() {
     });
   }
 
-  console.log('->',token);
   return token;
 }
+
+
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState('');
@@ -170,11 +171,15 @@ export default function App() {
     registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
 
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('notif received');
+      console.log(notification);
       setNotification(notification);
     });
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('clickeed');
       console.log(response);
+      console.log(response.notification);
     });
 
     return () => {
@@ -191,7 +196,7 @@ export default function App() {
         <Text>Body: {notification && notification.request.content.body}</Text>
         <Text>Data: {notification && JSON.stringify(notification.request.content.data)}</Text>
 
-        <Text>{Constants.manifest.extra.env.API_URL}</Text>
+        <Text>test</Text>
       </View>
       <Button
         title="Press to Send Notification"
