@@ -24,40 +24,32 @@ import { NotificationHandler } from './src/component/NotificationHandler';
 
 export default function App({ navigation }) {
 
-  if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-    });
-  }
-
-  console.log('->',token);
-  return token;
-}
-
-export default function App() {
-  const [expoPushToken, setExpoPushToken] = useState('');
-  const [notification, setNotification] = useState(false);
-  const notificationListener = useRef();
-  const responseListener = useRef();
+  const isLoggedIn = useSelector(selectIsLoggedIn)
+  const isLoading = useSelector(selectIsLoading)
+  const user = useSelector(selectUserCurrentSession)
+  const dispatch = useDispatch()
+  const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
-
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
-    });
-
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log(response);
-    });
-
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener.current);
-      Notifications.removeNotificationSubscription(responseListener.current);
+    const init = async () => {
+      try {
+        const config = await restoreLocalConfigAsync()
+        const check = await checkVersion({
+          version: Constants.manifest.version, // app local version
+          //version: '1.1.0', // app local version
+          iosStoreURL: 'https://apps.apple.com/us/app/orthomaster/id1644851864',
+          androidStoreURL: 'https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster&pli=1',
+          country: 'jp', // default value is 'jp'
+        });
+        dispatch(checkUserConnection(config))
+        if (check.result === 'new') {
+          setmodalVersionIsVisible(true)
+        }
+      } catch (e) {
+        Alert.alert('Oups...', "Nous n'arrivons pas à accéder à internet.")
+      }
     };
+    init();
   }, []);
 
 
