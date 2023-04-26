@@ -7,7 +7,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "API_URL": "https://api.orthomaster.fr"
+        "API_URL": "http://192.168.1.19",
+        "ENV_TEST": "test mec"
       },
       "ios": {
         "resourceClass": "m-medium"
