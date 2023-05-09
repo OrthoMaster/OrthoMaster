@@ -10,7 +10,8 @@ import {
 } from 'react-native'
 
 import { LessonHeader } from './LessonHeader'
-import { ModuleButton } from './components/ModuleButton';
+// import { ModuleButton } from './components/ModuleButton';
+import ModuleButton from './components/ModuleButton';
 import { MainQuizUnlockModal } from './modal/MainQuizUnlockModal';
 
 import { useIsFocused } from '@react-navigation/native';
@@ -29,16 +30,16 @@ const MainQuizButton = ({
     const [quizIsDone, setquizIsDone] = useState(false)
 
     useEffect(() => {
-      if (quizData) {
-        if (quizData.quiz_initial_status && quizType == 'initial') {
-            setquizIsDone(quizData.quiz_initial_status)
+        if (quizData) {
+            if (quizData.quiz_initial_status && quizType == 'initial') {
+                setquizIsDone(quizData.quiz_initial_status)
+            }
+            if (quizData.quiz_final_status && quizType == 'final') {
+                setquizIsDone(quizData.quiz_final_status)
+            }
         }
-        if (quizData.quiz_final_status && quizType == 'final') {
-            setquizIsDone(quizData.quiz_final_status)
-        }
-      }
     }, [quizData])
-    
+
     return (
         <TouchableOpacity
             style={[styles.mainQuizButtonContainer, {
@@ -123,10 +124,7 @@ export const ModuleLayout = ({ navigation, route }) => {
 
     useEffect(() => {
         if (isFocused) {
-            formationMainQuiz.refetch()
-            if (modules.data) {
-                modules.refetch()
-            }
+            onRefresh()
         }
     }, [isFocused])
 

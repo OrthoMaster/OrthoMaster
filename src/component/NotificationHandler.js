@@ -1,85 +1,93 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Text, View, Button, Platform } from 'react-native';
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { useDispatch } from "react-redux";
 import { registerForNotification } from "../actions/notificationActions";
 
-// Notifications.setNotificationHandler({
-//   handleNotification: async () => ({
-//     shouldShowAlert: true,
-//     shouldPlaySound: false,
-//     shouldSetBadge: false,
-//   }),
-// });
+import { useNavigation } from "@react-navigation/native";
 
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
-// async function registerForPushNotificationsAsync() {
-//     let token;
-//     if (Device.isDevice) {
-//       const { status: existingStatus } = await Notifications.getPermissionsAsync();
-//       let finalStatus = existingStatus;
-      
-//       if (existingStatus !== 'granted' && existingStatus != 'denied') {
-//         const { status } = await Notifications.requestPermissionsAsync();
-//         finalStatus = status;
-//       }
-  
-  
-//       if (finalStatus == 'granted') {
-//         token = (await Notifications.getDevicePushTokenAsync()).data;
-//         return;
-//       }
-//     } else {
-//       alert('Must use physical device for Push Notifications');
-//     }
-  
-//     if (Platform.OS === 'android') {
-//       Notifications.setNotificationChannelAsync('default', {
-//         name: 'default',
-//         importance: Notifications.AndroidImportance.MAX,
-//         vibrationPattern: [0, 250, 250, 250],
-//         lightColor: '#FF231F7C',
-//       });
-//     }
-  
-//     return token;
-//   }
+export const NotificationHandler = ({ children }) => {
+  //const notificationListener = useRef();
+  const responseListener = useRef();
+  const nav = useNavigation()
 
-export const NotificationHandler = ({children}) => {
-    const [devicePushToken, setDevicePushToken] = useState('');
-    const [notification, setNotification] = useState(false);
-    const notificationListener = useRef();
-    const responseListener = useRef();
-
-    const dispatch = useDispatch()
+  const dispatch = useDispatch()
 
 
-    useEffect(() => {
-      //registerForPushNotificationsAsync().then(token => setDevicePushToken(token));
-      dispatch(registerForNotification())
-  
-      notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-        console.log('notif received'); //notif received while navigatng in the app
-        console.log(notification);
-        setNotification(notification);
+  const handleNotif = (redirectContent) => {
+    console.log(redirectContent);
+    if (redirectContent != null) {
+      let rootView = ''
+      let screenView = ''
+      switch (redirectContent.type) {
+        case 'lesson':
+          rootView = 'Formation'
+          screenView = 'formation-content'
+          break;
+        case 'flash':
+          rootView = 'Flash ortho'
+          screenView = 'flash-content-viewer'
+          break;
+        case 'qa':
+          rootView = 'Accueil'
+          screenView = 'home-content'
+          break;
+        default:
+          rootView = 'Accueil'
+          screenView = 'home-home'
+          break;
+      }
+      nav.navigate(rootView, {
+          screen: screenView,
+          params: {
+              content: redirectContent,
+          },
+          initial: false
       });
-  
-      responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-        console.log('clickeed'); // triggered while the notif has been clicked
-        console.log(response);
-        console.log(response.notification);
-        console.log(response.notification.payload);
-      });
-  
-      return () => {
-        Notifications.removeNotificationSubscription(notificationListener.current);
-        Notifications.removeNotificationSubscription(responseListener.current);
-      };
-    }, []);
-  
+      //nav.navigate()
+    } else {
+      nav.navigate('Accueil')
+    }
+  }
 
-    return children
+  const getNotifDataByPlatform = (notification) => {
+    if (notification.request.trigger.payload) {
+      handleNotif(notification.request.trigger.payload.redirect_content)
+    } else if (notification.request.trigger.remoteMessage) {
+      handleNotif(JSON.parse(notification.request.trigger.remoteMessage.data.body).redirect_content)
+    } else {
+      console.log('Undefined');
+    }
+  }
+
+  useEffect(() => {
+    dispatch(registerForNotification())
+
+    // notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+    //   console.log('notif received'); //notif received while navigatng in the app
+    //   console.log(notification.request);
+    // });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      // triggered while the notif has been clicked
+      getNotifDataByPlatform(response.notification)
+    });
+
+    return () => {
+      //Notifications.removeNotificationSubscription(notificationListener.current);
+      Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
+
+
+  return children
 }
 

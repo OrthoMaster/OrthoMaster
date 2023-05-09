@@ -24,7 +24,6 @@ export function ContentDisplayer({ route, navigation }) {
   const contentScrollRef = useRef();
   var launchDate = null;
   const routes = navigation.getState()?.routes;
-
   const [refreshing, setRefreshing] = useState(false)
 
   const lessonIsFinish = useSelector(selectIsFinish)
@@ -119,10 +118,6 @@ export function ContentDisplayer({ route, navigation }) {
     }
   }, [])
 
-  useEffect(() => {
-    xmlContent.refetch()
-  }, [content])
-
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -133,6 +128,7 @@ export function ContentDisplayer({ route, navigation }) {
   }, []);
 
 
+  if (lessonIsFinish || contentIsRunning == false) return
 
   return (
     <View style={styles.container}>
@@ -140,7 +136,8 @@ export function ContentDisplayer({ route, navigation }) {
         title={content.title}
         onReturn={() => {
           dispatch(exitContent())
-          if (routes.length > 3) {
+          xmlContent.remove()   // by removing query, caching is disable on content display
+          if (routes.length > 3 && content.type == 'lesson') {
             navigation.pop(routes.length - 2)
           } else {
             navigation.goBack()
@@ -148,20 +145,17 @@ export function ContentDisplayer({ route, navigation }) {
         }}
       />
       <ScrollView
+      overScrollMode="never"
         contentContainerStyle={styles.scrollContainer}
         ref={contentScrollRef}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {xmlContent.isLoading ? <LoadingContent /> : <ContentFactory component={xmlContent.data} />}
+        {xmlContent.isLoading ? <LoadingContent /> : <ContentFactory component={xmlContent.data} contentInfos={content} />}
 
       </ScrollView>
 
     </View>
   )
-  if (contentIsRunning) {
-  } else {
-    return <LoadingContent />
-  }
 }
 
 var styles = StyleSheet.create({

@@ -24,7 +24,7 @@ import { AlertVersion } from './src/component/AlertVersion';
 import { ErrorHandler } from './src/component/ErrorHandler';
 import { NotificationHandler } from './src/component/NotificationHandler';
 
-export default function App({ navigation }) {
+export default function App({  }) {
 
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
@@ -63,7 +63,7 @@ export default function App({ navigation }) {
         <NavigationContainer>
           {
             isLoggedIn && user.enabled == 1 ? (
-              <NotificationHandler>
+              <NotificationHandler >
                 <AppTab />
               </NotificationHandler>
             ) : isLoading
