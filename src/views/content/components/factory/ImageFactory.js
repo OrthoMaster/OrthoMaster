@@ -16,7 +16,6 @@ export const ImageFactory = ({ config }) => {
 
     const [isFullscreen, setIsFullscreen] = useState(false)
 
-    const contentInfos = useSelector(selectContent)
 
     var imgWidth = Dimensions.get('window').width
 

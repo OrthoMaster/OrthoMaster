@@ -12,17 +12,6 @@ import {
 
 
 
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
-  });
-
-
-
-
 export const sendNotification = (notif) => (dispatch) => {
     dispatch({
         type: NOTIFICATION_SEND
@@ -32,28 +21,24 @@ export const sendNotification = (notif) => (dispatch) => {
 export const registerForNotification = () => async (dispatch) => {
     let finalToken = "";
     let finalStatus;
-    let oldPushToken = await AsyncStorage.getItem('pushToken', (error, result) => {
-        if (error) {
-            throw error
-        }
-        return result
-    })
 
     if (Device.isDevice) {
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
         finalStatus = existingStatus;
+        console.log(finalStatus);
 
-        if (existingStatus !== 'granted' && existingStatus != 'denied') {
+        if (existingStatus !== 'granted') {
             const { status } = await Notifications.requestPermissionsAsync();
             finalStatus = status;
+            console.log(status);
+            console.log(finalStatus);
         }
 
 
         if (finalStatus == 'granted') {
             finalToken = (await Notifications.getDevicePushTokenAsync()).data;
+            console.log(finalToken);
         }
-    } else {
-        alert('Must use physical device for Push Notifications');
     }
 
     if (Platform.OS === 'android') {
@@ -64,23 +49,12 @@ export const registerForNotification = () => async (dispatch) => {
             lightColor: '#FF231F7C',
         });
     }
-
-
-    console.log('old', oldPushToken);
-    console.log('new', finalToken);
-    if (finalToken != oldPushToken && finalStatus == "granted") {
-        AsyncStorage.setItem('pushToken', finalToken, (error) => {
-            if (error)
-                throw error
-        })
-
-        await registerUserToNotification(finalToken)
-            .then((value) => {
-                console.log("val:",value);
-            })
+    if (finalToken != "") {
+        const req = await registerUserToNotification(finalToken)
+            
+        console.log(req);
     }
 
-    console.log("dispatch");
     dispatch({
         type: NOTIFICATION_REGISTER,
         payload:{

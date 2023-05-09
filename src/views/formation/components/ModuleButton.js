@@ -1,65 +1,25 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import {
     TouchableOpacity,
     Text,
     StyleSheet,
     Dimensions
 } from 'react-native'
-
+import { useQuery } from 'react-query';
 import { getS3Image } from '../../../services/S3Service'
 
-import {
-    ModuleProgress,
+import ModuleProgress, {
     MODULE_NOT_STARTED,
     MODULE_STARTED,
     MODULE_FINISHED
 } from './ModuleProgress';
 
-export const ModuleButton = ({ item, onPress }) => {
-    const [logo, setLogo] = useState(null)
-    const [isActivate, setIsActivate] = useState(false)
+const ModuleButton = ({ item, onPress }) => {
 
-    useEffect(() => {
-      if (item.item.lesson_succeed > 0) {
-        setIsActivate(true)
-      } else {
-        setIsActivate(false)
-      }
-    }, [item.item.lesson_succeed])
+    const imgUrl = useQuery(
+        ["getContentImage", item.item.module.module_order, item.item.lesson_succeed ],
+        ()=>getS3Image('lesson/' + item.item.module.module_num + (item.item.lesson_succeed > 0 ? '/logo.png': '/logo_not_started.png')))
 
-
-    useEffect(() => {
-        var isDisplayed = true
-        if (item.item) {
-            fetchLogo(item).then(value => {
-                if (isDisplayed) {
-                    setLogo(value)
-                }
-            })
-        }
-
-        return () => {
-            isDisplayed = false
-        }
-
-    }, [isActivate])
-    
-
-    const fetchLogo = async (item) => {
-        let path
-        if (item.item.lesson_succeed > 0) {
-            path = 'lesson/' + item.item.module.module_num + '/logo.png'
-        } else {
-            path = 'lesson/' + item.item.module.module_num + '/logo_not_started.png'
-        }
-
-        try {
-            const imageUrl = await getS3Image(path)
-            return imageUrl
-        } catch (error) {
-            throw error
-        }
-    }
     return (
         <TouchableOpacity
             style={[styles.button, { alignSelf: (item.index % 2) == 0 ? 'flex-start' : 'flex-end' }]}
@@ -69,7 +29,7 @@ export const ModuleButton = ({ item, onPress }) => {
 
             <ModuleProgress
                 color={item.item.module.theme_color}
-                moduleImg={logo}
+                moduleImg={imgUrl.data}
                 nbLesson={item.item.total_lesson}
                 nbLessonValidate={item.item.lesson_succeed}
                 moduleState={
@@ -98,3 +58,8 @@ const styles = StyleSheet.create({
         width: '80%'
     }
 })
+const arePropsEqual = (prevProps, nextProps) => {
+    return prevProps.item.item.lesson_succeed === nextProps.item.item.lesson_succeed; 
+  }
+
+export default memo(ModuleButton, arePropsEqual);

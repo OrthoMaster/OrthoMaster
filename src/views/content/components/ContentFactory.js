@@ -14,7 +14,7 @@ import { handleColor } from "./factory/stylesXml";
 
 var staticLessonIndex = 0
 
-const buildContent = (content) => {
+const buildContent = (content, contentInfos) => {
     var displayContent = []
     if (content.name && content.name == 'layout') {
         var layoutStyle = {
@@ -36,7 +36,7 @@ const buildContent = (content) => {
 
 
         }
-        displayContent.push(<View key={staticLessonIndex} style={layoutStyle}>{buildContent(content.children)}</View>)
+        displayContent.push(<View key={staticLessonIndex} style={layoutStyle}>{buildContent(content.children, contentInfos)}</View>)
 
     } else {
         if (Array.isArray(content)) {
@@ -49,14 +49,14 @@ const buildContent = (content) => {
                         //displayContent.push(buttonFactory(element, contentInfos, index))
                         break;
                     case 'image':
-                        displayContent.push(<ImageFactory config={element} key={staticLessonIndex} />)
+                        displayContent.push(<ImageFactory config={element} key={staticLessonIndex} contentInfos={contentInfos} />)
                         break;
                     case 'video':
                         displayContent.push(<VideoFactory video={element} key={staticLessonIndex} />)
                         break;
 
                     case 'layout':
-                        displayContent.push(buildContent(element, staticLessonIndex))
+                        displayContent.push(buildContent(element, contentInfos))
                         break;
                     case 'quiz':
                         displayContent.push(<QuizFactory content={element} key={staticLessonIndex} />)
@@ -81,11 +81,10 @@ const buildContent = (content) => {
     }
     return displayContent
 }
-export const ContentFactory = ({ component }) => {
+export const ContentFactory = ({ component, contentInfos }) => {
 
     if (!component || component === 'undefined') return <Text>Nous rencontrons un problème...</Text>
-
-    return buildContent(component)
+    return buildContent(component, contentInfos)
 }
 
 const styles = StyleSheet.create({

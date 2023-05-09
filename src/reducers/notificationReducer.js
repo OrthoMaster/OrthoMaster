@@ -13,6 +13,7 @@ const initialState = {
     notificationsArray: []
 }
 
+export const selectNotificationArray = state => state.notification.notificationsArray
 
 
 export const notificationReducer = (state = initialState, action) => {
