@@ -30,56 +30,64 @@ const UserProgress = ({ user, refreshing }) => {
     }, [refreshing])
 
     useEffect(() => {
-      if (isToggle) {
-        userTrophy.refetch()
-      }
+        if (isToggle) {
+            userTrophy.refetch()
+        }
     }, [isToggle])
-    
+
 
     return (
         <View style={styles.userProgressContainer}>
             <Text style={styles.progressButtonText}>{user.name + ' ' + user.lastname}</Text>
 
-            <View style={[styles.userProgressContainer, { paddingVertical: 20 }]}>
-                        <View style={styles.statsContainer}>
-                            <View style={styles.statBox}>
-                                <Text style={styles.stat}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.formation_progress)}</Text>%</Text>
-                                <Text style={styles.statText}>progression formation</Text>
-                            </View>
-                            <View style={[styles.statBox, { flex: 2 }]}>
-                                <Text style={styles.stat}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.formation_logtime / 3600)}</Text>h</Text>
-                                <Text style={[styles.stat, { fontSize: 17 }]}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.formation_logtime % 3600 / 60)}</Text>min</Text>
-                                <Text style={styles.statText}>temps formation</Text>
-                            </View>
-                            <View style={styles.statBox}>
-                                <Text style={styles.stat}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.app_logtime / 3600)}</Text>h</Text>
-                                <Text style={[styles.stat, { fontSize: 17 }]}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.app_logtime % 3600 / 60)}</Text>min</Text>
-                                <Text style={styles.statText}>temps appli</Text>
-                            </View>
-                        </View>
-
+            <View style={[styles.userProgressContainer]}>
+                <View style={styles.statsContainer}>
+                    <View style={styles.statBox}>
+                        <Text style={styles.stat}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.formation_progress)}</Text>%</Text>
+                        <Text style={styles.statText}>progression formation</Text>
                     </View>
+                    <View style={[styles.statBox, { flex: 2 }]}>
+                        <Text style={styles.stat}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.formation_logtime / 3600)}</Text>h</Text>
+                        <Text style={[styles.stat, { fontSize: 17 }]}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.formation_logtime % 3600 / 60)}</Text>min</Text>
+                        <Text style={styles.statText}>temps formation</Text>
+                    </View>
+                    <View style={styles.statBox}>
+                        <Text style={styles.stat}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.app_logtime / 3600)}</Text>h</Text>
+                        <Text style={[styles.stat, { fontSize: 17 }]}><Text style={{ fontWeight: 'bold' }}>{Math.round(user.progress.app_logtime % 3600 / 60)}</Text>min</Text>
+                        <Text style={styles.statText}>temps appli</Text>
+                    </View>
+                </View>
 
-            
-            <TouchableOpacity style={{ backgroundColor: "red" }}
-                onPress={() => setIsToggle(!isToggle)}
-            >
-                <Text>
-                    Voir les trophées
-                </Text>
-            </TouchableOpacity>
+            </View>
+
             {
                 isToggle ?
-                        <FlatList
-                            data={userTrophy.data}
-                            renderItem={(item) => <TrophyCard item={item.item} />}
-                            keyExtractor={item => item.trophy.id_trophy}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={{ width: '90%', alignSelf: 'center', marginTop: 30 }}
-                        />
+                    <FlatList
+                        data={userTrophy.data}
+                        renderItem={(item) => <TrophyCard item={item.item} />}
+                        keyExtractor={item => item.trophy.id_trophy}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ width: '90%', alignSelf: 'center', marginTop: 30 }}
+                    />
                     : null
             }
+
+            <TouchableOpacity style={styles.trophiesTriggerContainer}
+                onPress={() => setIsToggle(!isToggle)}
+            >
+                <Image
+                    source={require('../../../../assets/navigation/right-arrow.png')}
+                    style={[styles.trophiesTriggerArrow, { transform: [{ rotate: isToggle ? '-90deg' : '90deg' }] }]}
+                />
+                <Text style={styles.trophiesTriggerText}>
+                    Voir les trophées
+                </Text>
+                <Image
+                    source={require('../../../../assets/navigation/right-arrow.png')}
+                    style={[styles.trophiesTriggerArrow, { transform: [{ rotate: isToggle ? '-90deg' : '90deg' }] }]}
+                />
+            </TouchableOpacity>
 
         </View>
     )
@@ -108,7 +116,7 @@ const OfficeButton = ({ office }) => {
             <View style={styles.progressButton}>
                 <Text style={styles.progressButtonText}>{office.name}</Text>
                 <View style={styles.progressBar} >
-                    <View style={[styles.formationProgress, { width: office.progress.formation_progress + '%' }]} />
+                    <View style={[styles.formationProgress, { width: (office.progress.formation_progress || '0') + '%' }]} />
                 </View>
             </View>
             <Image
@@ -121,7 +129,7 @@ const OfficeButton = ({ office }) => {
                 {!collaborators.data ?
                     <ActivityIndicator />
                     : collaborators.data.map((value, index) => {
-                        return <UserProgress user={value} key={index}/>
+                        return <UserProgress user={value} key={index} />
                     })
                 }
             </View>
@@ -226,6 +234,7 @@ const styles = StyleSheet.create({
     },
     userProgressContainer: {
         backgroundColor: '#fffefd',
+        padding: 10
     },
     statsContainer: {
         flexDirection: 'row',
@@ -250,8 +259,20 @@ const styles = StyleSheet.create({
     statText: {
         fontWeight: '400',
         fontSize: 13,
-        width: '80%',
         textAlign: 'center'
     },
-
+    trophiesTriggerContainer: {
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center'
+    },
+    trophiesTriggerArrow: {
+        width: 15,
+        height: 15,
+        tintColor: '#F76F10'
+    },
+    trophiesTriggerText: {
+        color: '#F76F10'
+    }
 })
