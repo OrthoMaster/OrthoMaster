@@ -18,7 +18,8 @@
       "distribution": "internal",
       "ios": {
         "simulator": true,
-        "resourceClass": "m-medium"
+        "resourceClass": "m-medium",
+        "enterpriseProvisioning": "universal"
       },
       "android": {
         "buildType": "apk"
