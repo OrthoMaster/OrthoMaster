@@ -14,39 +14,24 @@ import {
 
 import { getS3Image } from '../../../services/S3Service'
 import { LinearGradient } from 'expo-linear-gradient';
-import { useIsFocused } from '@react-navigation/native';
-
+import { useQuery } from 'react-query';
 
 const SearchCardDefault = ({ card, onSelect }) => {
-    const [thumbnail, setthumbnail] = useState(null)
-    const isFocused = useIsFocused()
-
-    useEffect(() => {
-        let isDisplay = true
-
-        if (isFocused) {
-            fetchThumbnail(card).then(result => {
-                if (isDisplay) {
-                    setthumbnail(result)
-                }
-            })
+    const thumbnail = useQuery(['fetchContentThumbnail', card.content.id_content, card.content.title],
+    () => getS3Image(createS3Path(card)), {
+        onError: (err) => {
+            throw err
         }
+    })
 
-        return () => {
-            isDisplay = false
-        }
-    }, [isFocused])
-
-
-    const fetchThumbnail = async (cardInfo) => {
-        let path = ''
+    const createS3Path = (cardInfo) => {
+        let path = cardInfo.content.s3_path
         if (cardInfo.content.type == 'lesson') {
-            path = cardInfo.content.type + '/' + cardInfo.content.module_num + '/logo_lesson.png'
+            path = path + '/logo_lesson.png'
         } else {
-            path = cardInfo.content.type + '/' + cardInfo.content.title + '/logo.png'
+            path = path + '/' + cardInfo.content.title + '/logo.png'
         }
-        const response = await getS3Image(path)
-        return response
+        return path
     }
 
 
@@ -110,7 +95,7 @@ const SearchCardDefault = ({ card, onSelect }) => {
                         height: Dimensions.get('screen').width * 0.15
                     }}
                     source={{
-                        uri: thumbnail
+                        uri: thumbnail.data
                     }}
                     resizeMode={'contain'}
                 />
@@ -142,17 +127,13 @@ const SearchCardDefault = ({ card, onSelect }) => {
 
 
 const QaCard = ({ card, onSelect }) => {
-    const [thumbnail, setthumbnail] = useState(null)
+    const thumbnail = useQuery(['fetchQaThumbnail', card.content.id_content, card.content.title],
+    () => getS3Image(`${card.content.s3_path}/${card.content.title}/logo.png`), {
+        onError: (err) => {
+            throw err
+        }
+    })
 
-    useEffect(() => {
-        fetchThumbnail(card)
-    }, [])
-
-    const fetchThumbnail = async (card) => {
-        let path = card.content.type + '/' + card.content.title + '/logo.png'
-        const response = await getS3Image(path)
-        setthumbnail(response)
-    }
     return (
         <TouchableOpacity style={stylesQa.card}
             onPress={() => onSelect(card)}
@@ -168,7 +149,7 @@ const QaCard = ({ card, onSelect }) => {
                                 resizeMode: 'contain'
                             }}
                             source={{
-                                uri: thumbnail
+                                uri: thumbnail.data
                             }}
                         />
                         : <ActivityIndicator />

@@ -159,7 +159,8 @@ export const ModuleLayout = ({ navigation, route }) => {
                             navigation.navigate('formation-content', {
                                 content: {
                                     type: 'lesson',
-                                    title: 'initial'
+                                    title: 'initial',
+                                    s3_path: 'lesson'
                                 }
                             })
                         }}
@@ -173,7 +174,8 @@ export const ModuleLayout = ({ navigation, route }) => {
                             navigation.navigate('formation-content', {
                                 content: {
                                     type: 'lesson',
-                                    title: 'final'
+                                    title: 'final',
+                                    s3_path: 'lesson'
                                 }
                             })
                         }}
@@ -195,7 +197,8 @@ export const ModuleLayout = ({ navigation, route }) => {
                             navigation.navigate('formation-content', {
                                 content: {
                                     type: 'lesson',
-                                    title: 'initial'
+                                    title: 'initial',
+                                    s3_path: 'lesson'
                                 }
                             })
                         }}

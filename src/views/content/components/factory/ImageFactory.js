@@ -8,12 +8,11 @@ import { getS3Image } from '../../../../services/S3Service'
 import { useSelector } from "react-redux";
 import { selectContent } from '../../../../reducers/contentReducer';
 import { ImageViewer } from '../../../../component/ImageViewer';
-import { S3ContentPathGenerator } from '../../../../utils';
 import { useQuery } from 'react-query';
 
 
 export const ImageFactory = ({ config }) => {
-    const imgUrl = useQuery(["getContentImage", config.attributes['src']], ()=>getS3Image(S3ContentPathGenerator(contentInfos)+ config.attributes['src']))
+    const imgUrl = useQuery(["getContentImage", config.attributes['src']], ()=>getS3Image(contentInfos.s3_path+ '/' + contentInfos.title +'/' + config.attributes['src']))
 
     const [isFullscreen, setIsFullscreen] = useState(false)
 
