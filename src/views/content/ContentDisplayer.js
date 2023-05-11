@@ -9,7 +9,7 @@ import { saveLogtimeOnLesson } from "../../services/LogsService";
 
 import { exitContent, runContent } from "../../actions/contentAction";
 
-import { getCurrentDate, S3ContentPathGenerator } from "../../utils";
+import { getCurrentDate } from "../../utils";
 import { ContentFactory } from './components/ContentFactory'
 import { LoadingContent } from "../../component/LoadingContent";
 
@@ -40,7 +40,7 @@ export function ContentDisplayer({ route, navigation }) {
 
   };
 
-  const xmlContent = useQuery(['fetchLessonContent', content.id_content], () => fetchLessonContent(S3ContentPathGenerator(content) + 'content.xml'), {
+  const xmlContent = useQuery(['fetchLessonContent', content.id_content], () => fetchLessonContent(content.s3_path + '/' + content.title + '/content.xml'), {
     onSuccess: (xml) => {
       initContent(xml)
     },

@@ -21,30 +21,6 @@ export const restoreLocalConfigAsync = async () => {
 }
 
 
-export const S3ContentPathGenerator = (content) => {
-  var path = ''
-
-  switch (content.type) {
-    case 'lesson':
-      if (content.title == 'initial' || content.title == 'final')
-        path = content.type + '/' + content.title + '/'
-      else
-        path = content.type + '/' + content.module_num + '/' + content.title + '/'
-      break;
-    case 'flash':
-      path = content.type + '/' + content.theme + '/' + content.category + '/' + content.subcategory + '/' + content.title + '/'
-      break;
-    case 'qa':
-      path = content.type + '/' + content.title + '/'
-      break;
-
-    default:
-      break;
-  }
-
-  return path
-}
-
 export const ColorLuminance = (hex, lum) => {
 
 	// validate hex string

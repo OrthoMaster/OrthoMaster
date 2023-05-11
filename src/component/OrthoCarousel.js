@@ -14,7 +14,7 @@ import { S3ContentPathGenerator } from '../utils';
 
 
 const CarousselCard = ({ item, navigation }) => {
-    const imageUrl = useQuery(['fetchHomeContentThumbnail', item.id_content, item.title], () => getS3Image(S3ContentPathGenerator(item)+'logo.png'))
+    const imageUrl = useQuery(['fetchHomeContentThumbnail', item.id_content, item.title], () => getS3Image(`${item.s3_path}/${item.title}/logo.png`))
     
 
     return (

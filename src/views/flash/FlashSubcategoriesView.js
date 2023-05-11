@@ -13,14 +13,12 @@ import {
 import { useQuery } from 'react-query'
 import { fetchFlashSubcategoriesByCategory, fetchFlashContent } from '../../services/FlashService'
 import { getS3Image } from '../../services/S3Service'
-import { ColorLuminance, S3ContentPathGenerator } from '../../utils.js'
+import { ColorLuminance } from '../../utils.js'
 
 
 
 const FlashContentButton = ({ config, onPress }) => {
-    const imageUrl = useQuery(['flashContentThumbnail', config.id_content], () => getS3Image(S3ContentPathGenerator(config) + 'logo.png'))
-
-
+    const imageUrl = useQuery(['flashContentThumbnail', config.id_content], () => getS3Image(config.s3_path+"/"+config.title+ '/logo.png'))
 
     return (
         <TouchableOpacity
