@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-
 import { NavigationContainer } from '@react-navigation/native';
 
 import { useSelector, useDispatch } from 'react-redux'
@@ -23,11 +22,9 @@ import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingContent } from './src/component/LoadingContent';
 import { AlertVersion } from './src/component/AlertVersion';
 import { ErrorHandler } from './src/component/ErrorHandler';
+import { NotificationHandler } from './src/component/NotificationHandler';
 
-
-
-
-export default function App({ navigation }) {
+export default function App({  }) {
 
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
@@ -59,23 +56,27 @@ export default function App({ navigation }) {
 
 
 
-  return (
-      <ErrorHandler>
-        <QueryClientProvider client={OmQueryClient}>
-          <NavigationContainer>
 
-            {
-              isLoggedIn && user.enabled == 1 ? (
+  return (
+    <ErrorHandler>
+      <QueryClientProvider client={OmQueryClient}>
+        <NavigationContainer>
+          {
+            isLoggedIn && user.enabled == 1 ? (
+              <NotificationHandler >
                 <AppTab />
-              ) : isLoading
-                ? (
-                  <LoadingContent />
-                ) : (
-                  <AuthStack />
-                )}
-            <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
-          </NavigationContainer>
-        </QueryClientProvider>
-      </ErrorHandler>
+              </NotificationHandler>
+            ) : isLoading
+              ? (
+                <LoadingContent />
+              ) : (
+                <AuthStack />
+              )}
+          <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
+        </NavigationContainer>
+      </QueryClientProvider>
+    </ErrorHandler>
   );
 }
+
+

@@ -12,7 +12,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hugotaieb.OrthoMaster",
-      "buildNumber": "22"
+      "buildNumber": "22",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ]
+     }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +27,8 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.hugotaieb.OrthoMaster",
-      "versionCode": 24
+      "versionCode": 24,
+      "googleServicesFile": "./google-services.json"
     },
     "extra": {
       "eas": {

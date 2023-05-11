@@ -7,17 +7,19 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "API_URL": "http://"
+        "API_URL": "http://192.168.1.19",
+        "ENV_TEST": "test mec"
       },
       "ios": {
-        "resourceClass": "m1-medium"
+        "resourceClass": "m-medium"
       }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "simulator": true,
-        "resourceClass": "m1-medium"
+        "resourceClass": "m-medium",
+        "enterpriseProvisioning": "universal"
       },
       "android": {
         "buildType": "apk"
@@ -32,7 +34,7 @@
         "API_URL": "https://api.orthomaster.fr"
       },
       "ios": {
-        "resourceClass": "m1-medium"
+        "resourceClass": "m-medium"
       }
     }
   },
