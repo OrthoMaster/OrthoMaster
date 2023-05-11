@@ -76,17 +76,9 @@ const UserProgress = ({ user, refreshing }) => {
             <TouchableOpacity style={styles.trophiesTriggerContainer}
                 onPress={() => setIsToggle(!isToggle)}
             >
-                <Image
-                    source={require('../../../../assets/navigation/right-arrow.png')}
-                    style={[styles.trophiesTriggerArrow, { transform: [{ rotate: isToggle ? '-90deg' : '90deg' }] }]}
-                />
                 <Text style={styles.trophiesTriggerText}>
-                    Voir les trophées
+                    {isToggle ? 'Cacher les trophées' : 'Voir les trophées'}
                 </Text>
-                <Image
-                    source={require('../../../../assets/navigation/right-arrow.png')}
-                    style={[styles.trophiesTriggerArrow, { transform: [{ rotate: isToggle ? '-90deg' : '90deg' }] }]}
-                />
             </TouchableOpacity>
 
         </View>
@@ -262,9 +254,6 @@ const styles = StyleSheet.create({
         textAlign: 'center'
     },
     trophiesTriggerContainer: {
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'space-around',
         alignItems: 'center'
     },
     trophiesTriggerArrow: {
@@ -273,6 +262,8 @@ const styles = StyleSheet.create({
         tintColor: '#F76F10'
     },
     trophiesTriggerText: {
-        color: '#F76F10'
+        color: '#F76F10',
+        marginTop: 10,
+        marginBottom: 20
     }
 })
