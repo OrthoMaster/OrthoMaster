@@ -15,7 +15,7 @@ import { useStore } from 'react-redux';
 import { AccountProgress } from './components/AccountProgress';
 import { Trophies } from './components/trophies/Trophies';
 
-import { AccountOfficeProgress } from './components/AccountOfficeProgress';
+import { AccountOfficesProgress } from './components/AccountOfficesProgress';
 
 import { AccountMenu } from './menu/AccountMenu';
 import { useQuery } from 'react-query'
@@ -75,7 +75,6 @@ export const AccountView = ({ navigation }) => {
   }, []);
 
 
-  //if (!infos.data) return <LoadingView />
 
   return (
     <View style={{ flex: 1 }}>
@@ -99,13 +98,8 @@ export const AccountView = ({ navigation }) => {
 
           <Trophies refreshing={refreshing}/>
 
-          {user.user_type_id == 1
-            ? <View style={styles.officeProgress}>
-              <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mon office et collaborateur</Text>
-              <AccountOfficeProgress officeId={user.office_id} refreshing={refreshing}/>
-            </View>
-            : <View />
-          }
+          <AccountOfficesProgress managerId={user.id_user} refreshing={refreshing}/>
+          
           <View style={{ height: 200 }} />
         </ScrollView>
         {
@@ -166,13 +160,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 20,
     marginBottom: 30
-  },
-  officeProgress: {
-    backgroundColor: '#F76F10',
-    marginTop: 10,
-    width: '100%',
-    alignItems: 'center',
-    paddingVertical: 10
   },
   sectionTitle: {
     marginLeft: 10,
