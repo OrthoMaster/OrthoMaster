@@ -34,6 +34,15 @@ export const registerForNotification = () => async (dispatch) => {
             console.log(finalStatus);
         }
 
+        if (Platform.OS === 'android') {
+            Notifications.setNotificationChannelAsync('default', {
+                name: 'default',
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: '#FF231F7C',
+                showBadge: true
+            });
+        }
 
         if (finalStatus == 'granted') {
             finalToken = (await Notifications.getDevicePushTokenAsync()).data;
@@ -41,14 +50,6 @@ export const registerForNotification = () => async (dispatch) => {
         }
     }
 
-    if (Platform.OS === 'android') {
-        Notifications.setNotificationChannelAsync('default', {
-            name: 'default',
-            importance: Notifications.AndroidImportance.MAX,
-            vibrationPattern: [0, 250, 250, 250],
-            lightColor: '#FF231F7C',
-        });
-    }
     if (finalToken != "") {
         const req = await registerUserToNotification(finalToken)
             

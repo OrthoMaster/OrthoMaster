@@ -14,6 +14,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
+
 export const NotificationHandler = ({ children }) => {
   //const notificationListener = useRef();
   const responseListener = useRef();
@@ -71,6 +72,11 @@ export const NotificationHandler = ({ children }) => {
   useEffect(() => {
     dispatch(registerForNotification())
 
+
+    // Notifications.getBadgeCountAsync().then((val)=>(console.log(val)))
+    Notifications.setBadgeCountAsync(0)
+
+    
     // notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
     //   console.log('notif received'); //notif received while navigatng in the app
     //   console.log(notification.request);
