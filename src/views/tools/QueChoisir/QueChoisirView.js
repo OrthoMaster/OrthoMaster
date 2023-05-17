@@ -1,7 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View, Animated, PanResponder, FlatList, ScrollView, SafeAreaView } from "react-native"
 import React, { useEffect, useState, useCallback } from "react"
 import { useQuery } from "react-query"
-import { TapGestureHandler, PanGestureHandler } from 'react-native-gesture-handler';
 import { getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
 
 

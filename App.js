@@ -3,7 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 
 import { selectIsLoggedIn, selectIsLoading, selectUserCurrentSession } from './src/reducers/auth';
+import { checkUserConnection } from './src/actions/auth';
 
+import { useSelector, useDispatch } from 'react-redux';
 import { restoreLocalConfigAsync } from './src/utils';
 import checkVersion from 'react-native-store-version';
 import Constants from 'expo-constants';
@@ -11,7 +13,6 @@ import {
   QueryClientProvider,
 } from 'react-query'
 import { OmQueryClient } from './src/component/OmQueryClient';
-
 import { Alert } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
@@ -20,6 +21,7 @@ import { LoadingContent } from './src/component/LoadingContent';
 import { AlertVersion } from './src/component/AlertVersion';
 import { ErrorHandler } from './src/component/ErrorHandler';
 import { NotificationHandler } from './src/component/NotificationHandler';
+
 
 export default function App({ navigation }) {
 
