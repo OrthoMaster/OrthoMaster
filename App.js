@@ -22,13 +22,6 @@ import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingContent } from './src/component/LoadingContent';
 import { AlertVersion } from './src/component/AlertVersion';
 import { ErrorHandler } from './src/component/ErrorHandler';
-import 'react-native-gesture-handler';
-
-import { AppTab } from './src/navigation/AppTab';
-import { AuthStack } from './src/navigation/stacks/AuthStack';
-import { LoadingContent } from './src/component/LoadingContent';
-import { AlertVersion } from './src/component/AlertVersion';
-import { ErrorHandler } from './src/component/ErrorHandler';
 import { NotificationHandler } from './src/component/NotificationHandler';
 
 export default function App({  }) {
