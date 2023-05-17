@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   containerTitle: {
     fontSize: 35,
     fontWeight: 'bold',
-    alignSelf: 'left',
+    alignSelf: 'flex-start',
     marginLeft: 40,
     marginVertical: 30
   },

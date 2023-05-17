@@ -90,7 +90,7 @@ export function ContentDisplayer({ route, navigation }) {
         ) {
           launchDate = getCurrentDate()
 
-        } else if (nextAppState === "background") {
+        } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
           saveLogs({
             login: launchDate,
             logout: getCurrentDate(),

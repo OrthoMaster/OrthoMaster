@@ -27,13 +27,6 @@ export const registerForNotification = () => async (dispatch) => {
         finalStatus = existingStatus;
         console.log(finalStatus);
 
-        if (existingStatus !== 'granted') {
-            const { status } = await Notifications.requestPermissionsAsync();
-            finalStatus = status;
-            console.log(status);
-            console.log(finalStatus);
-        }
-
         if (Platform.OS === 'android') {
             Notifications.setNotificationChannelAsync('default', {
                 name: 'default',
@@ -43,6 +36,15 @@ export const registerForNotification = () => async (dispatch) => {
                 showBadge: true
             });
         }
+        
+        if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+            console.log(status);
+            console.log(finalStatus);
+        }
+
+        
 
         if (finalStatus == 'granted') {
             finalToken = (await Notifications.getDevicePushTokenAsync()).data;

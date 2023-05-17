@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 
 import { ToolsView } from '../../views/tools/ToolsView';
-import { QueChoisirView } from '../../views/tools/QueChoisir/QueChoisirView';
+//import { QueChoisirView } from '../../views/tools/QueChoisir/QueChoisirView';
 
 
 const ToolsStackNav = createNativeStackNavigator();
@@ -21,12 +21,12 @@ export const ToolsStack = ({navigation, route}) => {
         component={ToolsView}
         options={{ headerShown: false }}
       />
-      <ToolsStackNav.Screen
+      {/* <ToolsStackNav.Screen
         name="tools-que-choisir"
         component={QueChoisirView}
         options={{ headerShown: false, title: 'Que choisir ?'}}
         
-      />
+      /> */}
 
     </ToolsStackNav.Navigator>
   );

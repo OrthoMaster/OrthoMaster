@@ -25,7 +25,8 @@ export const AppTab = ({}) => {
   const mutation = useMutation(saveLogtimeOnApp, {
     onError: (error) => {
       throw error
-    }
+    },
+    retry: 3
   });
 
   var launchDate = getCurrentDate()
@@ -35,7 +36,7 @@ export const AppTab = ({}) => {
       if (appState.current.match(/inactive|background/) &&
         nextAppState === "active") {
           launchDate = getCurrentDate()
-      } else if (nextAppState === "background") {
+} else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
         saveAppLogs({
           login: launchDate,
           logout: getCurrentDate()

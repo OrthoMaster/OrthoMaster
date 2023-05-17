@@ -63,7 +63,7 @@ export const HomeView = ({ navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         locations={[0, 0.5, 1]}
-        style={{ width: '100%' }}
+        style={{ width: '100%', height: '20%' }}
       >
         <SafeAreaView style={[styles.containerHeader, styles.AndroidSafeArea]}>
           <Image
@@ -157,12 +157,14 @@ const styles = StyleSheet.create({
   containerHeader: {
     width: '100%',
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    height: '100%'
   },
   logo: {
     resizeMode: 'contain',
-    flex: 2,
-    marginLeft: 10
+    flex: 3,
+    marginLeft: 30,
+    margin: 20
   },
   headerButtonGroup: {
     flex: 2,
