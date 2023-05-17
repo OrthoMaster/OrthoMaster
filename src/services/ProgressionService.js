@@ -52,13 +52,16 @@ export const getUserProgression = async () => {
       
   }
 
-  export const getOfficeProgression = async (officeId) => {
+  export const getOfficesProgressionForManager = async (managerId) => {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.accessToken;
   
     return axios
-      .get(route+"/office/"+officeId, {
+      .get(route+"/offices", {
         headers: { Authorization: authHeader },
+        params:{
+          manager_id: managerId
+        }
   
       })
       .then((response) => {

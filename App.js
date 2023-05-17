@@ -1,13 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-
 import { NavigationContainer } from '@react-navigation/native';
 
-import { useSelector, useDispatch } from 'react-redux'
+import { selectIsLoggedIn, selectIsLoading, selectUserCurrentSession } from './src/reducers/auth';
 import { checkUserConnection } from './src/actions/auth';
 
-import { selectIsLoggedIn, selectIsLoading, selectUserCurrentSession } from './src/reducers/auth';
-
+import { useSelector, useDispatch } from 'react-redux';
 import { restoreLocalConfigAsync } from './src/utils';
 import checkVersion from 'react-native-store-version';
 import Constants from 'expo-constants';
@@ -15,7 +13,6 @@ import {
   QueryClientProvider,
 } from 'react-query'
 import { OmQueryClient } from './src/component/OmQueryClient';
-
 import { Alert } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
@@ -23,9 +20,7 @@ import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingContent } from './src/component/LoadingContent';
 import { AlertVersion } from './src/component/AlertVersion';
 import { ErrorHandler } from './src/component/ErrorHandler';
-
-
-
+import { NotificationHandler } from './src/component/NotificationHandler';
 
 export default function App({ navigation }) {
 
@@ -59,23 +54,27 @@ export default function App({ navigation }) {
 
 
 
-  return (
-      <ErrorHandler>
-        <QueryClientProvider client={OmQueryClient}>
-          <NavigationContainer>
 
-            {
-              isLoggedIn && user.enabled == 1 ? (
+  return (
+    <ErrorHandler>
+      <QueryClientProvider client={OmQueryClient}>
+        <NavigationContainer>
+          {
+            isLoggedIn && user.enabled == 1 ? (
+              <NotificationHandler>
                 <AppTab />
-              ) : isLoading
-                ? (
-                  <LoadingContent />
-                ) : (
-                  <AuthStack />
-                )}
-            <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
-          </NavigationContainer>
-        </QueryClientProvider>
-      </ErrorHandler>
+              </NotificationHandler>
+            ) : isLoading
+              ? (
+                <LoadingContent />
+              ) : (
+                <AuthStack />
+              )}
+          <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
+        </NavigationContainer>
+      </QueryClientProvider>
+    </ErrorHandler>
   );
 }
+
+

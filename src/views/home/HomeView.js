@@ -50,7 +50,7 @@ export const HomeView = ({ navigation }) => {
       setRefreshing(false);
     }, 2000);
   }, []);
-  
+
 
   return (
     <View>
@@ -60,10 +60,10 @@ export const HomeView = ({ navigation }) => {
       />
       <LinearGradient
         colors={['#E9650E', '#E65909', '#E24C01']}
-        start={{x:0, y: 0}}
-        end={{x:1,y:0}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
         locations={[0, 0.5, 1]}
-        style={{width: '100%'}}
+        style={{ width: '100%', height: '20%' }}
       >
         <SafeAreaView style={[styles.containerHeader, styles.AndroidSafeArea]}>
           <Image
@@ -71,6 +71,7 @@ export const HomeView = ({ navigation }) => {
             source={require('../../../assets/home/header/logo.png')}
           />
           <View style={styles.headerButtonGroup}>
+
 
             <TouchableOpacity
               style={styles.headerButton}
@@ -91,7 +92,7 @@ export const HomeView = ({ navigation }) => {
       </LinearGradient>
 
       <ScrollView style={{ backgroundColor: 'white' }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <HomeHeader navigation={navigation} userName={authState.userCurrentSession.name} />
         <View style={styles.carouselContainer}>
@@ -117,7 +118,7 @@ export const HomeView = ({ navigation }) => {
           </View>
           <OrthoCarousel entries={flashPreview.data} navigation={navigation} />
         </View>
-        <View style={{height: 200}}/>
+        <View style={{ height: 200 }} />
       </ScrollView>
 
     </View>
@@ -156,12 +157,14 @@ const styles = StyleSheet.create({
   containerHeader: {
     width: '100%',
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    height: '100%'
   },
   logo: {
     resizeMode: 'contain',
-    flex: 2,
-    marginLeft: 10
+    flex: 3,
+    marginLeft: 30,
+    margin: 20
   },
   headerButtonGroup: {
     flex: 2,
@@ -173,6 +176,14 @@ const styles = StyleSheet.create({
   },
   AndroidSafeArea: {
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
+  },
+  notificationIndicator: {
+    backgroundColor: 'red',
+    width: 10,
+    height: 10,
+    borderRadius: 100,
+    position: 'absolute',
+    alignSelf: 'flex-end'
   }
 })
 

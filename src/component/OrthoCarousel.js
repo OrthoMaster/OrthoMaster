@@ -9,7 +9,6 @@ import {
 import { useQuery } from 'react-query';
 import Carousel from '../../snap-carousel/src/carousel/Carousel';
 import { getS3Image } from '../services/S3Service'
-import { S3ContentPathGenerator } from '../utils';
 
 
 

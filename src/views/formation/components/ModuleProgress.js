@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,7 +12,7 @@ export const MODULE_NOT_STARTED = 0
 export const MODULE_STARTED = 1
 export const MODULE_FINISHED = 2
 
-export const ModuleProgress = ({
+const ModuleProgress = ({
   radius = 70,
   strokeWidth = 10,
   color = "tomato",
@@ -24,6 +24,7 @@ export const ModuleProgress = ({
   const circleRef = React.useRef();
   const circumference = 2 * Math.PI * radius;
   const halfCircle = radius + strokeWidth;
+
 
   useEffect(() => {
 
@@ -166,3 +167,12 @@ export const ModuleProgress = ({
 const styles = StyleSheet.create({
   text: { fontWeight: '900', textAlign: 'center' },
 });
+
+const arePropsEqual = (prevProps, nextProps) => {
+
+  return prevProps.nbLesson === nextProps.nbLesson 
+  && prevProps.nbLessonValidate === nextProps.nbLessonValidate
+  && prevProps.moduleImg === nextProps.moduleImg
+}
+
+export default memo(ModuleProgress, arePropsEqual);
