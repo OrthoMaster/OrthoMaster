@@ -23,8 +23,6 @@ import { NotificationHandler } from './src/component/NotificationHandler';
 
 export default function App({ navigation }) {
 
-export default function App({ navigation }) {
-
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
   const user = useSelector(selectUserCurrentSession)
