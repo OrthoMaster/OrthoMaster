@@ -1,8 +1,8 @@
 {
   "name": "orthomaster",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "scripts": {
-    "api-local": "API_URL=http://192.168.1.19 npx expo start",
+    "api-local": "API_URL=http://172.20.10.3 npx expo start",
     "api-distant": "API_URL=https://api.orthomaster.fr npx expo start",
     "api-local-no-dev": "API_URL=http://192.168.1.19 npx expo start --no-dev --minify",
     "api-distant-no-dev": "API_URL=https://api.orthomaster.fr npx expo start --no-dev --minify",
@@ -55,8 +55,7 @@
     "react-native-youtube-iframe": "^2.2.2",
     "react-query": "^3.39.2",
     "react-redux": "^8.0.5",
-    "react-xml-parser": "^1.1.8",
-    "react-native-gesture-handler": "~2.5.0"
+    "react-xml-parser": "^1.1.8"
   },
   "private": true,
   "devDependencies": {
