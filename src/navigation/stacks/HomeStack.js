@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import  { HomeView }  from '../../views/home/HomeView';
 import  SearchView  from '../../views/search/SearchView';
@@ -10,7 +10,7 @@ import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 import { LessonEndingView } from '../../views/content/LessonEndingView';
 
 
-const HomeStackNav = createNativeStackNavigator();
+const HomeStackNav = createStackNavigator();
 export const HomeStack = (user) => {
   return (
     <HomeStackNav.Navigator>

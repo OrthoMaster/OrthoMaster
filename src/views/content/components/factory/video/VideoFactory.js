@@ -32,7 +32,8 @@ export const VideoFactory = ({ video }) => {
         <View pointerEvents={'none'}>
             <YoutubePlayer
                 webViewProps={{
-                    androidLayerType: 'none'
+                    androidLayerType: 'none',
+                    androidHardwareAccelerationDisabled: false
                 }}
                 ref={playerRef}
                 height={Dimensions.get('screen').width * 9 / 16}
@@ -48,16 +49,6 @@ export const VideoFactory = ({ video }) => {
                     }
                 }}
             />
-            {/* <Text style={{color: '#ffffff'}}>{playerRef.current.getCurrentTime()}</Text> */}
-            {/* <TouchableOpacity
-                pointerEvents='none'
-                style={{
-                    width: Dimensions.get('screen').width,
-                    height: Dimensions.get('screen').width * 9 / 16,
-                    position: 'absolute',
-                    alignSelf: 'flex-end',
-                }
-                } /> */}
         </View>
         <VideoControls
             //videoRef={playerRef}

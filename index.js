@@ -1,4 +1,5 @@
 import React from 'react';
+import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 import { Provider } from 'react-redux'

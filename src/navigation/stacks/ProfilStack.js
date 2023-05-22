@@ -1,12 +1,12 @@
 import React from 'react'
 
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import { AccountView } from '../../views/account/AccountView';
 import { AccountProfile } from '../../views/account/menu/AccountProfile';
 
-const ProfilStackNav = createNativeStackNavigator();
+const ProfilStackNav = createStackNavigator();
 
 export const ProfilStack = () => {
   return (

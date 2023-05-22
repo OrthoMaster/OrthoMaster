@@ -25,7 +25,6 @@ export const registerForNotification = () => async (dispatch) => {
     if (Device.isDevice) {
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
         finalStatus = existingStatus;
-        console.log(finalStatus);
 
         if (Platform.OS === 'android') {
             Notifications.setNotificationChannelAsync('default', {

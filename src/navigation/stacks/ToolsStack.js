@@ -1,14 +1,14 @@
 import React from 'react'
 
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 
 import { ToolsView } from '../../views/tools/ToolsView';
 //import { QueChoisirView } from '../../views/tools/QueChoisir/QueChoisirView';
 
 
-const ToolsStackNav = createNativeStackNavigator();
+const ToolsStackNav = createStackNavigator();
 
 export const ToolsStack = ({navigation, route}) => {
 

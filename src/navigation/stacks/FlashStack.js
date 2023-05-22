@@ -1,7 +1,7 @@
 import React from 'react'
 
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import { FlashThemesView } from '../../views/flash/FlashThemesView';
 
@@ -10,7 +10,7 @@ import { FlashCategoriesView } from '../../views/flash/FlashCategoriesView';
 import { FlashSubcategoriesView } from '../../views/flash/FlashSubcategoriesView';
 
 
-const FlashStackNav = createNativeStackNavigator();
+const FlashStackNav = createStackNavigator();
 export const FlashStack = () => {
   return (
     <FlashStackNav.Navigator initialRouteName='flash-themes'>

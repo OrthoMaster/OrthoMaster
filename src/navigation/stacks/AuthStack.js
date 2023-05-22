@@ -1,13 +1,13 @@
 import React from 'react'
 
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import { LoginView } from '../../views/auth/LoginView';
 import { ResetPassword } from '../../views/auth/ResetPassword';
 import { AuthHome } from '../../views/auth/AuthHome';
 
-const AuthStackNav = createNativeStackNavigator();
+const AuthStackNav = createStackNavigator();
 export const AuthStack = () => {
   return (
     <AuthStackNav.Navigator initialRouteName='auth-init'>

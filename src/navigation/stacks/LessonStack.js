@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import { LessonsView } from "../../views/formation/LessonsView";
 import { FormationView } from '../../views/formation/FormationView';
@@ -14,7 +14,7 @@ import { LessonEndingView } from '../../views/content/LessonEndingView';
 //import DeviceInfo from 'react-native-device-info';
 
 
-const LessonStackNav = createNativeStackNavigator();
+const LessonStackNav = createStackNavigator();
 export const LessonStack = () => {
   return (
     <LessonStackNav.Navigator
