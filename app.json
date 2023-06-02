@@ -31,7 +31,7 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.hugotaieb.OrthoMaster",
-      "versionCode": 27,
+      "versionCode": 28,
       "googleServicesFile": "./google-services.json"
     },
     "extra": {
