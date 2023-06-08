@@ -37,13 +37,13 @@ export const ToolsView = ({ navigation }) => {
 
         <View
           style={styles.containerButtons}
-          //onPress={() => navigation.navigate('tools-que-choisir')}
+          onPress={() => navigation.navigate('tools-que-choisir')}
         >
           <Text style={styles.toolButtonText}>Bientôt disponible</Text>
         </View>
         {/* <TouchableOpacity
           style={styles.containerButtons}
-          //onPress={() => navigation.navigate('tools-que-choisir')}
+          onPress={() => navigation.navigate('tools-que-choisir')}
         >
           <Text style={styles.toolButtonText}>Commencer</Text>
           <Image 

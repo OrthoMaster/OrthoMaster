@@ -6,7 +6,7 @@ let route = Constants.manifest.extra.env.API_URL+"/user"
 
 export const changeUserPassword = async (passwords) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     const body = {
         oldPassword: passwords.oldPassword,

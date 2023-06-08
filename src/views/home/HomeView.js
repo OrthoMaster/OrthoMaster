@@ -28,18 +28,8 @@ export const HomeView = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const store = useStore()
   const authState = store.getState().auth
-  const qaPreview = useQuery("homeQaPreview", () => fetchQa(5), {
-    onError: (error) => {
-      throw error
-
-    }
-  });
-  const flashPreview = useQuery("homeFlashPreview", () => fetchFlashContent(0, 5), {
-    onError: (error) => {
-      throw error
-    },
-
-  });
+  const qaPreview = useQuery(['Home', 'GET', "qaPreview"], () => fetchQa(5));
+  const flashPreview = useQuery(['Home', 'GET', "flashPreview"], () => fetchFlashContent(0, 5));
 
 
   const onRefresh = useCallback(() => {

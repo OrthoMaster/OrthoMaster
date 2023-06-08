@@ -18,7 +18,7 @@ import { ColorLuminance } from '../../utils.js'
 
 
 const FlashContentButton = ({ config, onPress }) => {
-    const imageUrl = useQuery(['flashContentThumbnail', config.id_content], () => getS3Image(config.s3_path+"/"+config.title+ '/logo.png'))
+    const imageUrl = useQuery(['Flash', 'GET', 'contentThumbnail', config.id_content], () => getS3Image(config.s3_path+"/"+config.title+ '/logo.png'))
 
     return (
         <TouchableOpacity
@@ -37,10 +37,7 @@ const FlashContentButton = ({ config, onPress }) => {
 
 const FlashSubcategoryButton = ({ item, onPress, theme_color }) => {
     const [isOpen, setIsOpen] = useState(false)
-    const { data, refetch, isLoading } = useQuery(["fetchContentBySubcategory", item.id], () => fetchFlashContent(item.id), {
-        onError: (error) => {
-            throw error
-        },
+    const { data, refetch, isLoading } = useQuery(['Flash', 'GET', "contentBySubcategory", item.id], () => fetchFlashContent(item.id), {
         enabled: false // disable this query from automatically running
     });
 
@@ -87,11 +84,7 @@ const FlashSubcategoryButton = ({ item, onPress, theme_color }) => {
 export const FlashSubcategoriesView = ({ navigation, route }) => {
     const [refreshing, setRefreshing] = useState(false)
 
-    const subcategories = useQuery('fetchFlashSubcategoriesByCategory', () => fetchFlashSubcategoriesByCategory(route.params.category_id), {
-        onError: (error) => {
-            throw error
-        }
-    })
+    const subcategories = useQuery(['Flash', 'GET', 'flashSubcategoriesByCategory'], () => fetchFlashSubcategoriesByCategory(route.params.category_id))
 
     useEffect(() => {
         navigation.setOptions({ title: route.params.category_title })

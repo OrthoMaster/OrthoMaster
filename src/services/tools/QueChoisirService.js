@@ -8,7 +8,7 @@ let route = Constants.manifest.extra.env.API_URL + "/tools/queChoisir"
 
 export const getAPIqueChoisirStep = async (questionRef, tool) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(route + "/step", {
@@ -28,7 +28,7 @@ export const getAPIqueChoisirStep = async (questionRef, tool) => {
 
 export const getAPIqueChoisirRedFlags = async (tool) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(route + "/redflags", {

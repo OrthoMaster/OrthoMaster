@@ -8,7 +8,7 @@ export const fetchSearchList = async ({ contentType = null, filters = null, body
 
   const config = await restoreLocalConfigAsync()
 
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(route, {

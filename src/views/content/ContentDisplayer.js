@@ -39,20 +39,13 @@ export function ContentDisplayer({ route, navigation }) {
 
   };
 
-  const xmlContent = useQuery(['fetchLessonContent', content.id_content], () => fetchLessonContent(content.s3_path + '/' + content.title + '/content.xml'), {
+  const xmlContent = useQuery(['Content', 'GET', 'lessonContent', content.id_content], () => fetchLessonContent(content.s3_path + '/' + content.title + '/content.xml'), {
     onSuccess: (xml) => {
       initContent(xml)
-    },
-    onError: (error) => {
-      throw error
     }
   });
 
-  const mutation = useMutation(saveLogtimeOnLesson, {
-    onError: (error) => {
-      throw error
-    }
-  });
+  const mutation = useMutation(saveLogtimeOnLesson);
 
   const saveLogs = async (log) => {
     await mutation.mutateAsync(log)

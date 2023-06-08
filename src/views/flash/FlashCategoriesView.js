@@ -28,11 +28,7 @@ const FlashCategoryButton = ({ item, onPress, theme_color }) => {
 export const FlashCategoriesView = ({ navigation, route }) => {
 
 
-    const categories = useQuery('fetchFlashCategoriesByTheme', () => fetchFlashCategoriesByTheme(route.params.theme_id), {
-        onError: (error) => {
-            throw error
-        }
-    })
+    const categories = useQuery(['Flash', 'GET', 'flashCategoriesByTheme'], () => fetchFlashCategoriesByTheme(route.params.theme_id))
 
     useEffect(() => {
         navigation.setOptions({ title: route.params.theme_title })

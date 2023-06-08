@@ -13,7 +13,7 @@ import { getS3Image } from '../services/S3Service'
 
 
 const CarousselCard = ({ item, navigation }) => {
-    const imageUrl = useQuery(['fetchHomeContentThumbnail', item.id_content, item.title], () => getS3Image(`${item.s3_path}/${item.title}/logo.png`))
+    const imageUrl = useQuery(['Home','GET','contentThumbnail', item.id_content, item.title], () => getS3Image(`${item.s3_path}/${item.title}/logo.png`))
     
 
     return (

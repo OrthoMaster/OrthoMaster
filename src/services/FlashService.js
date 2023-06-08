@@ -8,7 +8,7 @@ let route = Constants.manifest.extra.env.API_URL + "/flash"
 
 export const fetchFlashContent = async (subcategory_id = 0, limit = 0) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   let params = {}
   subcategory_id > 0 ? params.subcategory_id = subcategory_id : params
@@ -31,7 +31,7 @@ export const fetchFlashContent = async (subcategory_id = 0, limit = 0) => {
 export const fetchFlashCategoriesByTheme = async (theme_id) => {
 
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
 
   return axios
@@ -52,7 +52,7 @@ export const fetchFlashCategoriesByTheme = async (theme_id) => {
 export const fetchFlashSubcategoriesByCategory = async (category_id) => {
 
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
 
   return axios

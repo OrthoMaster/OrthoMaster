@@ -9,7 +9,7 @@ let route = Constants.manifest.extra.env.API_URL+"/contents"
 export const fetchQa = async (limit = 0) => {
 
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(route + '/qa', {

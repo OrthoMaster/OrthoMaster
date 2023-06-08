@@ -7,7 +7,7 @@ let route = Constants.manifest.extra.env.API_URL+"/modules"
 
 export const fetchModulesWithUserProgression = async () => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
 
   return axios

@@ -1,23 +1,28 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 export const getCurrentDate = () => {
-  var date = new Date()
+	var date = new Date()
 
-  return (date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' +
-    date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds());
+	return (date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' +
+		date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds());
 }
 
 export const restoreLocalConfigAsync = async () => {
 
-  let config = await AsyncStorage.getItem('config', (error, result) => {
-    if (error) {
-      throw error
-    }
-    return result
-  })
+	let config = await AsyncStorage.getItem('user', (error, result) => {
+		if (error) {
+			console.log(error);
+			throw error
+		}
+		return result
+	})
 
-  return JSON.parse(config)
+	let token = await SecureStore.getItemAsync('JWT');
+	
+
+	return { user: JSON.parse(config), JWT: token }
 }
 
 
@@ -26,16 +31,16 @@ export const ColorLuminance = (hex, lum) => {
 	// validate hex string
 	hex = String(hex).replace(/[^0-9a-f]/gi, '');
 	if (hex.length < 6) {
-		hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+		hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
 	}
 	lum = lum || 0;
 
 	// convert to decimal and change luminosity
 	var rgb = "#", c, i;
 	for (i = 0; i < 3; i++) {
-		c = parseInt(hex.substr(i*2,2), 16);
+		c = parseInt(hex.substr(i * 2, 2), 16);
 		c = Math.round(Math.min(Math.max(0, c + (c * lum)), 255)).toString(16);
-		rgb += ("00"+c).substr(c.length);
+		rgb += ("00" + c).substr(c.length);
 	}
 
 	return rgb;

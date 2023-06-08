@@ -9,7 +9,7 @@ let route = Constants.manifest.extra.env.API_URL+"/s3"
 
 export const getS3Image = async (path) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(route + "/content", {

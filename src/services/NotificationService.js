@@ -11,7 +11,7 @@ let route = Constants.manifest.extra.env.API_URL + "/notification"
 
 export const registerUserToNotification = async (pushToken) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     return axios
         .post(route + "/endpoint/create",

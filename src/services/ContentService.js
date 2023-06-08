@@ -9,7 +9,7 @@ let route = Constants.manifest.extra.env.API_URL+"/contents"
 
 export const fetchLessonByModuleWithProgression = async (idModule) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(route + "/module/" + idModule + "/user/" + config.user.id_user, {
@@ -29,7 +29,7 @@ export const fetchLessonContent = async (content) => {
 
 export const getUserNextLesson = async () => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(route + "/user/" + config.user.id_user + "/nextLesson", {

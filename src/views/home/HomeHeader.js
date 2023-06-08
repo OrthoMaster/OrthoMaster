@@ -15,12 +15,9 @@ import { useQuery } from 'react-query';
 import { getUserNextLesson } from '../../services/ContentService';
 
 export const HomeHeader = ({ navigation, userName }) => {
-    const nextLesson = useQuery('getUserNextLesson', getUserNextLesson, {
+    const nextLesson = useQuery(['Home', 'GET', 'userNextLesson'], getUserNextLesson, {
         refetchOnWindowFocus: false,
-        enabled: false,
-        onError: (error) => {
-            throw error
-        }
+        enabled: false
     })
 
 

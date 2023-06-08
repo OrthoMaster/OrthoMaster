@@ -9,10 +9,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { restoreLocalConfigAsync } from './src/utils';
 import checkVersion from 'react-native-store-version';
 import Constants from 'expo-constants';
-import {
-  QueryClientProvider,
-} from 'react-query'
-import { OmQueryClient } from './src/component/OmQueryClient';
+
 import { Alert } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
@@ -21,6 +18,7 @@ import { LoadingContent } from './src/component/LoadingContent';
 import { AlertVersion } from './src/component/AlertVersion';
 import { ErrorHandler } from './src/component/ErrorHandler';
 import { NotificationHandler } from './src/component/NotificationHandler';
+import { MyQueryProvider } from './src/component/MyQueryProvider';
 
 export default function App({ navigation }) {
 
@@ -57,7 +55,7 @@ export default function App({ navigation }) {
 
   return (
     <ErrorHandler>
-      <QueryClientProvider client={OmQueryClient}>
+      <MyQueryProvider>
         <NavigationContainer>
           {
             isLoggedIn && user.enabled == 1 ? (
@@ -72,7 +70,7 @@ export default function App({ navigation }) {
               )}
           <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
         </NavigationContainer>
-      </QueryClientProvider>
+      </MyQueryProvider>
     </ErrorHandler>
   );
 }

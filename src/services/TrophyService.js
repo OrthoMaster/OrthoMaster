@@ -7,7 +7,7 @@ let route = Constants.manifest.extra.env.API_URL+"/trophy"
 
 export const getTrophyProgressBasedOnModule = async (id_module) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
 
   return axios
@@ -23,7 +23,7 @@ export const getTrophyProgressBasedOnModule = async (id_module) => {
 
 export const getUserTrophy = async (id_user) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   const id = id_user != null ? id_user : config.user.id_user
 
@@ -39,7 +39,7 @@ export const getUserTrophy = async (id_user) => {
 
 export const postNewUserTrophy = async (id_trophy) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
 
   return axios

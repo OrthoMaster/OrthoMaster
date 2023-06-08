@@ -59,11 +59,7 @@ export const AccountView = ({ navigation }) => {
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
-  const infos = useQuery('getOfficeInfo', () => getOfficeInfos(user.office_id), {
-    onError: (e) => {
-      throw e
-    }
-  })
+  const infos = useQuery(['Account','GET','officeInfo'], () => getOfficeInfos(user.office_id))
 
 
   const onRefresh = useCallback(() => {

@@ -19,7 +19,7 @@ import { TrophyCard } from './trophies/TrophieCard'
 
 const UserProgress = ({ user, refreshing }) => {
     const [isToggle, setIsToggle] = useState(false)
-    const userTrophy = useQuery(['getCollaboratorTrophies', user.id_user], () => getUserTrophy(user.id_user), {
+    const userTrophy = useQuery(['Account','GET','collaboratorTrophies', user.id_user], () => getUserTrophy(user.id_user), {
         enabled: false
     })
 
@@ -87,10 +87,7 @@ const UserProgress = ({ user, refreshing }) => {
 
 const OfficeButton = ({ office }) => {
     const [isToggle, setIsToggle] = useState(false)
-    const collaborators = useQuery(['fetchOfficeCollaboratorsProgress', office.id_office], () => getCollaboratorsProgression(office.id_office), {
-        onError: (error) => {
-            throw error
-        },
+    const collaborators = useQuery(['Account','GET','officeCollaboratorsProgress', office.id_office], () => getCollaboratorsProgression(office.id_office), {
         enabled: false
     })
 
@@ -132,11 +129,7 @@ const OfficeButton = ({ office }) => {
 }
 
 export const AccountOfficesProgress = ({ managerId, refreshing }) => {
-    const office = useQuery('fetchOfficeProgress', () => getOfficesProgressionForManager(managerId), {
-        onError: (error) => {
-            throw error
-        }
-    })
+    const office = useQuery(['Account', 'GET', 'officeProgress'], () => getOfficesProgressionForManager(managerId))
 
     useEffect(() => {
         if (refreshing) {

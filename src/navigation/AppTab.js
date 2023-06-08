@@ -22,12 +22,7 @@ const Tab = createBottomTabNavigator();
 
 export const AppTab = ({}) => {
   const appState = useRef(AppState.currentState);
-  const mutation = useMutation(saveLogtimeOnApp, {
-    onError: (error) => {
-      throw error
-    },
-    retry: 3
-  });
+  const mutation = useMutation(saveLogtimeOnApp);
 
   var launchDate = getCurrentDate()
 

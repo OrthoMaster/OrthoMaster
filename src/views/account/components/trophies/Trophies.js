@@ -13,7 +13,7 @@ import { getUserTrophy } from '../../../../services/TrophyService'
 import { TrophyCard } from './TrophieCard'
 
 export const Trophies = ({refreshing}) => {
-    const userTrophy = useQuery('getUserTrophy', ()=> getUserTrophy(null))
+    const userTrophy = useQuery(['Account', 'GET', 'userTrophy'], ()=> getUserTrophy(null))
     
 
     useEffect(() => {

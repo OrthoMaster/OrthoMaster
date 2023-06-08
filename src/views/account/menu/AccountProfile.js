@@ -63,9 +63,6 @@ export const AccountProfile = () => {
     const [statusText, setStatusText] = useState('')
 
     const changePasswordMutation = useMutation('changePassword', changeUserPassword, {
-        onError: (error) => {
-            throw error
-        },
         onSuccess: (msg) => {
             setStatusText(msg)
         }

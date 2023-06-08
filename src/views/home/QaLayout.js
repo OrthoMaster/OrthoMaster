@@ -24,18 +24,14 @@ export const QaLayout = ({ navigation, route }) => {
 
   const [filters, setFilters] = useState(null)
 
-  const qaList = useQuery("qaList", () => fetchSearchList({
+  const qaList = useQuery(['Qa', 'GET', "qaList"], () => fetchSearchList({
     contentType: 'qa',
     filters: filters,
     body: null,
     searchText: null
   }
     , null
-  ), {
-    onError: (error) => {
-      throw error
-    }
-  })
+  ))
 
 
   useEffect(() => {

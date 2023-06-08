@@ -7,7 +7,7 @@ let route = Constants.manifest.extra.env.API_URL+"/progress"
 
 export const postUserLessonStatus = async (obj) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     const body = {
         status: obj.status,
@@ -24,7 +24,7 @@ export const postUserLessonStatus = async (obj) => {
 
 export const getUserProgression = async () => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
   
     return axios
       .get(route+"/user/"+config.user.id_user, {
@@ -39,7 +39,7 @@ export const getUserProgression = async () => {
 
   export const getCollaboratorsProgression = async (officeId) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
   
     return axios
       .get(route+"/office/" + officeId + "/collaborators", {
@@ -54,7 +54,7 @@ export const getUserProgression = async () => {
 
   export const getOfficesProgressionForManager = async (managerId) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
   
     return axios
       .get(route+"/offices", {

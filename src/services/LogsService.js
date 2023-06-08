@@ -7,7 +7,7 @@ let route = Constants.manifest.extra.env.API_URL+"/logtime"
 
 export const saveLogtimeOnLesson = async (log) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     const body = {
         login: log.login,
@@ -31,7 +31,7 @@ export const saveLogtimeOnLesson = async (log) => {
 
 export const saveLogtimeOnApp = async (log) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     const body = {
         login: log.login,

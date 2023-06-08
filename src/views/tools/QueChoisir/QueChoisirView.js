@@ -108,10 +108,7 @@ export const QueChoisirView = ({ navigation, route }) => {
     const [userSelection, setUserSelection] = useState([])
 
 
-    const getStep = useQuery(['getQueChoisirStep', nextQuestionId], () => getAPIqueChoisirStep(nextQuestionId), {
-        onError: (e) => {
-            throw e
-        },
+    const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', nextQuestionId], () => getAPIqueChoisirStep(nextQuestionId), {
         onSuccess: (data) => {
             setCurrentQuestion(data.question)
             setCurrentResponses(data.responses)

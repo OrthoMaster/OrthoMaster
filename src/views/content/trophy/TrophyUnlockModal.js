@@ -16,11 +16,7 @@ import { postNewUserTrophy } from "../../../services/TrophyService";
 
 export const TrophyUnlockModal = ({ trophy, imgUrl }) => {
     const [modalVisible, setModalVisible] = useState(true)
-    const postNewTrophy = useMutation(postNewUserTrophy, {
-        onSuccess: (data) => {
-            //console.log(data);
-        }
-    })
+    const postNewTrophy = useMutation(postNewUserTrophy)
 
     useEffect(() => {
         postNewTrophy.mutate(trophy.trophy.id_trophy)

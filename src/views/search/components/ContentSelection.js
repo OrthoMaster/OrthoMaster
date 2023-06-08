@@ -17,12 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from 'react-query';
 
 const SearchCardDefault = ({ card, onSelect }) => {
-    const thumbnail = useQuery(['fetchContentThumbnail', card.content.id_content, card.content.title],
-    () => getS3Image(createS3Path(card)), {
-        onError: (err) => {
-            throw err
-        }
-    })
+    const thumbnail = useQuery(['ContentSelection', 'GET', 'contentThumbnail', card.content.id_content, card.content.title],
+    () => getS3Image(createS3Path(card)))
 
     const createS3Path = (cardInfo) => {
         let path = cardInfo.content.s3_path
@@ -127,12 +123,8 @@ const SearchCardDefault = ({ card, onSelect }) => {
 
 
 const QaCard = ({ card, onSelect }) => {
-    const thumbnail = useQuery(['fetchQaThumbnail', card.content.id_content, card.content.title],
-    () => getS3Image(`${card.content.s3_path}/${card.content.title}/logo.png`), {
-        onError: (err) => {
-            throw err
-        }
-    })
+    const thumbnail = useQuery(['Qa', 'GET', 'qaThumbnail', card.content.id_content, card.content.title],
+    () => getS3Image(`${card.content.s3_path}/${card.content.title}/logo.png`))
 
     return (
         <TouchableOpacity style={stylesQa.card}

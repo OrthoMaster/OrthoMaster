@@ -8,7 +8,7 @@ let route = Constants.manifest.extra.env.API_URL+"/office"
 
 export const getOfficeInfos = async (officeId) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
   
     return axios
       .get(route+"/"+officeId, {

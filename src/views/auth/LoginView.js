@@ -32,9 +32,6 @@ export const LoginView = ({ navigation }) => {
         }
     })
     const userActivation = useMutation(activateUser, {
-        onError: (error) => {
-            throw error
-        },
         onSuccess: (status) => {
             switch (status) {
                 case 1:

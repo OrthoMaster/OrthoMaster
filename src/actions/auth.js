@@ -10,21 +10,20 @@ import {
 import AuthService from "../services/AuthService";
 
 
-export const login = (username, password) => (dispatch) => {
-  return AuthService.login(username, password).then(
-    (data) => {
-      dispatch({
-        type: LOGIN_SUCCESS,
-        payload: { user: data.user, accessToken: data.accessToken },
-      });
-      return Promise.resolve();
-    }
-  ).catch((e)=>{
+export const login = (username, password) => async (dispatch) => {
+  try {
+    const data = await AuthService.login(username, password);
     dispatch({
-          type: LOGIN_FAIL,
-          payload: { msg: e.response.data.msg}
-        });
-  })
+      type: LOGIN_SUCCESS,
+      payload: { user: data.user },
+    });
+    return await Promise.resolve();
+  } catch (e) {
+    dispatch({
+      type: LOGIN_FAIL,
+      payload: { msg: e.response.data.msg }
+    });
+  }
 };
 
 
@@ -35,15 +34,15 @@ export const logout = () => (dispatch) => {
   });
 };
 
-export const checkUserConnection = (config) => (dispatch) => {
-  if (!config) {
+export const checkUserConnection = (config) => async (dispatch) => {
+  if (config.JWT == null) {
     dispatch({
       type: TOKEN_INVALID
     })
     return
   }
 
-  AuthService.checkUserConnection(config).then(
+  AuthService.checkUserConnection(config.JWT).then(
     (data) => {
       dispatch({
         type: TOKEN_VALID,
