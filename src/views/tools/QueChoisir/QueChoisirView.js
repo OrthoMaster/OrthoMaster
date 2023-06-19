@@ -100,7 +100,7 @@ const ResponseButton = ({ element, onPress, history }) => {
 
 
 export const QueChoisirView = ({ navigation, route }) => {
-    const [nextQuestionId, setNextQuestionId] = useState()
+    const [nextQuestionRef, setNextQuestionRef] = useState('A')
     const [currentQuestion, setCurrentQuestion] = useState(null)
     const [currentResponses, setCurrentResponses] = useState(null)
     const [userHistory, setUserHistory] = useState([])
@@ -108,10 +108,13 @@ export const QueChoisirView = ({ navigation, route }) => {
     const [userSelection, setUserSelection] = useState([])
 
 
-    const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', nextQuestionId], () => getAPIqueChoisirStep(nextQuestionId), {
+    const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', nextQuestionRef], () => getAPIqueChoisirStep(nextQuestionRef, 'Ceinture lombaire'), {
         onSuccess: (data) => {
             setCurrentQuestion(data.question)
             setCurrentResponses(data.responses)
+        },
+        onError: (err) => {
+            //console.log(err.response);
         }
     })
 
@@ -159,13 +162,13 @@ export const QueChoisirView = ({ navigation, route }) => {
                             evaluateExpression(splitedExp[1], userHistory)
                                 .then((val) => {
                                     if (val) {
-                                        setNextQuestionId(splitedExp[0])
+                                        setNextQuestionRef(splitedExp[0])
                                     } else {
-                                        setNextQuestionId(userSelection[userSelection.length - 1].response.next_q_id);
+                                        setNextQuestionRef(userSelection[userSelection.length - 1].response.next_q_ref);
                                     }
                                 })
                         } else {
-                            setNextQuestionId(userSelection[userSelection.length - 1].response.next_q_id);
+                            setNextQuestionRef(userSelection[userSelection.length - 1].response.next_q_ref);
                         }
 
                         setUserSelection([])

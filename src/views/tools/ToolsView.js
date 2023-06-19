@@ -35,13 +35,13 @@ export const ToolsView = ({ navigation }) => {
           Que choisir ?
         </Text>
 
-        <View
+        {/* <View
           style={styles.containerButtons}
           onPress={() => navigation.navigate('tools-que-choisir')}
         >
           <Text style={styles.toolButtonText}>Bientôt disponible</Text>
-        </View>
-        {/* <TouchableOpacity
+        </View> */}
+        <TouchableOpacity
           style={styles.containerButtons}
           onPress={() => navigation.navigate('tools-que-choisir')}
         >
@@ -50,7 +50,7 @@ export const ToolsView = ({ navigation }) => {
             style={styles.toolButtonIcon}
             source={require('../../../assets/navigation/right-arrow.png')}
           />
-        </TouchableOpacity> */}
+        </TouchableOpacity>
       </LinearGradient>
     </SafeAreaView>
   );
