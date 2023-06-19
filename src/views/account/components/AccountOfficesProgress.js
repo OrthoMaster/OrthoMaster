@@ -128,7 +128,7 @@ const OfficeButton = ({ office }) => {
 
 }
 
-export const AccountOfficesProgress = ({ managerId, refreshing }) => {
+export const AccountOfficesProgress = ({ managerId, refreshing, navigation }) => {
     const office = useQuery(['Account', 'GET', 'officeProgress'], () => getOfficesProgressionForManager(managerId))
 
     useEffect(() => {
@@ -142,7 +142,18 @@ export const AccountOfficesProgress = ({ managerId, refreshing }) => {
     return (
         <View style={styles.container}>
             <View style={styles.displayContainer}>
-                <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mes collaborateurs</Text>
+                <View style={styles.headerContainer}>
+                    <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mes collaborateurs</Text>
+                    <TouchableOpacity style={styles.headerButton}
+                    onPress={()=>{
+                        navigation.push('account-team-manager', {
+                            managerId: managerId
+                        })
+                    }}
+                    >
+                        <Text style={styles.headerButtonText}>Gérer ⚙️</Text>
+                    </TouchableOpacity>
+                </View>
 
                 {office.data.map((value, key) => {
                     return <OfficeButton office={value} key={key} />
@@ -171,6 +182,22 @@ const styles = StyleSheet.create({
         width: '95%',
         paddingBottom: 20,
         marginVertical: 5
+    },
+    headerContainer: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+    },
+    headerButton: {
+        backgroundColor: '#ffffff',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 5
+    },
+    headerButtonText: {
+        fontWeight: 'bold',
+        color: '#F76F10'
     },
     officeStat: {
         fontSize: 40,
