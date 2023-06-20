@@ -10,10 +10,45 @@ import {
     SafeAreaView,
     Image, useWindowDimensions,
 } from "react-native"
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState } from "react"
 import { useQuery } from "react-query"
 import { getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
-import {pushKeySchema} from "expo-cli/build/credentials/credentials";
+import BottomArrow from '../../../../assets/queChoisir/bottom_arrow.svg'
+import UpperArrow from '../../../../assets/queChoisir/upper_arrow.svg'
+import { LinearGradient } from "expo-linear-gradient";
+
+
+const ResponseButton = ({ element, onPress, history }) => {
+    const [pressed, setPressed] = useState(false)
+    const [isDisplay, setIsDisplay] = useState(true)
+
+    useEffect(() => {
+        if (element.display_if) {
+            evaluateExpression(element.display_if, history)
+        .then((val) => {
+                    setIsDisplay(val)
+
+                })
+        }
+    }, [])
+
+    if (!isDisplay) return null
+    return (
+            <TouchableOpacity
+                key={element.id}
+                style={[styles.rectangleButton, { borderColor: pressed ? 'orange' : 'black'}]}
+                onPress={() => {
+                    onPress({
+                        response: element,
+                        status: !pressed
+                    });
+                    setPressed(!pressed);
+                }}
+            >
+                <Text style={styles.buttonTextQ}>{element.response}</Text>
+            </TouchableOpacity>
+)
+}
 
 const isLetter = (char) => {
     return char != null && char.length === 1 && char.match(/[a-z]/i) ? true : false;
@@ -48,7 +83,7 @@ const evaluateExpression = async (exp, userHistory) => {
 
 
     while (i < exp.length) {
-        
+
         if (isLetter(exp[i])) {
             refToCheck += exp[i]
         }
@@ -77,183 +112,114 @@ const evaluateExpression = async (exp, userHistory) => {
     return eval(toEvaluate)
 }
 
-const ResponseButton = ({ element, onPress, history }) => {
-    const [pressed, setPressed] = useState(false)
-    const [isDisplay, setIsDisplay] = useState(true)
-
-    useEffect(() => {
-        if (element.display_if) {
-            evaluateExpression(element.display_if, history)
-                .then((val) => {
-                    setIsDisplay(val)
-                })
-
-        }
-    }, [])
-
-
-    if (!isDisplay) return null
-    return (
-        <TouchableOpacity
-            style={[styles.rectangleButton, { backgroundColor: pressed ? 'orange' : 'grey' }]}
-            onPress={() => {
-                onPress({
-                    response: element,
-                    status: !pressed
-                })
-                setPressed(!pressed)
-            }}
-        >
-            <Text style={[styles.buttonTextQ, {backgroundColor: 'red'}]}>{element.response}</Text>
-        </TouchableOpacity>
-    )
-}
-
 
 export const QueChoisirView = ({ navigation, route }) => {
-    const [nextQuestionRef, setNextQuestionRef] = useState('A')
-    const [currentQuestion, setCurrentQuestion] = useState(null)
-    const [currentResponses, setCurrentResponses] = useState(null)
+    const [questionIndex, setQuestionIndex] = useState(0)
+    const [globalSteps, setGlobalSteps] = useState(null)
     const [userHistory, setUserHistory] = useState([])
-
     const [userSelection, setUserSelection] = useState([])
 
-    const [responsesCounter, setResponsesCounter] = useState(null);
-
-    const windowWidth = useWindowDimensions().width;
-    const maxWidth = Math.min(300, windowWidth * 0.9);
-
-    const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', nextQuestionRef], () => getAPIqueChoisirStep(nextQuestionRef, 'Ceinture lombaire'), {
+    const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', "Ceinture lombaire"], () => getAPIqueChoisirStep('Ceinture lombaire'), {
         onSuccess: (data) => {
-            setCurrentQuestion(data.question)
-            setCurrentResponses(data.responses)
+            setGlobalSteps(data);
         },
         onError: (err) => {
             //console.log(err.response);
         }
     })
-    function extractRefAndId(object) {
-        const { ref } = object.question;
-        const { value } = object.responses[0].response;
-        return ref + value;
-    }
-    const getResponseNumber = (elements, history) => {
-        let extractedData = [];
-        extractedData.push(history.map((item) => {return extractRefAndId(item)}));
-        console.log(extractedData);
-    }
 
+    if (globalSteps === null) return;
     return (<SafeAreaView style={styles.container}>
 
         <Image
             source={require('../../../../assets/queChoisir/tmp.png')}
             style={styles.image}
         />
-            <Text style={styles.heading}>Première question</Text>
-            {/*<FlatList*/}
-            {/*    data={currentResponses}*/}
-            {/*    renderItem={(item) => <ResponseButton element={item.item} key={item.index} history={userHistory} style={styles.buttonQ}*/}
-            {/*        onPress={(value) => {*/}
-            {/*            if (value.status) {*/}
-            {/*                setUserSelection(userSelection => [...userSelection, value])*/}
-            {/*            } else {*/}
-
-            {/*                var newSelection = userSelection.filter(function (obj) {*/}
-            {/*                    return obj.response.id !== value.response.id;*/}
-            {/*                });*/}
-            {/*                setUserSelection(newSelection)*/}
-
-            {/*            }*/}
-            {/*        }}*/}
-            {/*    />}*/}
-            {/*/>*/}
+            <Text style={styles.heading}>{globalSteps[questionIndex].question.question}</Text>
             <ScrollView centerContent={true} style={styles.quizScroll} contentContainerStyle={{ alignItems: 'center' }}>
                 <View style={[styles.quizContainer]}>
-                {currentResponses?.map((button, index) => {
-                    getResponseNumber(currentResponses, userHistory);
-                    return <ResponseButton element={button} key={index} history={userHistory}
-                                           onPress={(value) => {
-                                               if (value.status) {
-                                                   setUserSelection(userSelection => [...userSelection, value])
-
-                                               } else {
-                                                   var newSelection = userSelection.filter(function (obj) {
-                                                       return obj.response.id !== value.response.id;
-                                                   });
-                                                   console.log(newSelection)
-                                                   setUserSelection(newSelection)
-                                               }
-                                           }}
-                    />
+                {globalSteps[questionIndex].responses?.map((button, index) => {
+                        return <ResponseButton element={button} key={globalSteps[questionIndex].question.ref + button.value} history={userHistory}
+                                               onPress={(value) => {
+                                                   if (value.status) {
+                                                       setUserSelection(userSelection => [...userSelection, value])
+                                                   } else {
+                                                       var newSelection = userSelection.filter(function (obj) {
+                                                           return obj.response.id !== value.response.id;
+                                                       });
+                                                       setUserSelection(newSelection)
+                                                   }
+                                               }}
+                        />
                 })}
                     </View>
                 </ScrollView>
-    <TouchableOpacity style={{ backgroundColor: 'grey', width:50, height:75 }}
-                      onPress={() => {
-                          if (userSelection.length > 0) {
-                              let exp = userSelection[userSelection.length - 1].response.skip_to_if
+        <View style={styles.arrowContainer}>
+            <LinearGradient
+                colors={['#E8764A', '#EC4C70']}
+                style={styles.bottom_arrow}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+            >
+            <TouchableOpacity style={styles.bottom_arrow}
+                              onPress={() => {
+                                  if (userHistory.length > 0) {
+                                      setQuestionIndex(userHistory[userHistory.length - 1].question.ref.charCodeAt(0) - 65);
+                                      userHistory.pop();
+                                  }
+                              }}
+            >
+                    <UpperArrow height={50} width={50}/>
+            </TouchableOpacity>
+            </LinearGradient>
+            <LinearGradient
+                colors={['#E8764A', '#EC4C70']}
+                style={styles.bottom_arrow}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+            >
+            <TouchableOpacity style={styles.bottom_arrow}
+                              onPress={() => {
+                                  if (userSelection.length > 0) {
+                                      let exp = userSelection[userSelection.length - 1].response.skip_to_if
 
-                              setUserHistory(userHistory => [...userHistory, {
-                                  question: currentQuestion,
-                                  responses: userSelection
-                              }])
-                              if (exp) {
-                                  var splitedExp = exp.split(':')
-                                  evaluateExpression(splitedExp[1], userHistory)
-                                      .then((val) => {
-                                          if (val) {
-                                              setNextQuestionRef(splitedExp[0])
-                                          } else {
-                                              setNextQuestionRef(userSelection[userSelection.length - 1].response.next_q_ref);
-                                          }
-                                      })
-                              } else {
-                                  setNextQuestionRef(userSelection[userSelection.length - 1].response.next_q_ref);
-                              }
-
-                              setUserSelection([])
-                          }
-
-                      }}
-    >
-        <Text>Valider</Text>
-    </TouchableOpacity>
-
-        {/*<View style={{ backgroundColor: 'green' }}>*/}
-        {/*    {userHistory.map((element, index) => {*/}
-        {/*        return <Text key={index}>{element.question.ref}</Text>*/}
-        {/*    })}*/}
-        {/*</View>*/}
-
-        {/*<Text style={styles.questionText}>{currentQuestion ? currentQuestion.question : ""}</Text>*/}
-        {/*<View style={styles.responseContainer}>*/}
-        {/*    <FlatList*/}
-        {/*        data={currentResponses}*/}
-        {/*        renderItem={(item) => <ResponseButton element={item.item} key={item.index} history={userHistory}*/}
-        {/*            onPress={(value) => {*/}
-        {/*                if (value.status) {*/}
-        {/*                    setUserSelection(userSelection => [...userSelection, value])*/}
-        {/*                } else {*/}
-
-        {/*                    var newSelection = userSelection.filter(function (obj) {*/}
-        {/*                        return obj.response.id !== value.response.id;*/}
-        {/*                    });*/}
-        {/*                    setUserSelection(newSelection)*/}
-
-        {/*                }*/}
-        {/*            }}*/}
-        {/*        />}*/}
-        {/*    />*/}
+                                      setUserHistory(userHistory => [...userHistory, {
+                                          question: globalSteps[questionIndex].question,
+                                          responses: userSelection
+                                      }])
+                                      if (exp) {
+                                          var splitedExp = exp.split(':')
+                                          evaluateExpression(splitedExp[1], userHistory)
+                                              .then((val) => {
+                                                  if (val) {
+                                                      setQuestionIndex(splitedExp[0].charCodeAt(0) - 65)
+                                                  } else {
+                                                      setQuestionIndex(userSelection[userSelection.length - 1].response.next_q_ref.charCodeAt(0) - 65);
+                                                  }
+                                              })
+                                      } else {
+                                          setQuestionIndex(userSelection[userSelection.length - 1].response.next_q_ref.charCodeAt(0) - 65);
+                                      }
+                                      setUserSelection([])
+                                  }
+                              }}
+            >
+                <BottomArrow height={50} width={50}></BottomArrow>
+            </TouchableOpacity>
+            </LinearGradient>
+        </View>
     </SafeAreaView>)
 }
 
 const styles = StyleSheet.create({
-    listContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
+    arrowContainer:{
+        width: '100%',
+        flexWrap:'wrap',
+        flexDirection: 'row',
+        justifyContent:'space-evenly',
+        maxHeight: '35%',
     },
     rectangleButton: {
-        backgroundColor: '#F4F4F4',
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 8,
@@ -261,9 +227,9 @@ const styles = StyleSheet.create({
         minHeight: 100,
         width: '47%',
         justifyContent:'center',
+        borderWidth: 1,
     },
     quizContainer:{
-        backgroundColor: 'green',
         width: '100%',
         flexWrap:'wrap',
         flexDirection: 'row',
@@ -276,7 +242,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     quizScroll: {
-        backgroundColor: 'red',
         width: "100%",
     },
 
@@ -303,5 +268,12 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
+    },
+    bottom_arrow: {
+        borderRadius: 50,
+        height: "60%",
+        width: "20%",
+        alignItems:'center',
+        justifyContent:'center',
     },
 })

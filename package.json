@@ -2,7 +2,7 @@
   "name": "orthomaster",
   "version": "1.5.0",
   "scripts": {
-    "api-local": "API_URL=http://192.168.1.19 npx expo start",
+    "api-local": "API_URL=http://192.168.1.31:3030 npx expo start",
     "api-distant": "API_URL=https://api.orthomaster.fr npx expo start",
     "api-local-no-dev": "API_URL=http://192.168.1.19 npx expo start --no-dev --minify",
     "api-distant-no-dev": "API_URL=https://api.orthomaster.fr npx expo start --no-dev --minify",
@@ -33,6 +33,7 @@
     "expo-file-system": "~15.2.2",
     "expo-linear-gradient": "~12.1.2",
     "expo-notifications": "~0.18.1",
+    "expo-secure-store": "~12.1.1",
     "expo-splash-screen": "~0.18.2",
     "expo-status-bar": "~1.4.2",
     "expo-task-manager": "~11.1.1",
@@ -45,6 +46,7 @@
     "react-native": "0.71.8",
     "react-native-device-detection": "^0.2.1",
     "react-native-exception-handler": "^2.10.10",
+    "react-native-gesture-handler": "~2.9.0",
     "react-native-hyperlink": "^0.0.22",
     "react-native-image-pan-zoom": "^2.1.12",
     "react-native-input-spinner": "^1.7.12",
@@ -52,15 +54,14 @@
     "react-native-screens": "~3.20.0",
     "react-native-store-version": "^1.4.0",
     "react-native-svg": "13.4.0",
+    "react-native-svg-transformer": "^1.0.0",
     "react-native-swipe-gestures": "^1.0.5",
     "react-native-web": "~0.18.7",
     "react-native-webview": "11.26.0",
     "react-native-youtube-iframe": "^2.2.2",
     "react-query": "^3.39.2",
     "react-redux": "^8.0.5",
-    "react-xml-parser": "^1.1.8",
-    "react-native-gesture-handler": "~2.9.0",
-    "expo-secure-store": "~12.1.1"
+    "react-xml-parser": "^1.1.8"
   },
   "private": true,
   "devDependencies": {
