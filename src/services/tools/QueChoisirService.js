@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 
 let route = Constants.manifest.extra.env.API_URL + "/tools/queChoisir"
 
-export const getAPIqueChoisirStep = async (questionRef, tool) => {
+export const getAPIqueChoisirStep = async (tool) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
@@ -16,7 +16,6 @@ export const getAPIqueChoisirStep = async (questionRef, tool) => {
         Authorization: authHeader
       },
       params: {
-        ref: questionRef,
         tool: tool
       }
     })
