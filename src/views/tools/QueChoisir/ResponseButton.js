@@ -64,23 +64,24 @@ export const ResponseButton = ({ element, onPress, history, onHelp }) => {
 
 const styles = StyleSheet.create({
     rectangleButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
         borderRadius: 8,
         marginVertical: 5,
-        minHeight: 100,
+        minHeight: 80,
         width: '47%',
         justifyContent:'center',
         borderWidth: 1,
     },
     responseAlign: {
         flexDirection: 'row',
-        justifyContent: 'center',
+        alignItems: 'center',
+        justifyContent: 'space-around'
     },
     buttonTextQ: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#333333',
-        justifyContent: 'center',
+        textAlign: 'center',
+        width: '70%',
+        alignSelf: 'center'
     },
 })
