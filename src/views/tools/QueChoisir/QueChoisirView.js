@@ -8,138 +8,58 @@ import {
     FlatList,
     ScrollView,
     SafeAreaView,
-    Image, useWindowDimensions,
+    Image, useWindowDimensions, DrawerLayoutAndroid, ActivityIndicator, Dimensions,
 } from "react-native"
-import React, { useEffect, useState } from "react"
+import React, {useEffect, useRef, useState} from "react"
 import { useQuery } from "react-query"
 import { getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
 import BottomArrow from '../../../../assets/queChoisir/bottom_arrow.svg'
 import UpperArrow from '../../../../assets/queChoisir/upper_arrow.svg'
+import HelpIcon from '../../../../assets/queChoisir/help_icon.svg'
+import GotIt from '../../../../assets/queChoisir/got_it.svg'
 import { LinearGradient } from "expo-linear-gradient";
-
-
-const ResponseButton = ({ element, onPress, history }) => {
-    const [pressed, setPressed] = useState(false)
-    const [isDisplay, setIsDisplay] = useState(true)
-
-    useEffect(() => {
-        if (element.display_if) {
-            evaluateExpression(element.display_if, history)
-        .then((val) => {
-                    setIsDisplay(val)
-
-                })
-        }
-    }, [])
-
-    if (!isDisplay) return null
-    return (
-            <TouchableOpacity
-                key={element.id}
-                style={[styles.rectangleButton, { borderColor: pressed ? 'orange' : 'black'}]}
-                onPress={() => {
-                    onPress({
-                        response: element,
-                        status: !pressed
-                    });
-                    setPressed(!pressed);
-                }}
-            >
-                <Text style={styles.buttonTextQ}>{element.response}</Text>
-            </TouchableOpacity>
-)
-}
-
-const isLetter = (char) => {
-    return char != null && char.length === 1 && char.match(/[a-z]/i) ? true : false;
-}
-
-const isNumber = (char) => {
-    return char != null && char.length === 1 && char.match(/[0-9]/i) ? true : false;
-}
-
-const isInHistory = (ref, value, history) => {
-    let isIn = false
-    history.forEach(historyElement => {
-        if (historyElement.question.ref == ref) {
-            historyElement.responses.forEach(response => {
-                if (response.response.value == value) {
-                    isIn = true
-                    return
-                }
-            });
-        }
-    });
-    return isIn
-}
-
-const evaluateExpression = async (exp, userHistory) => {
-    var i = 0
-
-    let toEvaluate = exp
-
-    let refToCheck = ""
-    let valueToCheck = ""
-
-
-    while (i < exp.length) {
-
-        if (isLetter(exp[i])) {
-            refToCheck += exp[i]
-        }
-        if (isNumber(exp[i])) {
-            valueToCheck += exp[i]
-        }
-
-        if (i + 1 == exp.length || (!isLetter(exp[i + 1]) && !isNumber(exp[i + 1]))) {
-            if (refToCheck.length > 0 && valueToCheck.length > 0) {
-                var re = new RegExp(`\\b${refToCheck + valueToCheck}\\b`, 'g')
-                if (isInHistory(refToCheck, valueToCheck, userHistory)) {
-                    toEvaluate = toEvaluate.replace(re, true)
-                } else {
-                    toEvaluate = toEvaluate.replace(re, false)
-                }
-
-            }
-
-
-            refToCheck = ""
-            valueToCheck = ""
-        }
-
-        i++
-    }
-    return eval(toEvaluate)
-}
-
+import {getS3Image} from "../../../services/S3Service";
+import {ResponseButton} from "./ResponseButton";
+import {HelpSection} from "./HelpQC";
+import {NavbarQC} from "./NavbarQC";
+import {evaluateExpression} from "./tools";
 
 export const QueChoisirView = ({ navigation, route }) => {
     const [questionIndex, setQuestionIndex] = useState(0)
     const [globalSteps, setGlobalSteps] = useState(null)
     const [userHistory, setUserHistory] = useState([])
     const [userSelection, setUserSelection] = useState([])
+    const [helpIsActive, setHelpIsActive] = useState(false)
+    const [isQueryEnabled, setIsQueryEnabled] = useState(false);
+
+    const { width } = Dimensions.get('window');
+    const helpWidth = width * 0.7;
 
     const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', "Ceinture lombaire"], () => getAPIqueChoisirStep('Ceinture lombaire'), {
         onSuccess: (data) => {
             setGlobalSteps(data);
-        },
-        onError: (err) => {
-            //console.log(err.response);
+            setIsQueryEnabled(true);
         }
+    })
+    const getCurrentImage = useQuery(['Tools', 'GET', 'currentImage', "Ceinture lombaire", questionIndex], () => getS3Image(globalSteps[questionIndex].question.image_path), {
+        enabled: isQueryEnabled
     })
 
     if (globalSteps === null) return;
-    return (<SafeAreaView style={styles.container}>
-
-        <Image
-            source={require('../../../../assets/queChoisir/tmp.png')}
+    return (<SafeAreaView style={styles.safeAreaContainer}>
+        <View style={styles.container}>
+            <NavbarQC global={globalSteps} questionIndex={questionIndex}/>
+        <View style={styles.rightView}>
+        { getCurrentImage != null ?
+            <Image
+            source={{uri: getCurrentImage?.data}}
             style={styles.image}
-        />
+        /> : <ActivityIndicator/>}
             <Text style={styles.heading}>{globalSteps[questionIndex].question.question}</Text>
             <ScrollView centerContent={true} style={styles.quizScroll} contentContainerStyle={{ alignItems: 'center' }}>
                 <View style={[styles.quizContainer]}>
-                {globalSteps[questionIndex].responses?.map((button, index) => {
-                        return <ResponseButton element={button} key={globalSteps[questionIndex].question.ref + button.value} history={userHistory}
+                {globalSteps[questionIndex].responses?.map((response, index) => {
+                        return <ResponseButton element={response} key={globalSteps[questionIndex].question.ref + response.value} history={userHistory}
                                                onPress={(value) => {
                                                    if (value.status) {
                                                        setUserSelection(userSelection => [...userSelection, value])
@@ -150,6 +70,10 @@ export const QueChoisirView = ({ navigation, route }) => {
                                                        setUserSelection(newSelection)
                                                    }
                                                }}
+                                               onHelp={() => {
+                                                   setHelpIsActive(!helpIsActive);
+                                                }
+                                               }
                         />
                 })}
                     </View>
@@ -169,7 +93,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                                   }
                               }}
             >
-                    <UpperArrow height={50} width={50}/>
+                    <UpperArrow style={{marginTop: 10}} height={40} width={40}/>
             </TouchableOpacity>
             </LinearGradient>
             <LinearGradient
@@ -178,7 +102,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
             >
-            <TouchableOpacity style={styles.bottom_arrow}
+            <TouchableOpacity style={[styles.bottom_arrow, {height: '100%', width: '100%'}]}
                               onPress={() => {
                                   if (userSelection.length > 0) {
                                       let exp = userSelection[userSelection.length - 1].response.skip_to_if
@@ -204,30 +128,32 @@ export const QueChoisirView = ({ navigation, route }) => {
                                   }
                               }}
             >
-                <BottomArrow height={50} width={50}></BottomArrow>
+                <BottomArrow style={{marginTop: 10}} height={40} width={40}/>
             </TouchableOpacity>
             </LinearGradient>
         </View>
+        </View>
+        {helpIsActive ? <HelpSection helpIsActive={helpIsActive}
+                                     onPress={() => {
+                                        setHelpIsActive(false);
+                                     }
+        } helpWidth={helpWidth}/> : null}
+    </View>
     </SafeAreaView>)
 }
 
 const styles = StyleSheet.create({
+    rightView: {
+        flex: 1,
+        width: '80%',
+        alignSelf:'flex-end',
+    },
+    safeAreaContainer: {
+        flex: 1,
+    },
     arrowContainer:{
-        width: '100%',
-        flexWrap:'wrap',
         flexDirection: 'row',
         justifyContent:'space-evenly',
-        maxHeight: '35%',
-    },
-    rectangleButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        marginVertical: 5,
-        minHeight: 100,
-        width: '47%',
-        justifyContent:'center',
-        borderWidth: 1,
     },
     quizContainer:{
         width: '100%',
@@ -235,44 +161,31 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent:'space-evenly',
     },
-    buttonTextQ: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333333',
-        justifyContent: 'center',
-    },
     quizScroll: {
         width: "100%",
     },
-
     container: {
         flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 20,
+        width: '100%',
     },
     image: {
         width: "90%",
         marginBottom: 20,
         borderRadius: 16,
         resizeMode: "cover",
-        height: "30%",
+        height: "35%",
+        alignSelf:'center',
     },
     heading: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 10,
-    },
-
-    button: {
-        backgroundColor: 'blue',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
+        alignSelf: 'center',
     },
     bottom_arrow: {
+        marginBottom: 15,
         borderRadius: 50,
-        height: "60%",
-        width: "20%",
+        height: 60,
+        width: 60,
         alignItems:'center',
         justifyContent:'center',
     },
