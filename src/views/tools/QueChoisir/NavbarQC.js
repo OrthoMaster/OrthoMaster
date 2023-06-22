@@ -15,7 +15,7 @@ export const NavbarQC = ({global, questionIndex}) => {
             end={{ x: 1, y: 0 }}
         >
             <Svg height={screenHeight} width={"100%"} style={styles.leftView}>
-                <View style={{height: (questionIndex) * (screenHeight / global.length), top: 20, backgroundColor: 'white', width: 1, marginLeft: 12}}/>
+                <View style={{height: (questionIndex) * (screenHeight / global.length), top: 20, backgroundColor: 'white', width: 1, marginLeft: '14.5%'}}/>
                 {global.map((step, index) => (
                     <React.Fragment key={index}>
                         <React.Fragment>
@@ -36,7 +36,7 @@ export const NavbarQC = ({global, questionIndex}) => {
                         <SvgText
                             x={"30%"}
                             y={index * (screenHeight / global.length) + 20}
-                            fill={index === questionIndex ? 'white' : 'gray'}
+                            fill={index === questionIndex ? 'white' : '#B5BAC0'}
                             fontSize={12}
                             fontWeight={index === questionIndex ? 'bold' : 'normal'}
                             textAnchor="start"
