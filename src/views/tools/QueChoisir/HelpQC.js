@@ -4,28 +4,20 @@ import HelpIcon from "../../../../assets/queChoisir/help_icon.svg";
 import {LinearGradient}  from "expo-linear-gradient";
 import GotIt from "../../../../assets/queChoisir/got_it.svg";
 
-export const HelpSection = ({ helpWidth, helpIsActive, onPress }) => {
+export const HelpSection = ({ helpWidth, helpIsActive, onPress, response }) => {
     return (
         <View style={[styles.helpView, { width: helpWidth, right: helpIsActive ? 0 : helpWidth * -1} ]}>
             <SafeAreaView style={ [styles.helpContent]}>
                 <View style={styles.responseAlign}>
-                    <Text style={[styles.titleHelpView]}>Title</Text>
-                    <HelpIcon style={{marginLeft: 5, marginTop: 3}} height={20} width={20}/>
+                    <Text style={[styles.titleHelpView]}>{response.response}</Text>
+                    <HelpIcon style={{marginLeft: 5, marginTop: 3}} height={25} width={25}/>
                 </View>
                 <Image
                     source={require('../../../../assets/queChoisir/tmp.png')}
                     style={styles.image}
                 />
                 <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <Text>Lorem ipsum dolor sit amet consectetur. Lectus massa ac iaculis nisl euismod. Vulputate nulla lectus accumsan neque mi vitae turpis. Nisl mi pellentesque tellus non tristique dictum euismod blandit volutpat. Congue aliquam urna cras elementum. Pharetra pulvinar nunc eget eget.
-
-                        Ac in diam elementum volutpat quis auctor tellus. Morbi vestibulum sem auctor sed velit blandit id ullamcorper sollicitudin. Sed augue iaculis ultricies faucibus eget sit eu facilisis est. Ullamcorper blandit semper pellentesque sed dui eget et ultrices.
-
-                        Proin aliquet fames vitae odio quis nunc. Amet viverra egestas volutpat sapien. Sed massa lobortis eu suscipit urna aliquam. Non a eget diam integer dui. Tortor hendrerit magna posuere cras diam sit neque sit.
-                        Ante pellentesque nisl turpis vitae quam faucibus sed eget. Enim vestibulum semper rhoncus maecenas nulla.
-
-                        Proin aliquet fames vitae odio quis nunc. Amet viverra egestas volutpat sapien. Sed massa lobortis eu suscipit urna aliquam. Non a eget diam integer dui. Tortor hendrerit magna posuere cras diam sit neque sit.
-                        Ante pellentesque nisl turpis vitae quam faucibus sed eget. Enim vestibulum semper rhoncus maecenas nulla. </Text>
+                    <Text> {response.help_text} </Text>
                 </ScrollView>
                 <LinearGradient
                     colors={['#E8764A', '#EC4C70']}
@@ -68,9 +60,9 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     titleHelpView: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333333',
+        fontSize: 24,
+        fontWeight: 600,
+        color: '#20123A',
         alignSelf: 'center',
     },
     closeHelp: {
@@ -85,6 +77,7 @@ const styles = StyleSheet.create({
     image: {
         width: "90%",
         marginBottom: 20,
+        marginTop: '10%',
         borderRadius: 16,
         resizeMode: "cover",
         height: "35%",

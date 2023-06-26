@@ -3,20 +3,15 @@ import {
     Text,
     TouchableOpacity,
     View,
-    Animated,
-    PanResponder,
-    FlatList,
     ScrollView,
     SafeAreaView,
-    Image, useWindowDimensions, DrawerLayoutAndroid, ActivityIndicator, Dimensions,
+    Image, ActivityIndicator, Dimensions,
 } from "react-native"
 import React, { useEffect, useRef, useState } from "react"
 import { useQuery } from "react-query"
 import { getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
 import BottomArrow from '../../../../assets/queChoisir/bottom_arrow.svg'
 import UpperArrow from '../../../../assets/queChoisir/upper_arrow.svg'
-import HelpIcon from '../../../../assets/queChoisir/help_icon.svg'
-import GotIt from '../../../../assets/queChoisir/got_it.svg'
 import { LinearGradient } from "expo-linear-gradient";
 import { getS3Image } from "../../../services/S3Service";
 import { ResponseButton } from "./ResponseButton";
@@ -30,6 +25,7 @@ export const QueChoisirView = ({ navigation, route }) => {
     const [userHistory, setUserHistory] = useState([])
     const [userSelection, setUserSelection] = useState([])
     const [helpIsActive, setHelpIsActive] = useState(false)
+    const [currentResponse, setCurrentResponse] = useState(null)
     const [isQueryEnabled, setIsQueryEnabled] = useState(false);
 
     const { width } = Dimensions.get('window');
@@ -48,7 +44,6 @@ export const QueChoisirView = ({ navigation, route }) => {
     if (globalSteps === null) return;
     return (<SafeAreaView style={styles.safeAreaContainer}>
         <View style={styles.container}>
-
             <View style={styles.rightView}>
                 {getCurrentImage != null ?
                     <Image
@@ -72,12 +67,21 @@ export const QueChoisirView = ({ navigation, route }) => {
                                 }}
                                 onHelp={() => {
                                     setHelpIsActive(!helpIsActive);
+                                    setCurrentResponse(response);
                                 }
                                 }
                             />
                         })}
                     </View>
                 </ScrollView>
+                <View style={styles.tipsBox}>
+                    <Image source={require('../../../../assets/queChoisir/shield.png')} style={{marginLeft: '5%'}} />
+                    <ScrollView contentContainerStyle={styles.textContainer} showsVerticalScrollIndicator={false}>
+                        <Text style={styles.text}>
+                            Ce choix est contre indiqué en cas de X, Y, Z et 0.
+                        </Text>
+                    </ScrollView>
+                </View>
                 <View style={styles.arrowContainer}>
                     <LinearGradient
                         colors={['#E8764A', '#EC4C70']}
@@ -137,8 +141,13 @@ export const QueChoisirView = ({ navigation, route }) => {
                 onPress={() => {
                     setHelpIsActive(false);
                 }
-                } helpWidth={helpWidth} /> : null}
-            <NavbarQC global={globalSteps} questionIndex={questionIndex} />
+                } helpWidth={helpWidth} response={currentResponse} /> : null}
+            <NavbarQC global={globalSteps} questionIndex={questionIndex} onPress={(index) => {
+                for (let i = questionIndex - index; i !== 0; i--) {
+                    userHistory.pop();
+                }
+                setQuestionIndex(index);
+            }}/>
 
         </View>
 
@@ -150,6 +159,29 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '80%',
         alignSelf: 'flex-end',
+    },
+    tipsBox: {
+        flexDirection: 'row',
+        backgroundColor: '#E6FFFE',
+        width: '80%',
+        height:'10%',
+        marginBottom:'5%',
+        alignSelf:'center',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor:'#4E9694',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+    },
+    textContainer: {
+        flexGrow: 1,
+    },
+    text: {
+        marginHorizontal: '5%',
+        paddingVertical: '7%',
+        flexGrow: 1,
+        color: '#4E9694',
+        fontWeight: 500
     },
     safeAreaContainer: {
         flex: 1,
