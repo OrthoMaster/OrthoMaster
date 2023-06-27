@@ -9,7 +9,7 @@ import {
 } from "react-native"
 import React, { useEffect, useRef, useState } from "react"
 import { useQuery } from "react-query"
-import { getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
+import {getAPIqueChoisirRedFlags, getAPIqueChoisirStep} from "../../../services/tools/QueChoisirService";
 import BottomArrow from '../../../../assets/queChoisir/bottom_arrow.svg'
 import UpperArrow from '../../../../assets/queChoisir/upper_arrow.svg'
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,10 +26,27 @@ export const QueChoisirView = ({ navigation, route }) => {
     const [userSelection, setUserSelection] = useState([])
     const [helpIsActive, setHelpIsActive] = useState(false)
     const [currentResponse, setCurrentResponse] = useState(null)
+    const [contraindicationArray, setContraindicationArray] = useState([])
+    const [currentContraindicationArray, setCurrentContraindicationArray] = useState(new Set())
     const [isQueryEnabled, setIsQueryEnabled] = useState(false);
 
     const { width } = Dimensions.get('window');
     const helpWidth = width * 0.7;
+
+    useEffect(() => {
+        const updateArray = [];
+        contraindicationArray.map((element) => {
+            if (element.display_if) {
+                evaluateExpression(element.display_if, userHistory)
+                    .then((val) => {
+                        if (val) {
+                            updateArray.push(element);
+                        }
+                    })
+            }
+        })
+        setCurrentContraindicationArray(updateArray);
+    }, [userHistory])
 
     const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', "Ceinture lombaire"], () => getAPIqueChoisirStep('Ceinture lombaire'), {
         onSuccess: (data) => {
@@ -39,6 +56,12 @@ export const QueChoisirView = ({ navigation, route }) => {
     })
     const getCurrentImage = useQuery(['Tools', 'GET', 'currentImage', "Ceinture lombaire", questionIndex], () => getS3Image(globalSteps[questionIndex].question.image_path), {
         enabled: isQueryEnabled
+    })
+
+    const getContraindication = useQuery(['Tools', 'GET', 'currentImage', "Ceinture lombaire"], () => getAPIqueChoisirRedFlags('Ceinture lombaire'), {
+        onSuccess: (data) => {
+            setContraindicationArray(data);
+        }
     })
 
     if (globalSteps === null) return;
@@ -73,27 +96,29 @@ export const QueChoisirView = ({ navigation, route }) => {
                             />
                         })}
                     </View>
+                    {[...currentContraindicationArray].map((element, index) => {
+                        return <View style={styles.tipsBox} key={index}>
+                            <Image source={require('../../../../assets/queChoisir/shield.png')} style={{marginLeft: '5%'}} />
+                            <ScrollView contentContainerStyle={styles.textContainer} showsVerticalScrollIndicator={false}>
+                                <Text style={styles.text}>
+                                    {element.text}
+                                </Text>
+                            </ScrollView>
+                        </View>
+                        })}
                 </ScrollView>
-                <View style={styles.tipsBox}>
-                    <Image source={require('../../../../assets/queChoisir/shield.png')} style={{marginLeft: '5%'}} />
-                    <ScrollView contentContainerStyle={styles.textContainer} showsVerticalScrollIndicator={false}>
-                        <Text style={styles.text}>
-                            Ce choix est contre indiqué en cas de X, Y, Z et 0.
-                        </Text>
-                    </ScrollView>
-                </View>
                 <View style={styles.arrowContainer}>
                     <LinearGradient
                         colors={['#E8764A', '#EC4C70']}
-                        style={styles.bottom_arrow}
+                        style={styles.arrow}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                     >
-                        <TouchableOpacity style={styles.bottom_arrow}
+                        <TouchableOpacity style={styles.arrow}
                             onPress={() => {
                                 if (userHistory.length > 0) {
                                     setQuestionIndex(userHistory[userHistory.length - 1].question.ref.charCodeAt(0) - 65);
-                                    userHistory.pop();
+                                    setUserHistory(userHistory.slice(0, userHistory.length - 1));
                                 }
                             }}
                         >
@@ -102,11 +127,11 @@ export const QueChoisirView = ({ navigation, route }) => {
                     </LinearGradient>
                     <LinearGradient
                         colors={['#E8764A', '#EC4C70']}
-                        style={styles.bottom_arrow}
+                        style={styles.arrow}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                     >
-                        <TouchableOpacity style={[styles.bottom_arrow, { height: '100%', width: '100%' }]}
+                        <TouchableOpacity style={[styles.arrow, { height: '100%', width: '100%' }]}
                             onPress={() => {
                                 if (userSelection.length > 0) {
                                     let exp = userSelection[userSelection.length - 1].response.skip_to_if
@@ -143,9 +168,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                 }
                 } helpWidth={helpWidth} response={currentResponse} /> : null}
             <NavbarQC global={globalSteps} questionIndex={questionIndex} onPress={(index) => {
-                for (let i = questionIndex - index; i !== 0; i--) {
-                    userHistory.pop();
-                }
+                    setUserHistory(userHistory.slice(0, index))
                 setQuestionIndex(index);
             }}/>
 
@@ -163,25 +186,23 @@ const styles = StyleSheet.create({
     tipsBox: {
         flexDirection: 'row',
         backgroundColor: '#E6FFFE',
+        marginVertical: 15,
         width: '80%',
-        height:'10%',
-        marginBottom:'5%',
-        alignSelf:'center',
         borderRadius: 16,
         borderWidth: 1,
         borderColor:'#4E9694',
         alignItems: 'center',
-        justifyContent: 'flex-start',
     },
     textContainer: {
         flexGrow: 1,
+        justifyContent: 'center'
     },
     text: {
         marginHorizontal: '5%',
-        paddingVertical: '7%',
+        paddingVertical: '10%',
         flexGrow: 1,
         color: '#4E9694',
-        fontWeight: 500
+        fontWeight: 500,
     },
     safeAreaContainer: {
         flex: 1,
@@ -197,6 +218,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly',
     },
     quizScroll: {
+        paddingVertical: 10,
         width: "100%",
     },
     container: {
@@ -217,7 +239,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         alignSelf: 'center',
     },
-    bottom_arrow: {
+    arrow: {
         marginBottom: 15,
         borderRadius: 50,
         height: 60,
