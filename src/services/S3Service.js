@@ -24,9 +24,6 @@ export const getS3Image = async (path) => {
     .then((response) => {
       return response.data.url;
     })
-    .catch((e)=> {
-      throw e
-    });
 }
 
 export const getS3XML = async (path) => {

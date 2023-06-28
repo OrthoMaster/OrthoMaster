@@ -18,6 +18,7 @@ import { ResponseButton } from "./ResponseButton";
 import { HelpSection } from "./HelpQC";
 import { NavbarQC } from "./NavbarQC";
 import { evaluateExpression } from "./tools";
+import GotIt from "../../../../assets/queChoisir/check.svg";
 
 export const QueChoisirView = ({ navigation, route }) => {
     const [questionIndex, setQuestionIndex] = useState(0)
@@ -27,7 +28,7 @@ export const QueChoisirView = ({ navigation, route }) => {
     const [helpIsActive, setHelpIsActive] = useState(false)
     const [currentResponse, setCurrentResponse] = useState(null)
     const [contraindicationArray, setContraindicationArray] = useState([])
-    const [currentContraindicationArray, setCurrentContraindicationArray] = useState(new Set())
+    const [currentContraindicationArray, setCurrentContraindicationArray] = useState([])
     const [isQueryEnabled, setIsQueryEnabled] = useState(false);
 
     const { width } = Dimensions.get('window');
@@ -35,7 +36,7 @@ export const QueChoisirView = ({ navigation, route }) => {
 
     useEffect(() => {
         const updateArray = [];
-        contraindicationArray.map((element) => {
+        contraindicationArray.forEach((element) => {
             if (element.display_if) {
                 evaluateExpression(element.display_if, userHistory)
                     .then((val) => {
@@ -96,7 +97,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                             />
                         })}
                     </View>
-                    {[...currentContraindicationArray].map((element, index) => {
+                    {currentContraindicationArray.map((element, index) => {
                         return <View style={styles.tipsBox} key={index}>
                             <Image source={require('../../../../assets/queChoisir/shield.png')} style={{marginLeft: '5%'}} />
                             <ScrollView contentContainerStyle={styles.textContainer} showsVerticalScrollIndicator={false}>
@@ -117,6 +118,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                         <TouchableOpacity style={styles.arrow}
                             onPress={() => {
                                 if (userHistory.length > 0) {
+                                    setUserSelection([]);
                                     setQuestionIndex(userHistory[userHistory.length - 1].question.ref.charCodeAt(0) - 65);
                                     setUserHistory(userHistory.slice(0, userHistory.length - 1));
                                 }
@@ -140,6 +142,11 @@ export const QueChoisirView = ({ navigation, route }) => {
                                         question: globalSteps[questionIndex].question,
                                         responses: userSelection
                                     }])
+                                    if (questionIndex === globalSteps.length - 1) {
+                                        setUserSelection([])
+                                        navigation.navigate('tools-que-choisir-final');
+                                        return;
+                                    }
                                     if (exp) {
                                         var splitedExp = exp.split(':')
                                         evaluateExpression(splitedExp[1], userHistory)
@@ -157,7 +164,10 @@ export const QueChoisirView = ({ navigation, route }) => {
                                 }
                             }}
                         >
-                            <BottomArrow style={{ marginTop: 10 }} height={40} width={40} />
+                            {
+                                questionIndex === globalSteps.length - 1 ?  <GotIt style={{ marginTop: 20, marginRight: 10}} height={40} width={40} stroke={'#FFFFFF'}/> :
+                                <BottomArrow style={{ marginTop: 10 }} height={40} width={40} />
+                            }
                         </TouchableOpacity>
                     </LinearGradient>
                 </View>
@@ -168,7 +178,8 @@ export const QueChoisirView = ({ navigation, route }) => {
                 }
                 } helpWidth={helpWidth} response={currentResponse} /> : null}
             <NavbarQC global={globalSteps} questionIndex={questionIndex} onPress={(index) => {
-                    setUserHistory(userHistory.slice(0, index))
+                setUserSelection([]);
+                setUserHistory(userHistory.slice(0, index));
                 setQuestionIndex(index);
             }}/>
 
