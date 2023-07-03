@@ -29,7 +29,11 @@ export const ToolsStack = ({navigation, route}) => {
         
       />
 
-      <ToolsStackNav.Screen name={'tools-que-choisir-final'} component={FinalQC}/>
+      <ToolsStackNav.Screen
+          name={'tools-que-choisir-final'}
+          component={FinalQC}
+          options={{ headerShown: false, title: 'Que choisir ?'}}
+      />
 
     </ToolsStackNav.Navigator>
   );
