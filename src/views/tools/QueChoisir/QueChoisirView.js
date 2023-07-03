@@ -49,7 +49,7 @@ export const QueChoisirView = ({ navigation, route }) => {
         setCurrentContraindicationArray(updateArray);
     }, [userHistory])
 
-    const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', "Ceinture lombaire"], () => getAPIqueChoisirStep('Ceinture lombaire'), {
+    const getStep = useQuery(['Tools', 'GET', 'queChoisirStep', "Ceinture lombaire"], () => getAPIqueChoisirStep('Lombaire'), {
         onSuccess: (data) => {
             setGlobalSteps(data);
             setIsQueryEnabled(true);
@@ -59,7 +59,7 @@ export const QueChoisirView = ({ navigation, route }) => {
         enabled: isQueryEnabled
     })
 
-    const getContraindication = useQuery(['Tools', 'GET', 'currentImage', "Ceinture lombaire"], () => getAPIqueChoisirRedFlags('Ceinture lombaire'), {
+    const getContraindication = useQuery(['Tools', 'GET', 'currentImage', "Ceinture lombaire"], () => getAPIqueChoisirRedFlags('Lombaire'), {
         onSuccess: (data) => {
             setContraindicationArray(data);
         }
@@ -144,7 +144,12 @@ export const QueChoisirView = ({ navigation, route }) => {
                                     }])
                                     if (questionIndex === globalSteps.length - 1) {
                                         setUserSelection([])
-                                        navigation.navigate('tools-que-choisir-final');
+                                        navigation.navigate('tools-que-choisir-final', {
+                                            content: {
+                                                globalSteps,
+                                                userHistory
+                                            },
+                                        });
                                         return;
                                     }
                                     if (exp) {
