@@ -6,7 +6,8 @@ import {
     Image,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView
+    SafeAreaView,
+    Alert
 } from "react-native";
 
 import {
@@ -16,7 +17,7 @@ import {
 import { QueryClient} from "react-query"
 import AuthService from '../services/AuthService';
 import { useDispatch } from 'react-redux';
-
+import { logout } from '../actions/auth';
 
 
 export const MyQueryProvider = ({
@@ -37,7 +38,6 @@ export const MyQueryProvider = ({
                     if (failureCount >= 3) {
                         return false
                     }
-
                     if (error.response.data == 'token_not_valid' && gettingNewToken == false) {
                         gettingNewToken = true
                         getNewToken()
@@ -64,7 +64,8 @@ export const MyQueryProvider = ({
         if (res == true) {
             gettingNewToken = false
         } else {
-            AuthService.logout()
+            Alert.alert("Votre session à expiré, veuillez vous reconnecter.")
+            dispatch(logout())
         }
     }
 
@@ -76,52 +77,6 @@ export const MyQueryProvider = ({
             setErrorMsg(false);
         }, 5000);
     }, []);
-
-
-    // const callback = (event) => {
-    //     if (
-    //         event?.type === 'queryUpdated' &&
-    //         event.action.type === 'error'
-    //       ) {
-    //         console.log(
-    //             'inside callback'
-    //         );
-    //         //console.log(event.query);
-    //         //const queryCache = client.getQueryCache()
-    //         //console.log(client.getQueryData({ queryKey: ['Account'] }));
-    //         //console.log(client.getQueryCache({ queryKey: ['Account'] }));
-    //         //console.log(state);
-    //         //const queryKeys = queryCache.getAll().map(cache => cache)
-    //         //console.log(queryKeys);
-    //         // console.log(event.query.options.queryKey);
-    //             //client.cancelQueries()
-    //             // AuthService.getNewToken().then((token)=> {
-    //             //     if (token) {
-    //             //         //client.refetchQueries({queryKey: [event.query.options.queryKey]})
-    //             //     }
-    //             // })
-    //       }
-    //     // console.log(event.action.error);
-    //     // if (event.query.state.errorUpdateCount > 0) {
-    //     //     if (event.query.state.error.response.data == "token_not_valid") {
-    //     //         console.log('token invalid');
-    //     //         console.log(event);
-    //     //     }
-    //     // }
-    //   }
-
-    // useEffect(() => {
-    //     let queryCache = client.getQueryCache()
-    //     const unsubscribe = queryCache.subscribe(callback)
-
-    //     return unsubscribe
-    // }, [])
-
-    // useEffect(() => {
-    //   console.log(gettingNewToken);
-
-    // }, [gettingNewToken])
-
 
 
     if (client == null) return;

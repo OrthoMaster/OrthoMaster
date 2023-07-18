@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import { AccountView } from '../../views/account/AccountView';
 import { AccountProfile } from '../../views/account/menu/AccountProfile';
+import { TeamManagerView } from '../../views/account/teamManager/TeamManagerView';
 
 const ProfilStackNav = createStackNavigator();
 
@@ -26,6 +27,14 @@ export const ProfilStack = () => {
           title: 'Mon profile'
         }}
       />
+      <ProfilStackNav.Screen
+        name="account-team-manager"
+        component={TeamManagerView}
+        options={{
+          headerBackTitle: 'Retour',
+          title: 'Mon équipe'
+        }}
+      /> 
     </ProfilStackNav.Navigator>
   );
 }

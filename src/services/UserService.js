@@ -54,3 +54,23 @@ export const activateUser = async (username) => {
         throw e
       });
 }
+
+export const getUsersByOfficeId = async (officeId) => {
+
+    const config = await restoreLocalConfigAsync()
+    const authHeader = 'Bearer ' + config.JWT;
+
+    return axios
+        .get(route + "/office",{
+            headers: { Authorization: authHeader },
+            params: {
+                id: officeId
+            }
+        })
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e)=> {
+          throw e
+        });
+  }

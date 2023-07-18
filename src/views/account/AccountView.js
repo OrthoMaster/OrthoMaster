@@ -94,7 +94,7 @@ export const AccountView = ({ navigation }) => {
 
           <Trophies refreshing={refreshing}/>
 
-          <AccountOfficesProgress managerId={user.id_user} refreshing={refreshing}/>
+          <AccountOfficesProgress managerId={user.id_user} refreshing={refreshing} navigation={navigation}/>
           
           <View style={{ height: 200 }} />
         </ScrollView>
