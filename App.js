@@ -3,22 +3,21 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 
 import { selectIsLoggedIn, selectIsLoading, selectUserCurrentSession } from './src/reducers/auth';
-import { checkUserConnection } from './src/actions/auth';
+import { checkToken } from './src/actions/auth';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { restoreLocalConfigAsync } from './src/utils';
 import checkVersion from 'react-native-store-version';
 import Constants from 'expo-constants';
-
+import * as Linking from 'expo-linking';
 import { Alert } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingContent } from './src/component/LoadingContent';
 import { AlertVersion } from './src/component/AlertVersion';
-import { ErrorHandler } from './src/component/ErrorHandler';
 import { NotificationHandler } from './src/component/NotificationHandler';
-import { MyQueryProvider } from './src/component/MyQueryProvider';
+
+const prefix = Linking.createURL('/');
 
 export default function App({ navigation }) {
 
@@ -28,50 +27,81 @@ export default function App({ navigation }) {
   const dispatch = useDispatch()
   const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
 
+  const url = Linking.useURL()
+
   useEffect(() => {
-    const init = async () => {
-      try {
-        const config = await restoreLocalConfigAsync()
-        const check = await checkVersion({
-          version: Constants.manifest.version, // app local version
-          //version: '1.1.0', // app local version
-          iosStoreURL: 'https://apps.apple.com/us/app/orthomaster/id1644851864',
-          androidStoreURL: 'https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster&pli=1',
-          country: 'jp', // default value is 'jp'
-        });
-        dispatch(checkUserConnection(config))
-        if (check.result === 'new') {
-          setmodalVersionIsVisible(true)
-        }
-      } catch (e) {
-        Alert.alert('Oups...', "Nous n'arrivons pas à accéder à internet.")
+    if (url) {
+      if (isLoggedIn == true) {
+        Alert.alert('Lien introuvable', "Le lien que vous essayez d'ouvrir n'est pas accessible. Vérifiez d'être déconnecté de la plateforme avant d'ouvrir le lien.")
       }
-    };
+      if (isLoggedIn == false && url.substring(0,11) != 'orthomaster') {
+        Alert.alert('Lien introuvable', "Le lien que vous essayez d'ouvrir n'est pas accessible.")
+      }
+    }
+  }, [url])
+  
+  const linking = {
+    prefixes: [prefix],
+    config: {
+      screens: {
+        'auth-account-activate': {
+          path: 'activate/user/:user_id/token/:token',
+          parse: {
+            user_id: (user_id) => user_id,
+            token: (token) => token,
+          },
+        },
+        'auth-account-create': {
+          path: 'create/user/:user_id/token/:token',
+          parse: {
+            user_id: (user_id) => user_id,
+            token: (token) => token,
+          },
+        }
+      },
+    },
+  };
+
+  const init = async () => {
+    try {
+      dispatch(checkToken())
+
+      const check = await checkVersion({
+        version: Constants.manifest.version, // app local version
+        //version: '1.1.0', // app local version
+        iosStoreURL: 'https://apps.apple.com/us/app/orthomaster/id1644851864',
+        androidStoreURL: 'https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster&pli=1',
+        country: 'jp', // default value is 'jp'
+      });
+      if (check.result === 'new') {
+        setmodalVersionIsVisible(true)
+      }
+    } catch (e) {//
+      Alert.alert('Oups...', "Nous n'arrivons pas à accéder à internet.")
+    }
+  };
+
+
+  useEffect(() => {
     init();
   }, []);
 
 
-
+  if (isLoading)
+    return <LoadingContent />
 
   return (
-    <ErrorHandler>
-      <MyQueryProvider>
-        <NavigationContainer>
-          {
-            isLoggedIn && user.enabled == 1 ? (
-              <NotificationHandler>
-                <AppTab />
-              </NotificationHandler>
-            ) : isLoading
-              ? (
-                <LoadingContent />
-              ) : (
-                <AuthStack />
-              )}
-          <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
-        </NavigationContainer>
-      </MyQueryProvider>
-    </ErrorHandler>
+    <NavigationContainer linking={linking} onUnhandledAction={(action) => {console.log(action)}}>
+      {
+        isLoggedIn && user?.enabled == 1 ?
+          <NotificationHandler>
+            <AppTab />
+          </NotificationHandler>
+          : <AuthStack />
+      }
+
+      <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
+    </NavigationContainer>
   );
 }
 

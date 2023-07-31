@@ -69,12 +69,13 @@ const styles = StyleSheet.create({
         height: Dimensions.get('screen').width * 0.9,
         marginBottom: 20,
         shadowOpacity: 0.5,
-        shadowRadius: 10
+        shadowRadius: 10,
+        backgroundColor: "#ffffff",
+        borderRadius: 10
     },
     avatar: {
         borderRadius: 10,
         width: '100%',
-        height: '100%',
-        
+        height: '100%'
     }
 })

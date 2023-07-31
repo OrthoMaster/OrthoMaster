@@ -12,7 +12,8 @@ import {
 
 import {
     QueryCache,
-    QueryClientProvider
+    QueryClientProvider,
+    MutationCache
 } from 'react-query'
 import { QueryClient} from "react-query"
 import AuthService from '../services/AuthService';
@@ -46,8 +47,31 @@ export const MyQueryProvider = ({
                     return true
                 }
             },
+            mutations: {
+                retryDelay: 200,
+                retry: (failureCount, error) => {
+                    if (failureCount >= 3) {
+                        return false
+                    }
+                    if (error.response.data == 'token_not_valid' && gettingNewToken == false) {
+                        gettingNewToken = true
+                        getNewToken()
+                        return false
+                    }
+
+                    return true
+                }
+            }
         },
         queryCache: new QueryCache({
+            onError: (error) => {
+                console.log('Provider', error);
+                if (error.code == 'ERR_NETWORK') {
+                    onError('Nous rencontrons des problèmes de connexion...')
+                }
+            }
+        }),
+        mutationCache: new MutationCache({
             onError: (error) => {
                 if (error.code == 'ERR_NETWORK') {
                     onError('Nous rencontrons des problèmes de connexion...')
@@ -60,11 +84,12 @@ export const MyQueryProvider = ({
    
 
     const getNewToken = async () => {
+        console.log('get token');
         const res = await AuthService.getNewToken()
         if (res == true) {
             gettingNewToken = false
         } else {
-            Alert.alert("Votre session à expiré, veuillez vous reconnecter.")
+            //Alert.alert("Votre session à expiré, veuillez vous reconnecter.")
             dispatch(logout())
         }
     }

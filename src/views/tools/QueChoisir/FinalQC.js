@@ -6,7 +6,6 @@ import {useEffect, useState} from "react";
 import NavbarQC from "./NavbarQC";
 import {getS3Image} from "../../../services/S3Service";
 import {LinearGradient} from "expo-linear-gradient";
-import HubspotForm from 'react-hubspot-form'
 import {evaluateExpression} from "./tools";
 
 export const FinalQC = ({route, navigation}) => {

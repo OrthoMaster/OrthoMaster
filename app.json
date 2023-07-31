@@ -4,6 +4,7 @@
     "slug": "OrthoMaster",
     "version": "1.5.0",
     "orientation": "portrait",
+    "scheme": "orthomaster",
     "icon": "./assets/appicon.png",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": [

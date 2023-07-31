@@ -20,7 +20,6 @@ export const restoreLocalConfigAsync = async () => {
 	})
 
 	let token = await SecureStore.getItemAsync('JWT');
-	
 
 	return { user: JSON.parse(config), JWT: token }
 }
