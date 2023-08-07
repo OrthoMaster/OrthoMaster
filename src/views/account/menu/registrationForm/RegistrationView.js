@@ -32,7 +32,7 @@ export const RegistrationView = () => {
                     break;
                 case 500:
                     Alert.alert("Erreur lors de l'inscription",
-                        `Nous n'avons pas réussi à enregistrer l'entreprise demandé.
+                        `Nous n'avons pas réussi à enregistrer l'entreprise demandée.
                  Veuillez réessayer ou contacter les équipe OrthoMaster.`, [
                         {
                             text: 'Contacter',

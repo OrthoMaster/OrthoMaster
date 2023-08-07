@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 
 let route = Constants.manifest.extra.env.API_URL + "/v2/support"
 
-export const sendSupportTicket = async ({subject = "", priority = "", content = "", companyId = null, txId = null}) => {
+export const sendSupportTicket = async ({subject = "", priority = "", content = "", category = "", companyId = null, txId = null}) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
@@ -15,6 +15,7 @@ export const sendSupportTicket = async ({subject = "", priority = "", content = 
         subject: subject,
         priority: priority,
         content: content,
+        category: category,
         companyId: companyId,
         txId: txId
       }, {

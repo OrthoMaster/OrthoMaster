@@ -34,9 +34,7 @@ export const LoginView = ({ navigation, route }) => {
     }
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.container}>
+        <SafeAreaView style={styles.container}>
                 <View style={styles.logo}>
                     <Image
                         style={{
@@ -91,7 +89,6 @@ export const LoginView = ({ navigation, route }) => {
                 </View>
 
 
-            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }

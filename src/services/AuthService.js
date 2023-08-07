@@ -18,7 +18,7 @@ class AuthService {
   logout() {
     AsyncStorage.clear()
   }
-  
+
   async checkUserConnection(token) {
 
     const authHeader = 'Bearer ' + token;
@@ -40,7 +40,7 @@ class AuthService {
     console.log("Service new token");
     const config = await restoreLocalConfigAsync()
     const refreshToken = await SecureStore.getItemAsync('refreshToken')
-      return axios
+    return axios
       .post(Constants.manifest.extra.env.API_URL + "/user/token", { id_user: config.user.id_user, refresh_token: refreshToken })
       .then(async (response) => {
         if (response.data) {
@@ -61,7 +61,7 @@ class AuthService {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
     return axios
-      .post(Constants.manifest.extra.env.API_URL + "/v2/registration", data, { headers: { Authorization: authHeader }})
+      .post(Constants.manifest.extra.env.API_URL + "/v2/registration", data, { headers: { Authorization: authHeader } })
   }
 
   async sendSubscriptionLinkByEmail(body) {
@@ -69,55 +69,49 @@ class AuthService {
     const authHeader = 'Bearer ' + config.JWT;
 
     return axios
-      .post(Constants.manifest.extra.env.API_URL + "/v2/registration/mailing", body,{ headers: { Authorization: authHeader }})
+      .post(Constants.manifest.extra.env.API_URL + "/v2/registration/mailing", body, { headers: { Authorization: authHeader } })
   }
-  
+
   async activateUser(body) {
     return axios
-    .post(Constants.manifest.extra.env.API_URL + '/v2/registration/activate',
-    {
-      username: body.username,
-      password: body.password,
-      user_id: body.user_id
-    }, {
-      headers: {
-        "invitation-token": body.token
-      }
-    })
+      .post(Constants.manifest.extra.env.API_URL + '/v2/registration/activate',
+        {
+          username: body.username,
+          password: body.password,
+          user_id: body.user_id
+        }, {
+        headers: {
+          "invitation-token": body.token
+        }
+      })
   }
 
-  async createUser(body, invitationToken) {
+  async inviteUser(data) {
 
-    console.log(body);
-    console.log(invitationToken);
-  //   return axios
-  //   .post(Constants.manifest.extra.env.API_URL + '/v2/registration/register-contact?type=registration',
-  //   {
-  //     user: {
-  //         firstname: "Hugzzz",
-  //         lastname: "En Feuuuu",
-  //         email: "dmitry.yakovlev@epitech.eu",
-  //         fonction: "PREPARATEUR",
-  //         password: ''
-  //     },
-  //     office_id: 119
-  // },)
+    return axios
+      .post(Constants.manifest.extra.env.API_URL + '/v2/registration/register-contact?type=' + data.mode,
+        data.body,
+        {
+          headers: {
+          "invitation-token": data.token
+          }
+        })
   }
 
   async getFormSubscriptions() {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
 
-    return axios.get(Constants.manifest.extra.env.API_URL + '/v2/subscription/get-products', { headers: { Authorization: authHeader }})
+    return axios.get(Constants.manifest.extra.env.API_URL + '/v2/subscription/get-products', { headers: { Authorization: authHeader } })
   }
 
-  
-  async getFormProperties({objectType, property}) {
+
+  async getFormProperties({ objectType, property }) {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
 
     return axios.get(Constants.manifest.extra.env.API_URL + `/v2/registration/get-hs-properties?objectType=${objectType}&property=${property}`,
-    { headers: { Authorization: authHeader }})
+      { headers: { Authorization: authHeader } })
   }
 
 }

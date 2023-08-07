@@ -21,7 +21,7 @@ export const RegistrationFinalization = ({ formData, ids, errors }) => {
         }
     })
     const [isError, setIsError] = useState(false)
-    const paymentUrl = `https://orthomaster.fr/registration?hubspotId=${ids.companyId}&txId=${ids.txId}`
+    const paymentUrl = `https://orthomaster.fr/redirection-paiement?hubspotId=${ids.companyId}&txId=${ids.txId}`
     const sendTicket = useMutation(sendSupportTicket, {
         enabled: false,
     })
@@ -46,6 +46,7 @@ export const RegistrationFinalization = ({ formData, ids, errors }) => {
                     content: `Une ou plusieurs erreurs sont arrivé lors de l'enregistrement de l'entreprise: ${formData?.office.structure} - ${formData?.office.name}
                         Erreurs: ${errors?.toString()}
                     `,
+                    category: 'REGISTRATION_ISSUE',
                     companyId: ids.companyId,
                     txId: ids.txId
                 })
@@ -56,7 +57,7 @@ export const RegistrationFinalization = ({ formData, ids, errors }) => {
 
 
     return <ScrollView style={styles.container}>
-        <Text style={styles.statusMessage}>Votre entreprise à bien été enregistrer</Text>
+        <Text style={styles.statusMessage}>Votre entreprise à bien été enregistrée</Text>
 
         <Text style={styles.title}>Finalisation</Text>
 

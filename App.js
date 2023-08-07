@@ -31,15 +31,14 @@ export default function App({ navigation }) {
 
   useEffect(() => {
     if (url) {
-      if (isLoggedIn == true) {
+      const { hostname, path, queryParams } = Linking.parse(url);
+      console.log(hostname, path, queryParams);
+      if (isLoggedIn == true && (hostname == "activate" || hostname == 'create')) {
         Alert.alert('Lien introuvable', "Le lien que vous essayez d'ouvrir n'est pas accessible. Vérifiez d'être déconnecté de la plateforme avant d'ouvrir le lien.")
-      }
-      if (isLoggedIn == false && url.substring(0,11) != 'orthomaster') {
-        Alert.alert('Lien introuvable', "Le lien que vous essayez d'ouvrir n'est pas accessible.")
       }
     }
   }, [url])
-  
+
   const linking = {
     prefixes: [prefix],
     config: {
@@ -50,13 +49,13 @@ export default function App({ navigation }) {
             user_id: (user_id) => user_id,
             token: (token) => token,
           },
-        },
-        'auth-account-create': {
-          path: 'create/user/:user_id/token/:token',
-          parse: {
-            user_id: (user_id) => user_id,
-            token: (token) => token,
-          },
+          // 'auth-account-create': {
+          //   path: 'create/user/office/:office_id/token/:token',
+          //   parse: {
+          //     office_id: (office_id) => office_id,
+          //     token: (token) => token,
+          //   },
+          // }
         }
       },
     },
@@ -91,7 +90,7 @@ export default function App({ navigation }) {
     return <LoadingContent />
 
   return (
-    <NavigationContainer linking={linking} onUnhandledAction={(action) => {console.log(action)}}>
+    <NavigationContainer linking={linking} onUnhandledAction={(action) => { console.log(action) }}>
       {
         isLoggedIn && user?.enabled == 1 ?
           <NotificationHandler>

@@ -115,7 +115,6 @@ export const RegistrationForm = ({ onSubmit }) => {
     }
 
     const handleForm = (data) => {
-        console.log(data);
         if (data.target == "user") {
             setNewUser({
                 ...newUser,
@@ -144,9 +143,11 @@ export const RegistrationForm = ({ onSubmit }) => {
             </View>
             <FormField name={'Pays'} value={'state'} target={"office"} type={'dropdown'} data={dynamicDropdowns.country} onChange={handleForm} required />
 
-            <FormField name={'n° RPPS'} value={'numero_rpps'} target={"office"} type={'text'} onChange={handleForm} />
-            <Text>OU</Text>
-            <FormField name={'n° ADELI'} value={'numero_adeli'} target={"office"} type={'text'} onChange={handleForm} />
+
+            <ProNumber onChange={handleForm}/>
+
+
+
             <FormField name={'Email'} value={'email'} target={"office"} type={'email'} onChange={handleForm} required />
             <FormField name={'Téléphone'} value={'tel'} target={"office"} type={'tel'} onChange={handleForm} />
             <FormField name={'Abonnement'} value={'abonnement'} target={"office"} type={'dropdown'} data={dynamicDropdowns.abonnement} onChange={handleForm} required />
@@ -160,6 +161,46 @@ export const RegistrationForm = ({ onSubmit }) => {
             <View>
                 <Text style={styles.title}>Optionnel : <Text style={{ fontWeight: 'normal' }}>ajouter des utilisateurs</Text></Text>
                 <Text style={styles.displayText}>(Jusqu'à 10, au delà sur demande par mail: question@orthomaster.fr)</Text>
+
+                {
+                    formResult.collaboratorsArray.map((value, index) => {
+                        return <View key={index}
+                            style={{
+                                margin: 10,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                borderWidth: 1,
+                                borderColor: '#EA6812',
+                                borderRadius: 15,
+                                padding: 10,
+                            }}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.labelStyle}>Prénom :</Text>
+                                <Text style={styles.labelStyle}>Nom :</Text>
+                                <Text style={styles.labelStyle}>Email :</Text>
+                                <Text style={styles.labelStyle}>Fonction :</Text>
+                            </View>
+                            <View style={{ flex: 3 }}>
+                                <Text style={{ paddingLeft: 10 }}>{value.firstname}</Text>
+                                <Text style={{ paddingLeft: 10 }}>{value.lastname}</Text>
+                                <Text style={{ paddingLeft: 10 }}>{value.email}</Text>
+                                <Text style={{ paddingLeft: 10 }}>{value.fonction.toLowerCase().charAt(0).toUpperCase() + value.fonction.toLowerCase().slice(1)}</Text>
+                            </View>
+                            <TouchableOpacity style={{ flex: 1, alignItems: 'flex-end' }}
+                                onPress={() => {
+                                    const newArray = formResult.collaboratorsArray
+                                    newArray.splice(index, 1)
+                                    setformResult({
+                                        ...formResult,
+                                        collaboratorsArray: newArray
+                                    })
+                                }}
+                            >
+                                <Text style={{ color: '#EA6812', fontWeight: 'bold' }}>Annuler</Text>
+                            </TouchableOpacity>
+                        </View>
+                    })
+                }
                 {
                     addingUser &&
                     <View>
@@ -170,44 +211,35 @@ export const RegistrationForm = ({ onSubmit }) => {
                     </View>
                 }
                 {
-                    formResult.collaboratorsArray.map((value, index) => {
-                        return <View key={index} style={{ margin: 10, backgroundColor: 'grey' }}>
-                            <Text>{value.firstname}</Text>
-                            <Text>{value.lastname}</Text>
-                            <Text>{value.fonction}</Text>
-                            <Text>{value.email}</Text>
-                        </View>
-                    })
-                }
-                {
                     addingUser ?
-                    <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
-                        <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center', backgroundColor: '#828282' }]} onPress={async () => {
-                        setAddingUser(false)
-                        }}>
-                            <Text style={{ color: "#fff" }}>Annuler</Text>
+                        <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
+                            <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center', backgroundColor: '#828282' }]} onPress={async () => {
+                                setAddingUser(false)
+                            }}>
+                                <Text style={{ color: "#fff" }}>Annuler</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center' }]} onPress={async () => {
+                                setformResult({
+                                    ...formResult,
+                                    collaboratorsArray: [...formResult.collaboratorsArray, newUser]
+                                })
+                                setAddingUser(false)
+                                setNewUser({})
+                            }}>
+                                <Text style={{ color: "#fff" }}>Valider</Text>
+                            </TouchableOpacity>
+                        </View>
+                        : <TouchableOpacity
+                            style={{
+                                alignSelf: 'center',
+                            }}
+                            onPress={() => {
+                                setAddingUser(true)
+                            }}>
+                            <AntDesign name="pluscircle" size={50} color="#E75A06" />
                         </TouchableOpacity>
-                        <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center' }]} onPress={async () => {
-                            setformResult({
-                                ...formResult,
-                                collaboratorsArray: [...formResult.collaboratorsArray, newUser]
-                            })
-                            setNewUser({})
-                        }}>
-                            <Text style={{ color: "#fff" }}>Valider</Text>
-                        </TouchableOpacity>
-                    </View>
-                    :<TouchableOpacity
-                    style={{
-                        alignSelf: 'center',
-                    }}
-                    onPress={() => {
-                        setAddingUser(true)
-                    }}>
-                    <AntDesign name="pluscircle" size={50} color="#E75A06" />
-                </TouchableOpacity>
                 }
-                
+
             </View>
 
 
@@ -219,7 +251,6 @@ export const RegistrationForm = ({ onSubmit }) => {
             <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center' }]} onPress={async () => {
 
                 const isSubmitable = await checkForm()
-                console.log(formResult);
                 if (isSubmitable)
                     onSubmit(formResult)
             }}>
@@ -259,4 +290,66 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginVertical: 5
     },
+    labelStyle: {
+        fontWeight: 'bold'
+    }
 })
+
+
+const ProNumber = (props) => {
+    const [proNum, setProNum] = useState('')
+    // <FormField name={'n° RPPS'} value={'numero_rpps'} target={"office"} type={'text'} onChange={handleForm} />
+    //         <Text>OU</Text>
+    //         <FormField name={'n° ADELI'} value={'numero_adeli'} target={"office"} type={'text'} onChange={handleForm} />
+
+    return <View  style={{
+        paddingVertical: 20
+    }}>
+        <Text style={{
+            fontSize: 15,
+            marginBottom: 10
+        }}>Numéro professionnel *</Text>
+        <View style={{ flexDirection: 'row', alignSelf: 'center', alignItems: 'center' }}>
+            <Text>N° RPPS :</Text>
+            <TouchableOpacity
+            onPress={() => {
+                setProNum('numero_rpps')
+            }}
+            style={{
+                marginHorizontal: 10
+            }}
+            >
+                <View style={{
+                    width: 20,
+                    height: 20,
+                    borderWidth: 2,
+                    borderRadius: 50,
+                    backgroundColor: proNum == 'numero_rpps' ? '#EA6812' : "#fff"
+                }} />
+            </TouchableOpacity>
+            <Text>N° ADELI :</Text>
+            <TouchableOpacity
+            onPress={() => {
+                setProNum('numero_adeli')
+            }}
+            style={{
+                marginHorizontal: 10
+            }}
+            >
+                <View style={{
+                    width: 20,
+                    height: 20,
+                    borderWidth: 2,
+                    borderRadius: 50,
+                    backgroundColor: proNum == 'numero_adeli' ? '#EA6812' : "#fff"
+                }} />
+            </TouchableOpacity>
+
+        </View>
+        <FormField type={'text'} name="N°" target={"office"} onChange={(data) => {
+            let change = data
+            change.value = proNum
+            props.onChange(change)
+        }} isActive={proNum == '' ? false : true} required/>
+    </View>
+}

@@ -6,7 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { LoginView } from '../../views/auth/LoginView';
 import { ResetPassword } from '../../views/auth/ResetPassword';
 import { AuthHome } from '../../views/auth/AuthHome';
-import { ActivateAccountView, CreateAccountView } from '../../views/auth/InitAccount';
+import { ActivateAccountView } from '../../views/auth/InitAccount';
 
 
 const AuthStackNav = createStackNavigator();
@@ -43,13 +43,13 @@ export const AuthStack = () => {
         }}
         initialParams={{id_user: null, link: null}}
       />
-      <AuthStackNav.Screen
+      {/* <AuthStackNav.Screen
         name="auth-account-create"
         component={CreateAccountView}
         options={{
           headerShown: false
         }}
-      />
+      /> */}
     </AuthStackNav.Navigator>
   );
 }
