@@ -128,8 +128,8 @@ const OfficeButton = ({ office }) => {
 
 }
 
-export const AccountOfficesProgress = ({ managerId, refreshing, navigation }) => {
-    const office = useQuery(['Account', 'GET', 'officeProgress'], () => getOfficesProgressionForManager(managerId))
+export const AccountOfficesProgress = ({ refreshing, navigation }) => {
+    const office = useQuery(['Account', 'GET', 'officeProgress'], () => getOfficesProgressionForManager())
 
     useEffect(() => {
         if (refreshing) {
@@ -146,9 +146,7 @@ export const AccountOfficesProgress = ({ managerId, refreshing, navigation }) =>
                     <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mes collaborateurs</Text>
                     <TouchableOpacity style={styles.headerButton}
                     onPress={()=>{
-                        navigation.push('account-team-manager', {
-                            managerId: managerId
-                        })
+                        navigation.push('account-team-manager')
                     }}
                     >
                         <Text style={styles.headerButtonText}>Gérer ⚙️</Text>

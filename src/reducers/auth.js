@@ -21,9 +21,9 @@ import {
 
 const initialState = {
     isLoggedIn: false,
+    isLoading: true,
     userTopAccount: null,
     userCurrentSession: null,
-    isLoading: true,
     authMessage: ""
 }
 
@@ -43,7 +43,8 @@ export const authReducer = (state = initialState, action) => {
                 isLoggedIn: true,
                 userTopAccount: payload.user,
                 userCurrentSession: payload.user,
-                authMessage: ""
+                authMessage: "",
+                isLoading: false
             };
         case LOGIN_FAIL:
             return {
@@ -51,7 +52,8 @@ export const authReducer = (state = initialState, action) => {
                 isLoggedIn: false,
                 userTopAccount: null,
                 userCurrentSession: null,
-                authMessage: payload.msg
+                authMessage: payload.msg,
+                isLoading: false
             };
         case LOGOUT:
             return {
@@ -59,23 +61,7 @@ export const authReducer = (state = initialState, action) => {
                 isLoggedIn: false,
                 userTopAccount: null,
                 userCurrentSession: null,
-                accessToken: null,
-                isLoading: false
-            };
-        case TOKEN_VALID:
-            return {
-                ...state,
-                isLoggedIn: true,
-                userTopAccount: payload.user,
-                userCurrentSession: payload.user,
-            };
-        case TOKEN_INVALID:
-            return {
-                ...state,
-                isLoggedIn: false,
-                userTopAccount: null,
-                userCurrentSession: null,
-                isLoading: false
+                accessToken: null
             };
         default:
             return state;

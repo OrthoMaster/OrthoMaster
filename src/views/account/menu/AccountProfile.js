@@ -19,6 +19,8 @@ import { Modal } from "react-native";
 
 const DisplayUserInfo = ({ dataType, data }) => {
 
+    console.log(dataType);
+    console.log(data);
 
     if (dataType == 'Type de compte') {
         switch (data) {
@@ -103,8 +105,8 @@ export const AccountProfile = () => {
                             data={userState.username}
                         />
                         <DisplayUserInfo
-                            dataType={"Type de compte"}
-                            data={userState.user_type_id}
+                            dataType={"Fonction professionelle"}
+                            data={userState.job_function}
                         />
                         <DisplayUserInfo
                             dataType={"E-mail"}

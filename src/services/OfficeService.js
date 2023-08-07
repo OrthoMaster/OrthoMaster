@@ -37,3 +37,19 @@ export const getOfficeInfos = async (officeId) => {
         throw e
       });
   }
+
+  export const getOfficeInvitationToken = async (officeId) => {
+    const config = await restoreLocalConfigAsync()
+    const authHeader = 'Bearer ' + config.JWT;
+  
+    return axios
+      .get(route+"/invitation-token/"+officeId, {
+        headers: { Authorization: authHeader }
+      })
+      .then((response) => {
+        return response.data;
+      })
+      .catch((e)=> {
+        throw e
+      });
+  }

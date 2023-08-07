@@ -6,6 +6,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { LoginView } from '../../views/auth/LoginView';
 import { ResetPassword } from '../../views/auth/ResetPassword';
 import { AuthHome } from '../../views/auth/AuthHome';
+import { ActivateAccountView } from '../../views/auth/InitAccount';
+
 
 const AuthStackNav = createStackNavigator();
 export const AuthStack = () => {
@@ -33,7 +35,21 @@ export const AuthStack = () => {
           headerTitle: 'Mot de passe oublié'
         }}
       />
-
+      <AuthStackNav.Screen
+        name="auth-account-activate"
+        component={ActivateAccountView}
+        options={{
+          headerShown: false
+        }}
+        initialParams={{id_user: null, link: null}}
+      />
+      {/* <AuthStackNav.Screen
+        name="auth-account-create"
+        component={CreateAccountView}
+        options={{
+          headerShown: false
+        }}
+      /> */}
     </AuthStackNav.Navigator>
   );
 }

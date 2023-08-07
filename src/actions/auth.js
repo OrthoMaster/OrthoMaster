@@ -8,21 +8,35 @@ import {
 } from "./types";
 
 import AuthService from "../services/AuthService";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { restoreLocalConfigAsync } from "../utils";
 
 
 export const login = (username, password) => async (dispatch) => {
   try {
     const data = await AuthService.login(username, password);
+    if (data) {
+      AsyncStorage.setItem('user', JSON.stringify(data.user), (error) => {
+        if (error)
+          throw error
+      })
+      await SecureStore.setItemAsync('JWT', data.token.jwt_token)
+      await SecureStore.setItemAsync('refreshToken', data.token.refresh_token)
+    }
+
+    let user = data.user
+    // user.roles = user.roles.split(',')
     dispatch({
       type: LOGIN_SUCCESS,
-      payload: { user: data.user },
+      payload: { user: user },
     });
-    return await Promise.resolve();
   } catch (e) {
     dispatch({
       type: LOGIN_FAIL,
-      payload: { msg: e.response.data.msg }
+      payload: { msg: e.response.data?.message }
     });
+    throw e
   }
 };
 
@@ -34,26 +48,24 @@ export const logout = () => (dispatch) => {
   });
 };
 
-export const checkUserConnection = (config) => async (dispatch) => {
-  if (config.JWT == null) {
-    dispatch({
-      type: TOKEN_INVALID
-    })
-    return
-  }
 
-  AuthService.checkUserConnection(config.JWT).then(
-    (data) => {
+export const checkToken = () => async (dispatch) => {
+  const config = await restoreLocalConfigAsync()
+
+  try {
+    const res = await AuthService.checkUserConnection(config.JWT)
+    if (res.status == 200) {
       dispatch({
-        type: TOKEN_VALID,
-        payload: { user: config.user }
-      })
-      return Promise.resolve();
-    },
-    (error) => {
-      dispatch({
-        type: TOKEN_INVALID
+        type: LOGIN_SUCCESS,
+        payload: {user: config.user}
       })
     }
-  )
+
+  } catch (error) {
+    dispatch({
+      type: LOGIN_FAIL,
+      payload: { msg: '' }
+    })
+    
+  }
 }
