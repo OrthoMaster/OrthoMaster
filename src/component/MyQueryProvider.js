@@ -65,7 +65,7 @@ export const MyQueryProvider = ({
         },
         queryCache: new QueryCache({
             onError: (error) => {
-                console.log('Provider', error);
+                console.log('Provider', error.response);
                 if (error.code == 'ERR_NETWORK') {
                     onError('Nous rencontrons des problèmes de connexion...')
                 }

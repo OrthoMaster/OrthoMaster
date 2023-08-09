@@ -17,7 +17,6 @@ import { getOfficeByManager, getOfficeInvitationToken } from '../../../services/
 import AuthService from '../../../services/AuthService';
 import { AntDesign } from '@expo/vector-icons';
 import { FormField } from '../../../component/FormField';
-import QRCode from "react-native-qrcode-svg";
 
 
 const UserCard = ({ user }) => {
@@ -37,14 +36,6 @@ const UserCard = ({ user }) => {
             <Text>{user.email}</Text>
             <Text>{user.job_function}</Text>
         </View>
-        {/* <View style={{ flex: 1, alignItems: 'flex-end' }}>
-            {
-                user.enabled == 1 &&
-                <TouchableOpacity>
-                    <Text style={{ color: '#EA6812', fontWeight: 'bold' }}>Désactiver</Text>
-                </TouchableOpacity>
-            }
-        </View> */}
     </View>
 }
 
@@ -224,7 +215,10 @@ const styles = StyleSheet.create({
     },
     officeContainer: {
         width: '100%',
-        marginVertical: 5,
+        marginVertical: 10,
+        backgroundColor: '#fff',
+        shadowOpacity: 0.3,
+        shadowOffset:{height: 0}
     },
     officeButton: {
         flexDirection: 'row',

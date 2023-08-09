@@ -8,7 +8,7 @@ class AuthService {
 
   async login(username, password) {
     return axios
-      .post(Constants.manifest.extra.env.API_URL + "/user/login", { username, password })
+      .post(Constants.manifest.extra.env.API_URL + "/user/v2/login", { username, password })
       .then((response) => {
         return response.data;
       })

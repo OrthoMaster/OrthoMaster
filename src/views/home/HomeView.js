@@ -20,7 +20,7 @@ import { fetchQa } from '../../services/QaService';
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 import { LoadingContent } from '../../component/LoadingContent'
-
+import { useTheme } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 
@@ -30,7 +30,7 @@ export const HomeView = ({ navigation }) => {
   const authState = store.getState().auth
   const qaPreview = useQuery(['Home', 'GET', "qaPreview"], () => fetchQa(5));
   const flashPreview = useQuery(['Home', 'GET', "flashPreview"], () => fetchFlashContent(0, 5));
-
+  const {colors} = useTheme();
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -46,40 +46,9 @@ export const HomeView = ({ navigation }) => {
     <View>
       <StatusBar
         animated={true}
-        backgroundColor="#E45204"
+        barStyle={'light-content'}
       />
-      <LinearGradient
-        colors={['#E9650E', '#E65909', '#E24C01']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        locations={[0, 0.5, 1]}
-        style={{ width: '100%', height: '20%' }}
-      >
-        <SafeAreaView style={[styles.containerHeader, styles.AndroidSafeArea]}>
-          <Image
-            style={styles.logo}
-            source={require('../../../assets/home/header/logo.png')}
-          />
-          <View style={styles.headerButtonGroup}>
-
-
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => {
-                navigation.navigate('home-search')
-              }}
-            >
-              <Image
-                source={require('../../../assets/navigation/search.png')}
-              />
-            </TouchableOpacity>
-
-
-
-          </View>
-
-        </SafeAreaView>
-      </LinearGradient>
+      
 
       <ScrollView style={{ backgroundColor: 'white' }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -91,7 +60,7 @@ export const HomeView = ({ navigation }) => {
               Questions / réponses
             </Text>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('home-qa')}>
-              <Text style={styles.carouselHeaderButtonText}>Voir toutes</Text>
+              <Text style={[styles.carouselHeaderButtonText, {color: colors.primary}]}>Voir toutes</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={qaPreview.data} navigation={navigation} />
@@ -99,11 +68,11 @@ export const HomeView = ({ navigation }) => {
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-            <Text style={styles.carouselHeaderTitle}>
+            <Text style={[styles.carouselHeaderTitle]}>
               Flash ortho
             </Text>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
-              <Text style={styles.carouselHeaderButtonText}>Voir tous</Text>
+              <Text style={[styles.carouselHeaderButtonText, {color: colors.primary}]}>Voir tous</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={flashPreview.data} navigation={navigation} />
@@ -139,33 +108,9 @@ const styles = StyleSheet.create({
 
   },
   carouselHeaderButtonText: {
-    color: '#F45B11',
     fontWeight: '600',
     fontSize: 14,
     marginEnd: 15
-  },
-  containerHeader: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: '100%'
-  },
-  logo: {
-    resizeMode: 'contain',
-    flex: 3,
-    marginLeft: 30,
-    margin: 20
-  },
-  headerButtonGroup: {
-    flex: 2,
-    flexDirection: 'row-reverse'
-  },
-  headerButton: {
-    resizeMode: 'contain',
-    marginHorizontal: 15
-  },
-  AndroidSafeArea: {
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
   },
   notificationIndicator: {
     backgroundColor: 'red',

@@ -16,7 +16,8 @@ import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingContent } from './src/component/LoadingContent';
 import { AlertVersion } from './src/component/AlertVersion';
 import { NotificationHandler } from './src/component/NotificationHandler';
-
+import { appDefault, thuasne } from './src/AppMode';
+import { selectModeValue } from './src/reducers/appModeReducer';
 const prefix = Linking.createURL('/');
 
 export default function App({ navigation }) {
@@ -24,6 +25,7 @@ export default function App({ navigation }) {
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
   const user = useSelector(selectUserCurrentSession)
+  const appMode = useSelector(selectModeValue)
   const dispatch = useDispatch()
   const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
 
@@ -31,8 +33,7 @@ export default function App({ navigation }) {
 
   useEffect(() => {
     if (url) {
-      const { hostname, path, queryParams } = Linking.parse(url);
-      console.log(hostname, path, queryParams);
+      const { hostname } = Linking.parse(url);
       if (isLoggedIn == true && (hostname == "activate" || hostname == 'create')) {
         Alert.alert('Lien introuvable', "Le lien que vous essayez d'ouvrir n'est pas accessible. Vérifiez d'être déconnecté de la plateforme avant d'ouvrir le lien.")
       }
@@ -49,13 +50,6 @@ export default function App({ navigation }) {
             user_id: (user_id) => user_id,
             token: (token) => token,
           },
-          // 'auth-account-create': {
-          //   path: 'create/user/office/:office_id/token/:token',
-          //   parse: {
-          //     office_id: (office_id) => office_id,
-          //     token: (token) => token,
-          //   },
-          // }
         }
       },
     },
@@ -80,7 +74,6 @@ export default function App({ navigation }) {
     }
   };
 
-
   useEffect(() => {
     init();
   }, []);
@@ -90,7 +83,9 @@ export default function App({ navigation }) {
     return <LoadingContent />
 
   return (
-    <NavigationContainer linking={linking} onUnhandledAction={(action) => { console.log(action) }}>
+    <NavigationContainer linking={linking} onUnhandledAction={(action) => { console.log('App.js -> navigation container', action) }}
+      theme={appMode == 'default' ? appDefault : thuasne}
+    >
       {
         isLoggedIn && user?.enabled == 1 ?
           <NotificationHandler>
