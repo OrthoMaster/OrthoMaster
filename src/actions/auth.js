@@ -26,7 +26,7 @@ export const login = (username, password) => async (dispatch) => {
     }
 
     let user = data.user
-    // user.roles = user.roles.split(',')
+    user.roles = user.roles.split(',')
     dispatch({
       type: LOGIN_SUCCESS,
       payload: { user: user },
