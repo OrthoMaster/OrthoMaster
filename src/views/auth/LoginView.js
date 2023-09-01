@@ -7,15 +7,10 @@ import {
     SafeAreaView,
     TouchableOpacity,
     Image,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
     Dimensions
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectAuthMessage } from '../../reducers/auth';
-import { useMutation } from 'react-query';
-import { activateUser, resetUserPassword } from '../../services/UserService';
 
 
 import { login } from '../../actions/auth';

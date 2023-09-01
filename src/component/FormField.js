@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { TextInput, View, Text, StyleSheet } from "react-native";
 import SelectDropdown from 'react-native-select-dropdown'
 
+
 const DropDownField = ({ props }) => {
     const [alertError, setAlertError] = useState(false)
     return <SelectDropdown
@@ -61,7 +62,6 @@ const TextField = ({ props }) => {
     const [alertError, setAlertError] = useState('')
 
     const checkEmail = (text) => {
-        console.log('here');
         let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
         if (reg.test(text) === false) {
             return false

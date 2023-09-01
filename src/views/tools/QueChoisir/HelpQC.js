@@ -9,8 +9,11 @@ export const HelpSection = ({ helpWidth, helpIsActive, onPress, response }) => {
         <View style={[styles.helpView, { width: helpWidth, right: helpIsActive ? 0 : helpWidth * -1} ]}>
             <SafeAreaView style={ [styles.helpContent]}>
                 <View style={styles.responseAlign}>
+                    <View style={{flex: 1}}>
+
+                    <HelpIcon style={{marginLeft: 5, marginTop: 3}} height={30} width={30}/>
+                    </View>
                     <Text style={[styles.titleHelpView]}>{response.response}</Text>
-                    <HelpIcon style={{marginLeft: 5, marginTop: 3}} height={25} width={25}/>
                 </View>
                 <Image
                     source={require('../../../../assets/queChoisir/tmp.png')}
@@ -30,7 +33,7 @@ export const HelpSection = ({ helpWidth, helpIsActive, onPress, response }) => {
                                           onPress();
                                       }}
                     >
-                        <Text style={{fontSize: 16, fontWeight:'bold', color: 'white', marginRight: 5}}>Got It</Text>
+                        <Text style={{fontSize: 16, fontWeight:'bold', color: 'white', marginRight: 5}}>OK</Text>
                         <GotIt style={{marginBottom: 2}} height={30} width={30}/>
                     </TouchableOpacity>
                 </LinearGradient>
@@ -44,7 +47,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     helpView: {
-        borderBottomLeftRadius: 16,
         height:"100%",
         backgroundColor: 'white',
         shadowColor: 'black',
@@ -60,10 +62,11 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     titleHelpView: {
-        fontSize: 24,
+        fontSize: 18,
         fontWeight: 600,
         color: '#20123A',
-        alignSelf: 'center',
+        flex: 5,
+        textAlign: 'center',
     },
     closeHelp: {
         borderRadius: 16,
@@ -85,6 +88,6 @@ const styles = StyleSheet.create({
     },
     responseAlign: {
         flexDirection: 'row',
-        justifyContent: 'center',
+        alignItems: 'center'
     },
 })

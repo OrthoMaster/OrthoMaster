@@ -1,15 +1,7 @@
 import {StyleSheet} from "react-native";
 
 export const styles = StyleSheet.create({
-    circleGradient: {
-        backgroundColor: "white",
-        borderRadius: 7,
-        width: '98%',
-        minHeight: 80,
-        justifyContent:'center',
-        alignSelf: 'center',
-        margin: 1
-    },
+
     buttonPressed: {
         marginVertical: 5,
         minHeight: 80,

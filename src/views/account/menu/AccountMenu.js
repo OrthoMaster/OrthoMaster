@@ -38,6 +38,7 @@ export const AccountMenu = ({ navigation }) => {
 
     const user = store.getState().auth.userCurrentSession
 
+    console.log('Account menu', user);
 
     return (
         <View style={styles.container}>
@@ -63,7 +64,9 @@ export const AccountMenu = ({ navigation }) => {
                     icon={require('../../../../assets/settings/professional.png')}
                     text={"Formulaire d'inscription"}
                     onPress={() => {
-                        navigation.navigate('account-register-form')
+                        navigation.navigate('account-register-form',{
+                            seller: user
+                        })
                     }}
                 />
 

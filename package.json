@@ -6,7 +6,7 @@
     "api-distant": "API_URL=https://api.orthomaster.fr npx expo start",
     "api-local-no-dev": "API_URL=http://192.168.1.19 npx expo start --no-dev --minify",
     "api-distant-no-dev": "API_URL=https://api.orthomaster.fr npx expo start --no-dev --minify",
-    "dev-cli": "API_URL=http://192.168.1.18 npx expo start --dev-client",
+    "dev-cli": "API_URL=http://192.168.1.101 npx expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "eas-build-on-success": "npx bugsnag-eas-build-on-success"
@@ -48,6 +48,7 @@
     "react-dom": "18.2.0",
     "react-error-boundary": "^3.1.4",
     "react-native": "0.71.8",
+    "react-native-bouncy-checkbox": "^3.0.7",
     "react-native-dashed-line": "^1.1.0",
     "react-native-device-detection": "^0.2.1",
     "react-native-exception-handler": "^2.10.10",

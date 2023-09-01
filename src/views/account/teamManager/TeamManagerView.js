@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
     View,
     TextInput,
@@ -9,7 +9,9 @@ import {
     Image,
     Alert,
     FlatList,
-    Dimensions
+    Dimensions,
+    RefreshControl,
+    ActivityIndicator
 } from 'react-native'
 import { useMutation, useQuery } from 'react-query';
 import { getUsersByOfficeId } from '../../../services/UserService';
@@ -17,7 +19,7 @@ import { getOfficeByManager, getOfficeInvitationToken } from '../../../services/
 import AuthService from '../../../services/AuthService';
 import { AntDesign } from '@expo/vector-icons';
 import { FormField } from '../../../component/FormField';
-
+import BouncyCheckbox from "react-native-bouncy-checkbox";
 
 const UserCard = ({ user }) => {
     return <View style={{
@@ -55,10 +57,12 @@ const OfficeManager = ({ office }) => {
     })
     const registerUser = useMutation(AuthService.inviteUser, {
         onError: (e) => {
-            console.log(e.response);
+            setErrorMsg("Echec de la création d'utilisateur")
         },
         onSuccess: (data) => {
-            console.log(data);
+            setRegisteringUser(false)
+            setNewUser({})
+            users.refetch()
         }
     })
     const [jobFunctions, setJobFunctions] = useState([])
@@ -70,7 +74,8 @@ const OfficeManager = ({ office }) => {
         email: "",
         job_function: ""
     })
-
+    const [isCertified, setIsCertified] = useState(false)
+    const [errorMsg, setErrorMsg] = useState("")
     const handleFormChange = (val) => {
         setNewUser({
             ...newUser,
@@ -132,44 +137,63 @@ const OfficeManager = ({ office }) => {
                     {
                         registeringUser ?
                             <View>
-                                <Text>Inscription</Text>
+                                <Text style={{ alignSelf: 'center', fontWeight: 'bold', fontSize: 18 }}>Inscription</Text>
                                 <FormField name={"Prénom"} type={"text"} value={'firstname'} onChange={handleFormChange} required />
                                 <FormField name={"Nom"} type={"text"} value={'lastname'} onChange={handleFormChange} required />
                                 <FormField name={"Email"} type={"email"} value={'email'} onChange={handleFormChange} required />
                                 <FormField name={"Fonction professionelle"} type={"dropdown"} value={'job_function'} data={jobFunctions} onChange={handleFormChange} />
-                                <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
-                                    <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center', backgroundColor: '#828282' }]} onPress={async () => {
-                                        setRegisteringUser(false)
-                                    }}>
-                                        <Text style={{ color: "#fff" }}>Annuler</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center' }]} onPress={async () => {
-                                        if (newUser.firstname.length > 0 &&
-                                            newUser.lastname.length > 0 &&
-                                            newUser.email.length > 0 &&
-                                            newUser.job_function.length > 0) {
+                                <BouncyCheckbox
+                                    size={20}
+                                    style={{ width: '90%', alignSelf: 'center', marginTop: 20 }}
+                                    fillColor="#EA6912"
+                                    unfillColor="#FFFFFF"
+                                    text="Je certifie que la personne ci-dessus travail dans ma structure"
+                                    textStyle={{ color: '#000000', textDecorationLine: 'none', fontSize: 12 }}
+                                    iconStyle={{ borderColor: "#EA6912" }}
+                                    innerIconStyle={{ borderWidth: 2 }}
+                                    onPress={(isChecked) => { setIsCertified(isChecked) }}
+                                />
 
-                                            registerUser.mutate({
-                                                body: { user: newUser, office_id: office.id_office },
-                                                mode: 'pre-registration',
-                                                token: invitationToken.data.token
-                                            })
-                                        }
-                                        setRegisteringUser(false)
-                                        setNewUser({})
-                                    }}>
-                                        <Text style={{ color: "#fff" }}>Valider</Text>
-                                    </TouchableOpacity>
-                                </View>
-                                {/* <Text>OU</Text>
-                                <QRCode
-                                    value={`orthomaster://create/user/office/${office.id_office}/token/${invitationToken.data.token}`}
-                                    logoSize={30}
-                                    logoBackgroundColor="#fff"
-                                    quietZone={0}
-                                    logoBorderRadius={10}
-                                    size={100}
-                                /> */}
+                                {
+                                    errorMsg?.length > 0 &&
+                                    <Text style={{ color: 'red', alignSelf: 'center', marginTop: 20 }}>{errorMsg}</Text>
+                                }
+
+                                {
+                                    registerUser.isLoading ?
+                                        <ActivityIndicator style={{marginVertical: 30, alignSelf: 'center'}}/>
+                                        : <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
+                                            <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center', backgroundColor: '#828282' }]} onPress={async () => {
+                                                setRegisteringUser(false)
+                                                setNewUser({})
+                                                setErrorMsg("")
+                                            }}>
+                                                <Text style={{ color: "#fff" }}>Annuler</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center' }]} onPress={async () => {
+                                                let regEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+                                                if (newUser.firstname?.length > 0 &&
+                                                    newUser.lastname?.length > 0 &&
+                                                    newUser.email?.length > 0 && regEmail.test(newUser.email) &&
+                                                    newUser.job_function?.length > 0 &&
+                                                    isCertified == true) {
+
+                                                    registerUser.mutate({
+                                                        body: { user: newUser, office_id: office.id_office },
+                                                        mode: 'pre-registration',
+                                                        token: invitationToken.data.token
+                                                    })
+                                                    setErrorMsg("")
+                                                } else {
+                                                    setErrorMsg("Tout les champs doivent être remplis")
+                                                }
+                                            }}>
+                                                <Text style={{ color: "#fff" }}>Valider</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                }
+
+
                             </View>
 
                             : <TouchableOpacity
@@ -193,6 +217,7 @@ const OfficeManager = ({ office }) => {
 export const TeamManagerView = ({ route }) => {
     const office = useQuery(['Account', 'GET', 'officeByManager'], () => getOfficeByManager())
 
+
     if (office.data == null) return
 
     return (
@@ -202,6 +227,7 @@ export const TeamManagerView = ({ route }) => {
                 renderItem={({ item }) => <OfficeManager office={item} />}
                 keyExtractor={item => item.id_office}
                 style={{ width: '100%' }}
+
             />
         </SafeAreaView>
     );
@@ -218,7 +244,7 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         backgroundColor: '#fff',
         shadowOpacity: 0.3,
-        shadowOffset:{height: 0}
+        shadowOffset: { height: 0 }
     },
     officeButton: {
         flexDirection: 'row',

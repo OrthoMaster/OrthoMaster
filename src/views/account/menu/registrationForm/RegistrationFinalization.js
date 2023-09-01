@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Linking, StyleSheet, Alert, ScrollView, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, Linking, StyleSheet, Alert, ScrollView, Dimensions, ActivityIndicator } from "react-native";
 
 import AuthService from "../../../../services/AuthService";
 import { sendSupportTicket } from "../../../../services/tools/SupportService";
 import { useMutation } from "react-query";
 import QRCode from "react-native-qrcode-svg";
 
-export const RegistrationFinalization = ({ formData, ids, errors }) => {
+export const RegistrationFinalization = ({ formData, ids, errors, seller }) => {
     let qrLogoFromFile = require('../../../../../assets/logo.png');
 
     const sendMail = useMutation(AuthService.sendSubscriptionLinkByEmail, {
@@ -21,22 +21,26 @@ export const RegistrationFinalization = ({ formData, ids, errors }) => {
         }
     })
     const [isError, setIsError] = useState(false)
-    const paymentUrl = `https://orthomaster.fr/redirection-paiement?hubspotId=${ids.companyId}&txId=${ids.txId}`
+    const paymentUrl = `https://orthomaster.fr/redirection-paiement?h=${ids.companyId}&t=${ids.txId}`
     const sendTicket = useMutation(sendSupportTicket, {
         enabled: false,
     })
-
     const sendEmailTo = (mail) => {
+        
         sendMail.mutate({
             email: mail,
             params: {
                 payment_url: paymentUrl
+            },
+            header: {
+                seller_email: seller.email,
+                company: `${formData.office.name}, ${formData.office.zip} ${formData.office.city}`
             }
         })
     }
 
     useEffect(() => {
-
+        sendEmailTo(formData.office.email)
         errors.forEach(element => {
             if (element.gravity == "VERY_IMPORTANT") {
                 setIsError(true)
@@ -65,7 +69,7 @@ export const RegistrationFinalization = ({ formData, ids, errors }) => {
             isError ?
                 <View>
                     <Text style={styles.statusMessage}>Lien de paiement indisponible.</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'center',marginTop: 15 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 15 }}>
                         <Text style={styles.displayText}>Notification aux équipes OrthoMaster:</Text>
                         <View style={{
                             borderRadius: 20,
@@ -80,37 +84,44 @@ export const RegistrationFinalization = ({ formData, ids, errors }) => {
                     <TouchableOpacity onPress={() => {
                         Linking.openURL('mailto:orthomaster.services@gmail.com')
                     }}>
-                        <Text style={[styles.displayText, {textDecorationLine: 'underline'}]}>orthomaster.services@gmail.com</Text>
+                        <Text style={[styles.displayText, { textDecorationLine: 'underline' }]}>orthomaster.services@gmail.com</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => {
                         Linking.openURL('tel:+33388126989')
                     }}>
-                        <Text style={[styles.displayText, {textDecorationLine: 'underline'}]}>+33 3 88 12 69 89</Text>
+                        <Text style={[styles.displayText, { textDecorationLine: 'underline' }]}>+33 3 88 12 69 89</Text>
                     </TouchableOpacity>
                 </View>
                 : <View>
-                    <Text style={styles.displayText}>Envoie de la  confirmation avec lien pour paiement par mail :</Text>
-
-                    <View style={{ flexDirection: 'row', alignSelf: 'center', marginVertical: 20 }}>
-                        <TouchableOpacity style={styles.buttonContainer} onPress={() => sendEmailTo(formData.office.email)}>
-                            <Text style={styles.buttonText}>Email Entreprise</Text>
+                    <Text style={[styles.displayText, { width: '80%', fontSize: 15 }]}>Confirmation avec lien pour paiement par mail :</Text>
+                    {
+                        sendMail.isLoading ?
+                            <ActivityIndicator />
+                            : <Text style={[styles.displayText, {
+                                color: sendMail.isSuccess ? 'green' : "red",
+                                fontWeight: 'bold',
+                                fontSize: 15
+                            }]}>{sendMail.isSuccess ? 'envoyé' : "echec d'envoie"}</Text>
+                    }
+                    {
+                        sendMail.isError &&
+                        <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center' }]} onPress={() => sendEmailTo(formData.office.email)}>
+                            <Text>Renvoyer</Text>
                         </TouchableOpacity>
+                    }
+                    <Text style={[styles.title, { marginTop: 60 }]}>Lien de paiement</Text>
+                    <Text style={[styles.displayText, { width: '80%' }]}>Faite payer votre client tout de suite</Text>
 
-                        <TouchableOpacity style={styles.buttonContainer} onPress={() => sendEmailTo(formData.manager.email)}>
-                            <Text style={styles.buttonText}>Email Contact principal</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <Text style={{ fontWeight: 'bold', fontSize: 22, alignSelf: 'center' }}>OU</Text>
-                    <View style={{alignSelf: 'center', marginVertical: 20}}>
-                    <QRCode
-                        value={paymentUrl}
-                        logo={qrLogoFromFile}
-                        logoSize={30}
-                        logoBackgroundColor="#fff"
-                        quietZone={0}
-                        logoBorderRadius={10}
-                        size={200}
-                    />
+                    <View style={{ alignSelf: 'center', marginVertical: 20 }}>
+                        <QRCode
+                            value={paymentUrl}
+                            logo={qrLogoFromFile}
+                            logoSize={30}
+                            logoBackgroundColor="#fff"
+                            quietZone={0}
+                            logoBorderRadius={10}
+                            size={200}
+                        />
                     </View>
                 </View>
         }
@@ -154,7 +165,7 @@ const styles = StyleSheet.create({
         borderColor: '#fff',
         borderWidth: 2,
         shadowOpacity: 0.3,
-        shadowOffset:{width: 0, height: 0},
+        shadowOffset: { width: 0, height: 0 },
         width: Dimensions.get('screen').width * 0.4,
         alignItems: "center",
         justifyContent: 'center',

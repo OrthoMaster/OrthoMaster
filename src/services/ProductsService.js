@@ -5,7 +5,7 @@ import { restoreLocalConfigAsync } from "../utils";
 
 let route = Constants.manifest.extra.env.API_URL + "/products"
 
-export const getAPIgetProducts = async (type) => {
+export const getAPIgetProducts = async (category) => {
     const config = await restoreLocalConfigAsync()
 
     const authHeader = 'Bearer ' + config.JWT;
@@ -15,7 +15,23 @@ export const getAPIgetProducts = async (type) => {
                 Authorization: authHeader
             },
             params: {
-                type: type
+                category: category
+            }
+        })
+        .then((response) => {
+            return response.data;
+        })
+
+}
+
+export const getProductsBrands = async () => {
+    const config = await restoreLocalConfigAsync()
+
+    const authHeader = 'Bearer ' + config.JWT;
+    return axios
+        .get(route + "/brands", {
+            headers: {
+                Authorization: authHeader
             }
         })
         .then((response) => {

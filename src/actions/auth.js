@@ -17,6 +17,9 @@ export const login = (username, password) => async (dispatch) => {
   try {
     const data = await AuthService.login(username, password);
     if (data) {
+      data.user.roles = data.user.roles?.split(',')
+      data.user.labos = data.user.labos?.split(',')
+
       AsyncStorage.setItem('user', JSON.stringify(data.user), (error) => {
         if (error)
           throw error
@@ -25,11 +28,9 @@ export const login = (username, password) => async (dispatch) => {
       await SecureStore.setItemAsync('refreshToken', data.token.refresh_token)
     }
 
-    let user = data.user
-    user.roles = user.roles.split(',')
     dispatch({
       type: LOGIN_SUCCESS,
-      payload: { user: user },
+      payload: { user: data.user },
     });
   } catch (e) {
     dispatch({
@@ -57,7 +58,7 @@ export const checkToken = () => async (dispatch) => {
     if (res.status == 200) {
       dispatch({
         type: LOGIN_SUCCESS,
-        payload: {user: config.user}
+        payload: { user: config.user }
       })
     }
 
@@ -66,6 +67,6 @@ export const checkToken = () => async (dispatch) => {
       type: LOGIN_FAIL,
       payload: { msg: '' }
     })
-    
+
   }
 }

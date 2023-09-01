@@ -8,9 +8,11 @@ import AuthService from "../../../../services/AuthService";
 import { RegistrationForm } from "./RegistrationForm";
 import { RegistrationFinalization } from "./RegistrationFinalization";
 
-export const RegistrationView = () => {
+export const RegistrationView = ({ route }) => {
+    const seller = route.params.seller
     const [formCompleted, setFormCompleted] = useState(false)
     const [registrationInfos, setRegistrationInfos] = useState(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [hubspotIds, setHubspotIds] = useState({
         companyId: null,
         txId: null
@@ -18,6 +20,7 @@ export const RegistrationView = () => {
     const [errors, setErrors] = useState([])
     const sendForm = useMutation(AuthService.registerNewCompanyAndUser, {
         onSuccess: (data) => {
+            setIsSubmitting(false)
             setHubspotIds({
                 companyId: data.data.hubspot_id,
                 txId: data.data.transaction_id,
@@ -26,6 +29,7 @@ export const RegistrationView = () => {
             setFormCompleted(true)
         },
         onError: (err) => {
+            setIsSubmitting(false)
             switch (err.response.status) {
                 case 400:
                     Alert.alert('Entreprise déjà existante', `Une entreprise avec l'adresse email: ${registrationInfos.office.email} est déjà existante.`)
@@ -49,11 +53,14 @@ export const RegistrationView = () => {
     })
 
     if (formCompleted) {
-        return <RegistrationFinalization formData={registrationInfos} ids={hubspotIds} errors={errors} />
+        return <RegistrationFinalization formData={registrationInfos} ids={hubspotIds} errors={errors} seller={seller} />
     } else {
-        return <RegistrationForm onSubmit={(data) => {
+        return <RegistrationForm isSubmitting={isSubmitting} onSubmit={(data) => {
             setRegistrationInfos(data)
+            setIsSubmitting(true)
             sendForm.mutate(data)
-        }} />
+        }}
+            seller={seller}
+        />
     }
 }

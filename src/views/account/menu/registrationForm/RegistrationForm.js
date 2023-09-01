@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Alert, ActivityIndicator } from "react-native";
 import { FormField } from "../../../../component/FormField";
 import { useQuery } from "react-query";
 import AuthService from "../../../../services/AuthService";
 import { AntDesign } from '@expo/vector-icons';
 
-export const RegistrationForm = ({ onSubmit }) => {
+export const RegistrationForm = ({ onSubmit, isSubmitting, seller }) => {
     const [formResult, setformResult] = useState({
         office: {
             name: "",
@@ -28,8 +28,8 @@ export const RegistrationForm = ({ onSubmit }) => {
         },
         collaboratorsArray: [],
         seller: {
-            code: "",
-            labo: ""
+            email: seller.email,
+            labo: seller.labos ? seller.labos[0] : ""
         }
     })
 
@@ -144,18 +144,18 @@ export const RegistrationForm = ({ onSubmit }) => {
             <FormField name={'Pays'} value={'state'} target={"office"} type={'dropdown'} data={dynamicDropdowns.country} onChange={handleForm} required />
 
 
-            <ProNumber onChange={handleForm}/>
-
-
+            <ProNumber onChange={handleForm} />
 
             <FormField name={'Email'} value={'email'} target={"office"} type={'email'} onChange={handleForm} required />
+            <Text style={{ width: '80%', textAlign: 'center', alignSelf: 'center', fontStyle: 'italic', color: 'grey' }}>Cet email servira aux données de facturation</Text>
             <FormField name={'Téléphone'} value={'tel'} target={"office"} type={'tel'} onChange={handleForm} />
             <FormField name={'Abonnement'} value={'abonnement'} target={"office"} type={'dropdown'} data={dynamicDropdowns.abonnement} onChange={handleForm} required />
             <View>
                 <Text style={styles.title}>Contact principal</Text>
                 <FormField name={'Nom'} value={'lastname'} target={"manager"} type={'text'} onChange={handleForm} required />
                 <FormField name={'Prénom'} value={'firstname'} target={"manager"} type={'text'} onChange={handleForm} required />
-                <FormField name={'Email'} value={'email'} target={"manager"} type={'email'} onChange={handleForm} required />
+                <FormField name={'Email lié au compte OrthoMaster'} value={'email'} target={"manager"} type={'email'} onChange={handleForm} required />
+                <Text style={{ width: '80%', textAlign: 'center', alignSelf: 'center', fontStyle: 'italic', color: 'grey' }}>Cet email doit être accessible depuis l'appareil disposant de l'application</Text>
                 <FormField name={'Fonction professionnel'} target={"manager"} value={'fonction'} data={dynamicDropdowns.fonctions} type={'dropdown'} onChange={handleForm} required />
             </View>
             <View>
@@ -206,7 +206,8 @@ export const RegistrationForm = ({ onSubmit }) => {
                     <View>
                         <FormField name={'Nom'} value={'lastname'} target={"user"} type={'text'} onChange={handleForm} required />
                         <FormField name={'Prénom'} value={'firstname'} target={"user"} type={'text'} onChange={handleForm} required />
-                        <FormField name={'Email'} value={'email'} target={"user"} type={'email'} onChange={handleForm} required />
+                        <FormField name={'Email lié au compte OrthoMaster'} value={'email'} target={"user"} type={'email'} onChange={handleForm} required />
+                        <Text style={{ width: '80%', textAlign: 'center', alignSelf: 'center', fontStyle: 'italic', color: 'grey' }}>Cet email doit être accessible depuis l'appareil disposant de l'application</Text>
                         <FormField name={'Fonction professionnel'} target={"user"} value={'fonction'} type={'dropdown'} data={dynamicDropdowns.fonctions} onChange={handleForm} required />
                     </View>
                 }
@@ -245,16 +246,30 @@ export const RegistrationForm = ({ onSubmit }) => {
 
             {
                 isError &&
-                <Text>{errorMsg}</Text>
+                <Text style={{ alignSelf: 'center', marginTop: 20, color: 'red', fontWeight: 'bold' }}>{errorMsg}</Text>
             }
 
             <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center' }]} onPress={async () => {
 
                 const isSubmitable = await checkForm()
-                if (isSubmitable)
-                    onSubmit(formResult)
+                if (isSubmitable) {
+                    setIsError(false)
+                    setErrorMsg('')
+                    Alert.alert("C'est presque fini",
+                        `Assurez vous que l'email de contact suivant\n\n${formResult.office.email}\n\n ainsi que les données du formulaire soient corrects, une fois validé, vous ne pourrez plus revenir en arrière`, [
+                        {
+                            text: 'Modifier',
+                            style: 'destructive',
+                        },
+                        { text: 'Valider le formulaire', onPress: () =>onSubmit(formResult)},
+                    ])
+                }
             }}>
                 <Text style={{ color: "#fff" }}>Valider</Text>
+                {
+                    isSubmitting &&
+                    <ActivityIndicator color={"#ffffff"} style={{ position: 'absolute', left: '80%' }} />
+                }
             </TouchableOpacity>
         </View>
     </ScrollView>
@@ -298,26 +313,24 @@ const styles = StyleSheet.create({
 
 const ProNumber = (props) => {
     const [proNum, setProNum] = useState('')
-    // <FormField name={'n° RPPS'} value={'numero_rpps'} target={"office"} type={'text'} onChange={handleForm} />
-    //         <Text>OU</Text>
-    //         <FormField name={'n° ADELI'} value={'numero_adeli'} target={"office"} type={'text'} onChange={handleForm} />
 
-    return <View  style={{
+    return <View style={{
         paddingVertical: 20
     }}>
         <Text style={{
             fontSize: 15,
-            marginBottom: 10
+            marginBottom: 10,
+            marginLeft: 10
         }}>Numéro professionnel *</Text>
         <View style={{ flexDirection: 'row', alignSelf: 'center', alignItems: 'center' }}>
             <Text>N° RPPS :</Text>
             <TouchableOpacity
-            onPress={() => {
-                setProNum('numero_rpps')
-            }}
-            style={{
-                marginHorizontal: 10
-            }}
+                onPress={() => {
+                    setProNum('numero_rpps')
+                }}
+                style={{
+                    marginHorizontal: 10
+                }}
             >
                 <View style={{
                     width: 20,
@@ -329,12 +342,12 @@ const ProNumber = (props) => {
             </TouchableOpacity>
             <Text>N° ADELI :</Text>
             <TouchableOpacity
-            onPress={() => {
-                setProNum('numero_adeli')
-            }}
-            style={{
-                marginHorizontal: 10
-            }}
+                onPress={() => {
+                    setProNum('numero_adeli')
+                }}
+                style={{
+                    marginHorizontal: 10
+                }}
             >
                 <View style={{
                     width: 20,
@@ -350,6 +363,6 @@ const ProNumber = (props) => {
             let change = data
             change.value = proNum
             props.onChange(change)
-        }} isActive={proNum == '' ? false : true} required/>
+        }} isActive={proNum == '' ? false : true} required />
     </View>
 }

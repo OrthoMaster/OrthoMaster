@@ -6,11 +6,11 @@ const isNumber = (char) => {
     return char != null && char.length === 1 && char.match(/[0-9]/i) ? true : false;
 }
 
-const isInHistory = (ref, value, history) => {
+const isInHistory = async (ref, value, history) => {
     let isIn = false
-    history.forEach(historyElement => {
+    history.forEach(async historyElement => {
         if (historyElement.question.ref == ref) {
-            historyElement.responses.forEach(response => {
+            historyElement.responses.forEach(async response => {
                 if (response.response.value == value) {
                     isIn = true
                     return
@@ -42,7 +42,7 @@ export const evaluateExpression = async (exp, userHistory) => {
         if (i + 1 == exp.length || (!isLetter(exp[i + 1]) && !isNumber(exp[i + 1]))) {
             if (refToCheck.length > 0 && valueToCheck.length > 0) {
                 var re = new RegExp(`\\b${refToCheck + valueToCheck}\\b`, 'g')
-                if (isInHistory(refToCheck, valueToCheck, userHistory)) {
+                if (await isInHistory(refToCheck, valueToCheck, userHistory)) {
                     toEvaluate = toEvaluate.replace(re, true)
                 } else {
                     toEvaluate = toEvaluate.replace(re, false)

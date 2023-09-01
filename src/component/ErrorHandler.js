@@ -56,6 +56,9 @@ export const ErrorHandler = ({ children }) => {
                     //reloadAsync()
                 }
             },
+            {
+                text: 'Fermer'
+            }
             ]
         );
     }
