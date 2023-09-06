@@ -1,10 +1,8 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import { getS3XML } from './S3Service'
-import Constants from 'expo-constants';
 
-let route = Constants.manifest.extra.env.API_URL + "/flash"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+ "/flash"
 
 export const fetchFlashContent = async (subcategory_id = 0, limit = 0) => {
   const config = await restoreLocalConfigAsync()
@@ -16,7 +14,7 @@ export const fetchFlashContent = async (subcategory_id = 0, limit = 0) => {
 
 
   return axios
-    .get(route + "/content", {
+    .get(baseurl + "/content", {
       headers: {
         Authorization: authHeader
       },
@@ -35,7 +33,7 @@ export const fetchFlashCategoriesByTheme = async (theme_id) => {
 
 
   return axios
-    .get(route + "/category", {
+    .get(baseurl + "/category", {
       headers: { Authorization: authHeader },
       params: {
         theme_id: theme_id,
@@ -56,7 +54,7 @@ export const fetchFlashSubcategoriesByCategory = async (category_id) => {
 
 
   return axios
-    .get(route + "/subcategory", {
+    .get(baseurl + "/subcategory", {
       headers: { Authorization: authHeader },
       params: {
         category_id: category_id,

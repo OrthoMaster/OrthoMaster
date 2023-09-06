@@ -1,14 +1,15 @@
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
 import { restoreLocalConfigAsync } from "../utils";
+
+const baseurl = process.env.EXPO_PUBLIC_API_URL
 
 class AuthService {
 
   async login(username, password) {
     return axios
-      .post(Constants.manifest.extra.env.API_URL + "/user/v2/login", { username, password })
+      .post(baseurl + "/user/v2/login", { username, password })
       .then((response) => {
         return response.data;
       })
@@ -22,7 +23,7 @@ class AuthService {
   async checkUserConnection(token) {
 
     const authHeader = 'Bearer ' + token;
-    const res = await axios.get(Constants.manifest.extra.env.API_URL + '/connect', { headers: { Authorization: authHeader } });
+    const res = await axios.get(baseurl + '/connect', { headers: { Authorization: authHeader } });
     //console.log('res',res);
     return res
   }
@@ -30,7 +31,7 @@ class AuthService {
   async changePassword(credentials) {
 
     try {
-      return await axios.post(Constants.manifest.extra.env.API_URL + '/user/edit/password', credentials);
+      return await axios.post(baseurl + '/user/edit/password', credentials);
     } catch (e) {
       throw e;
     }
@@ -41,7 +42,7 @@ class AuthService {
     const config = await restoreLocalConfigAsync()
     const refreshToken = await SecureStore.getItemAsync('refreshToken')
     return axios
-      .post(Constants.manifest.extra.env.API_URL + "/user/token", { id_user: config.user.id_user, refresh_token: refreshToken })
+      .post(baseurl + "/user/token", { id_user: config.user.id_user, refresh_token: refreshToken })
       .then(async (response) => {
         if (response.data) {
           console.log(response.data);
@@ -61,7 +62,7 @@ class AuthService {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
     return axios
-      .post(Constants.manifest.extra.env.API_URL + "/v2/registration", data, { headers: { Authorization: authHeader } })
+      .post(baseurl + "/v2/registration", data, { headers: { Authorization: authHeader } })
   }
 
   async sendSubscriptionLinkByEmail(body) {
@@ -69,12 +70,12 @@ class AuthService {
     const authHeader = 'Bearer ' + config.JWT;
 
     return axios
-      .post(Constants.manifest.extra.env.API_URL + "/v2/registration/mailing", body, { headers: { Authorization: authHeader } })
+      .post(baseurl + "/v2/registration/mailing", body, { headers: { Authorization: authHeader } })
   }
 
   async activateUser(body) {
     return axios
-      .post(Constants.manifest.extra.env.API_URL + '/v2/registration/activate',
+      .post(baseurl + '/v2/registration/activate',
         {
           username: body.username,
           password: body.password,
@@ -89,7 +90,7 @@ class AuthService {
   async inviteUser(data) {
 
     return axios
-      .post(Constants.manifest.extra.env.API_URL + '/v2/registration/register-contact?type=' + data.mode,
+      .post(baseurl + '/v2/registration/register-contact?type=' + data.mode,
         data.body,
         {
           headers: {
@@ -102,7 +103,7 @@ class AuthService {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
 
-    return axios.get(Constants.manifest.extra.env.API_URL + '/v2/subscription/get-products', { headers: { Authorization: authHeader } })
+    return axios.get(baseurl + '/v2/subscription/get-products', { headers: { Authorization: authHeader } })
   }
 
 
@@ -110,7 +111,7 @@ class AuthService {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
 
-    return axios.get(Constants.manifest.extra.env.API_URL + `/v2/registration/get-hs-properties?objectType=${objectType}&property=${property}`,
+    return axios.get(baseurl + `/v2/registration/get-hs-properties?objectType=${objectType}&property=${property}`,
       { headers: { Authorization: authHeader } })
   }
 

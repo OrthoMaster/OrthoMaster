@@ -1,8 +1,7 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import Constants from 'expo-constants';
-let route = Constants.manifest.extra.env.API_URL+"/modules"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/modules"
 
 
 export const fetchModulesWithUserProgression = async () => {
@@ -11,7 +10,7 @@ export const fetchModulesWithUserProgression = async () => {
 
 
   return axios
-    .get(route+"/user/"+config.user.id_user, {
+    .get(baseurl+"/user/"+config.user.id_user, {
       headers: { Authorization: authHeader },
 
     })

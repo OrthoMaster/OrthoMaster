@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,18 +13,30 @@ import {
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { getProductsBrands } from '../../services/ProductsService';
 import { getQCcategories } from '../../services/tools/QueChoisirService';
 import { useQuery } from 'react-query';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import AppModal from '../../component/AppModal';
+import FiltersQC from './QueChoisir/FiltersQC';
+
 
 export const ToolsView = ({ navigation }) => {
-
-  const brands = useQuery(['Tools', 'GET', 'Brands'], () => getProductsBrands())
   const qcCategories = useQuery(['Tools', 'GET', 'QC categories'], () => getQCcategories())
   const [showFilters, setShowFilters] = useState(false)
+
+  const [qcFilters, setQcFilters] = useState([])
+
+
+  useEffect(() => {
+    AsyncStorage.getItem("qcFilters", (err, result) => {
+      if (result) {
+        setQcFilters(result.split(','))
+      }
+    })
+  }, [])
+  
 
   return (
     <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
@@ -41,7 +53,7 @@ export const ToolsView = ({ navigation }) => {
         <TouchableOpacity style={[{
           backgroundColor: '#fff',
           padding: 10,
-          borderRadius: '100%',
+          borderRadius: 100,
           position: 'absolute',
           right: 10,
           top: 10,
@@ -49,7 +61,23 @@ export const ToolsView = ({ navigation }) => {
           shadowOffset: { width: 5, height: 5 }
         }]}
           onPress={() => setShowFilters(true)}>
-          <Ionicons name="filter" size={24} color="#EC4E6E" />
+          <MaterialCommunityIcons name="format-list-numbered" size={24} color="#EC4E6E" />
+          {
+            qcFilters.length > 0 &&
+            <View style={{backgroundColor: '#EC5369',
+            borderColor: '#fff',
+            borderWidth: 1,
+            alignItems: 'center',
+            borderRadius: 100,
+            position: 'absolute',
+            width: 20, height: 20,
+            bottom: -5, right: -5,
+            justifyContent: 'center',
+            shadowOpacity: 0.25, shadowOffset: {width: 0, height: 0}
+            }}>
+              <Text style={{color: '#fff', fontWeight: 'bold', fontSize: 10}}>1</Text>
+            </View>
+          }
         </TouchableOpacity>
 
         <Image
@@ -60,34 +88,40 @@ export const ToolsView = ({ navigation }) => {
           Que choisir ?
         </Text>
 
-        <FlatList
-          data={qcCategories.data}
-          keyExtractor={(item, index) => index}
-          renderItem={(item) => (<TouchableOpacity
-            style={styles.containerButtons}
-            onPress={() => navigation.navigate('tools-que-choisir', {
-              category: item.item.name
-            })}
-          >
-            <Text style={styles.toolButtonText}>{item.item.name}</Text>
-          </TouchableOpacity>)
-          }
-          numColumns={2}
-          columnWrapperStyle={{
-            flex: 1,
-            justifyContent: 'space-evenly',
-            paddingVertical: 10
-          }}
-          style={{ width: '70%' }}
-        />
+          <FlatList
+            data={qcCategories.data}
+            keyExtractor={(item, index) => index}
+            renderItem={(item) => (<TouchableOpacity
+              style={styles.containerButtons}
+              onPress={() => navigation.navigate('tools-que-choisir', {
+                category: item.item.name,
+                filters: qcFilters
+              })}
+            >
+              <Text style={styles.toolButtonText}>{item.item.name}</Text>
+            </TouchableOpacity>)
+            }
+            numColumns={2}
+            columnWrapperStyle={{
+              flex: 1,
+              justifyContent: 'space-evenly',
+              paddingVertical: 10
+            }}
+            style={{ width: '70%' }}
+          />
+
       </LinearGradient>
 
+      
       <AppModal isVisible={showFilters} style={{
         width: '90%'
       }}
-        customRender={<View>
-
-        </View>}
+        customRender={<FiltersQC onChange={(filters) => {
+          AsyncStorage.setItem("qcFilters", filters.toString())
+          setQcFilters(filters)
+        }}
+        current={qcFilters}
+        />}
         onClose={() => setShowFilters(false)}
       />
     </SafeAreaView>

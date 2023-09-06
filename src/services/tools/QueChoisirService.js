@@ -1,17 +1,15 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../../utils";
-import { getS3XML } from '../S3Service'
-import Constants from 'expo-constants';
 
-let route = Constants.manifest.extra.env.API_URL + "/tools/que-choisir"
+const baseurl = process.env.EXPO_PUBLIC_API_URL + "/tools/que-choisir"
 
 export const getAPIqueChoisirStep = async (category) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(route + "/step", {
+    .get(baseurl + "/step", {
       headers: {
         Authorization: authHeader
       },
@@ -30,7 +28,7 @@ export const getAPIqueChoisirRedFlags = async (category) => {
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(route + "/redflags", {
+    .get(baseurl + "/redflags", {
       headers: {
         Authorization: authHeader
       },
@@ -49,7 +47,7 @@ export const getQCcategories = async () => {
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(route + "/categories", {
+    .get(baseurl + "/categories", {
       headers: {
         Authorization: authHeader
       }

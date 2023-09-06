@@ -7,7 +7,6 @@ import { checkToken } from './src/actions/auth';
 
 import { useSelector, useDispatch } from 'react-redux';
 import checkVersion from 'react-native-store-version';
-import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { Alert } from 'react-native';
 
@@ -18,10 +17,11 @@ import { AlertVersion } from './src/component/AlertVersion';
 import { NotificationHandler } from './src/component/NotificationHandler';
 import { appDefault, thuasne } from './src/AppMode';
 import { selectModeValue } from './src/reducers/appModeReducer';
+import * as Application from 'expo-application';
+
 const prefix = Linking.createURL('/');
 
 export default function App({ navigation }) {
-
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isLoading = useSelector(selectIsLoading)
   const user = useSelector(selectUserCurrentSession)
@@ -58,9 +58,8 @@ export default function App({ navigation }) {
   const init = async () => {
     try {
       dispatch(checkToken())
-
       const check = await checkVersion({
-        version: Constants.manifest.version, // app local version
+        version: Application.nativeApplicationVersion, // app local version
         //version: '1.1.0', // app local version
         iosStoreURL: 'https://apps.apple.com/us/app/orthomaster/id1644851864',
         androidStoreURL: 'https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster&pli=1',

@@ -8,6 +8,7 @@ import { ErrorHandler } from './src/component/ErrorHandler';
 import { MyQueryProvider } from './src/component/MyQueryProvider';
 
 import App from './App';
+
 const WrapApp = () => (
   <Provider store={store}>
     <ErrorHandler>

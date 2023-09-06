@@ -1,10 +1,8 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import { getS3XML } from './S3Service'
-import Constants from 'expo-constants';
 
-let route = Constants.manifest.extra.env.API_URL+"/contents"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/contents"
 
 export const fetchQa = async (limit = 0) => {
 
@@ -12,7 +10,7 @@ export const fetchQa = async (limit = 0) => {
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(route + '/qa', {
+    .get(baseurl + '/qa', {
       headers: { Authorization: authHeader },
       params: {
         _limit: limit

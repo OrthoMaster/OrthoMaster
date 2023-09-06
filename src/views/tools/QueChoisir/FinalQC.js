@@ -1,4 +1,15 @@
-import { ActivityIndicator, Dimensions, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity } from "react-native";
+import {
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    SafeAreaView,
+    SectionList,
+    FlatList,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity
+} from "react-native";
 import { View } from "react-native";
 import { useQuery } from "react-query";
 import { getAPIgetProducts } from "../../../services/ProductsService";
@@ -7,7 +18,6 @@ import NavbarQC from "./NavbarQC";
 import { getS3Image } from "../../../services/S3Service";
 import { LinearGradient } from "expo-linear-gradient";
 import { evaluateExpression } from "./tools";
-import { FlatList } from "react-native-gesture-handler";
 
 
 const DisplayHistory = ({ userHistory, onClose, onEdit }) => {
@@ -51,11 +61,12 @@ const DisplayHistory = ({ userHistory, onClose, onEdit }) => {
 }
 
 const ProductCard = ({ product }) => {
+    console.log('Product:', product);
     const imgUrl = useQuery(['Product', 'GET', "productImage", product.id], () => getS3Image(product.image_path))
     const containerSideSize = Dimensions.get('window').width * 0.45
     return (
         <View style={{
-            marginTop: '5%',
+            margin: 5,
             width: containerSideSize,
             height: containerSideSize,
             backgroundColor: '#fff',
@@ -80,7 +91,10 @@ const ProductCard = ({ product }) => {
 
 export const FinalQC = ({ route, navigation }) => {
     const { userHistory, filtredProducts } = route.params.content
-    const [products, setProducts] = useState([]);
+    const { filters } = route.params
+
+    const [productsPref, setProductsPref] = useState([]);
+    const [productsOther, setProductsOther] = useState([]);
     const [isLoading, setIsLoading] = useState(true)
     const [historyIsVisible, setHistoryIsVisible] = useState(false)
 
@@ -96,7 +110,7 @@ export const FinalQC = ({ route, navigation }) => {
                 if (ref[i] != ';') {
                     conditionLength++
                 } else {
-                    if (formattedHistory.includes(refConditioned)) {   
+                    if (formattedHistory.includes(refConditioned)) {
                         conditions.push(ref.substring(i - conditionLength, i))
                     }
                     conditionLength = 0
@@ -152,14 +166,24 @@ export const FinalQC = ({ route, navigation }) => {
     }
 
     useEffect(() => {
-        setTimeout(()=>setIsLoading(false),1000)
+        setTimeout(() => setIsLoading(false), 1000)
         formatUserHistory(userHistory)
             .then((formattedHistory) => {
                 startFilterProduct(formattedHistory)
-                .then((finalProducts) => {
-                    let tmp = [...(shuffleArray(finalProducts))]
-                    setProducts(tmp)
-                })
+                    .then((finalProducts) => {
+
+                        let listPref = []
+                        let listOther = []
+                        filters.forEach(element => {
+                            listPref = listPref.concat(finalProducts.filter((value) => value.brand === element))
+                        });
+                        listOther = finalProducts.filter(x => !listPref.includes(x));
+                        listOther = [...(shuffleArray(listOther))]
+
+                        setProductsPref(listPref)
+                        setProductsOther(listOther)
+
+                    })
             })
     }, [])
 
@@ -175,9 +199,9 @@ export const FinalQC = ({ route, navigation }) => {
 
     if (isLoading)
         return <SafeAreaView style={{ flex: 1, backgroundColor: '#EC4E6E', justifyContent: 'center' }}>
-            <Text style={{color: '#fff', fontSize: 25, textAlign: 'center', fontWeight: 'bold'}}>Traitement des réponses</Text>
-            <Text style={{color: '#fff', fontSize: 22, textAlign: 'center'}}>Veuillez patienter...</Text>
-            <ActivityIndicator color={'#fff'} size={'large'} style={{paddingVertical: 10}}/>
+            <Text style={{ color: '#fff', fontSize: 25, textAlign: 'center', fontWeight: 'bold' }}>Traitement des réponses</Text>
+            <Text style={{ color: '#fff', fontSize: 22, textAlign: 'center' }}>Veuillez patienter...</Text>
+            <ActivityIndicator color={'#fff'} size={'large'} style={{ paddingVertical: 10 }} />
         </SafeAreaView>
     else
         return (
@@ -193,7 +217,7 @@ export const FinalQC = ({ route, navigation }) => {
                         paddingVertical: 10
                     }}>
                         <Text style={{ color: '#ffffff', fontSize: 24, fontWeight: 'bold' }}>Terminé</Text>
-                        <Text style={{ color: "#fff" }}><Text style={{ fontWeight: 'bold' }}>{products.length}</Text> produit(s) trouvé(s)</Text>
+                        <Text style={{ color: "#fff" }}><Text style={{ fontWeight: 'bold' }}>{productsPref.length+productsOther.length}</Text> produit(s) trouvé(s)</Text>
 
                         {
                             historyIsVisible ?
@@ -210,19 +234,34 @@ export const FinalQC = ({ route, navigation }) => {
 
 
                     </View>
-                    <FlatList
-                        data={products}
-                        key={(item) => item.id}
-                        renderItem={(item) => (<ProductCard product={item.item} />)}
-                        numColumns={2}
-                        columnWrapperStyle={{
-                            flex: 1,
-                            justifyContent: 'space-evenly'
-                        }}  // space them out evenly
-                        contentContainerStyle={{
-                            paddingBottom: 50,
-                        }}
-                    />
+                    <ScrollView>
+                        <Text style={styles.sectionTitle}>Vos marques</Text>
+                        <View style={{
+                            flexDirection: 'row',
+                            flexWrap: 'wrap',
+                            justifyContent: 'center'
+                        }}>
+                            {
+                                productsPref.map((value, index) => {
+                                    return <ProductCard product={value} key={index} />
+                                })
+                            }
+                        </View>
+
+                        <Text style={styles.sectionTitle}>Autres marques</Text>
+                        <View style={{
+                            flexDirection: 'row',
+                            flexWrap: 'wrap',
+                            justifyContent: 'center',
+                            marginBottom: 50
+                        }}>
+                            {
+                                productsOther.map((value, index) => {
+                                    return <ProductCard product={value} key={index} />
+                                })
+                            }
+                        </View>
+                    </ScrollView>
 
                     <LinearGradient
                         colors={['#EC4C70', '#E8764A']}
@@ -283,5 +322,13 @@ const styles = StyleSheet.create({
         },
         width: '50%',
         alignItems: 'center'
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: 'grey',
+        marginLeft: 15,
+        marginTop: 10,
+        marginBottom: 5
     }
 })

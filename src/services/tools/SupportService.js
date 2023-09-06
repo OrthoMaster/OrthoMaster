@@ -1,16 +1,15 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../../utils";
-import Constants from 'expo-constants';
 
-let route = Constants.manifest.extra.env.API_URL + "/v2/support"
+const baseurl = process.env.EXPO_PUBLIC_API_URL + "/v2/support"
 
 export const sendSupportTicket = async ({subject = "", priority = "", content = "", category = "", companyId = null, txId = null}) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .post(route,
+    .post(baseurl,
       {
         subject: subject,
         priority: priority,

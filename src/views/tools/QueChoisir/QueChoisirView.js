@@ -22,7 +22,7 @@ import GotIt from "../../../../assets/queChoisir/check.svg";
 import { getAPIgetProducts } from "../../../services/ProductsService";
 
 export const QueChoisirView = ({ navigation, route }) => {
-    const { category } = route.params
+    const { category, filters } = route.params
     const [isFinished, setIsFinished] = useState(false)
     const [questionIndex, setQuestionIndex] = useState(0)
     const [globalSteps, setGlobalSteps] = useState(null)
@@ -89,8 +89,9 @@ export const QueChoisirView = ({ navigation, route }) => {
             navigation.navigate('tools-que-choisir-final', {
                 content: {
                     userHistory,
-                    filtredProducts
+                    filtredProducts,
                 },
+                filters
             });
         }
     }, [isFinished])

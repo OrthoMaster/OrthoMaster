@@ -1,8 +1,7 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import Constants from 'expo-constants';
-let route = Constants.manifest.extra.env.API_URL+"/trophy"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/trophy"
 
 
 export const getTrophyProgressBasedOnModule = async (id_module) => {
@@ -11,7 +10,7 @@ export const getTrophyProgressBasedOnModule = async (id_module) => {
 
 
   return axios
-    .get(route+"/user/"+config.user.id_user+'/trophy-progress/'+ id_module, {
+    .get(baseurl+"/user/"+config.user.id_user+'/trophy-progress/'+ id_module, {
       headers: { Authorization: authHeader },
 
     })
@@ -28,7 +27,7 @@ export const getUserTrophy = async (id_user) => {
   const id = id_user != null ? id_user : config.user.id_user
 
   return axios
-    .get(route+"/user/"+ id, {
+    .get(baseurl+"/user/"+ id, {
       headers: { Authorization: authHeader },
 
     })
@@ -43,7 +42,7 @@ export const postNewUserTrophy = async (id_trophy) => {
 
 
   return axios
-    .post(route+"/user/"+config.user.id_user+"/trophy/"+id_trophy, {}, {
+    .post(baseurl+"/user/"+config.user.id_user+"/trophy/"+id_trophy, {}, {
       headers: { Authorization: authHeader },
     })
     .then((response) => {

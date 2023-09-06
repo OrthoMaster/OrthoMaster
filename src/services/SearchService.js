@@ -1,8 +1,7 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import Constants from 'expo-constants';
-const route = Constants.manifest.extra.env.API_URL+"/contents/search"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/contents/search"
 
 export const fetchSearchList = async ({ contentType = null, filters = null, body = null, searchText = "" }, page) => {
 
@@ -11,7 +10,7 @@ export const fetchSearchList = async ({ contentType = null, filters = null, body
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(route, {
+    .get(baseurl, {
       headers: { Authorization: authHeader },
       params: {
         pageSize: page ? 10 : null,

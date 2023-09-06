@@ -3,8 +3,7 @@ import axios from "axios";
 
 
 import { restoreLocalConfigAsync } from "../utils";
-import Constants from 'expo-constants';
-let route = Constants.manifest.extra.env.API_URL+"/s3"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/s3"
 
 
 export const getS3Image = async (path) => {
@@ -12,7 +11,7 @@ export const getS3Image = async (path) => {
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(route + "/content", {
+    .get(baseurl + "/content", {
       headers: {
         'Access-Control-Allow-Origin': true,
         Authorization: authHeader

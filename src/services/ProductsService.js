@@ -1,16 +1,15 @@
 import axios from "axios";
 
-import Constants from 'expo-constants';
 import { restoreLocalConfigAsync } from "../utils";
 
-let route = Constants.manifest.extra.env.API_URL + "/products"
+const baseurl = process.env.EXPO_PUBLIC_API_URL + "/products"
 
 export const getAPIgetProducts = async (category) => {
     const config = await restoreLocalConfigAsync()
 
     const authHeader = 'Bearer ' + config.JWT;
     return axios
-        .get(route + "/products", {
+        .get(baseurl + "/products", {
             headers: {
                 Authorization: authHeader
             },
@@ -29,7 +28,7 @@ export const getProductsBrands = async () => {
 
     const authHeader = 'Bearer ' + config.JWT;
     return axios
-        .get(route + "/brands", {
+        .get(baseurl + "/brands", {
             headers: {
                 Authorization: authHeader
             }

@@ -1,8 +1,7 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import Constants from 'expo-constants';
-let route = Constants.manifest.extra.env.API_URL+"/office"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/office"
 
 
 
@@ -11,7 +10,7 @@ export const getOfficeInfos = async (officeId) => {
     const authHeader = 'Bearer ' + config.JWT;
     console.log('herre too');
     return axios
-      .get(route+"/"+officeId, {
+      .get(baseurl+"/"+officeId, {
         headers: { Authorization: authHeader },
       })
       .then((response) => {
@@ -27,7 +26,7 @@ export const getOfficeInfos = async (officeId) => {
     const authHeader = 'Bearer ' + config.JWT;
   
     return axios
-      .get(route+"/manager/"+config.user.id_user, {
+      .get(baseurl+"/manager/"+config.user.id_user, {
         headers: { Authorization: authHeader }
       })
       .then((response) => {
@@ -43,7 +42,7 @@ export const getOfficeInfos = async (officeId) => {
     const authHeader = 'Bearer ' + config.JWT;
   
     return axios
-      .get(route+"/invitation-token/"+officeId, {
+      .get(baseurl+"/invitation-token/"+officeId, {
         headers: { Authorization: authHeader }
       })
       .then((response) => {
