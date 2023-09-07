@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, PanResponder, Animated, Dimensions, TouchableOpacity, FlatList } from "react-native";
-import { useQuery } from "react-query";
-import { getProductsBrands } from "../../../services/ProductsService";
+
 
 import DraggableFlatList from 'react-native-draggable-flatlist'
 import { AntDesign } from '@expo/vector-icons';
 
-export default FiltersQC = ({ onChange, current }) => {
+export default FiltersQC = ({ onChange, filterConfig }) => {
 
     const [selection, setSelection] = useState([])
-    const [filtredBrands, setFiltredBrands] = useState(current)
+    const [filtredBrands, setFiltredBrands] = useState(filterConfig.selected)
     const [isDefault, setIsDefault] = useState(true)
-    useQuery(['Tools', 'GET', 'Brands'], () => getProductsBrands(), {
-        onSuccess: (data) => {
-            let purgedList = data.brands
+    
+
+    useEffect(() => {
+        if (filterConfig.default) {
+            let purgedList = filterConfig.default
             purgedList = purgedList.filter(x => !filtredBrands.includes(x));
             setSelection(purgedList)
         }
-    })
+    }, [])
+    
 
     useEffect(() => {
         if (filtredBrands.length < 1) {
@@ -81,7 +83,7 @@ export default FiltersQC = ({ onChange, current }) => {
             fontWeight: '500',
             marginBottom: 20
         }}>
-            Filtrer les marques selon votre préférence
+            Filtrez les marques selon vos préférences
         </Text>
 
         <View style={{
@@ -96,7 +98,7 @@ export default FiltersQC = ({ onChange, current }) => {
             borderColor: "#fff",
             alignItems: 'center'
         }}>
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{isDefault ? 'Par défaut' : 'Filtrées'}</Text>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Sélection</Text>
         </View>
 
         <View style={{
@@ -115,8 +117,8 @@ export default FiltersQC = ({ onChange, current }) => {
                 fontStyle: 'italic',
                 color: 'grey'
             }}>
-                {isDefault ? "Par défaut, les marques s'afficheront aléatoirement"
-                    : "Vos préférences"}
+                {isDefault ? "Par défaut, les marques s'afficheront par ordre alphabétique"
+                    : ""}
             </Text>
 
 
@@ -139,8 +141,9 @@ export default FiltersQC = ({ onChange, current }) => {
                 fontStyle: 'italic',
                 color: 'grey',
                 width: '80%',
+                fontSize: 12
             }}>
-                Les marques non filtrées s'afficheront aléatoirement
+                Les marques non-sélectionnées s'affichent par ordre alphabétique
             </Text>
         }
         <View style={{
@@ -148,7 +151,7 @@ export default FiltersQC = ({ onChange, current }) => {
             flexDirection: 'row',
             flexWrap: 'wrap',
             justifyContent: 'center',
-            marginTop: 10
+            marginTop: 30
         }}>
             {
                 selection.map((value, index) => {

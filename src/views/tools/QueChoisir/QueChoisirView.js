@@ -22,7 +22,7 @@ import GotIt from "../../../../assets/queChoisir/check.svg";
 import { getAPIgetProducts } from "../../../services/ProductsService";
 
 export const QueChoisirView = ({ navigation, route }) => {
-    const { category, filters } = route.params
+    const { category, filtersConfig } = route.params
     const [isFinished, setIsFinished] = useState(false)
     const [questionIndex, setQuestionIndex] = useState(0)
     const [globalSteps, setGlobalSteps] = useState(null)
@@ -33,12 +33,39 @@ export const QueChoisirView = ({ navigation, route }) => {
     const [contraindicationArray, setContraindicationArray] = useState([])
     const [currentContraindicationArray, setCurrentContraindicationArray] = useState([])
     const [toolIsLoaded, setToolIsLoaded] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null)
 
     const [stepImage, setStepImage] = useState(null)
     const [filtredProducts, setFiltredProducts] = useState([])
 
     const { width } = Dimensions.get('window');
     const helpWidth = width * 0.7;
+
+    useQuery(['Tools', 'GET', 'queChoisirStep', category], () => getAPIqueChoisirStep(category), {
+        onSuccess: (data) => {
+            setGlobalSteps(data);
+            setToolIsLoaded(true);
+        }
+    })
+    const getCurrentImage = useQuery(['Tools', 'GET', 'currentImage', category, questionIndex], () => getS3Image(globalSteps[questionIndex].question.image_path), {
+        enabled: toolIsLoaded,
+        onSuccess: (data) => {
+            setStepImage(data)
+        }
+    })
+
+    useQuery(['Tools', 'GET', 'currentImage', category], () => getAPIqueChoisirRedFlags(category), {
+        onSuccess: (data) => {
+            setContraindicationArray(data);
+        }
+    })
+
+    const products = useQuery(['Tools', 'GET', 'getProducts', category], () => getAPIgetProducts(category), {
+        onSuccess: (data) => {
+            setFiltredProducts(data)
+        },
+    })
+
 
 
 
@@ -78,7 +105,6 @@ export const QueChoisirView = ({ navigation, route }) => {
     }
 
     useEffect(() => {
-
         filterProduct()
         findContreIndications()
 
@@ -91,36 +117,12 @@ export const QueChoisirView = ({ navigation, route }) => {
                     userHistory,
                     filtredProducts,
                 },
-                filters
+                filtersConfig
             });
         }
     }, [isFinished])
 
 
-    useQuery(['Tools', 'GET', 'queChoisirStep', category], () => getAPIqueChoisirStep(category), {
-        onSuccess: (data) => {
-            setGlobalSteps(data);
-            setToolIsLoaded(true);
-        }
-    })
-    const getCurrentImage = useQuery(['Tools', 'GET', 'currentImage', category, questionIndex], () => getS3Image(globalSteps[questionIndex].question.image_path), {
-        enabled: toolIsLoaded,
-        onSuccess: (data) => {
-            setStepImage(data)
-        }
-    })
-
-    useQuery(['Tools', 'GET', 'currentImage', category], () => getAPIqueChoisirRedFlags(category), {
-        onSuccess: (data) => {
-            setContraindicationArray(data);
-        }
-    })
-
-    const products = useQuery(['Tools', 'GET', 'getProducts', category], () => getAPIgetProducts(category), {
-        onSuccess: (data) => {
-            setFiltredProducts(data)
-        },
-    })
 
     useEffect(() => {
         setStepImage(null)
@@ -149,6 +151,10 @@ export const QueChoisirView = ({ navigation, route }) => {
 
                 <Text style={styles.heading}>{globalSteps[questionIndex].question.question}</Text>
 
+                {
+                    errorMessage &&
+                    <Text style={{alignSelf: 'center'}}>{errorMessage}</Text>
+                }
 
                 <ScrollView centerContent={true} style={styles.quizScroll} contentContainerStyle={{ alignItems: 'center', paddingBottom: 100 }}>
 
@@ -166,8 +172,15 @@ export const QueChoisirView = ({ navigation, route }) => {
                                     }
 
                                     if (value.status) {
-                                        currentQuestion.responses = [...currentQuestion.responses, value]
+                                        if (currentQuestion.question.mode === "unique") {
+                                            currentQuestion.responses = [value]
+                                        } else {
+                                            currentQuestion.responses = [...currentQuestion.responses, value]
+                                        }
                                     } else {
+                                        if (globalSteps.length - 1 == questionIndex) {
+                                            setIsFinished(false)
+                                        }
                                         var newSelection = currentQuestion.responses.filter(function (obj) {
                                             return obj.response.id !== value.response.id;
                                         });
@@ -198,7 +211,6 @@ export const QueChoisirView = ({ navigation, route }) => {
                     })}
 
                 </ScrollView>
-
 
                 <View style={styles.arrowContainer}>
 
@@ -231,17 +243,22 @@ export const QueChoisirView = ({ navigation, route }) => {
                         end={{ x: 1, y: 0 }}>
                         <TouchableOpacity style={[styles.arrow, { height: '100%', width: '100%' }]}
                             onPress={() => {
+
                                 const mode = globalSteps[questionIndex].question.mode
                                 const nbResponse = userHistory[questionIndex]?.responses?.length ? userHistory[questionIndex]?.responses?.length : 0
                                 switch (mode) {
                                     case 'unique':
-                                        if (nbResponse != 1)
+                                        if (nbResponse != 1) {
+                                            setErrorMessage("Une réponse est attendue")
                                             return
-                                        else break
+                                        } else
+                                            break
                                     case 'multiple':
-                                        if (nbResponse < 1)
+                                        if (nbResponse < 1) {
+                                            setErrorMessage("Au moins 1 réponse est attendue")
                                             return
-                                        else break
+                                        } else
+                                            break
                                     default:
                                         break;
                                 }
@@ -263,7 +280,8 @@ export const QueChoisirView = ({ navigation, route }) => {
                                             }
                                         })
                                 } else {
-                                    if (nbResponse == 0) {
+                                    setErrorMessage(null)
+                                    if (nbResponse == 0 && !userHistory[questionIndex]) {
                                         let newHistory = userHistory
                                         newHistory.push({
                                             question: globalSteps[questionIndex].question,
@@ -290,7 +308,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                     </LinearGradient>
 
                 </View>
-                <Text style={{ textAlign: 'center', color: '#EC4E6E', paddingVertical: 5 }}>Nombre de produit trouvé: <Text style={{ fontWeight: 'bold' }}>{filtredProducts.length}</Text></Text>
+                <Text style={{ textAlign: 'center', color: '#EC4E6E', paddingVertical: 5 }}>Nombre de produit trouvés : <Text style={{ fontWeight: 'bold' }}>{filtredProducts.length}</Text></Text>
             </View>
 
 

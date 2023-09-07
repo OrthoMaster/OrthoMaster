@@ -18,15 +18,72 @@ import NavbarQC from "./NavbarQC";
 import { getS3Image } from "../../../services/S3Service";
 import { LinearGradient } from "expo-linear-gradient";
 import { evaluateExpression } from "./tools";
+import { array } from "i/lib/util";
 
+const DisplaySubHeader = ({ title }) => {
+    return (<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 20 }}>
+        <View
+            style={{
+                borderBottomColor: 'grey',
+                borderBottomWidth: 1,
+                width: '5%'
+            }}
+        />
+        <Text style={{
+            fontWeight: 'bold',
+            color: 'grey',
+            paddingHorizontal: 15,
+        }}>{title}</Text>
+        <View
+            style={{
+                borderBottomColor: 'grey',
+                borderBottomWidth: 1,
+                width: '100%'
+            }}
+        />
+    </View>)
+}
+
+const ViewHeader = ({nbProduct, userHistory, navigation}) => {
+    const [historyIsVisible, setHistoryIsVisible] = useState(false)
+
+    return (
+        <View style={{
+            width: "90%",
+            backgroundColor: '#EC4E6E',
+            alignSelf: 'center',
+            alignItems: 'center',
+            borderBottomLeftRadius: 15,
+            borderBottomRightRadius: 15,
+            paddingVertical: 10
+        }}>
+            <Text style={{ color: '#ffffff', fontSize: 24, fontWeight: 'bold' }}>Terminé</Text>
+            <Text style={{ color: "#fff" }}><Text style={{ fontWeight: 'bold' }}>{nbProduct}</Text> produit(s) trouvé(s)</Text>
+
+            {
+                historyIsVisible ?
+                    <DisplayHistory userHistory={userHistory} onClose={() => setHistoryIsVisible(false)} onEdit={() => navigation.pop()} />
+                    : <TouchableOpacity style={styles.historyButton}
+                        onPress={() => {
+                            setHistoryIsVisible(true)
+                        }}>
+                        <Text style={{
+                            color: '#fff'
+                        }}>Voir les détails</Text>
+                    </TouchableOpacity>
+            }
+
+
+        </View>
+    )
+}
 
 const DisplayHistory = ({ userHistory, onClose, onEdit }) => {
-    console.log(userHistory);
     return <View style={{
         width: '90%',
         paddingTop: 20
     }}>
-        <Text style={{ color: '#fff', fontSize: 22 }}>Votre récap.</Text>
+        <Text style={{ color: '#fff', fontSize: 22 }}>Votre récapitulatif</Text>
         {
             userHistory.map((value, index) => {
                 return <View key={index} style={{ marginVertical: 5 }}>
@@ -61,8 +118,9 @@ const DisplayHistory = ({ userHistory, onClose, onEdit }) => {
 }
 
 const ProductCard = ({ product }) => {
-    console.log('Product:', product);
     const imgUrl = useQuery(['Product', 'GET', "productImage", product.id], () => getS3Image(product.image_path))
+
+
     const containerSideSize = Dimensions.get('window').width * 0.45
     return (
         <View style={{
@@ -79,10 +137,35 @@ const ProductCard = ({ product }) => {
             }
         }}>
             <View style={{ width: '100%', alignItems: 'center' }}>
-                <Image source={{ uri: imgUrl.data }} style={styles.image} />
+                <View style={{ width: '100%' }}>
+                    <Image source={{ uri: imgUrl.data }} style={styles.image} />
+                    <View style={{ position: 'absolute', right: 0, bottom: 0 }}>
+                        {
+                            product.more?.split(";").map((value, index) => {
+                                return <View
+                                    key={index}
+                                    style={{
+                                        backgroundColor: '#EC4E6E',
+                                        paddingLeft: 5, paddingRight: 10,
+                                        paddingVertical: 1,
+                                        marginVertical: 1,
+                                        alignSelf: 'flex-end',
+                                        opacity: 0.9
+                                    }}>
+                                    <Text key={index} style={{ color: "#fff", fontSize: 8, fontWeight: 'bold' }}>{value}</Text>
+                                </View>
+                            })
+                        }
+                        {/* <Text style={{ fontSize: 10, color: '#EC4E6E', width: '80%', textAlign: 'left' }}>{product.more}</Text> */}
+                    </View>
+                </View>
                 <Text style={{ fontSize: 10, fontWeight: 300, width: '80%', textAlign: 'left' }}>{product.type}</Text>
                 <Text style={{ fontSize: 12, fontWeight: 700, width: '80%', textAlign: 'left' }}>{product.model}</Text>
                 <Text style={{ fontSize: 10, fontWeight: 500, width: '80%', textAlign: 'left' }}>{product.option} <Text style={{ color: '#ED7D32' }}>{product.brand}</Text></Text>
+
+
+
+
             </View>
         </View>
     );
@@ -91,12 +174,13 @@ const ProductCard = ({ product }) => {
 
 export const FinalQC = ({ route, navigation }) => {
     const { userHistory, filtredProducts } = route.params.content
-    const { filters } = route.params
+    const { filtersConfig } = route.params
+
 
     const [productsPref, setProductsPref] = useState([]);
     const [productsOther, setProductsOther] = useState([]);
+    const [nbProduct, setNbProduct] = useState(0)
     const [isLoading, setIsLoading] = useState(true)
-    const [historyIsVisible, setHistoryIsVisible] = useState(false)
 
     const findAllConditionsInRef = async (ref, formattedHistory) => {
         let conditions = []
@@ -139,6 +223,7 @@ export const FinalQC = ({ route, navigation }) => {
         for (const product of filtredProducts) {
             let productIsValide = true
             let conditions = await findAllConditionsInRef(product.qc_ref, formattedHistory)
+
             for (const condition of conditions) {
                 const isOk = await new Promise((resolve, reject) => {
                     evaluateExpression(condition, userHistory).then((isOk) => {
@@ -174,27 +259,38 @@ export const FinalQC = ({ route, navigation }) => {
 
                         let listPref = []
                         let listOther = []
-                        filters.forEach(element => {
-                            listPref = listPref.concat(finalProducts.filter((value) => value.brand === element))
-                        });
-                        listOther = finalProducts.filter(x => !listPref.includes(x));
-                        listOther = [...(shuffleArray(listOther))]
+                        let nbPrd = 0
+                        filtersConfig.selected.forEach(element => {
+                            let toPush = finalProducts.filter((value) => value.brand === element)
+                            nbPrd = nbPrd + toPush.length
+                            listPref.push({
+                                brand: element,
+                                products: toPush
+                            })
 
+                        });
                         setProductsPref(listPref)
+
+                        let purgedBrandList = filtersConfig.default
+                        purgedBrandList = purgedBrandList.filter(x => !filtersConfig.selected.includes(x));
+                        purgedBrandList = purgedBrandList.sort(() => Math.random() - 0.5);
+
+                        purgedBrandList.forEach(element => {
+                            let toPush = finalProducts.filter((value) => value.brand === element)
+                            nbPrd += toPush.length
+                            listOther.push({
+                                brand: element,
+                                products: toPush
+                            })
+                        })
+
+                        setNbProduct(nbPrd)
                         setProductsOther(listOther)
 
                     })
             })
     }, [])
 
-    function shuffleArray(array) {
-        const shuffledArray = [...array];
-        for (let i = shuffledArray.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
-        }
-        return shuffledArray;
-    }
 
 
     if (isLoading)
@@ -207,60 +303,56 @@ export const FinalQC = ({ route, navigation }) => {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: '#F1F1F1' }}>
                 <View style={styles.container}>
-                    <View style={{
-                        width: "90%",
-                        backgroundColor: '#EC4E6E',
-                        alignSelf: 'center',
-                        alignItems: 'center',
-                        borderBottomLeftRadius: 15,
-                        borderBottomRightRadius: 15,
-                        paddingVertical: 10
-                    }}>
-                        <Text style={{ color: '#ffffff', fontSize: 24, fontWeight: 'bold' }}>Terminé</Text>
-                        <Text style={{ color: "#fff" }}><Text style={{ fontWeight: 'bold' }}>{productsPref.length+productsOther.length}</Text> produit(s) trouvé(s)</Text>
-
+                    <ViewHeader nbProduct={nbProduct} userHistory={userHistory} navigation={navigation}/>
+                    <ScrollView>
                         {
-                            historyIsVisible ?
-                                <DisplayHistory userHistory={userHistory} onClose={() => setHistoryIsVisible(false)} onEdit={() => navigation.pop()} />
-                                : <TouchableOpacity style={styles.historyButton}
-                                    onPress={() => {
-                                        setHistoryIsVisible(true)
+                            productsPref.length > 0 &&
+                            <Text style={styles.sectionTitle}>Vos marques</Text>
+                        }
+                        {
+                            productsPref.map((products, index) => {
+                                return <View key={index}>
+                                    <DisplaySubHeader title={products.brand} />
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        flexWrap: 'wrap',
+                                        justifyContent: 'center'
                                     }}>
-                                    <Text style={{
-                                        color: '#fff'
-                                    }}>Voir les détails</Text>
-                                </TouchableOpacity>
+                                        {
+                                            products.products.map((value, index) => {
+                                                return <ProductCard product={value} key={index} />
+                                            })
+                                        }
+
+                                    </View>
+                                </View>
+                            })
                         }
 
+                        {
+                            productsPref.length > 0 &&
+                            <Text style={styles.sectionTitle}>Autres marques</Text>
+                        }
+                        {
+                            productsOther.map((products, index) => {
+                                return <View key={index} >
+                                    <DisplaySubHeader title={products.brand} />
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        flexWrap: 'wrap',
+                                        justifyContent: 'center'
+                                    }}>
+                                        {
+                                            products.products.map((value, index) => {
+                                                return <ProductCard product={value} key={index} />
+                                            })
+                                        }
 
-                    </View>
-                    <ScrollView>
-                        <Text style={styles.sectionTitle}>Vos marques</Text>
-                        <View style={{
-                            flexDirection: 'row',
-                            flexWrap: 'wrap',
-                            justifyContent: 'center'
-                        }}>
-                            {
-                                productsPref.map((value, index) => {
-                                    return <ProductCard product={value} key={index} />
-                                })
-                            }
-                        </View>
-
-                        <Text style={styles.sectionTitle}>Autres marques</Text>
-                        <View style={{
-                            flexDirection: 'row',
-                            flexWrap: 'wrap',
-                            justifyContent: 'center',
-                            marginBottom: 50
-                        }}>
-                            {
-                                productsOther.map((value, index) => {
-                                    return <ProductCard product={value} key={index} />
-                                })
-                            }
-                        </View>
+                                    </View>
+                                </View>
+                            })
+                        }
+                        <View style={{height: 50}}/>
                     </ScrollView>
 
                     <LinearGradient
@@ -305,7 +397,7 @@ const styles = StyleSheet.create({
     image: {
         width: "80%",
         marginBottom: 10,
-        resizeMode: "cover",
+        resizeMode: "contain",
         height: 100,
         alignSelf: 'center',
     },
@@ -328,7 +420,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'grey',
         marginLeft: 15,
-        marginTop: 10,
-        marginBottom: 5
+        marginTop: 20,
     }
 })

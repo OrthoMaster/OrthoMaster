@@ -31,7 +31,6 @@ export const ResponseButton = ({ element, onPress, history, onHelp, currentStepH
         )
     }
     useEffect(() => {
-
         if (element.display_if) {
             evaluateExpression(element.display_if, history)
                 .then((val) => {
@@ -40,12 +39,23 @@ export const ResponseButton = ({ element, onPress, history, onHelp, currentStepH
                 })
         }
 
-        currentStepHistory?.forEach(response => {
-            if (response.response.value == element.value) {
-                setPressed(true)
-            }
-        });
+        // currentStepHistory?.forEach(response => {
+        //     if (response.response.value == element.value) {
+        //         setPressed(true)
+        //     }
+        // });
     }, [])
+
+    useEffect(() => {
+        if (currentStepHistory) {
+            if (currentStepHistory.some(elem => elem.response.value == element.value)) {
+                setPressed(true)
+            } else {
+                setPressed(false)
+            }
+        }
+    }, [currentStepHistory])
+
 
     if (!isDisplay) return null
 
