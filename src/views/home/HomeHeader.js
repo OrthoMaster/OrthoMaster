@@ -127,16 +127,17 @@ export const HomeHeader = ({ navigation, userName }) => {
                         }}
                     />
                     <HomeHeaderButton
-                        value='Mon labo'
+                        value='Leçon suivante'
                         color='#A84206'
                         style={styles.primaryButton}
-                        icon={require('../../../assets/logo.png')}
+                        icon={require('../../../assets/home/header/header_button_flash.png')}
                         onPress={() => {
-                            if (currentMode == MODES.orthomaster) {
-                                dispatch(actionChangeAppMode('thuasne'))
-                            } else {
-                                dispatch(actionChangeAppMode(MODES.orthomaster))
-                            }
+                            nextLesson.refetch()
+                            // if (currentMode == MODES.orthomaster) {
+                            //     dispatch(actionChangeAppMode('thuasne'))
+                            // } else {
+                            //     dispatch(actionChangeAppMode(MODES.orthomaster))
+                            // }
                         }}
                     />
                     <HomeHeaderButton
