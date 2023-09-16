@@ -38,7 +38,6 @@ export const AccountMenu = ({ navigation }) => {
 
     const user = store.getState().auth.userCurrentSession
 
-    console.log('Account menu', user);
 
     return (
         <View style={styles.container}>
@@ -60,15 +59,18 @@ export const AccountMenu = ({ navigation }) => {
                     icon={require('../../../../assets/settings/activity.png')}
                     text={'Mon activité'}
                 /> */}
-                <CustomMenuButton
-                    icon={require('../../../../assets/settings/professional.png')}
-                    text={"Formulaire d'inscription"}
-                    onPress={() => {
-                        navigation.navigate('account-register-form',{
-                            seller: user
-                        })
-                    }}
-                />
+                {
+                    user.roles?.find((element) => element == 'seller') &&
+                    <CustomMenuButton
+                        icon={require('../../../../assets/settings/professional.png')}
+                        text={"Formulaire d'inscription"}
+                        onPress={() => {
+                            navigation.navigate('account-register-form', {
+                                seller: user
+                            })
+                        }}
+                    />
+                }
 
                 <CustomMenuButton
                     icon={require('../../../../assets/settings/legal-paper.png')}

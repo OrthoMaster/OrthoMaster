@@ -39,7 +39,7 @@ export const QueChoisirView = ({ navigation, route }) => {
     const [filtredProducts, setFiltredProducts] = useState([])
 
     const { width } = Dimensions.get('window');
-    const helpWidth = width * 0.7;
+    const helpWidth = width * 0.8;
 
     useQuery(['Tools', 'GET', 'queChoisirStep', category], () => getAPIqueChoisirStep(category), {
         onSuccess: (data) => {

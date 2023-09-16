@@ -84,7 +84,6 @@ export const MyQueryProvider = ({
    
 
     const getNewToken = async () => {
-        console.log('get token');
         const res = await AuthService.getNewToken()
         if (res == true) {
             gettingNewToken = false

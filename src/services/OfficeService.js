@@ -8,7 +8,6 @@ const baseurl = process.env.EXPO_PUBLIC_API_URL+"/office"
 export const getOfficeInfos = async (officeId) => {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
-    console.log('herre too');
     return axios
       .get(baseurl+"/"+officeId, {
         headers: { Authorization: authHeader },

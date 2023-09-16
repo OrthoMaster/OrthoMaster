@@ -62,6 +62,7 @@ export const AppTab = ({}) => {
     <Tab.Navigator
       initialRouteName='Accueil'
       screenOptions={({ route }) => ({
+        tabBarStyle:{backgroundColor: 'white'},
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 

@@ -19,8 +19,6 @@ import { Modal } from "react-native";
 
 const DisplayUserInfo = ({ dataType, data }) => {
 
-    console.log(dataType);
-    console.log(data);
 
     if (dataType == 'Type de compte') {
         switch (data) {

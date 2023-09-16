@@ -1,6 +1,6 @@
 {
   "name": "orthomaster",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "scripts": {
     "api-local": "npx expo start",
     "api-distant": "API_URL=https://api.orthomaster.fr npx expo start",
@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@bugsnag/expo": "^49.0.1",
-    "@expo/metro-config": "^0.10.7",
+    "@expo/metro-config": "~0.10.0",
     "@react-native-async-storage/async-storage": "1.18.2",
     "@react-native-community/netinfo": "9.3.10",
     "@react-navigation/bottom-tabs": "^6.3.3",
@@ -32,7 +32,7 @@
     "expo-crypto": "~12.4.1",
     "expo-dev-client": "~2.4.8",
     "expo-device": "~5.4.0",
-    "expo-file-system": "~15.4.3",
+    "expo-file-system": "~15.4.4",
     "expo-linear-gradient": "~12.3.0",
     "expo-linking": "~5.0.2",
     "expo-notifications": "^0.20.1",
@@ -75,7 +75,8 @@
     "react-query": "^3.39.2",
     "react-redux": "^8.0.5",
     "react-xml-parser": "^1.1.8",
-    "yarn": "^1.22.19"
+    "yarn": "^1.22.19",
+    "expo-sharing": "~11.5.0"
   },
   "private": true,
   "devDependencies": {

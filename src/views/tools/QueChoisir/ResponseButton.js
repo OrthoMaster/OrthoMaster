@@ -10,23 +10,22 @@ export const ResponseButton = ({ element, onPress, history, onHelp, currentStepH
     const ButtonContent = () => {
         return (
             <View style={{
-                flex: 1,
                 justifyContent: 'center',
-                flexDirection: 'row',
                 alignItems: 'center',
-                padding: 5
+                padding: 5,
+                flex: 1,
             }}>
                 <Text style={{
                     textAlign: 'center',
-                    flex: 4,
                     alignSelf: 'center'
                 }}>{element.response.trim()}</Text>
                 {
-                    element.help_text &&
-                    <TouchableOpacity style={{ flex: 1 }} onPress={() => onHelp()}>
-                        <HelpIcon height={30} width={30} />
+                    (element.help_text || element.help_img) &&
+                    <TouchableOpacity style={{ position: 'absolute', top: 3, right:3 }} onPress={() => onHelp()}>
+                        <HelpIcon height={20} width={20} />
                     </TouchableOpacity>
                 }
+                
             </View>
         )
     }

@@ -16,10 +16,12 @@ import { getCollaboratorsProgression, getOfficesProgressionForManager } from '..
 
 import { getUserTrophy } from '../../../services/TrophyService'
 import { TrophyCard } from './trophies/TrophieCard'
+import { FontAwesome5 } from '@expo/vector-icons';
+
 
 const UserProgress = ({ user, refreshing }) => {
     const [isToggle, setIsToggle] = useState(false)
-    const userTrophy = useQuery(['Account','GET','collaboratorTrophies', user.id_user], () => getUserTrophy(user.id_user), {
+    const userTrophy = useQuery(['Account', 'GET', 'collaboratorTrophies', user.id_user], () => getUserTrophy(user.id_user), {
         enabled: false
     })
 
@@ -87,7 +89,7 @@ const UserProgress = ({ user, refreshing }) => {
 
 const OfficeButton = ({ office }) => {
     const [isToggle, setIsToggle] = useState(false)
-    const collaborators = useQuery(['Account','GET','officeCollaboratorsProgress', office.id_office], () => getCollaboratorsProgression(office.id_office), {
+    const collaborators = useQuery(['Account', 'GET', 'officeCollaboratorsProgress', office.id_office], () => getCollaboratorsProgression(office.id_office), {
         enabled: false
     })
 
@@ -128,7 +130,7 @@ const OfficeButton = ({ office }) => {
 
 }
 
-export const AccountOfficesProgress = ({ refreshing, navigation }) => {
+export const AccountOfficesProgress = ({ refreshing, navigation, enableConfig }) => {
     const office = useQuery(['Account', 'GET', 'officeProgress'], () => getOfficesProgressionForManager())
 
     useEffect(() => {
@@ -144,13 +146,18 @@ export const AccountOfficesProgress = ({ refreshing, navigation }) => {
             <View style={styles.displayContainer}>
                 <View style={styles.headerContainer}>
                     <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mes collaborateurs</Text>
-                    <TouchableOpacity style={styles.headerButton}
-                    onPress={()=>{
-                        navigation.push('account-team-manager')
-                    }}
-                    >
-                        <Text style={styles.headerButtonText}>Gérer ⚙️</Text>
-                    </TouchableOpacity>
+
+                    {
+                        enableConfig &&
+                        <TouchableOpacity style={styles.headerButton}
+                            onPress={() => {
+                                navigation.push('account-team-manager')
+                            }}
+                        >
+                            <Text style={styles.headerButtonText}>Gérer</Text>
+                            <FontAwesome5 name="cog" size={20} color="#F76F11" />
+                        </TouchableOpacity>
+                    }
                 </View>
 
                 {office.data.map((value, key) => {
@@ -191,11 +198,15 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         paddingHorizontal: 10,
         paddingVertical: 5,
-        borderRadius: 5
+        borderRadius: 5,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     headerButtonText: {
         fontWeight: 'bold',
-        color: '#F76F10'
+        color: '#F76F10',
+        marginEnd: 5
     },
     officeStat: {
         fontSize: 40,

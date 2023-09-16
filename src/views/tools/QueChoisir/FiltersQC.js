@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, PanResponder, Animated, Dimensions, TouchableOpacity, FlatList } from "react-native";
+import { View, Text, PanResponder, Animated, Dimensions, TouchableOpacity, FlatList, Platform } from "react-native";
 
 
 import DraggableFlatList from 'react-native-draggable-flatlist'
 import { AntDesign } from '@expo/vector-icons';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default FiltersQC = ({ onChange, filterConfig }) => {
 
     const [selection, setSelection] = useState([])
     const [filtredBrands, setFiltredBrands] = useState(filterConfig.selected)
     const [isDefault, setIsDefault] = useState(true)
-    
+
 
     useEffect(() => {
         if (filterConfig.default) {
@@ -19,7 +20,7 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
             setSelection(purgedList)
         }
     }, [])
-    
+
 
     useEffect(() => {
         if (filtredBrands.length < 1) {
@@ -39,6 +40,8 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
         return <View
             key={getIndex()}
             onTouchStart={drag}
+            //onLongPress={drag}
+            // onResponderMove={drag}
             //disabled={isActive}
 
             style={{
@@ -59,8 +62,9 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
             <Text style={{ color: '#D0D0D0', fontSize: 30, fontWeight: 'bold' }}>{getIndex() + 1}</Text>
             <Text style={{}}>{item}</Text>
             <TouchableOpacity
-                style={{ padding: 3 }}
+                style={{ padding: 10 }}
                 onPress={() => {
+                    console.log('press');
                     setFiltredBrands(filtredBrands.filter(elem => elem !== item))
                     setSelection([...selection, item])
                 }}
@@ -121,15 +125,27 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
                     : ""}
             </Text>
 
+            {
+                Platform.OS == "android" ?
+                    <GestureHandlerRootView style={{ width: '100%' }}>
+                        <DraggableFlatList
+                            data={filtredBrands}
+                            onDragEnd={({ data }) => setFiltredBrands(data)}
+                            keyExtractor={(item, index) => index.toString()}
+                            renderItem={renderItem}
+                            scrollEnabled={false}
 
-            <DraggableFlatList
-                data={filtredBrands}
-                onDragEnd={({ data }) => setFiltredBrands(data)}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={renderItem}
-                scrollEnabled={false}
+                        />
+                    </GestureHandlerRootView>
+                    : <DraggableFlatList
+                        data={filtredBrands}
+                        onDragEnd={({ data }) => setFiltredBrands(data)}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={renderItem}
+                        scrollEnabled={false}
 
-            />
+                    />
+            }
 
         </View>
 

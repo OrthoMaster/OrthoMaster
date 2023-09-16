@@ -6,7 +6,12 @@ import DashedLine from 'react-native-dashed-line';
 export const NavbarQC = memo(({ global, questionIndex, onPress }) => {
 
     return (
-        <View style={[styles.container, {justifyContent: 'center'}]}>
+        <LinearGradient
+        colors={['#DBDBDB', '#F1F1F1']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[styles.container, {justifyContent: 'center'}]}
+    >
             <View style={{ height: '90%', alignItems: 'center', justifyContent: 'space-between' }}>
                 <DashedLine axis="vertical" dashLength={10} dashThickness={3}  dashColor="#DADADA" style={[styles.verticalLineDotted]} />
                 <View style={[styles.verticalLine, { height: `${(100 * questionIndex) / (global.length - 1)}%` }]} />
@@ -39,7 +44,7 @@ export const NavbarQC = memo(({ global, questionIndex, onPress }) => {
             </View>
 
                 <StatusBar barStyle={'dark-content'}/>
-        </View>
+        </LinearGradient>
     );
 });
 
@@ -53,7 +58,7 @@ const styles = StyleSheet.create({
         width: '12%',
         height: '100%',
         position: 'absolute',
-        backgroundColor: '#E99A6E',
+        backgroundColor: 'white',
     },
     verticalLine: {
         width: 10,

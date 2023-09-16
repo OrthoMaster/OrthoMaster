@@ -87,7 +87,13 @@ const OfficeManager = ({ office }) => {
         <View style={styles.officeContainer}>
             <TouchableOpacity
                 style={[styles.officeButton]}
-                onPress={() => { setIsActive(!isActive) }}
+                onPress={() => {
+                    if (invitationToken.isSuccess) {
+                        setIsActive(!isActive)
+                    } else {
+                        Alert.alert("Service indisponible", "Veuillez contacter nos services")
+                    }
+                }}
             >
                 <View>
                     <Text style={styles.officeButtonText}>{office.name}</Text>
@@ -141,13 +147,13 @@ const OfficeManager = ({ office }) => {
                                 <FormField name={"Prénom"} type={"text"} value={'firstname'} onChange={handleFormChange} required />
                                 <FormField name={"Nom"} type={"text"} value={'lastname'} onChange={handleFormChange} required />
                                 <FormField name={"Email"} type={"email"} value={'email'} onChange={handleFormChange} required />
-                                <FormField name={"Fonction professionelle"} type={"dropdown"} value={'job_function'} data={jobFunctions} onChange={handleFormChange} />
+                                <FormField name={"Fonction professionnelle"} type={"dropdown"} value={'job_function'} data={jobFunctions} onChange={handleFormChange} />
                                 <BouncyCheckbox
                                     size={20}
-                                    style={{ width: '90%', alignSelf: 'center', marginTop: 20 }}
+                                    style={{ width: '70%', alignSelf: 'center', marginTop: 20 }}
                                     fillColor="#EA6912"
                                     unfillColor="#FFFFFF"
-                                    text="Je certifie que la personne ci-dessus travail dans ma structure"
+                                    text="Je certifie que la personne ci-dessus est un professionnel de santé et travaille dans ma structure"
                                     textStyle={{ color: '#000000', textDecorationLine: 'none', fontSize: 12 }}
                                     iconStyle={{ borderColor: "#EA6912" }}
                                     innerIconStyle={{ borderWidth: 2 }}

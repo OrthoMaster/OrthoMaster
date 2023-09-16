@@ -38,14 +38,12 @@ class AuthService {
   }
 
   async getNewToken() {
-    console.log("Service new token");
     const config = await restoreLocalConfigAsync()
     const refreshToken = await SecureStore.getItemAsync('refreshToken')
     return axios
       .post(baseurl + "/user/token", { id_user: config.user.id_user, refresh_token: refreshToken })
       .then(async (response) => {
         if (response.data) {
-          console.log(response.data);
           await SecureStore.setItemAsync('JWT', response.data.jwt_token)
           await SecureStore.setItemAsync('refreshToken', response.data.refresh_token)
           return true;

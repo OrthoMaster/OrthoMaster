@@ -24,13 +24,13 @@
         "buildType": "apk"
       },
       "env": {
-        "API_URL": "https://api.orthomaster.fr"
+        "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "API_URL": "https://api.orthomaster.fr"
+        "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr"
       },
       "ios": {
         "resourceClass": "m-medium"
@@ -45,6 +45,8 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      
+    }
   }
 }

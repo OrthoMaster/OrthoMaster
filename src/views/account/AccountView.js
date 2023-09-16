@@ -70,8 +70,6 @@ export const AccountView = ({ navigation }) => {
     }, 2000);
   }, []);
 
-
-
   return (
     <View style={{ flex: 1 }}>
       <AccountHeader
@@ -94,7 +92,7 @@ export const AccountView = ({ navigation }) => {
 
           <Trophies refreshing={refreshing}/>
 
-          <AccountOfficesProgress refreshing={refreshing} navigation={navigation}/>
+          <AccountOfficesProgress enableConfig={user.job_function == 'TITULAIRE' ? true : false} refreshing={refreshing} navigation={navigation}/>
           
           <View style={{ height: 200 }} />
         </ScrollView>
