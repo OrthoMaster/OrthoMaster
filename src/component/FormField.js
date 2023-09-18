@@ -83,7 +83,7 @@ const TextField = ({ props }) => {
             }}
             onBlur={(event) => {
                 if (props.required) {
-                    if (event.nativeEvent.text.trim().length == 0) {
+                    if (event.nativeEvent.text?.trim().length == 0) {
                         setAlertError('Ce champs ne peut pas être vide')
                         return
                     } else {
@@ -99,7 +99,7 @@ const TextField = ({ props }) => {
                 }
             }}
             inputMode={props.type}
-            autoCapitalize={props.type == 'email' ? 'none' : 'sentences'}
+            autoCapitalize={'none'}
             autoComplete="off"
             autoCorrect={props.type == 'email' ? false : true}
             secureTextEntry={props.password ? true : false}

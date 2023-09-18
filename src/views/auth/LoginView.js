@@ -56,6 +56,7 @@ export const LoginView = ({ navigation, route }) => {
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
+                        autoCapitalize={'none'}
                     />
 
 

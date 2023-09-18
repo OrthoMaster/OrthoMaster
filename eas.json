@@ -21,7 +21,8 @@
         "enterpriseProvisioning": "universal"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "node": "20.5.1"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr"
@@ -34,6 +35,9 @@
       },
       "ios": {
         "resourceClass": "m-medium"
+      },
+      "android": {
+        "node": "20.5.1"
       }
     },
     "development-simulator": {

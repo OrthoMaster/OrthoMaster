@@ -23,7 +23,6 @@ export const AuthHome = ({navigation}) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle={'default'} />
             <Carousel
                 data={pages}
                 renderItem={item => pages[item.index]}

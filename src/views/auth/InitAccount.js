@@ -17,7 +17,8 @@ export const ActivateAccountView = ({ route, navigation }) => {
     })
     const [credentials, setCredentials] = useState({
         username: "",
-        password: ""
+        password: "",
+        confirm_password: ""
     })
 
     const handleForm = (data) => {
@@ -47,7 +48,7 @@ export const ActivateAccountView = ({ route, navigation }) => {
             <TouchableOpacity
                 style={styles.buttonContainer}
                 onPress={() => {
-                    if (user_id && token && credentials.username.trim().length > 0 && credentials.password.trim().length > 0) {
+                    if (user_id && token && credentials.username?.trim().length > 0 && credentials.password?.trim().length > 0) {
                         if (credentials.password == credentials.confirm_password) {
                             setErrorMsg("")
                             activateAccount.mutate({

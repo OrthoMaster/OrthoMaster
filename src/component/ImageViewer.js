@@ -10,7 +10,11 @@ export const ImageViewer = ({ url, visible, title, onClose }) => {
 
     return (
         <Modal visible={visible} onRequestClose={onClose} statusBarTranslucent animationType="slide">
-            <StatusBar barStyle="light-content" />
+            <StatusBar
+                animated={true}
+                backgroundColor="#000000"
+                barStyle={'light-content'}
+            />
             <ImageZoom
                 style={styles.container}
                 cropWidth={screenWidth}
@@ -28,15 +32,15 @@ export const ImageViewer = ({ url, visible, title, onClose }) => {
                         width: imageSize.width,
                         height: imageSize.height
                     }}
-                    />
+                />
             </ImageZoom>
             <TouchableOpacity style={styles.backButton} onPress={onClose}>
-                                <Image
-            
-                                    source={require('../../assets/navigation/close.png')}
-                                    style={{ width: '50%', height: '50%', resizeMode: 'contain' }}
-                                />
-                            </TouchableOpacity>
+                <Image
+
+                    source={require('../../assets/navigation/close.png')}
+                    style={{ width: '50%', height: '50%', resizeMode: 'contain' }}
+                />
+            </TouchableOpacity>
         </Modal>
     )
 }

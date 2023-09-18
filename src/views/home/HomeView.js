@@ -7,7 +7,7 @@ import {
   Pressable,
   SafeAreaView,
   Image,
-  TouchableOpacity,
+  Platform,
   StatusBar,
   RefreshControl
 } from 'react-native';
@@ -46,7 +46,8 @@ export const HomeView = ({ navigation }) => {
     <View>
       <StatusBar
         animated={true}
-        barStyle={'light-content'}
+        barStyle={Platform.OS === "android" ? 'light-content' :'dark-content'}
+        backgroundColor={"#000"}
       />
       
 

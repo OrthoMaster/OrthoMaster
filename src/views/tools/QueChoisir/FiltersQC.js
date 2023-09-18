@@ -64,7 +64,6 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
             <TouchableOpacity
                 style={{ padding: 10 }}
                 onPress={() => {
-                    console.log('press');
                     setFiltredBrands(filtredBrands.filter(elem => elem !== item))
                     setSelection([...selection, item])
                 }}

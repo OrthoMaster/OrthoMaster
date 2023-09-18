@@ -43,7 +43,6 @@ export const NavbarQC = memo(({ global, questionIndex, onPress }) => {
                 ))}
             </View>
 
-                <StatusBar barStyle={'dark-content'}/>
         </LinearGradient>
     );
 });
