@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 
 import { selectIsLoggedIn, selectIsLoading, selectUserCurrentSession } from './src/reducers/auth';
-import { checkToken } from './src/actions/auth';
+import { checkToken, refreshUserSession } from './src/actions/auth';
 
 import { useSelector, useDispatch } from 'react-redux';
 import checkVersion from 'react-native-store-version';
@@ -18,16 +18,21 @@ import { NotificationHandler } from './src/component/NotificationHandler';
 import { appDefault, thuasne } from './src/AppMode';
 import { selectModeValue } from './src/reducers/appModeReducer';
 import * as Application from 'expo-application';
-
+import { useQuery } from 'react-query';
+import { getCurrentUser } from './src/services/UserService';
 const prefix = Linking.createURL('/');
 
 export default function App({ navigation }) {
   const isLoggedIn = useSelector(selectIsLoggedIn)
-  const isLoading = useSelector(selectIsLoading)
-  const user = useSelector(selectUserCurrentSession)
+  const isEnabled = useSelector(state => state.auth.userCurrentSession?.enabled)
+
+  const [isLoading, setIsLoading] = useState(true)
   const appMode = useSelector(selectModeValue)
   const dispatch = useDispatch()
   const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
+  const currentUser = useQuery(["init", "GET", "user"], () => getCurrentUser(),{
+    enabled: false
+  })
 
   const url = Linking.useURL()
 
@@ -57,7 +62,12 @@ export default function App({ navigation }) {
 
   const init = async () => {
     try {
-      dispatch(checkToken())
+      currentUser.refetch().then(res=>{
+        if (res.data) {
+          dispatch(refreshUserSession(res.data))
+        }
+        setIsLoading(false)
+      })
       const check = await checkVersion({
         version: Application.nativeApplicationVersion, // app local version
         //version: '1.1.0', // app local version
@@ -86,7 +96,7 @@ export default function App({ navigation }) {
       theme={appMode == 'default' ? appDefault : thuasne}
     >
       {
-        isLoggedIn && user?.enabled == 1 ?
+        isLoggedIn && isEnabled == 1 ?
           <NotificationHandler>
             <AppTab />
           </NotificationHandler>

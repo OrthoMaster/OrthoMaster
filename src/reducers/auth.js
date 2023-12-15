@@ -6,6 +6,7 @@ import {
     LOGOUT,
     TOKEN_VALID,
     TOKEN_INVALID,
+    REFRESH_SESSION
 } from "../actions/types";
 
 
@@ -21,7 +22,6 @@ import {
 
 const initialState = {
     isLoggedIn: false,
-    isLoading: true,
     userTopAccount: null,
     userCurrentSession: null,
     authMessage: ""
@@ -29,7 +29,6 @@ const initialState = {
 
 
 export const selectIsLoggedIn = state => state.auth.isLoggedIn
-export const selectIsLoading = state => state.auth.isLoading
 export const selectAuthMessage = state => state.auth.authMessage
 export const selectUserCurrentSession = state => state.auth.userCurrentSession
 
@@ -43,8 +42,16 @@ export const authReducer = (state = initialState, action) => {
                 isLoggedIn: true,
                 userTopAccount: payload.user,
                 userCurrentSession: payload.user,
-                authMessage: "",
-                isLoading: false
+                authMessage: ""
+            };
+
+        case REFRESH_SESSION:
+            return {
+                ...state,
+                isLoggedIn: true,
+                userTopAccount: payload.user,
+                userCurrentSession: payload.user,
+                authMessage: ""
             };
         case LOGIN_FAIL:
             return {
@@ -52,8 +59,7 @@ export const authReducer = (state = initialState, action) => {
                 isLoggedIn: false,
                 userTopAccount: null,
                 userCurrentSession: null,
-                authMessage: payload.msg,
-                isLoading: false
+                authMessage: payload.msg
             };
         case LOGOUT:
             return {

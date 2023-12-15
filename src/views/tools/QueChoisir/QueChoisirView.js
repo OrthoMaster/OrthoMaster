@@ -47,23 +47,23 @@ export const QueChoisirView = ({ navigation, route }) => {
             setToolIsLoaded(true);
         }
     })
-    const getCurrentImage = useQuery(['Tools', 'GET', 'currentImage', category, questionIndex], () => getS3Image(globalSteps[questionIndex].question.image_path), {
-        enabled: toolIsLoaded,
-        onSuccess: (data) => {
-            setStepImage(data)
-        }
-    })
-
+    
     useQuery(['Tools', 'GET', 'currentImage', category], () => getAPIqueChoisirRedFlags(category), {
         onSuccess: (data) => {
             setContraindicationArray(data);
         }
     })
-
+    
     const products = useQuery(['Tools', 'GET', 'getProducts', category], () => getAPIgetProducts(category), {
         onSuccess: (data) => {
             setFiltredProducts(data)
         },
+    })
+    const getCurrentImage = useQuery(['Tools', 'GET', 'currentImage', category, questionIndex], () => getS3Image(globalSteps[questionIndex].question.image_path), {
+        enabled: toolIsLoaded,
+        onSuccess: (data) => {
+            setStepImage(data)
+        }
     })
 
 
@@ -77,9 +77,15 @@ export const QueChoisirView = ({ navigation, route }) => {
                     refToSearch.push(step.question.ref + responseObj.response.value)
                 });
             });
+            console.log("=======================\n========================");
+            console.log("Filtering products");
+            console.log("History base:", refToSearch);
+            console.log("=======================\n========================");
             let newSelection = []
             products.data.forEach(product => {
                 if (refToSearch.every(item => product.qc_ref.includes(item))) { //TODO filter sans OK SI donc parsing de string car includes return booléen
+                    // console.log(product.type, product.qc_ref);
+                    
                     newSelection.push(product)
                 }
             });

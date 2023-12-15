@@ -1,7 +1,9 @@
 import axios from "axios";
 
+import { Buffer } from "buffer"
 import { restoreLocalConfigAsync } from "../utils";
 const baseurl = process.env.EXPO_PUBLIC_API_URL+"/user"
+
 
 export const changeUserPassword = async (passwords) => {
     const config = await restoreLocalConfigAsync()
@@ -64,6 +66,28 @@ export const getUsersByOfficeId = async (officeId) => {
             headers: { Authorization: authHeader },
             params: {
                 id: officeId
+            }
+        })
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e)=> {
+          throw e
+        });
+  }
+
+
+export const getCurrentUser = async () => {
+
+    const config = await restoreLocalConfigAsync()
+    const authHeader = 'Bearer ' + config.JWT;
+    const parts = config.JWT.split('.').map((part) => Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'),'base64').toString());
+    const userId = JSON.parse(parts[1]).id_user;
+    return axios
+        .get(baseurl + "/",{
+            headers: { Authorization: authHeader },
+            params: {
+                id_user: userId
             }
         })
         .then((response) => {

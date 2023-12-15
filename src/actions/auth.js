@@ -5,13 +5,12 @@ import {
   SET_MESSAGE,
   TOKEN_INVALID,
   TOKEN_VALID,
+  REFRESH_SESSION
 } from "./types";
 
 import AuthService from "../services/AuthService";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { restoreLocalConfigAsync } from "../utils";
-
 
 export const login = (username, password) => async (dispatch) => {
   try {
@@ -50,23 +49,10 @@ export const logout = () => (dispatch) => {
 };
 
 
-export const checkToken = () => async (dispatch) => {
-  const config = await restoreLocalConfigAsync()
+export const refreshUserSession = (user) => async (dispatch) => {
 
-  try {
-    const res = await AuthService.checkUserConnection(config.JWT)
-    if (res.status == 200) {
-      dispatch({
-        type: LOGIN_SUCCESS,
-        payload: { user: config.user }
-      })
-    }
-
-  } catch (error) {
-    dispatch({
-      type: LOGIN_FAIL,
-      payload: { msg: '' }
-    })
-
-  }
+  dispatch({
+    type: REFRESH_SESSION,
+    payload: { user: user }
+  })
 }

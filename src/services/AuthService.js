@@ -2,6 +2,8 @@ import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { restoreLocalConfigAsync } from "../utils";
+import { osName } from 'expo-device';
+import { Buffer } from "buffer";
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL
 
@@ -9,7 +11,11 @@ class AuthService {
 
   async login(username, password) {
     return axios
-      .post(baseurl + "/user/v2/login", { username, password })
+      .post(baseurl + "/user/v2/login", { username, password }, {
+        params: {
+          platform: osName
+        }
+      })
       .then((response) => {
         return response.data;
       })
@@ -40,8 +46,11 @@ class AuthService {
   async getNewToken() {
     const config = await restoreLocalConfigAsync()
     const refreshToken = await SecureStore.getItemAsync('refreshToken')
+    const parts = config.JWT.split('.').map((part) => Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'),'base64').toString());
+    const userId = JSON.parse(parts[1]).id_user;
+
     return axios
-      .post(baseurl + "/user/token", { id_user: config.user.id_user, refresh_token: refreshToken })
+      .post(baseurl + "/user/token", { id_user: userId, refresh_token: refreshToken })
       .then(async (response) => {
         if (response.data) {
           await SecureStore.setItemAsync('JWT', response.data.jwt_token)

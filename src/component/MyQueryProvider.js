@@ -65,16 +65,15 @@ export const MyQueryProvider = ({
         },
         queryCache: new QueryCache({
             onError: (error) => {
-                console.log('Provider', error.response);
                 if (error.code == 'ERR_NETWORK') {
-                    onError('Nous rencontrons des problèmes de connexion...')
+                    onErrorMsg('Nous rencontrons des problèmes de connexion...')
                 }
             }
         }),
         mutationCache: new MutationCache({
             onError: (error) => {
                 if (error.code == 'ERR_NETWORK') {
-                    onError('Nous rencontrons des problèmes de connexion...')
+                    onErrorMsg('Nous rencontrons des problèmes de connexion...')
                 }
             }
         })
@@ -93,7 +92,7 @@ export const MyQueryProvider = ({
         }
     }
 
-    const onError = useCallback((msg) => {
+    const onErrorMsg = useCallback((msg) => {
         setIsError(true)
         setErrorMsg(msg)
         setTimeout(() => {

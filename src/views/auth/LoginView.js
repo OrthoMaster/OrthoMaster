@@ -30,6 +30,7 @@ export const LoginView = ({ navigation, route }) => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <Text>{process.env.EXPO_PUBLIC_API_URL}</Text>
                 <View style={styles.logo}>
                     <Image
                         style={{
