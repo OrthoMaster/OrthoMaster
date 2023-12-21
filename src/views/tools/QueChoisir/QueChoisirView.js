@@ -77,14 +77,9 @@ export const QueChoisirView = ({ navigation, route }) => {
                     refToSearch.push(step.question.ref + responseObj.response.value)
                 });
             });
-            console.log("=======================\n========================");
-            console.log("Filtering products");
-            console.log("History base:", refToSearch);
-            console.log("=======================\n========================");
             let newSelection = []
             products.data.forEach(product => {
                 if (refToSearch.every(item => product.qc_ref.includes(item))) { //TODO filter sans OK SI donc parsing de string car includes return booléen
-                    // console.log(product.type, product.qc_ref);
                     
                     newSelection.push(product)
                 }
@@ -222,7 +217,7 @@ export const QueChoisirView = ({ navigation, route }) => {
 
                     {/* UPPER ARROW */}
                     <LinearGradient
-                        colors={['#E8764A', '#EC4C70']}
+                        colors={['#33C0B7', '#33C0B7']}
                         style={[styles.arrow, { width: 40, height: 40, marginHorizontal: 10 }]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}>
@@ -243,7 +238,7 @@ export const QueChoisirView = ({ navigation, route }) => {
 
                     {/* BOTTOM ARROW */}
                     <LinearGradient
-                        colors={['#E8764A', '#EC4C70']}
+                        colors={['#33C0B7', '#33C0B7']}
                         style={[styles.arrow, { marginHorizontal: 10 }]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}>
@@ -314,7 +309,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                     </LinearGradient>
 
                 </View>
-                <Text style={{ textAlign: 'center', color: '#EC4E6E', paddingVertical: 5 }}>Nombre de produit trouvés : <Text style={{ fontWeight: 'bold' }}>{filtredProducts.length}</Text></Text>
+                <Text style={{ textAlign: 'center', paddingVertical: 5 }}>Nombre de produit trouvés : <Text style={{ fontWeight: 'bold', color: "#33C0B7" }}>{filtredProducts.length}</Text></Text>
             </View>
 
 

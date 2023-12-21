@@ -19,7 +19,7 @@ export const NavbarQC = memo(({ global, questionIndex, onPress }) => {
                     <View style={[{
                         width: index == questionIndex ? 40 : 30,
                         height: index == questionIndex ? 40 : 30,
-                        backgroundColor: index == questionIndex ? '#EC4E6E' : index < questionIndex ? '#EC4E6E' : '#BDBDBD',
+                        backgroundColor: index == questionIndex ? '#33C0B7' : index < questionIndex ? '#33C0B7' : '#BDBDBD',
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: 50
@@ -33,7 +33,7 @@ export const NavbarQC = memo(({ global, questionIndex, onPress }) => {
                             alignItems: 'center'
                         }}>
                             <Text style={{
-                                color: index == questionIndex ? '#EC4E6E' : index < questionIndex ? '#000000' : '#BDBDBD',
+                                color: index == questionIndex ? '#33C0B7' : index < questionIndex ? '#000000' : '#BDBDBD',
                                 fontWeight: 'bold',
                                 fontSize: index == questionIndex ? 18 : 13 
                                 }}>{index + 1}</Text>
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     verticalLine: {
         width: 10,
         borderWidth: 3,
-        borderColor: '#EC4E6E',
+        borderColor: '#33C0B7',
         backgroundColor: '#ffffff',
         position: 'absolute',
     },

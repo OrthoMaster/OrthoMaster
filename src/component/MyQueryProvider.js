@@ -36,10 +36,14 @@ export const MyQueryProvider = ({
                 retryDelay: 2000,
                 // retry: 3
                 retry: (failureCount, error) => {
+                    console.log('err',error);
+                    console.log('err response',error.response);
+                    console.log(failureCount);
+                    console.log(gettingNewToken);
                     if (failureCount >= 3) {
                         return false
                     }
-                    if (error.response.data == 'token_not_valid' && gettingNewToken == false) {
+                    if (error.response.status == 401 && gettingNewToken == false) {
                         gettingNewToken = true
                         getNewToken()
                     }
@@ -50,13 +54,14 @@ export const MyQueryProvider = ({
             mutations: {
                 retryDelay: 200,
                 retry: (failureCount, error) => {
+                    console.log('mut err',error);
+                    console.log('mut err response',error.response);
                     if (failureCount >= 3) {
                         return false
                     }
-                    if (error.response.data == 'token_not_valid' && gettingNewToken == false) {
+                    if (error.response.status == 401 && gettingNewToken == false) {
                         gettingNewToken = true
                         getNewToken()
-                        return false
                     }
 
                     return true
@@ -83,12 +88,17 @@ export const MyQueryProvider = ({
    
 
     const getNewToken = async () => {
-        const res = await AuthService.getNewToken()
-        if (res == true) {
+        try {
+            const res = await AuthService.getNewToken()
+            console.log("Récupération token :", res);
+            if (res == false) {
+                console.log("Logout");
+                dispatch(logout())
+            }
             gettingNewToken = false
-        } else {
-            //Alert.alert("Votre session à expiré, veuillez vous reconnecter.")
-            dispatch(logout())
+            
+        } catch (error) {
+            console.log('errrrrr catch query provider', error);
         }
     }
 

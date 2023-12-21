@@ -28,7 +28,7 @@ export const HelpSection = ({ helpWidth, helpIsActive, onPress, response }) => {
                     </ScrollView>
                 }
                 <LinearGradient
-                    colors={['#E8764A', '#EC4C70']}
+                    colors={['#33C0B7', '#33C0B7']}
                     style={styles.closeHelp}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}

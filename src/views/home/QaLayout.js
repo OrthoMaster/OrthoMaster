@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Image,
   View,
-  Linking
+  Linking,
+  TouchableOpacity
 } from 'react-native'
 
 import { SearchFilters } from '../search/components/SearchFilters';
@@ -20,7 +21,7 @@ import { LoadingContent } from '../../component/LoadingContent'
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 
 
-export const QaLayout = ({ navigation, route }) => {
+export const QaLayout = ({ navigation }) => {
 
   const [filters, setFilters] = useState(null)
 
@@ -46,41 +47,44 @@ export const QaLayout = ({ navigation, route }) => {
 
   return (<View style={styles.container}>
 
-    <SearchFilters
-      route={route}
-      values={['Connaissance médicale', 'Prise en charge du patient', 'Solution orthopédique', 'Gestion de l\'officine', 'Divers']}
-      onSelect={(filters) => { setFilters(filters) }}
-    />
 
     <ContentSelection
       content={qaList.data}
       onSelect={(card) => {
-        navigation.navigate('home-content', {
+        navigation.navigate('flash-content-viewer', {
           content: card.content
         })
       }}
       cardLayout={'qa'}
       onRetry={() => qaList.refetch}
     />
-    <HomeHeaderButton
-      value='Poser une question'
-      color='#386CDA'
-      icon={require('../../../assets/home/header/header_button_question.png')}
-      style={styles.askQuestionButton}
+
+    <TouchableOpacity style={[{
+      backgroundColor: "#DF8501",
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'absolute',
+      right: 10,
+      bottom: 170,
+      padding: 5,
+      borderRadius: 10
+    }]}
       onPress={() => {
         Linking.openURL('mailto:question@orthomaster.fr')
-        // Linking.canOpenURL('mailto:question@orthomaster.fr')
-        //   .then((supported) => {
-        //     if (supported) {
-              
-        //     } else {
-        //       Alert.alert(`Impossible d'ouvrir: question@orthomaster.fr`);
-        //     }
-        //   })
-
-      }}
-    />
-
+      }
+      }
+    >
+      <Image
+        style={{
+          width: 50, height: 50,
+          resizeMode: 'contain',
+        }}
+        source={require('../../../assets/navigation/question-icon.png')}
+      />
+      <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center', fontSize: 10 }}>
+        Poser une question
+      </Text>
+    </TouchableOpacity>
   </View>
   )
 }
@@ -90,7 +94,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fffefd',
     width: '100%',
     alignItems: 'center',
-    height: '100%'
+    height: '100%',
   },
   scrollContainer: {
     //width: '100%'
@@ -110,7 +114,7 @@ const styles = StyleSheet.create({
   cardDescriptionContainer: {
     paddingLeft: 5,
     paddingVertical: 10,
-    borderWidth: 1,
+    borderWidth: 0.3,
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
   },

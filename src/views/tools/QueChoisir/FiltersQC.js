@@ -68,7 +68,7 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
                     setSelection([...selection, item])
                 }}
             >
-                <AntDesign name="minuscircle" size={15} color="#EC5369" />
+                <AntDesign name="minuscircle" size={15} color="#33C0B7" />
             </TouchableOpacity>
         </View>
 
@@ -90,7 +90,7 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
         </Text>
 
         <View style={{
-            backgroundColor: '#EC5369',
+            backgroundColor: '#33C0B7',
             width: '40%',
             alignSelf: 'center',
             paddingTop: 10,
@@ -108,7 +108,7 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
             width: '90%',
             alignSelf: 'center',
             paddingVertical: 10,
-            borderColor: '#EC5369',
+            borderColor: '#33C0B7',
             borderWidth: 5,
             borderRadius: 15,
             marginBottom: 10
@@ -189,7 +189,7 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
                     >
                         <Text style={{ marginHorizontal: 5 }}>{value}</Text>
 
-                        <AntDesign name="pluscircle" size={15} color="#EC5369" />
+                        <AntDesign name="pluscircle" size={15} color="#33C0B7" />
                     </TouchableOpacity>
                 })
             }

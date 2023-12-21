@@ -7,11 +7,14 @@ import {
     SafeAreaView,
     TouchableOpacity,
     Image,
-    Dimensions
+    Dimensions,
+    KeyboardAvoidingView,
+    TouchableWithoutFeedback,
+    Keyboard
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectAuthMessage } from '../../reducers/auth';
-
+import { Ionicons } from '@expo/vector-icons';
 
 import { login } from '../../actions/auth';
 
@@ -21,6 +24,7 @@ export const LoginView = ({ navigation, route }) => {
     const [statusMessage, setStatusMessage] = useState('')
     const authMessage = useSelector(selectAuthMessage)
     const dispatch = useDispatch()
+    const [showPassword, setShowPassword] = useState(false)
 
 
     const handleClick = () => {
@@ -29,63 +33,85 @@ export const LoginView = ({ navigation, route }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <Text>{process.env.EXPO_PUBLIC_API_URL}</Text>
-                <View style={styles.logo}>
-                    <Image
-                        style={{
-                            width: Dimensions.get('screen').width * 0.7,
-                            resizeMode: 'contain',
-                        }}
-                        source={require('../../../assets/logo-text.png')}
-                    />
-                </View>
-                <View style={styles.connectionBox}>
-                    <Text style={styles.redirectMessage}>{route.params?.message}</Text>
-                    <Text style={styles.title}>Connexion</Text>
-                    <TextInput
-                        style={styles.intputField}
-                        placeholder="Nom d'utilisateur"
-                        value={username}
-                        onChangeText={setUsername}
-                        autoCapitalize={'none'}
-                    />
-
-                    <TextInput
-                        style={[styles.intputField]}
-                        placeholder="Mot de passe"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                        autoCapitalize={'none'}
-                    />
+        <SafeAreaView style={[styles.container]}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={[styles.container, { width: '100%' }]}
+            >
+                <TouchableWithoutFeedback
+                    style={{ width: '100%', height: '100%' }}
+                    onPress={() => { Keyboard.dismiss() }}>
+                    <View style={{
+                        height: "100%", width: "100%",
+                        alignItems: 'center'
+                    }}>
 
 
-                    {
-                        authMessage?.length > 0 &&
-                        <Text style={styles.authText}>{authMessage}</Text>
-                    }
-                    {
-                        statusMessage?.length > 0 &&
-                        <Text style={styles.authText}>{statusMessage}</Text>
-                    }
-                    <TouchableOpacity
-                        style={styles.signInButton}
-                        onPress={() => handleClick()}
-                    >
-                        <Text style={styles.signInButtonText}>Continuer</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => {
-                            navigation.push("auth-reset-password")
-                        }}
-                    >
-                        <Text style={{ color: '#EA6910', fontSize: 18 }}>Mot de passe oublié</Text>
-                    </TouchableOpacity>
+                        <View style={styles.logo}>
+                            <Image
+                                style={{
+                                    width: Dimensions.get('screen').width * 0.7,
+                                    resizeMode: 'contain',
+                                }}
+                                source={require('../../../assets/logo-text.png')}
+                            />
+                        </View>
+                        <View style={styles.connectionBox}>
+                            <Text style={styles.redirectMessage}>{route.params?.message}</Text>
+                            <Text style={styles.title}>Connexion</Text>
+                            <TextInput
+                                style={[styles.intputField]}
+                                placeholder="Nom d'utilisateur"
+                                value={username}
+                                onChangeText={setUsername}
+                                textContentType="username"
+                                autoCapitalize={'none'}
+                            />
 
-                </View>
+                            <View style={styles.intputField}>
+                                <TextInput
+                                    style={{flex: 1}}
+                                    placeholder="Mot de passe"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={!showPassword}
+                                    textContentType="password"
+                                    autoCapitalize={'none'}
+                                />
+                                <Ionicons
+                                    name={showPassword ? "eye-off" : "eye"}
+                                    size={24} color="#aaa"
+                                    onPress={() => setShowPassword(!showPassword)}
+                                />
 
+                            </View>
 
+                            {
+                                authMessage?.length > 0 &&
+                                <Text style={styles.authText}>{authMessage}</Text>
+                            }
+                            {
+                                statusMessage?.length > 0 &&
+                                <Text style={styles.authText}>{statusMessage}</Text>
+                            }
+                            <TouchableOpacity
+                                style={styles.signInButton}
+                                onPress={() => handleClick()}
+                            >
+                                <Text style={styles.signInButtonText}>Continuer</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    navigation.push("auth-reset-password")
+                                }}
+                            >
+                                <Text style={{ color: '#EA6910', fontSize: 18 }}>Mot de passe oublié</Text>
+                            </TouchableOpacity>
+
+                        </View>
+                    </View>
+
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
@@ -106,23 +132,25 @@ const styles = StyleSheet.create({
         width: '95%',
         borderRadius: 24,
         alignItems: 'center',
-        paddingVertical: 35,
+        paddingVertical: 15,
         flex: 1,
         flexGrow: 3
     },
     title: {
         fontSize: 28,
         fontWeight: '600',
-        marginBottom: 32,
+        marginBottom: 25,
         color: '#1B1C1E'
     },
     intputField: {
-        borderWidth: 1,
-        borderColor: '#BEBEBE',
-        width: '90%',
-        height: 60,
-        borderRadius: 12,
-        paddingLeft: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 8,
+        backgroundColor: '#f3f3f3',
+        height: 50,
+        width: '80%',
+        justifyContent: 'space-between',
+        paddingHorizontal: 10,
         marginVertical: 5
     },
     signInButton: {

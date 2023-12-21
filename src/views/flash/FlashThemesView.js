@@ -1,142 +1,96 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Dimensions,
   StatusBar,
   Image
 } from 'react-native';
 
-import { Text as SvgText, TextPath, TSpan, G, Svg, Defs, Path, Use }
-  from 'react-native-svg';
+import { FlashCategoriesView } from './FlashCategoriesView';
+import { QaLayout } from '../home/QaLayout';
 
-const FlashButton = ({ label, onPress, buttonColor }) => {
-  var buttonImage = null
-  switch (label) {
-    case 'Mon patient':
-      buttonImage= require('../../../assets/flash/patient.png')
-      break;
-      case 'Mon activité':
-        buttonImage= require('../../../assets/flash/activite.png')
-      
-      break;
-      case 'Les solutions':
-        buttonImage= require('../../../assets/flash/les_solutions.png')
-      
-      break;
-      case 'Ressources':
-        buttonImage= require('../../../assets/flash/ressources.png')
-      
-      break;
-  
-    default:
-      
-      break;
-  }
-  return ( <View style={styles.buttonContainer}>
-    <Image
-      source={buttonImage}
-      style={{
-        width: '100%', height: '100%',
-        resizeMode: 'cover',
-        position: 'absolute'
-      }}
-    />
-        <TouchableOpacity style={[styles.button]}
-            onPress={onPress}>
-  
-            <Text style={styles.buttonText}>{label}</Text>
-          </TouchableOpacity>
+const FlashButton = ({ label, onPress, buttonColor, flashImg }) => {
+
+  return (<View style={styles.buttonContainer}>
+    <TouchableOpacity style={[styles.button]}
+      onPress={onPress}>
+      <Image
+        source={flashImg}
+        style={{
+          width: 100, height: 100,
+          resizeMode: 'contain',
+        }}
+      />
+
+      <Text style={styles.buttonText}>{label}</Text>
+    </TouchableOpacity>
   </View>
-    )
+  )
 }
 
 export const FlashThemesView = ({ navigation, route }) => {
+
+  const [themeSelected, setThemeSelected] = useState(null)
+  const [qaSelected, setQaSelected] = useState(false)
+
+  useEffect(() => {
+    console.log(themeSelected);
+  }, [themeSelected])
+
 
   return (
     <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
 
       <View style={styles.rowContainer}>
-      <FlashButton
-          label={'Mon activité'}
-          onPress={() => navigation.navigate('flash-categories', {
-            theme_id: 2,
-            theme_title: 'Mon activié',
-            theme_color: '#ffffff'
-          })}
-        />
         <FlashButton
-          label={'Mon patient'}
-          onPress={() => navigation.navigate('flash-categories', {
-            theme_id: 1,
-            theme_title: 'Mon patient',
-            theme_color: '#ffffff'
-          })}
-        />
-        
-      </View>
-      <View style={styles.rowContainer}>
-        <FlashButton
-          label={'Les solutions'}
-          onPress={() => navigation.navigate('flash-categories', {
-            theme_id: 3,
-            theme_title: 'Les solutions',
-            theme_color: '#ffffff'
-          })}
-        />
-        <FlashButton
-          label={"Ressources"}
-          onPress={() => navigation.navigate('flash-categories', {
-            theme_id: 4,
-            theme_title: "Ressources",
-            theme_color: '#ffffff'
-          })}
-        />
-      </View>
-
-      <View style={styles.orthoLogo}>
-
-        <Svg
-          width={Dimensions.get('screen').width / 3}
-          height={Dimensions.get('screen').width / 3}
-          viewBox="0 0 200 200"
-        >
-          <G>
-            <SvgText fill="black" fontSize={22} fontWeight='600'>
-              <TextPath href="#pathUp" startOffset="20%">
-                <TSpan dy="-15">
-                  Les infos utiles
-                </TSpan>
-              </TextPath>
-            </SvgText>
-            <SvgText fill="black" fontSize={22} fontWeight='600'>
-              <TextPath href="#pathDown" startOffset="20%" >
-                <TSpan dy="25">
-                  sur l'orthopédie
-                </TSpan>
-              </TextPath>
-            </SvgText>
-          </G>
-          <Defs>
-            <Path id="pathUp" d="M10 100 C 10 100, 100 -55, 190 100" fill="blue" />
-            <Path id="pathDown" d="M10 100 C 10 100, 100 255, 190 100" fill="blue" />
-          </Defs>
-        </Svg>
-
-        <Image
-          style={{
-            position: 'absolute',
-            alignSelf: 'center',
-            width: Dimensions.get('screen').width / 5,
-            height: Dimensions.get('screen').width / 5
-            
+          label={'Mon Patient'}
+          onPress={() => {
+            setThemeSelected({
+              type: "flash",
+              theme_id: 5,
+              color: '#FBAF31'
+            })
+            setQaSelected(false)
           }}
-          source={require('../../../assets/logo.png')}
+          flashImg={require("../../../assets/flash/Mon-patient.png")}
+        />
+        <FlashButton
+          label={'Ressources'}
+          onPress={() => {
+            setThemeSelected({
+              type: "flash",
+              theme_id: 6,
+              color: "#1B70C0"
+            })
+            setQaSelected(false)
+          }}
+          flashImg={require("../../../assets/flash/Ressources2.png")}
+        />
+        <FlashButton
+          label={'Question & Réponse'}
+          onPress={() => {
+            setThemeSelected(null)
+            setQaSelected(true)
+          }}
+          flashImg={require("../../../assets/flash/Question-reponse.png")}
         />
       </View>
+      {
+        themeSelected &&
+        <FlashCategoriesView navigation={navigation} theme_id={themeSelected.theme_id} color={themeSelected.color} />
+      }
+      {
+        qaSelected &&
+        <QaLayout navigation={navigation} />
+      }
+
+      {
+        (themeSelected === null && qaSelected == false) &&
+        <Text style={{ alignSelf: 'center', marginTop: 200 }}>Aucune catégorie séléctionner</Text>
+      }
 
     </SafeAreaView>
   );
@@ -150,7 +104,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fffefd',
     flex: 1,
     flexDirection: 'column',
-    justifyContent: 'center'
   },
   orthoLogo: {
     position: 'absolute',
@@ -162,22 +115,22 @@ const styles = StyleSheet.create({
   },
   rowContainer: {
     flexDirection: 'row',
-    flex: 1
   },
   buttonContainer: {
     flex: 1,
-    marginHorizontal: 5,
-    marginVertical: 5
+    alignItems: 'center',
+    borderColor: "#BDBDBD",
+    borderWidth: 0.5,
+    padding: 10
   },
   button: {
-    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
   buttonText: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#fffefd',
-    textAlign: 'center'
+    color: '#000',
+    textAlign: 'center',
   }
 })

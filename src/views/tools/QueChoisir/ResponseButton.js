@@ -75,7 +75,7 @@ export const ResponseButton = ({ element, onPress, history, onHelp, currentStepH
         }]}
     >
         {pressed ? <LinearGradient
-            colors={['#E8764A', '#EC4C70']}
+            colors={['#33C0B7', '#33C0B7']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={{ borderRadius: 8 }}

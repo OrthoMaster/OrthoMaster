@@ -10,32 +10,49 @@ import { useDispatch, useSelector, connect } from 'react-redux';
 
 //import { useQuery, useQueryClient } from "react-query"
 
-import { getSearchList } from '../../actions/searchAction';
-import { logout } from '../../actions/auth';
+import { getSearchList, searchFailure, searchSuccess, listEnded } from '../../actions/searchAction';
 
 import { SearchFilters } from './components/SearchFilters'
 import { ContentSelection } from './components/ContentSelection'
 import { SearchHeader } from './SearchHeader'
 import { LoadingContent } from '../../component/LoadingContent'
 import { API_SEARCH_CLEAN } from '../../actions/types';
+import { useQuery } from 'react-query';
+import { fetchSearchList } from '../../services/SearchService';
 
 const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState()
     const [searchText, setSearchText] = useState()
+    const fetchContent = useQuery(["search", searchText, filters], () => fetchSearchList({
+        contentType: route.name == "formation-search" ? 'lesson' : null,
+        filters: filters,
+        body: null,
+        searchText: searchText
+    }, page), {
+        onSuccess: val => {
+            if (val.length == 0) {
+                dispatch(listEnded())
+            }
+            dispatch(searchSuccess({
+                data: val
+            }))
+        },
+        onError: err => {
+            dispatch(searchSuccess({
+                error: err.response.data
+            }))
+        },
+        enabled: false
+    })
 
 
     const requestAPI = () => {
-
         dispatch(getSearchList({
-            page: page,
-            payload: {
-                contentType: route.name == "formation-search" ? 'lesson' : null,
-                filters: filters,
-                body: null,
-                searchText: searchText
-            },
+            page: page
         }))
+
+        fetchContent.refetch()
     }
 
     const searchWithFiltersArray = (filters) => {

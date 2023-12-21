@@ -50,7 +50,7 @@ const ViewHeader = ({nbProduct, userHistory, navigation}) => {
     return (
         <View style={{
             width: "90%",
-            backgroundColor: '#EC4E6E',
+            backgroundColor: '#33C0B7',
             alignSelf: 'center',
             alignItems: 'center',
             borderBottomLeftRadius: 15,
@@ -91,8 +91,8 @@ const DisplayHistory = ({ userHistory, onClose, onEdit }) => {
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                         {
                             value.responses.map((value, index) => {
-                                return <View style={{ backgroundColor: '#fff', borderRadius: 50, paddingHorizontal: 5, margin: 2 }} key={index}>
-                                    <Text style={{ color: '#EC4E6E', fontSize: 12 }}>{value.response.response}</Text>
+                                return <View style={{ backgroundColor: '#FBAF31', borderRadius: 50, padding: 5, margin: 2 }} key={index}>
+                                    <Text style={{ color: '#fff', fontSize: 12 }}>{value.response.response}</Text>
                                 </View>
 
                             })
@@ -110,7 +110,7 @@ const DisplayHistory = ({ userHistory, onClose, onEdit }) => {
             <TouchableOpacity style={[styles.historyButton, { alignSelf: 'center', backgroundColor: '#fff' }]}
                 onPress={onEdit}
             >
-                <Text style={{ color: '#EC4E6E' }}>Modifier</Text>
+                <Text style={{ color: '#33C0B7' }}>Modifier</Text>
             </TouchableOpacity>
         </View>
 
@@ -145,7 +145,7 @@ const ProductCard = ({ product }) => {
                                 return <View
                                     key={index}
                                     style={{
-                                        backgroundColor: '#EC4E6E',
+                                        backgroundColor: '#33C0B7',
                                         paddingLeft: 5, paddingRight: 10,
                                         paddingVertical: 1,
                                         marginVertical: 1,
@@ -161,7 +161,7 @@ const ProductCard = ({ product }) => {
                 </View>
                 <Text style={{ fontSize: 10, fontWeight: 300, width: '80%', textAlign: 'left' }}>{product.type}</Text>
                 <Text style={{ fontSize: 12, fontWeight: 700, width: '80%', textAlign: 'left' }}>{product.model}</Text>
-                <Text style={{ fontSize: 10, fontWeight: 500, width: '80%', textAlign: 'left' }}>{product.option} <Text style={{ color: '#ED7D32' }}>{product.brand}</Text></Text>
+                <Text style={{ fontSize: 10, fontWeight: 500, width: '80%', textAlign: 'left' }}>{product.option} <Text style={{ color: '#33C0B7' }}>{product.brand}</Text></Text>
 
 
 
@@ -356,7 +356,7 @@ export const FinalQC = ({ route, navigation }) => {
                     </ScrollView>
 
                     <LinearGradient
-                        colors={['#EC4C70', '#E8764A']}
+                        colors={['#33C0B7', '#33C0B7']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.finishButton}
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     },
     historyButton: {
         marginTop: 20,
-        backgroundColor: '#EC4E6E',
+        backgroundColor: '#33C0B7',
         borderWidth: 1,
         borderColor: '#fff',
         padding: 5,

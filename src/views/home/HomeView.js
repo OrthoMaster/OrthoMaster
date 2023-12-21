@@ -60,7 +60,7 @@ export const HomeView = ({ navigation }) => {
             <Text style={styles.carouselHeaderTitle}>
               Questions / réponses
             </Text>
-            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('home-qa')}>
+            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, {color: colors.primary}]}>Voir toutes</Text>
             </Pressable>
           </View>

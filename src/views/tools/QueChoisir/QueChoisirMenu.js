@@ -59,7 +59,7 @@ export const QueChoisirMenu = ({ navigation }) => {
     }, [])
 
     return <LinearGradient
-        colors={['#E8754B', '#E8754B']}
+        colors={['#33C0B7', '#33C0B7']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.containerTool}
@@ -126,11 +126,11 @@ export const QueChoisirMenu = ({ navigation }) => {
             shadowOffset: { width: 5, height: 5 }
         }]}
             onPress={() => setShowFilters(true)}>
-            <MaterialCommunityIcons name="format-list-numbered" size={24} color="#EC4E6E" />
+            <MaterialCommunityIcons name="format-list-numbered" size={24} color="#33C0B7" />
             {
                 filters.queChoisir.selected.length > 0 &&
                 <View style={{
-                    backgroundColor: '#EC5369',
+                    backgroundColor: '#33C0B7',
                     borderColor: '#fff',
                     borderWidth: 1,
                     alignItems: 'center',
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     },
     toolButtonText: {
         fontSize: 17,
-        color: '#EC4C70',
+        color: '#33C0B7',
     },
     toolButtonIcon: {
         width: 15,

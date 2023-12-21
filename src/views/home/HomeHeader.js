@@ -119,20 +119,20 @@ export const HomeHeader = ({ navigation, userName }) => {
                     }}>
                     <HomeHeaderButton
                         value='Poser une question'
-                        color='#386CDA'
-                        icon={require('../../../assets/home/header/header_button_question.png')}
+                        color='#FAA221'
+                        icon={require('../../../assets/navigation/question-icon.png')}
                         style={styles.secondaryButton}
                         onPress={() => {
                             Linking.openURL('mailto:question@orthomaster.fr')
                         }}
                     />
                     <HomeHeaderButton
-                        value='Leçon suivante'
-                        color='#A84206'
+                        value='Outils'
+                        color='#1662A8'
                         style={styles.primaryButton}
-                        icon={require('../../../assets/home/header/header_button_flash.png')}
+                        icon={require('../../../assets/navigation/outils-icon.png')}
                         onPress={() => {
-                            nextLesson.refetch()
+                            navigation.navigate('tools-home')
                             // if (currentMode == MODES.orthomaster) {
                             //     dispatch(actionChangeAppMode('thuasne'))
                             // } else {
@@ -142,8 +142,8 @@ export const HomeHeader = ({ navigation, userName }) => {
                     />
                     <HomeHeaderButton
                         value='Rechercher un contenu'
-                        color='#386CDA'
-                        icon={require('../../../assets/home/header/header_button_search.png')}
+                        color='#79B937'
+                        icon={require('../../../assets/navigation/rechercher-icon.png')}
                         style={styles.secondaryButton}
                         onPress={() => navigation.navigate('home-search')}
                     />

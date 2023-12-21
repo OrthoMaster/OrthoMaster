@@ -37,33 +37,34 @@ export const ResetPassword = () => {
     })
 
     useEffect(() => {
-      if (resetStatus.status) {
-        Alert.alert(
-            "Nouveau mot de passe",
-            resetStatus.message
-        )
-      }
+        if (resetStatus.status) {
+            Alert.alert(
+                "Nouveau mot de passe",
+                resetStatus.message
+            )
+        }
     }, [resetStatus])
-    
+
 
 
     return <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
-        <Text style={[styles.primaryText, {marginTop: 30}]}>
+        <Text style={[styles.primaryText, { marginTop: 30 }]}>
             Renseigne ton nom d'utilisateur dans le champ ci-dessous dessous
         </Text>
-        <Text style={{fontSize: 30, marginVertical: 30}}>⬇️</Text>
+        <Text style={{ fontSize: 30, marginVertical: 30 }}>⬇️</Text>
         <TextInput
             style={styles.intputField}
             placeholder="Nom d'utilisateur"
             value={username}
             onChangeText={(val) => setUsername(val)}
+            textContentType="username"
             autoCapitalize={'none'}
         />
 
         {
             (resetStatus.status == false && resetStatus.message != '') &&
-            <Text style={{color: '#E72311'}}>{resetStatus.message}</Text>
-            }
+            <Text style={{ color: '#E72311' }}>{resetStatus.message}</Text>
+        }
 
         <TouchableOpacity
             style={styles.resetInButton}
