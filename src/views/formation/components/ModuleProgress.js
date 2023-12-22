@@ -59,6 +59,7 @@ const ModuleProgress = ({
             },
             top: 20,
             left: 20,
+            backgroundColor: '#fff'
           }]}>
 
         {moduleImg ? 

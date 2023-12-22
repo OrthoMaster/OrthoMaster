@@ -12,7 +12,7 @@ import { useQuery } from 'react-query';
 
 
 export const ImageFactory = ({ config }) => {
-    const imgUrl = useQuery(["getContentImage", config.attributes['src']], ()=>getS3Image(contentInfos.s3_path+ '/' + contentInfos.title +'/' + config.attributes['src']))
+    const imgUrl = useQuery(['Content', 'GET', "contentImage", config.attributes['src']], ()=>getS3Image(contentInfos.s3_path+ '/' + contentInfos.title +'/' + config.attributes['src']))
 
     const [isFullscreen, setIsFullscreen] = useState(false)
 

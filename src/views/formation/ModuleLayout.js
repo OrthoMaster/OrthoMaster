@@ -87,10 +87,7 @@ export const ModuleLayout = ({ navigation, route }) => {
     const isFocused = useIsFocused();
     const [modalVisible, setModalVisible] = useState(true)
     const [formationPercentage, setFormationPercentage] = useState(0)
-    const modules = useQuery('modulesProgress', () => fetchModulesWithUserProgression(), {
-        onError: (error) => {
-            throw error
-        },
+    const modules = useQuery(['Formation', 'GET', 'modulesProgress'], () => fetchModulesWithUserProgression(), {
         onSuccess: (modules) => {
             let totalLesson = 0
             let finishLesson = 0
@@ -104,11 +101,7 @@ export const ModuleLayout = ({ navigation, route }) => {
         }
     })
 
-    const formationMainQuiz = useQuery('getFormationMainQuiz', () => getFormationMainQuizStatus(1), {
-        onError: (error) => {
-            throw error
-        }
-    })
+    const formationMainQuiz = useQuery(['getFormationMainQuiz'], () => getFormationMainQuizStatus(1))
 
 
     const onRefresh = useCallback(() => {

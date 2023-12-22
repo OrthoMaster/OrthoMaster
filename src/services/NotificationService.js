@@ -1,20 +1,19 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import Constants from 'expo-constants';
 import { osName } from 'expo-device';
 
 
-let route = Constants.manifest.extra.env.API_URL + "/notification"
+const baseurl = process.env.EXPO_PUBLIC_API_URL + "/notification"
 
 
 
 export const registerUserToNotification = async (pushToken) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     return axios
-        .post(route + "/endpoint/create",
+        .post(baseurl + "/endpoint/create",
         null,
         {
             headers: { Authorization: authHeader },

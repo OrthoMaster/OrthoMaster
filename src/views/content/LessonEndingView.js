@@ -120,42 +120,19 @@ export const LessonEndingView = ({ navigation, route }) => {
   const stateContent = store.getState().content
   const [nbQuizValidated, setnbQuizValidated] = useState(0)
   const dispatch = useDispatch()
-  const saveContentMutation = useMutation(postUserLessonStatus, {
-    onError: (error) => {
-      throw error
-    },
-    onSuccess: () => {
-      //trophyProgression.refetch()
+  const saveContentMutation = useMutation(postUserLessonStatus);
 
-    },
-    retry: 10,
-    retryDelay: 3000
-  });
-
-  const trophyProgression = useQuery('getTrophyProgressBasedOnModule', () => getTrophyProgressBasedOnModule(stateContent.content.module_num), {
-    //enabled: false,
-    onError: (error) => {
-      throw error
-    },
-    retry: 10,
-    retryDelay: 3000
-  })
+  const trophyProgression = useQuery(['Lesson','GET', 'trophyProgressBasedOnModule'], () => getTrophyProgressBasedOnModule(stateContent.content.module_num))
 
 
-  const valideMainQuiz = useMutation(valideMainQuizStatusByFormation, {
-    onError: (error) => {
-      throw error
-    },
-    retry: 10,
-    retryDelay: 3000
-  });
+  const valideMainQuiz = useMutation(valideMainQuizStatusByFormation);
   const [status, setStatus] = useState(false)
 
   const saveUserAnswer = async (data) => {
     saveContentMutation.mutateAsync({ status: data.status, id: data.id })
   };
 
-  const nextLesson = useQuery('getNextLesson', () => getUserNextLesson(), {
+  const nextLesson = useQuery(['Lesson', 'GET', 'nextLesson'], () => getUserNextLesson(), {
     enabled: false,
     onSuccess: (lesson) => {
       dispatch(nextContent(lesson))
@@ -168,12 +145,7 @@ export const LessonEndingView = ({ navigation, route }) => {
           content: lesson
         });
       }
-    },
-    onError: (error) => {
-      throw error
-    },
-    retry: 10,
-    retryDelay: 3000
+    }
   });
 
 

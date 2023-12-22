@@ -4,14 +4,21 @@ import { registerRootComponent } from 'expo';
 
 import { Provider } from 'react-redux'
 import store from './src/store'
+import { ErrorHandler } from './src/component/ErrorHandler';
+import { MyQueryProvider } from './src/component/MyQueryProvider';
 
 import App from './App';
+
 const WrapApp = () => (
-      <Provider store={store}>
+  <Provider store={store}>
+    <ErrorHandler>
+      <MyQueryProvider>
         <App />
-      </Provider>
-    //document.getElementById('root')
-  );
+      </MyQueryProvider>
+    </ErrorHandler>
+  </Provider>
+  //document.getElementById('root')
+);
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,

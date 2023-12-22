@@ -59,11 +59,7 @@ export const AccountView = ({ navigation }) => {
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
-  const infos = useQuery('getOfficeInfo', () => getOfficeInfos(user.office_id), {
-    onError: (e) => {
-      throw e
-    }
-  })
+  const infos = useQuery(['Account','GET','officeInfo'], () => getOfficeInfos(user.office_id))
 
 
   const onRefresh = useCallback(() => {
@@ -73,8 +69,6 @@ export const AccountView = ({ navigation }) => {
       setRefreshing(false);
     }, 2000);
   }, []);
-
-
 
   return (
     <View style={{ flex: 1 }}>
@@ -98,7 +92,7 @@ export const AccountView = ({ navigation }) => {
 
           <Trophies refreshing={refreshing}/>
 
-          <AccountOfficesProgress managerId={user.id_user} refreshing={refreshing}/>
+          <AccountOfficesProgress enableConfig={user.job_function == 'TITULAIRE' ? true : false} refreshing={refreshing} navigation={navigation}/>
           
           <View style={{ height: 200 }} />
         </ScrollView>

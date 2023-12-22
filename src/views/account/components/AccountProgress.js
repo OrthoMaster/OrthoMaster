@@ -13,11 +13,7 @@ import { logout } from '../../../actions/auth'
 import { LoadingContent } from '../../../component/LoadingContent'
 
 export const AccountProgress = ({ userId, refreshing }) => {
-    const progress = useQuery('getUserProgress', () => getUserProgression(), {
-        onError: (error) => {
-            throw error
-          }
-    })
+    const progress = useQuery(['Account','GET', 'userProgress'], () => getUserProgression())
     useEffect(() => {
       if (refreshing) {
         progress.refetch()

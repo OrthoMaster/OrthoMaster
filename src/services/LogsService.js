@@ -1,13 +1,12 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import Constants from 'expo-constants';
-let route = Constants.manifest.extra.env.API_URL+"/logtime"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/logtime"
 
 
 export const saveLogtimeOnLesson = async (log) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     const body = {
         login: log.login,
@@ -16,7 +15,7 @@ export const saveLogtimeOnLesson = async (log) => {
     }
 
     return axios
-        .post(route + "/lesson/user/" + config.user.id_user, body, {
+        .post(baseurl + "/lesson/user/" + config.user.id_user, body, {
             headers: { Authorization: authHeader },
         },
         
@@ -31,7 +30,7 @@ export const saveLogtimeOnLesson = async (log) => {
 
 export const saveLogtimeOnApp = async (log) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     const body = {
         login: log.login,
@@ -40,7 +39,7 @@ export const saveLogtimeOnApp = async (log) => {
 
 
     return axios
-        .post(route + "/user/" + config.user.id_user, body, {
+        .post(baseurl + "/user/" + config.user.id_user, body, {
             headers: { Authorization: authHeader },
         })
         .then((response) => {

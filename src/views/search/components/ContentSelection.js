@@ -17,12 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from 'react-query';
 
 const SearchCardDefault = ({ card, onSelect }) => {
-    const thumbnail = useQuery(['fetchContentThumbnail', card.content.id_content, card.content.title],
-    () => getS3Image(createS3Path(card)), {
-        onError: (err) => {
-            throw err
-        }
-    })
+    const thumbnail = useQuery(['ContentSelection', 'GET', 'contentThumbnail', card.content.id_content, card.content.title],
+    () => getS3Image(createS3Path(card)))
 
     const createS3Path = (cardInfo) => {
         let path = cardInfo.content.s3_path
@@ -126,25 +122,22 @@ const SearchCardDefault = ({ card, onSelect }) => {
 
 
 
-const QaCard = ({ card, onSelect }) => {
-    const thumbnail = useQuery(['fetchQaThumbnail', card.content.id_content, card.content.title],
-    () => getS3Image(`${card.content.s3_path}/${card.content.title}/logo.png`), {
-        onError: (err) => {
-            throw err
-        }
-    })
+const QaCard = ({ card, onSelect, color }) => {
+    const thumbnail = useQuery(['Qa', 'GET', 'qaThumbnail', card.content.id_content, card.content.title],
+    () => getS3Image(`${card.content.s3_path}/${card.content.title}/logo.png`))
 
     return (
         <TouchableOpacity style={stylesQa.card}
             onPress={() => onSelect(card)}
         >
-            <View >
+            <View style={{
+                width: '100%',
+            }}>
                 {
                     thumbnail
                         ? <Image
-                            width={Dimensions.get('screen').width}
                             style={{
-                                width: Dimensions.get('screen').width,
+                                width: "100%",
                                 height: Dimensions.get('screen').width / 2,
                                 resizeMode: 'contain'
                             }}
@@ -164,14 +157,14 @@ const QaCard = ({ card, onSelect }) => {
                 </LinearGradient>
             </View>
 
-            <View style={stylesQa.cardDescriptionContainer}>
+            <View style={[stylesQa.cardDescriptionContainer, {backgroundColor: color}]}>
                 <Text>⏱ {card.content.duration} | {card.content.description}</Text>
             </View>
         </TouchableOpacity>
     )
 }
 
-export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, onMoreLoading, onRetry }) => {
+export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, onMoreLoading, onRetry, color }) => {
     const renderEmpty = () => {
         return (
             <View>
@@ -188,7 +181,7 @@ export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, 
                 renderItem={(item) => {
                     switch (cardLayout) {
                         case 'qa':
-                            return <QaCard card={item.item} onSelect={(card) => onSelect(card)} />
+                            return <QaCard card={item.item} onSelect={(card) => onSelect(card)} color={color} />
 
                         default:
                             return <SearchCardDefault card={item.item} onSelect={(card) => onSelect(card)} />
@@ -199,6 +192,7 @@ export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, 
                 ListEmptyComponent={renderEmpty}
                 onEndReachedThreshold={0.20}
                 onEndReached={onEndReached}
+                automaticallyAdjustKeyboardInsets={true}
             />
         </View>
     )
@@ -206,7 +200,8 @@ export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, 
 }
 const styles = StyleSheet.create({
     container: {
-        flex: 1
+        flex: 1,
+        width: '100%',
     }
 })
 
@@ -257,15 +252,15 @@ const stylesDefault = StyleSheet.create({
 
 const stylesQa = StyleSheet.create({
     card: {
-        width: '100%',
+        width: '80%',
         marginBottom: 20,
-        alignSelf: 'center'
+        alignSelf: 'center',
     },
 
     cardDescriptionContainer: {
         paddingLeft: 5,
         paddingVertical: 10,
-        borderWidth: 1,
+        borderWidth: 0.2,
         borderBottomLeftRadius: 10,
         borderBottomRightRadius: 10,
     },

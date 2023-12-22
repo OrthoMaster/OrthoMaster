@@ -24,7 +24,6 @@ export const NotificationHandler = ({ children }) => {
 
 
   const handleNotif = (redirectContent) => {
-    console.log(redirectContent);
     if (redirectContent != null) {
       let rootView = ''
       let screenView = ''

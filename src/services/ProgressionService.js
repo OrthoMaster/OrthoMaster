@@ -1,20 +1,19 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-import Constants from 'expo-constants';
-let route = Constants.manifest.extra.env.API_URL+"/progress"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/progress"
 
 
 export const postUserLessonStatus = async (obj) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
 
     const body = {
         status: obj.status,
         content_id: obj.id
     }
     return axios
-        .post(route + "/user/" + config.user.id_user, body, {
+        .post(baseurl + "/user/" + config.user.id_user, body, {
             headers: { Authorization: authHeader },
         })
         .then((response) => {
@@ -24,10 +23,10 @@ export const postUserLessonStatus = async (obj) => {
 
 export const getUserProgression = async () => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
   
     return axios
-      .get(route+"/user/"+config.user.id_user, {
+      .get(baseurl+"/user/"+config.user.id_user, {
         headers: { Authorization: authHeader },
   
       })
@@ -39,10 +38,10 @@ export const getUserProgression = async () => {
 
   export const getCollaboratorsProgression = async (officeId) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
+    const authHeader = 'Bearer ' + config.JWT;
   
     return axios
-      .get(route+"/office/" + officeId + "/collaborators", {
+      .get(baseurl+"/office/" + officeId + "/collaborators", {
         headers: { Authorization: authHeader },
   
       })
@@ -54,13 +53,12 @@ export const getUserProgression = async () => {
 
   export const getOfficesProgressionForManager = async (managerId) => {
     const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.accessToken;
-  
+    const authHeader = 'Bearer ' + config.JWT;
     return axios
-      .get(route+"/offices", {
+      .get(baseurl+"/offices", {
         headers: { Authorization: authHeader },
         params:{
-          manager_id: managerId
+          manager_id: config.user.id_user
         }
   
       })

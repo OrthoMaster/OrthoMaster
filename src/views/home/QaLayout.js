@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Image,
   View,
-  Linking
+  Linking,
+  TouchableOpacity
 } from 'react-native'
 
 import { SearchFilters } from '../search/components/SearchFilters';
@@ -20,22 +21,18 @@ import { LoadingContent } from '../../component/LoadingContent'
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 
 
-export const QaLayout = ({ navigation, route }) => {
+export const QaLayout = ({ navigation, color }) => {
 
   const [filters, setFilters] = useState(null)
 
-  const qaList = useQuery("qaList", () => fetchSearchList({
+  const qaList = useQuery(['Qa', 'GET', "qaList"], () => fetchSearchList({
     contentType: 'qa',
     filters: filters,
     body: null,
     searchText: null
   }
     , null
-  ), {
-    onError: (error) => {
-      throw error
-    }
-  })
+  ))
 
 
   useEffect(() => {
@@ -50,41 +47,40 @@ export const QaLayout = ({ navigation, route }) => {
 
   return (<View style={styles.container}>
 
-    <SearchFilters
-      route={route}
-      values={['Connaissance médicale', 'Prise en charge du patient', 'Solution orthopédique', 'Gestion de l\'officine', 'Divers']}
-      onSelect={(filters) => { setFilters(filters) }}
-    />
 
     <ContentSelection
       content={qaList.data}
       onSelect={(card) => {
-        navigation.navigate('home-content', {
+        navigation.navigate('flash-content-viewer', {
           content: card.content
         })
       }}
       cardLayout={'qa'}
       onRetry={() => qaList.refetch}
+      color={color}
     />
-    <HomeHeaderButton
-      value='Poser une question'
-      color='#386CDA'
-      icon={require('../../../assets/home/header/header_button_question.png')}
-      style={styles.askQuestionButton}
+
+    <TouchableOpacity style={[{
+      backgroundColor: color,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'absolute',
+      right: 10,
+      bottom: 10,
+      padding: 5,
+      borderRadius: 50,
+      width: 50, height: 50
+    }]}
       onPress={() => {
         Linking.openURL('mailto:question@orthomaster.fr')
-        // Linking.canOpenURL('mailto:question@orthomaster.fr')
-        //   .then((supported) => {
-        //     if (supported) {
-              
-        //     } else {
-        //       Alert.alert(`Impossible d'ouvrir: question@orthomaster.fr`);
-        //     }
-        //   })
+      }
+      }
+    >
 
-      }}
-    />
-
+      <Text style={{ color: '#1D3470', fontWeight: 'bold', textAlign: 'center', fontSize: 8 }}>
+        Poser une question
+      </Text>
+    </TouchableOpacity>
   </View>
   )
 }
@@ -94,7 +90,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fffefd',
     width: '100%',
     alignItems: 'center',
-    height: '100%'
+    height: '100%',
   },
   scrollContainer: {
     //width: '100%'
@@ -114,7 +110,7 @@ const styles = StyleSheet.create({
   cardDescriptionContainer: {
     paddingLeft: 5,
     paddingVertical: 10,
-    borderWidth: 1,
+    borderWidth: 0.3,
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
   },

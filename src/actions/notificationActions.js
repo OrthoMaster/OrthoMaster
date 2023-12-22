@@ -39,22 +39,18 @@ export const registerForNotification = () => async (dispatch) => {
         if (existingStatus !== 'granted') {
             const { status } = await Notifications.requestPermissionsAsync();
             finalStatus = status;
-            console.log(status);
-            console.log(finalStatus);
         }
 
         
 
         if (finalStatus == 'granted') {
             finalToken = (await Notifications.getDevicePushTokenAsync()).data;
-            console.log(finalToken);
         }
     }
 
     if (finalToken != "") {
         const req = await registerUserToNotification(finalToken)
             
-        console.log(req);
     }
 
     dispatch({

@@ -5,6 +5,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import { AccountView } from '../../views/account/AccountView';
 import { AccountProfile } from '../../views/account/menu/AccountProfile';
+import { TeamManagerView } from '../../views/account/teamManager/TeamManagerView';
+import { RegistrationView } from '../../views/account/menu/registrationForm/RegistrationView';
 
 const ProfilStackNav = createStackNavigator();
 
@@ -24,6 +26,23 @@ export const ProfilStack = () => {
         options={{
           headerBackTitle: 'Retour',
           title: 'Mon profile'
+        }}
+      />
+      <ProfilStackNav.Screen
+        name="account-team-manager"
+        component={TeamManagerView}
+        options={{
+          headerBackTitle: 'Retour',
+          title: 'Mon équipe'
+        }}
+      />
+
+      <ProfilStackNav.Screen
+        name="account-register-form"
+        component={RegistrationView}
+        options={{
+          headerBackTitle: 'Retour',
+          title: "Formulaire d'inscription"
         }}
       />
     </ProfilStackNav.Navigator>

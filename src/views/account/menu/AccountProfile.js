@@ -8,7 +8,11 @@ import {
     StyleSheet,
     Dimensions,
     ScrollView,
-    TextInput
+    TextInput,
+    Alert,
+    KeyboardAvoidingView,
+    TouchableWithoutFeedback,
+    Keyboard
 } from "react-native";
 
 import { useStore } from "react-redux";
@@ -16,6 +20,7 @@ import { useMutation } from "react-query";
 import { changeUserPassword } from "../../../services/UserService";
 
 import { Modal } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 
 const DisplayUserInfo = ({ dataType, data }) => {
 
@@ -51,7 +56,7 @@ const DisplayUserInfo = ({ dataType, data }) => {
 }
 
 
-export const AccountProfile = () => {
+export const AccountProfile = ({navigation}) => {
     const store = useStore()
     const userState = store.getState().auth.userCurrentSession
     const [changingPassword, setchangingPassword] = useState(false)
@@ -61,13 +66,17 @@ export const AccountProfile = () => {
     const [confirmPassword, setconfirmPassword] = useState('')
 
     const [statusText, setStatusText] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
 
     const changePasswordMutation = useMutation('changePassword', changeUserPassword, {
-        onError: (error) => {
-            throw error
-        },
         onSuccess: (msg) => {
             setStatusText(msg)
+            Alert.alert(msg)
+            navigation.goBack()
+
+        },
+        onError: err => {
+            Alert.alert(err.response.data.message)
         }
     })
 
@@ -77,8 +86,8 @@ export const AccountProfile = () => {
             setStatusText("Les mots de passe ne correspondent pas.")
             return
         }
-        
-        changePasswordMutation.mutate({oldPassword: oldPassword, newPassword: newPassword})
+
+        changePasswordMutation.mutate({ oldPassword: oldPassword, newPassword: newPassword })
 
 
     }
@@ -106,8 +115,8 @@ export const AccountProfile = () => {
                             data={userState.username}
                         />
                         <DisplayUserInfo
-                            dataType={"Type de compte"}
-                            data={userState.user_type_id}
+                            dataType={"Fonction professionelle"}
+                            data={userState.job_function}
                         />
                         <DisplayUserInfo
                             dataType={"E-mail"}
@@ -141,55 +150,99 @@ export const AccountProfile = () => {
                 transparent={true}
             >
                 <SafeAreaView style={styles.resetContainer}>
-                    <View style={styles.resetView}>
-                        <TouchableOpacity style={styles.resetReturnButton}
-                            onPress={() => setchangingPassword(false)}
-                        >
-                            <Image
-                                source={require('../../../../assets/navigation/right-arrow.png')}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    transform: [{ rotateZ: '180deg' }],
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={[styles.container, { width: '100%' }]}
+                    >
+                        <TouchableWithoutFeedback
+                            style={{ width: '100%', height: '100%', }}
+                            onPress={() => { Keyboard.dismiss() }}>
+                            <View style={{
+                                height: "100%", width: "100%",
+                                alignItems: 'center'
+                            }}>
 
-                                }}
-                            />
-                        </TouchableOpacity>
+                                <View style={styles.resetView}>
+                                    <TouchableOpacity style={styles.resetReturnButton}
+                                        onPress={() => setchangingPassword(false)}
+                                    >
+                                        <Image
+                                            source={require('../../../../assets/navigation/right-arrow.png')}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                transform: [{ rotateZ: '180deg' }],
 
-                        <Text style={{ fontWeight: 'bold', marginTop: 15, fontSize: 18 }}>Changer de mot de passe</Text>
+                                            }}
+                                        />
+                                    </TouchableOpacity>
+
+                                    <Text style={{ fontWeight: 'bold', marginTop: 15, fontSize: 18 }}>Changer de mot de passe</Text>
 
 
-                        <TextInput
-                            style={[styles.inputFields, {marginTop: 100}]}
-                            value={oldPassword}
-                            placeholder="Ancien mot de passe"
-                            onChangeText={(value) => setOldPassword(value)}
-                            secureTextEntry
-                        />
-                        <TextInput
-                            style={[styles.inputFields, {marginTop: 50}]}
-                            value={newPassword}
-                            placeholder="Nouveau mot de passe "
-                            onChangeText={(value) => setNewPassword(value)}
-                            secureTextEntry
-                        />
-                        <TextInput
-                            style={styles.inputFields}
-                            value={confirmPassword}
-                            placeholder="Confirmer nouveau mot de passe"
-                            onChangeText={(value) => setconfirmPassword(value)}
-                            secureTextEntry
-                        />
+                                    <TextInput
+                                        style={[styles.inputFields, { marginTop: 100 }]}
+                                        value={oldPassword}
+                                        placeholder="Ancien mot de passe"
+                                        onChangeText={(value) => setOldPassword(value)}
+                                        textContentType="password"
+                                        secureTextEntry={!showPassword}
+                                    />
 
-                        <Text style={{fontSize: 12, marginTop: 20}}>{statusText}</Text>
+                                    <TextInput
+                                        style={[styles.inputFields, { marginTop: 50 }]}
+                                        value={newPassword}
+                                        placeholder="Nouveau mot de passe "
+                                        onChangeText={(value) => setNewPassword(value)}
+                                        textContentType="newPassword"
+                                        secureTextEntry={!showPassword}
 
-                        <TouchableOpacity style={styles.submitBtn}
-                        onPress={()=>handleChange()}
-                        >
-                            <Text style={styles.submitBtnTxt}>Valider</Text>
-                        </TouchableOpacity>
+                                    />
 
-                    </View>
+                                    <TextInput
+                                        style={styles.inputFields}
+                                        value={confirmPassword}
+                                        placeholder="Confirmer nouveau mot de passe"
+                                        onChangeText={(value) => setconfirmPassword(value)}
+                                        textContentType="newPassword"
+                                        secureTextEntry={!showPassword}
+
+                                    />
+
+                                    <TouchableOpacity
+                                        onPress={() => setShowPassword(!showPassword)}
+                                        style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            marginTop: 20
+                                        }}
+                                    >
+                                        <Ionicons
+                                            name={showPassword ? "eye-off" : "eye"}
+                                            size={24} color="#eb7b0f"
+                                        />
+                                        <Text style={{
+                                            color: '#eb7b0f',
+                                            marginLeft: 10
+                                        }}>
+                                            {showPassword ? "Cacher" : "Afficher"}
+                                        </Text>
+                                    </TouchableOpacity>
+
+
+
+
+                                    <Text style={{ fontSize: 12, marginTop: 20 }}>{statusText}</Text>
+
+                                    <TouchableOpacity style={styles.submitBtn}
+                                        onPress={() => handleChange()}
+                                    >
+                                        <Text style={styles.submitBtnTxt}>Valider</Text>
+                                    </TouchableOpacity>
+
+                                </View>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </KeyboardAvoidingView>
                 </SafeAreaView>
             </Modal>
 
@@ -200,6 +253,7 @@ export const AccountProfile = () => {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: "#ffffff",
+        height: "100%"
     },
     user: {
         flexDirection: 'row',
@@ -235,7 +289,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         height: '100%',
         borderTopLeftRadius: 10,
-
+        width: '100%',
         alignItems: 'center'
     },
     resetViewHeader: {
@@ -250,13 +304,14 @@ const styles = StyleSheet.create({
         margin: 15
     },
     inputFields: {
-        height: 40,
-        width: '70%',
-        margin: 5,
-        borderWidth: 0.5,
-        padding: 10,
-        borderColor: '#E77D40',
-        borderRadius: 5
+        alignItems: 'center',
+        borderRadius: 8,
+        backgroundColor: '#f3f3f3',
+        height: 50,
+        width: '80%',
+        justifyContent: 'space-between',
+        paddingHorizontal: 10,
+        marginVertical: 5
     },
     submitBtn: {
         backgroundColor: '#E75A08',

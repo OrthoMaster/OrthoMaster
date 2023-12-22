@@ -1,57 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Image,
-  Alert,
-  Dimensions,
   StatusBar,
-  SafeAreaView
+  SafeAreaView,
+  ScrollView,
+  View
 } from 'react-native';
 
-import { LinearGradient } from 'expo-linear-gradient';
 
-
+import { QueChoisirMenu } from './QueChoisir/QueChoisirMenu';
+import { GuidePatientMenu } from './GuidePatient/GuidePatientMenu';
 export const ToolsView = ({ navigation }) => {
-  return (
-    <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
-      <Text style={styles.containerTitle}>
-        Mes outils
-      </Text>
 
-      <LinearGradient
-        colors={['#E8764A', '#EC4C70']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.containerTool}
-      >
-        <Image
-          style={styles.toolQCImage}
-          source={require('../../../assets/tools/exam.png')}
-        />
-        <Text style={styles.toolTitle}>
-          Que choisir ?
+
+
+  return (
+    <SafeAreaView style={{}}>
+      <ScrollView contentContainerStyle={{alignItems: 'center'}}>
+
+        <Text style={styles.containerTitle}>
+          Mes outils
         </Text>
 
-        <View
-          style={styles.containerButtons}
-          //onPress={() => navigation.navigate('tools-que-choisir')}
-        >
-          <Text style={styles.toolButtonText}>Bientôt disponible</Text>
-        </View>
-        {/* <TouchableOpacity
-          style={styles.containerButtons}
-          //onPress={() => navigation.navigate('tools-que-choisir')}
-        >
-          <Text style={styles.toolButtonText}>Commencer</Text>
-          <Image 
-            style={styles.toolButtonIcon}
-            source={require('../../../assets/navigation/right-arrow.png')}
-          />
-        </TouchableOpacity> */}
-      </LinearGradient>
+        <QueChoisirMenu navigation={navigation}/>
+        <View style={{height: 30}}/>
+        <GuidePatientMenu />
+
+
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -90,18 +67,18 @@ const styles = StyleSheet.create({
   },
   containerButtons: {
     backgroundColor: '#ffffff',
-    width: '90%',
-    paddingVertical: 10,
+    width: 80, height: 80,
     borderRadius: 11,
     alignItems: 'center',
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    shadowOpacity: 0.2,
+    shadowOffset: {
+      width: 5, height: 5
+    }
   },
   toolButtonText: {
     fontSize: 17,
     color: '#EC4C70',
-    marginRight: 20
   },
   toolButtonIcon: {
     width: 15,

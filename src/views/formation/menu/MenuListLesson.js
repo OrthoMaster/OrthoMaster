@@ -72,11 +72,7 @@ const MenuButton = ({ item, navigation }) => {
 
 
 export const MenuListLesson = ({ navigation, category, filters }) => {
-    const lessons = useQuery('searchLessonInMenu', () => fetchSearchList({ contentType: 'lesson', filters: filters, body: category.tags }), {
-        onError: (error) => {
-            throw error
-          }
-    })
+    const lessons = useQuery(['Formation', 'GET', 'searchLessonInMenu'], () => fetchSearchList({ contentType: 'lesson', filters: filters, body: category.tags }))
 
     useEffect(() => {
         lessons.refetch()

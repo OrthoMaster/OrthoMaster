@@ -6,6 +6,7 @@ import {
     LOGOUT,
     TOKEN_VALID,
     TOKEN_INVALID,
+    REFRESH_SESSION
 } from "../actions/types";
 
 
@@ -23,14 +24,11 @@ const initialState = {
     isLoggedIn: false,
     userTopAccount: null,
     userCurrentSession: null,
-    isLoading: true,
     authMessage: ""
 }
 
 
 export const selectIsLoggedIn = state => state.auth.isLoggedIn
-export const selectIsLoading = state => state.auth.isLoading
-export const selectAccessToken = state => state.auth.accessToken
 export const selectAuthMessage = state => state.auth.authMessage
 export const selectUserCurrentSession = state => state.auth.userCurrentSession
 
@@ -39,6 +37,15 @@ export const authReducer = (state = initialState, action) => {
     const { type, payload } = action;
     switch (type) {
         case LOGIN_SUCCESS:
+            return {
+                ...state,
+                isLoggedIn: true,
+                userTopAccount: payload.user,
+                userCurrentSession: payload.user,
+                authMessage: ""
+            };
+
+        case REFRESH_SESSION:
             return {
                 ...state,
                 isLoggedIn: true,
@@ -60,23 +67,7 @@ export const authReducer = (state = initialState, action) => {
                 isLoggedIn: false,
                 userTopAccount: null,
                 userCurrentSession: null,
-                accessToken: null,
-                isLoading: false
-            };
-        case TOKEN_VALID:
-            return {
-                ...state,
-                isLoggedIn: true,
-                userTopAccount: payload.user,
-                userCurrentSession: payload.user,
-            };
-        case TOKEN_INVALID:
-            return {
-                ...state,
-                isLoggedIn: false,
-                userTopAccount: null,
-                userCurrentSession: null,
-                isLoading: false
+                accessToken: null
             };
         default:
             return state;

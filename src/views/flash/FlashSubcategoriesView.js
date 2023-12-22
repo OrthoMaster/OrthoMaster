@@ -18,7 +18,7 @@ import { ColorLuminance } from '../../utils.js'
 
 
 const FlashContentButton = ({ config, onPress }) => {
-    const imageUrl = useQuery(['flashContentThumbnail', config.id_content], () => getS3Image(config.s3_path+"/"+config.title+ '/logo.png'))
+    const imageUrl = useQuery(['Flash', 'GET', 'contentThumbnail', config.id_content], () => getS3Image(config.s3_path + "/" + config.title + '/logo.png'))
 
     return (
         <TouchableOpacity
@@ -35,12 +35,9 @@ const FlashContentButton = ({ config, onPress }) => {
 }
 
 
-const FlashSubcategoryButton = ({ item, onPress, theme_color }) => {
+const FlashSubcategoryButton = ({ item, onPress, theme_color, text_color }) => {
     const [isOpen, setIsOpen] = useState(false)
-    const { data, refetch, isLoading } = useQuery(["fetchContentBySubcategory", item.id], () => fetchFlashContent(item.id), {
-        onError: (error) => {
-            throw error
-        },
+    const { data, refetch, isLoading } = useQuery(['Flash', 'GET', "contentBySubcategory", item.id], () => fetchFlashContent(item.id), {
         enabled: false // disable this query from automatically running
     });
 
@@ -56,7 +53,7 @@ const FlashSubcategoryButton = ({ item, onPress, theme_color }) => {
                 onPress={() => setIsOpen(!isOpen)}
                 style={[styles.subcategoryButton, { backgroundColor: theme_color }]}
             >
-                <Text style={styles.subcategoryButtonText}>{item.name}</Text>
+                <Text style={[styles.subcategoryButtonText, {color: text_color}]}>{item.name}</Text>
                 <Image
                     style={[styles.subcategoryButtonArrow,
                     {
@@ -84,23 +81,16 @@ const FlashSubcategoryButton = ({ item, onPress, theme_color }) => {
 }
 
 
-export const FlashSubcategoriesView = ({ navigation, route }) => {
+export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, title, theme_id, onReturn, text_color }) => {
     const [refreshing, setRefreshing] = useState(false)
+    const subcategories = useQuery(['Flash', 'GET', 'flashSubcategoriesByCategory', category_id, theme_id], () => fetchFlashSubcategoriesByCategory(category_id))
 
-    const subcategories = useQuery('fetchFlashSubcategoriesByCategory', () => fetchFlashSubcategoriesByCategory(route.params.category_id), {
-        onError: (error) => {
-            throw error
-        }
-    })
 
-    useEffect(() => {
-        navigation.setOptions({ title: route.params.category_title })
-    }, [])
 
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        subcategories.refetch(route.params.category_id)
+        subcategories.refetch(category_id)
         setTimeout(() => {
             setRefreshing(false);
         }, 2000);
@@ -114,9 +104,12 @@ export const FlashSubcategoriesView = ({ navigation, route }) => {
 
     return (
         <View style={styles.container}>
+            <TouchableOpacity style={{margin: 20}} onPress={onReturn}>
+                <Text style={{color: theme_color, fontWeight: 'bold'}}> {'<'} Retour</Text>
+            </TouchableOpacity>
             <FlatList
                 data={subcategories.data}
-                renderItem={(item) => <FlashSubcategoryButton item={item.item} onPress={(content) => navigateToContent(content)} theme_color={route.params.theme_color} />}
+                renderItem={(item) => <FlashSubcategoryButton item={item.item} onPress={(content) => navigateToContent(content)} theme_color={theme_color} text_color={text_color} />}
                 keyExtractor={(item, index) => index}
                 showsVerticalScrollIndicator={false}
                 style={{ width: '100%', marginTop: 20 }}
@@ -128,8 +121,7 @@ export const FlashSubcategoriesView = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: '#F76F11'
+        width: '100%'
     },
     subcategoryContainer: {
         width: '90%',
@@ -147,7 +139,6 @@ const styles = StyleSheet.create({
         borderRadius: 5
     },
     subcategoryButtonText: {
-        fontWeight: 'bold',
         color: '#0A3C74'
     },
     subcategoryButtonArrow: {

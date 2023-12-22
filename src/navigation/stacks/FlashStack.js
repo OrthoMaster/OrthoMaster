@@ -24,26 +24,6 @@ export const FlashStack = () => {
       />
 
       <FlashStackNav.Screen
-        name="flash-categories"
-        component={FlashCategoriesView}
-        options={{
-          headerShown: true,
-          headerBackTitle: 'Retour'
-          //title: 'Flash orthopédie'
-        }}
-      />
-
-      <FlashStackNav.Screen
-        name="flash-subcategories"
-        component={FlashSubcategoriesView}
-        options={{
-          headerShown: true,
-          headerBackTitle: 'Retour'
-          //title: 'Flash orthopédie'
-        }}
-      />
-
-      <FlashStackNav.Screen
         name="flash-content-viewer"
         component={ContentDisplayer}
         options={{

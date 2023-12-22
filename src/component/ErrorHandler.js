@@ -11,12 +11,7 @@ import { useStore } from 'react-redux';
 
 
 const myErrorHandler = (error, info) => {
-
-    if (error == 'token_not_valid') {
-        store.dispatch(logout())
-    } else {
-        Bugsnag.notify(error)
-    }
+    Bugsnag.notify(error)
 
 };
 
@@ -36,61 +31,19 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 
 export const ErrorHandler = ({ children }) => {
 
-    const [isError, setIsError] = useState(false)
-    const [errorMsg, setErrorMsg] = useState("")
+ 
     const store = useStore()
 
     const errorHandler = (e, isFatal) => {
-        if (axios.isAxiosError(e)) {
-
-            switch (e.code) {
-                case 'ERR_BAD_REQUEST':
-                    if (e.response.status == 401 && e.response.data == 'token_not_valid') {
-                        Alert.alert(
-                            'Votre connexion à Orthomaster à expiré',
-                            "Veuillez vous reconnecter",
-                            [{
-                                text: 'OK',
-                                onPress: () => {
-                                    store.dispatch(logout())
-                                }
-                            }]
-                        );
-                    } else {
-                        if (isFatal) {
-                            alertAboutFatalError()
-                        }
-                        Bugsnag.notify(e)
-                    }
-                    break;
-                case 'ERR_NETWORK':
-                    onError('Nous rencontrons des problèmes de connexion...')
-                    break;
-                default:
-                    if (isFatal) {
-                        alertAboutFatalError()
-                    }
-                    Bugsnag.notify(e)
-                    break;
-            }
+        if (isFatal) {
+            alertAboutFatalError()
         }
+        Bugsnag.notify(e)
     };
 
     useEffect(() => {
         setJSExceptionHandler(errorHandler, true);
     }, [])
-
-
-
-    const onError = useCallback((msg) => {
-        setIsError(true)
-        setErrorMsg(msg)
-        setTimeout(() => {
-            setIsError(false);
-            setErrorMsg(false);
-        }, 5000);
-    }, []);
-
 
     const alertAboutFatalError = () => {
         Alert.alert(
@@ -103,7 +56,10 @@ export const ErrorHandler = ({ children }) => {
                     //reloadAsync()
                 }
             },
-        ]
+            {
+                text: 'Fermer'
+            }
+            ]
         );
     }
 
@@ -128,14 +84,9 @@ export const ErrorHandler = ({ children }) => {
                 FallbackComponent={ErrorFallback}
                 onError={myErrorHandler}
             >
-                {children}
-                {isError ?
-                    <SafeAreaView style={styles.errorNotifContainer}>
-                        <Text style={styles.errorNotifText}>{errorMsg}</Text>
-                    </SafeAreaView>
-                    : null
-                }
+                
             </ErrorBoundary>
+            {children}
         </View>
     )
 };
@@ -146,16 +97,7 @@ const styles = StyleSheet.create({
     errorHandlerContainer: {
         flex: 1
     },
-    errorNotifContainer: {
-        backgroundColor: 'red',
-        alignItems: 'center'
-    },
-    errorNotifText: {
-        color: '#ffffff',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 5
-    }
+    
 });
 
 

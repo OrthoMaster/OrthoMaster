@@ -5,13 +5,15 @@ import {authReducer} from "./reducers/auth";
 import {searchReducer} from './reducers/searchReducer';
 import {contentReducer} from './reducers/contentReducer';
 import { notificationReducer } from './reducers/notificationReducer';
+import { appModeReducer } from './reducers/appModeReducer';
 
 const reducer = combineReducers({
   // here we will be adding reducers
   auth: authReducer,
   search: searchReducer,
   content: contentReducer,
-  notification: notificationReducer
+  notification: notificationReducer,
+  mode: appModeReducer
 })
 const store = configureStore({
   reducer,

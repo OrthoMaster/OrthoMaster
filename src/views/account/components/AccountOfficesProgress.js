@@ -16,10 +16,12 @@ import { getCollaboratorsProgression, getOfficesProgressionForManager } from '..
 
 import { getUserTrophy } from '../../../services/TrophyService'
 import { TrophyCard } from './trophies/TrophieCard'
+import { FontAwesome5 } from '@expo/vector-icons';
+
 
 const UserProgress = ({ user, refreshing }) => {
     const [isToggle, setIsToggle] = useState(false)
-    const userTrophy = useQuery(['getCollaboratorTrophies', user.id_user], () => getUserTrophy(user.id_user), {
+    const userTrophy = useQuery(['Account', 'GET', 'collaboratorTrophies', user.id_user], () => getUserTrophy(user.id_user), {
         enabled: false
     })
 
@@ -87,10 +89,7 @@ const UserProgress = ({ user, refreshing }) => {
 
 const OfficeButton = ({ office }) => {
     const [isToggle, setIsToggle] = useState(false)
-    const collaborators = useQuery(['fetchOfficeCollaboratorsProgress', office.id_office], () => getCollaboratorsProgression(office.id_office), {
-        onError: (error) => {
-            throw error
-        },
+    const collaborators = useQuery(['Account', 'GET', 'officeCollaboratorsProgress', office.id_office], () => getCollaboratorsProgression(office.id_office), {
         enabled: false
     })
 
@@ -131,12 +130,8 @@ const OfficeButton = ({ office }) => {
 
 }
 
-export const AccountOfficesProgress = ({ managerId, refreshing }) => {
-    const office = useQuery('fetchOfficeProgress', () => getOfficesProgressionForManager(managerId), {
-        onError: (error) => {
-            throw error
-        }
-    })
+export const AccountOfficesProgress = ({ refreshing, navigation, enableConfig }) => {
+    const office = useQuery(['Account', 'GET', 'officeProgress'], () => getOfficesProgressionForManager())
 
     useEffect(() => {
         if (refreshing) {
@@ -149,7 +144,21 @@ export const AccountOfficesProgress = ({ managerId, refreshing }) => {
     return (
         <View style={styles.container}>
             <View style={styles.displayContainer}>
-                <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mes collaborateurs</Text>
+                <View style={styles.headerContainer}>
+                    <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mes collaborateurs</Text>
+
+                    {
+                        enableConfig &&
+                        <TouchableOpacity style={styles.headerButton}
+                            onPress={() => {
+                                navigation.push('account-team-manager')
+                            }}
+                        >
+                            <Text style={styles.headerButtonText}>Gérer</Text>
+                            <FontAwesome5 name="cog" size={20} color="#F76F11" />
+                        </TouchableOpacity>
+                    }
+                </View>
 
                 {office.data.map((value, key) => {
                     return <OfficeButton office={value} key={key} />
@@ -178,6 +187,26 @@ const styles = StyleSheet.create({
         width: '95%',
         paddingBottom: 20,
         marginVertical: 5
+    },
+    headerContainer: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+    },
+    headerButton: {
+        backgroundColor: '#ffffff',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 5,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    headerButtonText: {
+        fontWeight: 'bold',
+        color: '#F76F10',
+        marginEnd: 5
     },
     officeStat: {
         fontSize: 40,

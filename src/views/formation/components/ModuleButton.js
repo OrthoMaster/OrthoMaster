@@ -17,7 +17,7 @@ import ModuleProgress, {
 const ModuleButton = ({ item, onPress }) => {
 
     const imgUrl = useQuery(
-        ["getContentImage", item.item.module.module_order, item.item.lesson_succeed ],
+        ['Formation', 'GET', "contentImage", item.item.module.module_order, item.item.lesson_succeed ],
         ()=>getS3Image('lesson/' + item.item.module.module_num + (item.item.lesson_succeed > 0 ? '/logo.png': '/logo_not_started.png')))
 
     return (

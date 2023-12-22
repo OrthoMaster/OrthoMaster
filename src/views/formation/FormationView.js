@@ -4,7 +4,8 @@ import { Text, View, Pressable, StyleSheet } from 'react-native'
 import { ModuleLayout } from './ModuleLayout'
 import { MenuLayout } from './menu/MenuLayout'
 
-
+import { useTheme } from '@react-navigation/native'
+import LaboFormationView from './labo/LaboFormationView'
 
 const FORMATION_TYPE_MODULE = 'formation-module'
 const FORMATION_TYPE_MENU = 'formation-menu'
@@ -12,6 +13,7 @@ const FORMATION_TYPE_MENU = 'formation-menu'
 
 const FormationTypeNav = ({ displayView, navigation }) => {
     const [selected, setselected] = useState('lesson')
+
 
     return <View style={styles.formationTypeNavContainer}>
         <Pressable
@@ -56,14 +58,19 @@ const FormationTypeDisplay = ({ type, navigation, route }) => {
 
 export const FormationView = ({ navigation, route }) => {
     const [formationType, setformationType] = useState(FORMATION_TYPE_MODULE)
+    const {isLabo} = useTheme()
 
-    return <View style={styles.container}>
-        <FormationTypeDisplay type={formationType} navigation={navigation} route={route} />
+    if (isLabo == false) {
+        return <View style={styles.container}>
+            <FormationTypeDisplay type={formationType} navigation={navigation} route={route} />
 
-        <FormationTypeNav displayView={(view) => { setformationType(view) }}
-            navigation={navigation}
-        />
-    </View>
+            <FormationTypeNav displayView={(view) => { setformationType(view) }}
+                navigation={navigation}
+            />
+        </View>
+    } else {
+        return <LaboFormationView navigation={navigation}/>
+    }
 
 
 }

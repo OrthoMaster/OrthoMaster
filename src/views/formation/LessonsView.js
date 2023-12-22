@@ -21,11 +21,7 @@ import { LoadingContent } from '../../component/LoadingContent';
 
 export function LessonsView({ route, navigation }) {
     let moduleInfos = route.params.module
-    const modules = useQuery(['lessonProgress', moduleInfos.module.module_num], () => fetchLessonByModuleWithProgression(moduleInfos.module.module_num), {
-        onError: (error) => {
-            throw error
-        }
-    })
+    const modules = useQuery(['Formation', 'GET', 'lessonProgress', moduleInfos.module.module_num], () => fetchLessonByModuleWithProgression(moduleInfos.module.module_num))
     const [refreshing, setRefreshing] = useState(false)
     const [moduleLogo, setModuleLogo] = useState(null)
 

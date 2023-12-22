@@ -36,7 +36,7 @@ export const AccountMenu = ({ navigation }) => {
     const store = useStore()
     const dispatch = useDispatch()
 
-    //const stateAuth = store.getState().auth
+    const user = store.getState().auth.userCurrentSession
 
 
     return (
@@ -59,10 +59,18 @@ export const AccountMenu = ({ navigation }) => {
                     icon={require('../../../../assets/settings/activity.png')}
                     text={'Mon activité'}
                 /> */}
-                {/* <CustomMenuButton
-                    icon={require('../../../../assets/settings/professional.png')}
-                    text={'Le réseau OrthoMaster'}
-                /> */}
+                {
+                    user.roles?.find((element) => element == 'seller') &&
+                    <CustomMenuButton
+                        icon={require('../../../../assets/settings/professional.png')}
+                        text={"Formulaire d'inscription"}
+                        onPress={() => {
+                            navigation.navigate('account-register-form', {
+                                seller: user
+                            })
+                        }}
+                    />
+                }
 
                 <CustomMenuButton
                     icon={require('../../../../assets/settings/legal-paper.png')}

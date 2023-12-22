@@ -19,11 +19,7 @@ export const MainQuizUnlockModal = ({
     quizType
 }) => {
 
-    const mainQuizStatus = useMutation('insertInitialQuizStatus', insertMainQuizStatusByFormation, {
-        onError: (error) => {
-            throw error
-        }
-    })
+    const mainQuizStatus = useMutation('insertInitialQuizStatus', insertMainQuizStatusByFormation)
 
     useEffect(() => {
         mainQuizStatus.mutate({ formation_id: 1, quiz_type: quizType })

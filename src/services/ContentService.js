@@ -2,17 +2,16 @@ import axios from "axios";
 
 import { restoreLocalConfigAsync, S3ContentPathGenerator } from "../utils";
 import { getS3XML } from '../services/S3Service'
-import Constants from 'expo-constants';
 
-let route = Constants.manifest.extra.env.API_URL+"/contents"
+const baseurl = process.env.EXPO_PUBLIC_API_URL+"/contents"
 
 
 export const fetchLessonByModuleWithProgression = async (idModule) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(route + "/module/" + idModule + "/user/" + config.user.id_user, {
+    .get(baseurl + "/module/" + idModule + "/user/" + config.user.id_user, {
       headers: { Authorization: authHeader }
     })
     .then((response) => {
@@ -29,10 +28,10 @@ export const fetchLessonContent = async (content) => {
 
 export const getUserNextLesson = async () => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.accessToken;
+  const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(route + "/user/" + config.user.id_user + "/nextLesson", {
+    .get(baseurl + "/user/" + config.user.id_user + "/nextLesson", {
       headers: { Authorization: authHeader }
     })
     .then((response) => {

@@ -20,14 +20,9 @@ import { getCurrentDate } from "../utils";
 const Tab = createBottomTabNavigator();
 
 
-export const AppTab = ({}) => {
+export const AppTab = ({ }) => {
   const appState = useRef(AppState.currentState);
-  const mutation = useMutation(saveLogtimeOnApp, {
-    onError: (error) => {
-      throw error
-    },
-    retry: 3
-  });
+  const mutation = useMutation(saveLogtimeOnApp);
 
   var launchDate = getCurrentDate()
 
@@ -35,8 +30,8 @@ export const AppTab = ({}) => {
     const userLogtimeHandling = AppState.addEventListener("change", nextAppState => {
       if (appState.current.match(/inactive|background/) &&
         nextAppState === "active") {
-          launchDate = getCurrentDate()
-} else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
+        launchDate = getCurrentDate()
+      } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
         saveAppLogs({
           login: launchDate,
           logout: getCurrentDate()
@@ -67,41 +62,44 @@ export const AppTab = ({}) => {
     <Tab.Navigator
       initialRouteName='Accueil'
       screenOptions={({ route }) => ({
+        tabBarStyle: { backgroundColor: 'white', height: 80 },
+        tabBarItemStyle: {
+        },
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
           switch (route.name) {
             case 'Accueil':
               iconName = focused
-                ? require('../../assets/navigation/navigation_home_hover.png')
-                : require('../../assets/navigation/navigation_home.png')
+                ? require('../../assets/navigation/accueil-icon.png')
+                : require('../../assets/navigation/accueil-icon-transparent.png')
               break;
             case 'Formation':
               iconName = focused
-                ? require('../../assets/navigation/navigation_formation_hover.png')
-                : require('../../assets/navigation/navigation_formation.png')
+                ? require('../../assets/navigation/formation-icon.png')
+                : require('../../assets/navigation/formation-icon-transparent.png')
               break;
             case 'Flash ortho':
               iconName = focused
-                ? require('../../assets/navigation/navigation_flash_hover.png')
-                : require('../../assets/navigation/navigation_flash.png')
+                ? require('../../assets/navigation/flash-icon.png')
+                : require('../../assets/navigation/flash-icon-transparent.png')
               break;
             case 'Outils':
               iconName = focused
-                ? require('../../assets/navigation/navigation_que_choisir_hover.png')
-                : require('../../assets/navigation/navigation_que_choisir.png')
+                ? require('../../assets/navigation/outils-icon.png')
+                : require('../../assets/navigation/outils-icon-transparent.png')
               break;
-            case 'Compte':
+            case 'Mon espace':
               iconName = focused
-                ? require('../../assets/navigation/navigation_profil_hover.png')
-                : require('../../assets/navigation/navigation_profil.png')
+                ? require('../../assets/navigation/tableau-de-bord-icon.png')
+                : require('../../assets/navigation/tableau-de-bord-icon-transparent.png')
               break;
 
 
             default:
               iconName = focused
-                ? require('../../assets/navigation/navigation_home_hover.png')
-                : require('../../assets/navigation/navigation_home.png')
+                ? require('../../assets/navigation/accueil-icon.png')
+                : require('../../assets/navigation/accueil-icon-transparent.png')
               break;
           }
 
@@ -136,9 +134,9 @@ export const AppTab = ({}) => {
       <Tab.Screen
         name="Outils"
         component={ToolsStack}
-        options={{headerShown: false}}
+        options={{ headerShown: false }}
       />
-      <Tab.Screen name="Compte"
+      <Tab.Screen name="Mon espace"
         component={ProfilStack}
         options={{ headerShown: false }}
       />
