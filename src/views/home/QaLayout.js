@@ -21,7 +21,7 @@ import { LoadingContent } from '../../component/LoadingContent'
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 
 
-export const QaLayout = ({ navigation }) => {
+export const QaLayout = ({ navigation, color }) => {
 
   const [filters, setFilters] = useState(null)
 
@@ -57,31 +57,27 @@ export const QaLayout = ({ navigation }) => {
       }}
       cardLayout={'qa'}
       onRetry={() => qaList.refetch}
+      color={color}
     />
 
     <TouchableOpacity style={[{
-      backgroundColor: "#DF8501",
+      backgroundColor: color,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'absolute',
       right: 10,
-      bottom: 170,
+      bottom: 10,
       padding: 5,
-      borderRadius: 10
+      borderRadius: 50,
+      width: 50, height: 50
     }]}
       onPress={() => {
         Linking.openURL('mailto:question@orthomaster.fr')
       }
       }
     >
-      <Image
-        style={{
-          width: 50, height: 50,
-          resizeMode: 'contain',
-        }}
-        source={require('../../../assets/navigation/question-icon.png')}
-      />
-      <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center', fontSize: 10 }}>
+
+      <Text style={{ color: '#1D3470', fontWeight: 'bold', textAlign: 'center', fontSize: 8 }}>
         Poser une question
       </Text>
     </TouchableOpacity>

@@ -35,7 +35,7 @@ const FlashContentButton = ({ config, onPress }) => {
 }
 
 
-const FlashSubcategoryButton = ({ item, onPress, theme_color }) => {
+const FlashSubcategoryButton = ({ item, onPress, theme_color, text_color }) => {
     const [isOpen, setIsOpen] = useState(false)
     const { data, refetch, isLoading } = useQuery(['Flash', 'GET', "contentBySubcategory", item.id], () => fetchFlashContent(item.id), {
         enabled: false // disable this query from automatically running
@@ -53,7 +53,7 @@ const FlashSubcategoryButton = ({ item, onPress, theme_color }) => {
                 onPress={() => setIsOpen(!isOpen)}
                 style={[styles.subcategoryButton, { backgroundColor: theme_color }]}
             >
-                <Text style={styles.subcategoryButtonText}>{item.name}</Text>
+                <Text style={[styles.subcategoryButtonText, {color: text_color}]}>{item.name}</Text>
                 <Image
                     style={[styles.subcategoryButtonArrow,
                     {
@@ -81,9 +81,8 @@ const FlashSubcategoryButton = ({ item, onPress, theme_color }) => {
 }
 
 
-export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, title, theme_id, onReturn }) => {
+export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, title, theme_id, onReturn, text_color }) => {
     const [refreshing, setRefreshing] = useState(false)
-    console.log(category_id);
     const subcategories = useQuery(['Flash', 'GET', 'flashSubcategoriesByCategory', category_id, theme_id], () => fetchFlashSubcategoriesByCategory(category_id))
 
 
@@ -106,11 +105,11 @@ export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, t
     return (
         <View style={styles.container}>
             <TouchableOpacity style={{margin: 20}} onPress={onReturn}>
-                <Text style={{color: theme_color}}>Retour</Text>
+                <Text style={{color: theme_color, fontWeight: 'bold'}}> {'<'} Retour</Text>
             </TouchableOpacity>
             <FlatList
                 data={subcategories.data}
-                renderItem={(item) => <FlashSubcategoryButton item={item.item} onPress={(content) => navigateToContent(content)} theme_color={theme_color} />}
+                renderItem={(item) => <FlashSubcategoryButton item={item.item} onPress={(content) => navigateToContent(content)} theme_color={theme_color} text_color={text_color} />}
                 keyExtractor={(item, index) => index}
                 showsVerticalScrollIndicator={false}
                 style={{ width: '100%', marginTop: 20 }}
@@ -122,7 +121,6 @@ export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, t
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         width: '100%'
     },
     subcategoryContainer: {
@@ -141,7 +139,6 @@ const styles = StyleSheet.create({
         borderRadius: 5
     },
     subcategoryButtonText: {
-        fontWeight: 'bold',
         color: '#0A3C74'
     },
     subcategoryButtonArrow: {

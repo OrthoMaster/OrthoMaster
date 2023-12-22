@@ -12,16 +12,19 @@ import {
 import { FlashCategoriesView } from './FlashCategoriesView';
 import { QaLayout } from '../home/QaLayout';
 
-const FlashButton = ({ label, onPress, buttonColor, flashImg }) => {
+const FlashButton = ({ label, onPress, buttonColor, flashImg, active }) => {
 
   return (<View style={styles.buttonContainer}>
-    <TouchableOpacity style={[styles.button]}
+    <TouchableOpacity style={[styles.button, {
+      opacity: active ? 1 : 0.5
+    }]}
       onPress={onPress}>
       <Image
         source={flashImg}
         style={{
-          width: 100, height: 100,
+          width: 85, height: 85,
           resizeMode: 'contain',
+          marginBottom: 10,
         }}
       />
 
@@ -36,11 +39,6 @@ export const FlashThemesView = ({ navigation, route }) => {
   const [themeSelected, setThemeSelected] = useState(null)
   const [qaSelected, setQaSelected] = useState(false)
 
-  useEffect(() => {
-    console.log(themeSelected);
-  }, [themeSelected])
-
-
   return (
     <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
 
@@ -51,10 +49,12 @@ export const FlashThemesView = ({ navigation, route }) => {
             setThemeSelected({
               type: "flash",
               theme_id: 5,
-              color: '#FBAF31'
+              color: '#FBAF31',
+              textColor: "#000"
             })
             setQaSelected(false)
           }}
+          active={themeSelected?.theme_id === 5}
           flashImg={require("../../../assets/flash/Mon-patient.png")}
         />
         <FlashButton
@@ -63,34 +63,45 @@ export const FlashThemesView = ({ navigation, route }) => {
             setThemeSelected({
               type: "flash",
               theme_id: 6,
-              color: "#1B70C0"
+              color: "#1B70C0",
+              textColor: "#fff"
             })
             setQaSelected(false)
           }}
           flashImg={require("../../../assets/flash/Ressources2.png")}
+          active={themeSelected?.theme_id === 6}
         />
         <FlashButton
-          label={'Question & Réponse'}
+          label={'Questions / Réponses'}
           onPress={() => {
             setThemeSelected(null)
             setQaSelected(true)
           }}
           flashImg={require("../../../assets/flash/Question-reponse.png")}
+          active={qaSelected}
         />
       </View>
-      {
-        themeSelected &&
-        <FlashCategoriesView navigation={navigation} theme_id={themeSelected.theme_id} color={themeSelected.color} />
-      }
-      {
-        qaSelected &&
-        <QaLayout navigation={navigation} />
-      }
+      <View style={{
+        height: '80%'
+      }}>
+        {
+          themeSelected &&
+          <FlashCategoriesView
+            navigation={navigation} theme_id={themeSelected.theme_id}
+            color={themeSelected.color}
+            text_color={themeSelected.textColor}
+          />
+        }
+        {
+          qaSelected &&
+          <QaLayout navigation={navigation} color={"#BBEF89"} />
+        }
 
-      {
-        (themeSelected === null && qaSelected == false) &&
-        <Text style={{ alignSelf: 'center', marginTop: 200 }}>Aucune catégorie séléctionner</Text>
-      }
+        {
+          (themeSelected === null && qaSelected == false) &&
+          <Text style={{ alignSelf: 'center', marginTop: 200 }}>Veuillez sélectionner une catégorie</Text>
+        }
+      </View>
 
     </SafeAreaView>
   );
@@ -102,7 +113,6 @@ const styles = StyleSheet.create({
   },
   container: {
     backgroundColor: '#fffefd',
-    flex: 1,
     flexDirection: 'column',
   },
   orthoLogo: {
@@ -115,12 +125,14 @@ const styles = StyleSheet.create({
   },
   rowContainer: {
     flexDirection: 'row',
+    width: '90%',
+    alignSelf: 'center',
+    paddingTop: 10,
+    height: "20%"
   },
   buttonContainer: {
     flex: 1,
     alignItems: 'center',
-    borderColor: "#BDBDBD",
-    borderWidth: 0.5,
     padding: 10
   },
   button: {
@@ -128,8 +140,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 13,
     color: '#000',
     textAlign: 'center',
   }

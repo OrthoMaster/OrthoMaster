@@ -32,7 +32,6 @@ class AuthService {
 
     const authHeader = 'Bearer ' + token;
     const res = await axios.get(baseurl + '/connect', { headers: { Authorization: authHeader } });
-    //console.log('res',res);
     return res
   }
 
@@ -46,21 +45,16 @@ class AuthService {
   }
 
   async getNewToken() {
-    console.log("Auth service getting new token");
     const config = await restoreLocalConfigAsync()
     const refreshToken = await SecureStore.getItemAsync('refreshToken')
-    console.log("getting new token with:",refreshToken);
     const parts = config.JWT.split('.').map((part) => Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'),'base64').toString());
     const userId = JSON.parse(parts[1]).id_user;
 
-    console.log(baseurl + "/user/token", { id_user: userId, refresh_token: refreshToken });
 
     return axios
       .post(baseurl + "/user/token", { id_user: userId, refresh_token: refreshToken })
       .then(async (response) => {
         if (response.data) {
-          console.log("getNEwToken Authservice RESPONSE");
-          console.log(response.data.jwt_token, response.data.refresh_token);
           await SecureStore.setItemAsync('JWT', response.data.jwt_token)
           await SecureStore.setItemAsync('refreshToken', response.data.refresh_token)
           return true;
@@ -69,7 +63,6 @@ class AuthService {
         }
       })
       .catch((e) => {
-        console.log("getNEwToken authservice ERROR", e.response);
         if (e.response.status === 403) {
           return false
         }

@@ -118,30 +118,33 @@ export const QueChoisirMenu = ({ navigation }) => {
         <TouchableOpacity style={[{
             backgroundColor: '#fff',
             padding: 10,
-            borderRadius: 100,
+            borderRadius: 15,
             position: 'absolute',
-            right: 10,
-            top: 10,
+            right: 5,
+            top: 5,
             shadowOpacity: 0.25,
-            shadowOffset: { width: 5, height: 5 }
+            shadowOffset: { width: 5, height: 5 },
+            alignItems: 'center'
         }]}
             onPress={() => setShowFilters(true)}>
+            <Text style={{
+                color: "#33C0B7",
+                fontWeight: 'bold',
+                fontSize: 10
+            }}>Mes labos</Text>
             <MaterialCommunityIcons name="format-list-numbered" size={24} color="#33C0B7" />
             {
                 filters.queChoisir.selected.length > 0 &&
                 <View style={{
-                    backgroundColor: '#33C0B7',
-                    borderColor: '#fff',
-                    borderWidth: 1,
                     alignItems: 'center',
                     borderRadius: 100,
                     position: 'absolute',
                     width: 20, height: 20,
-                    bottom: -5, right: -5,
+                    bottom: -5, right: 0,
                     justifyContent: 'center',
                     shadowOpacity: 0.25, shadowOffset: { width: 0, height: 0 }
                 }}>
-                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 10 }}>1</Text>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>✅</Text>
                 </View>
             }
         </TouchableOpacity>
@@ -181,7 +184,7 @@ const styles = StyleSheet.create({
         marginVertical: 20
     },
     containerButtons: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#F97302',
         width: 80, height: 80,
         borderRadius: 11,
         alignItems: 'center',
@@ -192,8 +195,10 @@ const styles = StyleSheet.create({
         }
     },
     toolButtonText: {
-        fontSize: 17,
-        color: '#33C0B7',
+        fontSize: 12,
+        color: '#fff',
+        width: '90%',
+        textAlign: 'center'
     },
     toolButtonIcon: {
         width: 15,

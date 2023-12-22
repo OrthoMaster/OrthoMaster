@@ -309,7 +309,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                     </LinearGradient>
 
                 </View>
-                <Text style={{ textAlign: 'center', paddingVertical: 5 }}>Nombre de produit trouvés : <Text style={{ fontWeight: 'bold', color: "#33C0B7" }}>{filtredProducts.length}</Text></Text>
+                <Text style={{ textAlign: 'center', paddingVertical: 5 }}>Nombre de produits trouvés : <Text style={{ fontWeight: 'bold', color: "#33C0B7" }}>{filtredProducts.length}</Text></Text>
             </View>
 
 

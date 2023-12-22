@@ -122,7 +122,7 @@ const SearchCardDefault = ({ card, onSelect }) => {
 
 
 
-const QaCard = ({ card, onSelect }) => {
+const QaCard = ({ card, onSelect, color }) => {
     const thumbnail = useQuery(['Qa', 'GET', 'qaThumbnail', card.content.id_content, card.content.title],
     () => getS3Image(`${card.content.s3_path}/${card.content.title}/logo.png`))
 
@@ -157,14 +157,14 @@ const QaCard = ({ card, onSelect }) => {
                 </LinearGradient>
             </View>
 
-            <View style={stylesQa.cardDescriptionContainer}>
+            <View style={[stylesQa.cardDescriptionContainer, {backgroundColor: color}]}>
                 <Text>⏱ {card.content.duration} | {card.content.description}</Text>
             </View>
         </TouchableOpacity>
     )
 }
 
-export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, onMoreLoading, onRetry }) => {
+export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, onMoreLoading, onRetry, color }) => {
     const renderEmpty = () => {
         return (
             <View>
@@ -181,7 +181,7 @@ export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, 
                 renderItem={(item) => {
                     switch (cardLayout) {
                         case 'qa':
-                            return <QaCard card={item.item} onSelect={(card) => onSelect(card)} />
+                            return <QaCard card={item.item} onSelect={(card) => onSelect(card)} color={color} />
 
                         default:
                             return <SearchCardDefault card={item.item} onSelect={(card) => onSelect(card)} />
@@ -202,7 +202,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         width: '100%',
-        backgroundColor: 'green'
     }
 })
 

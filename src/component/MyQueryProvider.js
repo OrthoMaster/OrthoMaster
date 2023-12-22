@@ -36,10 +36,6 @@ export const MyQueryProvider = ({
                 retryDelay: 2000,
                 // retry: 3
                 retry: (failureCount, error) => {
-                    console.log('err',error);
-                    console.log('err response',error.response);
-                    console.log(failureCount);
-                    console.log(gettingNewToken);
                     if (failureCount >= 3) {
                         return false
                     }
@@ -54,8 +50,6 @@ export const MyQueryProvider = ({
             mutations: {
                 retryDelay: 200,
                 retry: (failureCount, error) => {
-                    console.log('mut err',error);
-                    console.log('mut err response',error.response);
                     if (failureCount >= 3) {
                         return false
                     }
@@ -90,15 +84,13 @@ export const MyQueryProvider = ({
     const getNewToken = async () => {
         try {
             const res = await AuthService.getNewToken()
-            console.log("Récupération token :", res);
             if (res == false) {
-                console.log("Logout");
                 dispatch(logout())
             }
             gettingNewToken = false
             
         } catch (error) {
-            console.log('errrrrr catch query provider', error);
+            console.log('query provider', error);
         }
     }
 

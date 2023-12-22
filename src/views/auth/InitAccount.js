@@ -73,60 +73,6 @@ export const ActivateAccountView = ({ route, navigation }) => {
 }
 
 
-// export const CreateAccountView = ({ route, navigation }) => {
-//     const { token, office_id } = route.params
-//     const inviteUser = useMutation(AuthService.inviteUser)
-//     const [newUser, setNewUser] = useState({
-//         firstname: "",
-//         lastname: "",
-//         email: "",
-//         job_function: "",
-//         password:""
-//     })
-//     const [confirmPaswd, setConfirmPaswd] = useState("")
-
-//     const [errorMsg, setErrorMsg] = useState("")
-
-//     const handleForm = (data) => {
-//         setNewUser({
-//             ...newUser,
-//             [data.value]: data.text
-//         })
-//     }
-
-//     return <SafeAreaView>
-//         <Text>Créez votre compte</Text>
-//         <FormField type="text" name={"Prénom"} value={"firstname"} onChange={handleForm} />
-//         <FormField type="text" name={"Nom"} value={"lastname"} onChange={handleForm} />
-//         <FormField type="email" name={"Email"} value={"email"} onChange={handleForm} />
-//         <FormField type="dropdown" name={"Fonction"} value={"job_function"} data={jobFunctions} onChange={handleForm} />
-//         <FormField type="text" password name={"Confirmez votre mot de passe"} value={"confirm-password"} onChange={(c)=>{setConfirmPaswd(c.text)}} />
-
-//         <TouchableOpacity
-//         style={styles.buttonContainer}
-//         onPress={() => {
-//             console.log({
-//                 body: {
-//                     user: newUser,
-//                     office_id: office_id
-//                 },
-//                 mode: 'registration'
-//             });
-//             // if (user_id && link) {
-//             //     inviteUser.mutate({
-//             //         body: {
-//             //             user: newUser,
-//             //             office_id: office_id
-//             //         },
-//             //         mode: 'registration'
-//             //     })
-//             // }
-//         }}>
-//             <Text style={{ color: '#ffffff' }}>Valider</Text>
-//         </TouchableOpacity>
-//     </SafeAreaView>
-// }
-
 
 const styles = StyleSheet.create({
     buttonContainer: {

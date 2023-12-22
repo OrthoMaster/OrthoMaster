@@ -15,26 +15,22 @@ import { FlashSubcategoriesView } from './FlashSubcategoriesView'
 
 
 
-const FlashCategoryButton = ({ item, onPress, theme_color }) => {
+const FlashCategoryButton = ({ item, onPress, theme_color, text_color }) => {
     return (
         <TouchableOpacity
             style={[styles.buttonBox, { backgroundColor: theme_color }]}
             onPress={() => onPress(item)}
         >
-            <Text style={styles.textButton}>{item.name}</Text>
+            <Text style={[styles.textButton, {color: text_color}]}>{item.name}</Text>
         </TouchableOpacity>)
 }
 
 
-export const FlashCategoriesView = ({ navigation, theme_id, title, color }) => {
+export const FlashCategoriesView = ({ navigation, theme_id, title, color, text_color }) => {
 
 
     const categories = useQuery(['Flash', 'GET', 'flashCategoriesByTheme', theme_id], () => fetchFlashCategoriesByTheme(theme_id))
     const [selectedCategory, setSelectedCategory] = useState(null)
-
-    useEffect(() => {
-        console.log(selectedCategory);
-    }, [selectedCategory])
 
     useEffect(() => {
       setSelectedCategory(null)
@@ -53,7 +49,11 @@ export const FlashCategoriesView = ({ navigation, theme_id, title, color }) => {
             {
                 selectedCategory === null ?
                     categories.data.map((category, index) =>
-                        <FlashCategoryButton key={index} item={category} onPress={(cat) => setSelectedCategory(cat)} theme_color={color} />
+                        <FlashCategoryButton key={index} item={category}
+                        onPress={(cat) => setSelectedCategory(cat)}
+                        theme_color={color}
+                        text_color={text_color}
+                        />
                     )
                     : <FlashSubcategoriesView
                     navigation={navigation}
@@ -62,6 +62,7 @@ export const FlashCategoriesView = ({ navigation, theme_id, title, color }) => {
                         title={selectedCategory.name}
                         theme_id={theme_id}
                         onReturn={()=>{setSelectedCategory(null)}}
+                        text_color={text_color}
                     />
             }
 
@@ -71,9 +72,8 @@ export const FlashCategoriesView = ({ navigation, theme_id, title, color }) => {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
     },
     list: {
         width: '100%',

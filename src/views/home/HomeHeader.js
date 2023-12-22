@@ -18,6 +18,8 @@ import { actionChangeAppMode } from '../../actions/appModeAction';
 import { MODES, selectModeValue } from '../../reducers/appModeReducer';
 import { useTheme } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FontAwesome } from '@expo/vector-icons';
+
 
 export const HomeHeader = ({ navigation, userName }) => {
     const nextLesson = useQuery(['Home', 'GET', 'userNextLesson'], getUserNextLesson, {
@@ -42,17 +44,12 @@ export const HomeHeader = ({ navigation, userName }) => {
 
     let username = userName
     return (
-        <LinearGradient
-            colors={['#fff', colors.primary]}
-            start={{ x: -2, y: -2 }}
-            end={{ x: 1, y: 0 }}
-            locations={[0, 0.9]}
-            style={styles.container}
-        >
+        <View>
+
             <SafeAreaView style={[styles.containerHeader, styles.AndroidSafeArea]}>
                 <Image
                     style={[styles.logo, { opacity: isLabo ? 0 : 1 }]}
-                    source={require('../../../assets/home/header/logo.png')}
+                    source={require('../../../assets/logo-text-orange.png')}
                 />
                 <View style={styles.headerButtonGroup}>
                     <TouchableOpacity
@@ -61,97 +58,93 @@ export const HomeHeader = ({ navigation, userName }) => {
                             navigation.navigate('home-search')
                         }}
                     >
-                        <Image
-                            source={require('../../../assets/navigation/search.png')}
-                        />
+                        <FontAwesome name="search" size={24} color="gray" />
                     </TouchableOpacity>
                 </View>
 
 
 
             </SafeAreaView>
-            <ImageBackground source={require('../../../assets/home/header/background.png')} resizeMode='stretch' style={{
-                justifyContent: "center",
-                alignItems: 'center',
-            }}>
-                {
-                    !isLabo ?
-                        <View style={{
-                            height: Dimensions.get('screen').width * 0.3,
-                            justifyContent: 'center'
-                        }}>
-                            <Text
-                                style={{
-                                    color: 'white',
-                                    fontSize: 16,
-                                    fontWeight: '400'
-                                }}
-                            >
-                                Bonjour
-                            </Text>
-                            <Text
-                                style={{
-                                    color: 'white',
-                                    fontSize: 22,
-                                    fontWeight: '600',
-                                }}
-                            >
-                                {username}
-                            </Text>
-                        </View>
-                        : <Image
-                            source={logos.full}
-                            style={{
-                                width: Dimensions.get('screen').width * 0.3,
-                                height: Dimensions.get('screen').width * 0.3,
-                                resizeMode: 'contain',
-                            }}
-                        />
-                }
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        width: '100%',
+
+            {
+                !isLabo ?
+                    <View style={{
+                        height: Dimensions.get('screen').width * 0.3,
                         justifyContent: 'center',
-                        flex: 1,
-                        display: 'flex',
-                        marginVertical: 20
+                        alignItems: 'center'
                     }}>
-                    <HomeHeaderButton
-                        value='Poser une question'
-                        color='#FAA221'
-                        icon={require('../../../assets/navigation/question-icon.png')}
-                        style={styles.secondaryButton}
-                        onPress={() => {
-                            Linking.openURL('mailto:question@orthomaster.fr')
+                        <Text
+                            style={{
+                                color: 'gray',
+                                fontSize: 16,
+                                fontWeight: '400'
+                            }}
+                        >
+                            Bonjour
+                        </Text>
+                        <Text
+                            style={{
+                                color: 'gray',
+                                fontSize: 22,
+                                fontWeight: '600',
+                            }}
+                        >
+                            {username}
+                        </Text>
+                    </View>
+                    : <Image
+                        source={logos.full}
+                        style={{
+                            width: Dimensions.get('screen').width * 0.3,
+                            height: Dimensions.get('screen').width * 0.3,
+                            resizeMode: 'contain',
                         }}
                     />
-                    <HomeHeaderButton
-                        value='Outils'
-                        color='#1662A8'
-                        style={styles.primaryButton}
-                        icon={require('../../../assets/navigation/outils-icon.png')}
-                        onPress={() => {
-                            navigation.navigate('tools-home')
-                            // if (currentMode == MODES.orthomaster) {
-                            //     dispatch(actionChangeAppMode('thuasne'))
-                            // } else {
-                            //     dispatch(actionChangeAppMode(MODES.orthomaster))
-                            // }
-                        }}
-                    />
-                    <HomeHeaderButton
-                        value='Rechercher un contenu'
-                        color='#79B937'
-                        icon={require('../../../assets/navigation/rechercher-icon.png')}
-                        style={styles.secondaryButton}
-                        onPress={() => navigation.navigate('home-search')}
-                    />
-                </View>
+            }
+            <View
+                style={{
+                    flexDirection: 'row',
+                    width: '100%',
+                    justifyContent: 'center',
+                    flex: 1,
+                    display: 'flex',
+                    marginVertical: 20
+                }}>
+                <HomeHeaderButton
+                    value='Poser une question'
+                    color='#F98407'
+                    icon={require('../../../assets/navigation/question-icon.png')}
+                    style={styles.secondaryButton}
+                    onPress={() => {
+                        Linking.openURL('mailto:question@orthomaster.fr')
+                    }}
+                />
+                <HomeHeaderButton
+                    value='Outils'
+                    color='#1662A8'
+                    style={styles.primaryButton}
+                    icon={require('../../../assets/navigation/outils-icon.png')}
+                    onPress={() => {
+                        navigation.navigate('tools-home')
+                        // if (currentMode == MODES.orthomaster) {
+                        //     dispatch(actionChangeAppMode('thuasne'))
+                        // } else {
+                        //     dispatch(actionChangeAppMode(MODES.orthomaster))
+                        // }
+                    }}
+                />
+                <HomeHeaderButton
+                    value='Recherche          de contenu'
+                    color='#71A11E'
+                    icon={require('../../../assets/navigation/rechercher-icon.png')}
+                    style={styles.secondaryButton}
+                    onPress={() => navigation.navigate('home-search')}
+                />
+            </View>
 
 
-            </ImageBackground>
-        </LinearGradient>
+        </View>
+
 
     )
 }
