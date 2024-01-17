@@ -60,7 +60,7 @@ export const AccountMenu = ({ navigation }) => {
                     text={'Mon activité'}
                 /> */}
                 {
-                    user.roles?.find((element) => element == 'seller') &&
+                    user.roles?.split(',').find((element) => element == 'seller') &&
                     <CustomMenuButton
                         icon={require('../../../../assets/settings/professional.png')}
                         text={"Formulaire d'inscription"}

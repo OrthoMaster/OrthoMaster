@@ -16,9 +16,6 @@ export const login = (username, password) => async (dispatch) => {
   try {
     const data = await AuthService.login(username, password);
     if (data) {
-      data.user.roles = data.user.roles?.split(',')
-      data.user.labos = data.user.labos?.split(',')
-
       AsyncStorage.setItem('user', JSON.stringify(data.user), (error) => {
         if (error)
           throw error

@@ -1,6 +1,5 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { registerUserToNotification } from "../services/NotificationService";
 import {

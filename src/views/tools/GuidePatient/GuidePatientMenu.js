@@ -189,8 +189,6 @@ export const GuidePatientMenu = () => {
     end={{ x: 1, y: 0 }}
     style={styles.containerTool}
   >
-
-
     <Image
       style={styles.toolQCImage}
       source={require('../../../../assets/tools/guide-patient.png')}
@@ -208,6 +206,7 @@ export const GuidePatientMenu = () => {
       style={{ width: '100%' }}
       contentContainerStyle={{ alignItems: 'center' }}
     />
+
     <TouchableOpacity style={[{
       backgroundColor: '#fff',
       padding: 10,
@@ -283,7 +282,7 @@ export const GuidePatientMenu = () => {
           marginVertical: 10
         }}
           onPress={() => {
-            Linking.openURL(config.stickers_url)
+            Linking.openURL(GUIDES[0].stickers_url)
           }}>
           <Text style={{ color: 'white' }}>Accéder au fichier</Text>
         </TouchableOpacity>

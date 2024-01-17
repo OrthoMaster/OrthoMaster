@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { Text, View, Pressable, StyleSheet } from 'react-native'
+import { Text, View, Pressable, StyleSheet, Linking, Image } from 'react-native'
 
 import { ModuleLayout } from './ModuleLayout'
 import { MenuLayout } from './menu/MenuLayout'
 
 import { useTheme } from '@react-navigation/native'
 import LaboFormationView from './labo/LaboFormationView'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import AppModal from '../../component/AppModal'
+import { TouchableOpacity } from 'react-native-gesture-handler'
 
 const FORMATION_TYPE_MODULE = 'formation-module'
 const FORMATION_TYPE_MENU = 'formation-menu'
@@ -50,7 +53,7 @@ const FormationTypeNav = ({ displayView, navigation }) => {
 
 const FormationTypeDisplay = ({ type, navigation, route }) => {
     if (type == FORMATION_TYPE_MODULE) {
-        return <ModuleLayout navigation={navigation} route={route}/>
+        return <ModuleLayout navigation={navigation} route={route} />
     } else {
         return <MenuLayout navigation={navigation} route={route} />
     }
@@ -58,7 +61,22 @@ const FormationTypeDisplay = ({ type, navigation, route }) => {
 
 export const FormationView = ({ navigation, route }) => {
     const [formationType, setformationType] = useState(FORMATION_TYPE_MODULE)
-    const {isLabo} = useTheme()
+    const { isLabo } = useTheme()
+    const [showCertifInfosModal, setshowCertifInfosModal] = useState(false)
+
+
+    useEffect(() => {
+        const displayCertifModal = async () => {
+            const visitOnce = await AsyncStorage.getItem("formationModalHasBeenDisplayed")
+            if (JSON.parse(visitOnce) == true)
+                return
+            setshowCertifInfosModal(true)
+            await AsyncStorage.setItem("formationModalHasBeenDisplayed", JSON.stringify(true))
+        }
+        displayCertifModal()
+    }, [])
+
+
 
     if (isLabo == false) {
         return <View style={styles.container}>
@@ -67,12 +85,55 @@ export const FormationView = ({ navigation, route }) => {
             <FormationTypeNav displayView={(view) => { setformationType(view) }}
                 navigation={navigation}
             />
+            <AppModal
+                isVisible={showCertifInfosModal}
+                onClose={() => setshowCertifInfosModal(false)}
+                style={{ width: '90%' }}
+                customRender={<View style={{
+                    display: 'flex',
+                    paddingHorizontal: 10,
+                    width: '100%'
+                }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', alignSelf: 'center' }}>Le savez-vous ?</Text>
+                    <Text style={{ marginTop: 10, }}>Vous pouvez suivre ce parcours pédagogique et obtenir un certificat de formation DPC.</Text>
+
+                    <Image
+                        source={require('../../../assets/formation/logo-dpc.png')}
+                        style={{
+                            height: 70,
+                            resizeMode: 'contain',
+                            marginVertical: 20,
+                            alignSelf: 'center'
+                        }}
+                    />
+                    <Text style={{ fontSize: 13, alignSelf: 'center', textAlign: 'center' }}>Il en va de même pour chaque membre de votre équipe.</Text>
+                    <Text style={{ fontSize: 15, fontWeight: 'bold', marginVertical: 10 }}>Inscrivez-vous dès maintenant !</Text>
+                    <Text style={{}}>C'est simple, <Text style={{ textDecorationLine: 'underline' }}>gratuit</Text> et nous vous accompagnons dans les démarches d'inscription / validation.</Text>
+
+                    <TouchableOpacity style={{
+                        backgroundColor: "#EB7B10",
+                        padding: 10,
+                        borderRadius: 5,
+                        width: "30%",
+                        alignSelf: 'center',
+                        alignItems: 'center',
+                        marginTop: 20
+                    }}
+                        onPress={() => {
+                            Linking.openURL("https://orthomaster.fr/parcour-certifiant")
+                        }}
+                    >
+                        <Text style={{
+                            color: '#fff',
+                            textAlign: 'center',
+                        }}>En savoir +</Text>
+                    </TouchableOpacity>
+                </View>}
+            />
         </View>
     } else {
-        return <LaboFormationView navigation={navigation}/>
+        return <LaboFormationView navigation={navigation} />
     }
-
-
 }
 
 const styles = StyleSheet.create({

@@ -21,6 +21,7 @@ import { AccountMenu } from './menu/AccountMenu';
 import { useQuery } from 'react-query'
 import { useDispatch } from 'react-redux'
 import { getOfficeInfos } from '../../services/OfficeService'
+import { CertifiedFormationProgress } from './components/CertifiedFormationProgress';
 
 
 const AccountHeader = ({ user, menuActive, toggleMenu, officeInfo }) => {
@@ -91,6 +92,8 @@ export const AccountView = ({ navigation }) => {
           <Text style={[styles.sectionTitle]}>Mes trophées</Text>
 
           <Trophies refreshing={refreshing}/>
+
+          <CertifiedFormationProgress />
 
           <AccountOfficesProgress enableConfig={user.job_function == 'TITULAIRE' ? true : false} refreshing={refreshing} navigation={navigation}/>
           

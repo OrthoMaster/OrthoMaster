@@ -130,7 +130,6 @@ export const RegistrationFinalization = ({ formData, ids, errors, seller }) => {
 
 
     </ScrollView>
-    //TODO Create QR code to paymentUrl
 
 }
 const styles = StyleSheet.create({
