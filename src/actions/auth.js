@@ -47,9 +47,21 @@ export const logout = () => (dispatch) => {
 
 
 export const refreshUserSession = (user) => async (dispatch) => {
-
-  dispatch({
-    type: REFRESH_SESSION,
-    payload: { user: user }
-  })
+  try {
+    AsyncStorage.setItem('user', JSON.stringify(user)).catch(e=>{
+    dispatch({
+      type: LOGIN_FAIL,
+      payload: { msg: "Impossible de retrouver l'utilisateur" }
+    });
+    })
+    dispatch({
+      type: REFRESH_SESSION,
+      payload: { user: user }
+    })
+  } catch (error) {
+    dispatch({
+      type: LOGIN_FAIL,
+      payload: { msg: "Impossible de retrouver l'utilisateur" }
+    });
+  }
 }

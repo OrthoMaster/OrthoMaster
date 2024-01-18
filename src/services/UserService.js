@@ -78,7 +78,6 @@ export const getUsersByOfficeId = async (officeId) => {
 
 
 export const getCurrentUser = async () => {
-
     try {
         const config = await restoreLocalConfigAsync()
         const authHeader = 'Bearer ' + config.JWT;
@@ -94,9 +93,6 @@ export const getCurrentUser = async () => {
             .then((response) => {
                 return response.data;
             })
-            .catch((e)=> {
-              throw e
-            });
         
     } catch (error) {
         return null

@@ -125,12 +125,7 @@ export const HomeHeader = ({ navigation, userName }) => {
                     style={styles.primaryButton}
                     icon={require('../../../assets/navigation/outils-icon.png')}
                     onPress={() => {
-                        navigation.navigate('tools-home')
-                        // if (currentMode == MODES.orthomaster) {
-                        //     dispatch(actionChangeAppMode('thuasne'))
-                        // } else {
-                        //     dispatch(actionChangeAppMode(MODES.orthomaster))
-                        // }
+                        navigation.navigate('Outils')
                     }}
                 />
                 <HomeHeaderButton

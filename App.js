@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 
 import { selectIsLoggedIn, selectIsLoading, selectUserCurrentSession } from './src/reducers/auth';
-import { checkToken, refreshUserSession } from './src/actions/auth';
+import { checkToken, refreshUserSession, logout } from './src/actions/auth';
 
 import { useSelector, useDispatch } from 'react-redux';
 import checkVersion from 'react-native-store-version';
@@ -63,11 +63,14 @@ export default function App({ navigation }) {
   const init = async () => {
     try {
       currentUser.refetch().then(res=>{
-        if (res.data) {
+        if (res && res.data) {
           dispatch(refreshUserSession(res.data))
+        } else {
+          dispatch(logout())
         }
         setIsLoading(false)
       })
+
       const check = await checkVersion({
         version: Application.nativeApplicationVersion, // app local version
         //version: '1.1.0', // app local version
