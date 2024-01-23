@@ -60,8 +60,7 @@ export const AccountView = ({ navigation }) => {
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
-  const infos = useQuery(['Account','GET','officeInfo'], () => getOfficeInfos(user.office_id))
-
+  const infos = useQuery(['Account', 'GET', 'officeInfo'], () => getOfficeInfos(user.office_id))
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -87,21 +86,26 @@ export const AccountView = ({ navigation }) => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           <Text style={styles.sectionTitle}>Ma progression</Text>
-          <AccountProgress userId={user.id_user} refreshing={refreshing}/>
+          <AccountProgress userId={user.id_user} refreshing={refreshing} />
 
           <Text style={[styles.sectionTitle]}>Mes trophées</Text>
 
-          <Trophies refreshing={refreshing}/>
+          <Trophies refreshing={refreshing} />
 
           <CertifiedFormationProgress />
 
-          <AccountOfficesProgress enableConfig={user.job_function == 'TITULAIRE' ? true : false} refreshing={refreshing} navigation={navigation}/>
-          
+          <AccountOfficesProgress
+            enableConfig={user.roles?.split(',')
+            .find((element) => element == 'primary_manager' || element == "secondary_manager")}
+            refreshing={refreshing}
+            navigation={navigation}
+          />
+
           <View style={{ height: 200 }} />
         </ScrollView>
         {
           menuIsActive ?
-            <AccountMenu navigation={navigation} />
+            <AccountMenu user={user} navigation={navigation} />
             : null
         }
       </View>

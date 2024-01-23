@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Text, View, Pressable, StyleSheet, Linking, Image } from 'react-native'
+import { Text, View, Pressable, StyleSheet, Linking, Image, TouchableOpacity } from 'react-native'
+import BouncyCheckbox from "react-native-bouncy-checkbox";
 
 import { ModuleLayout } from './ModuleLayout'
 import { MenuLayout } from './menu/MenuLayout'
@@ -8,7 +9,6 @@ import { useTheme } from '@react-navigation/native'
 import LaboFormationView from './labo/LaboFormationView'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import AppModal from '../../component/AppModal'
-import { TouchableOpacity } from 'react-native-gesture-handler'
 
 const FORMATION_TYPE_MODULE = 'formation-module'
 const FORMATION_TYPE_MENU = 'formation-menu'
@@ -63,19 +63,20 @@ export const FormationView = ({ navigation, route }) => {
     const [formationType, setformationType] = useState(FORMATION_TYPE_MODULE)
     const { isLabo } = useTheme()
     const [showCertifInfosModal, setshowCertifInfosModal] = useState(false)
+    const [disableModal, setDisableModal] = useState(false)
 
 
     useEffect(() => {
         const displayCertifModal = async () => {
-            const visitOnce = await AsyncStorage.getItem("formationModalHasBeenDisplayed")
-            if (JSON.parse(visitOnce) == true)
+            const visitOnce = await AsyncStorage.getItem('certif')
+
+            if (JSON.parse(visitOnce) == true) {
                 return
+            }
             setshowCertifInfosModal(true)
-            await AsyncStorage.setItem("formationModalHasBeenDisplayed", JSON.stringify(true))
         }
         displayCertifModal()
     }, [])
-
 
 
     if (isLabo == false) {
@@ -87,13 +88,22 @@ export const FormationView = ({ navigation, route }) => {
             />
             <AppModal
                 isVisible={showCertifInfosModal}
-                onClose={() => setshowCertifInfosModal(false)}
+                onClose={() => {
+                    if (disableModal === true) {
+                        AsyncStorage.setItem("certif", JSON.stringify(true), (error) => {
+                            if (error)
+                                throw error
+                        })
+                    }
+                    setshowCertifInfosModal(false)
+                }}
                 style={{ width: '90%' }}
                 customRender={<View style={{
                     display: 'flex',
                     paddingHorizontal: 10,
                     width: '100%'
-                }}>
+                }}
+                >
                     <Text style={{ fontSize: 18, fontWeight: 'bold', alignSelf: 'center' }}>Le savez-vous ?</Text>
                     <Text style={{ marginTop: 10, }}>Vous pouvez suivre ce parcours pédagogique et obtenir un certificat de formation DPC.</Text>
 
@@ -128,6 +138,24 @@ export const FormationView = ({ navigation, route }) => {
                             textAlign: 'center',
                         }}>En savoir +</Text>
                     </TouchableOpacity>
+
+
+                    <BouncyCheckbox
+                        onPress={isChecked => { setDisableModal(isChecked) }}
+                        text='ne plus me montrer ce message pour le moment'
+                        size={15}
+                        fillColor="#EB7B10"
+                        unfillColor="#FFFFFF"
+                        textStyle={{
+                            color: '#000',
+                            fontSize: 12,
+                            textDecorationLine: "none"
+                        }}
+                        style={{
+                            alignSelf: 'center',
+                            marginTop: 20
+                        }}
+                    />
                 </View>}
             />
         </View>

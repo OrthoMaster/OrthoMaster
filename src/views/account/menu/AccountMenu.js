@@ -11,7 +11,6 @@ import {
     ScrollView
 } from "react-native"
 
-import { useStore } from "react-redux";
 
 import { logout } from '../../../actions/auth';
 import { useDispatch } from "react-redux";
@@ -32,12 +31,10 @@ const CustomMenuButton = ({ icon, text, onPress, style }) => {
     )
 }
 
-export const AccountMenu = ({ navigation }) => {
-    const store = useStore()
+export const AccountMenu = ({ navigation, user }) => {
     const dispatch = useDispatch()
 
-    const user = store.getState().auth.userCurrentSession
-
+    console.log("Account menu :", user);
 
     return (
         <View style={styles.container}>

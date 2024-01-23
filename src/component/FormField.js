@@ -91,7 +91,7 @@ const TextField = ({ props }) => {
                     }
                 }
                 if (props.type == "email") {
-                    if (checkEmail(event.nativeEvent.text) == false) {
+                    if (checkEmail(text) == false) {
                         setAlertError('Adresse email invalide')
                     } else {
                         setAlertError('')
