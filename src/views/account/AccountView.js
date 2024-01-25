@@ -32,7 +32,7 @@ const AccountHeader = ({ user, menuActive, toggleMenu, officeInfo }) => {
     <SafeAreaView style={[styles.header]} >
       <View style={styles.headerText}>
         <Text style={styles.profilName}>{user ? user.name + ' ' + user.lastname : ''}</Text>
-        <Text style={styles.officeName}>{officeInfo.data ? officeInfo.data.name : ''}</Text>
+        <Text style={styles.profilUsername}><Text style={{fontWeight: 'bold'}}>Nom d'utilisateur :</Text> {user.username}</Text>
       </View>
       <TouchableOpacity
         style={styles.headerLogoutButton}
@@ -142,6 +142,13 @@ const styles = StyleSheet.create({
     color: '#ffffff'
   },
   officeName: {
+    fontSize: 15,
+    marginLeft: 10,
+    marginBottom: 10,
+    alignSelf: 'flex-start',
+    color: '#ffffff'
+  },
+  profilUsername: {
     fontSize: 15,
     marginLeft: 10,
     marginBottom: 10,

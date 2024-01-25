@@ -49,7 +49,7 @@ export const ResetPassword = () => {
 
     return <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
         <Text style={[styles.primaryText, { marginTop: 30 }]}>
-            Renseigne ton nom d'utilisateur dans le champ ci-dessous dessous
+            Renseignez votre nom d'utilisateur dans le champ ci-dessous dessous
         </Text>
         <Text style={{ fontSize: 30, marginVertical: 30 }}>⬇️</Text>
         <TextInput

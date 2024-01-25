@@ -40,7 +40,7 @@ const UserProgress = ({ user, refreshing }) => {
 
     return (
         <View style={styles.userProgressContainer}>
-            <Text style={styles.progressButtonText}>{user.name + ' ' + user.lastname}</Text>
+            <Text><Text style={{fontWeight: 'bold'}}>{user.name + ' ' + user.lastname}</Text> ({user.username})</Text>
 
             <View style={[styles.userProgressContainer]}>
                 <View style={styles.statsContainer}>

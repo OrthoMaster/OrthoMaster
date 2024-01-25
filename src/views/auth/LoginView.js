@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { login } from '../../actions/auth';
 
+
 export const LoginView = ({ navigation, route }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -65,16 +66,19 @@ export const LoginView = ({ navigation, route }) => {
                                 onChangeText={setUsername}
                                 textContentType="username"
                                 autoCapitalize={'none'}
+                                autoComplete='username'
+
                             />
 
                             <View style={styles.intputField}>
                                 <TextInput
-                                    style={{flex: 1}}
+                                    style={{ flex: 1 }}
                                     placeholder="Mot de passe"
                                     value={password}
                                     onChangeText={setPassword}
                                     secureTextEntry={!showPassword}
                                     textContentType="password"
+                                    autoComplete='password'
                                     autoCapitalize={'none'}
                                 />
                                 <Ionicons
@@ -105,6 +109,15 @@ export const LoginView = ({ navigation, route }) => {
                                 }}
                             >
                                 <Text style={{ color: '#EA6910', fontSize: 18 }}>Mot de passe oublié</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={{ marginTop: 10 }}
+                                onPress={() => {
+                                    navigation.push("auth-forgot-username")
+                                }}
+                            >
+                                <Text style={{ color: '#EA6910', fontSize: 18 }}>Nom d'utilisateur oublié</Text>
                             </TouchableOpacity>
 
                         </View>
