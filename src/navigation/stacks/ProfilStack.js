@@ -25,7 +25,8 @@ export const ProfilStack = () => {
         component={AccountProfile}
         options={{
           headerBackTitle: 'Retour',
-          title: 'Mon profile'
+          title: 'Mon profile',
+          headerBackTitleStyle:{ color: "#ffaf31"},
         }}
       />
       <ProfilStackNav.Screen
@@ -33,7 +34,8 @@ export const ProfilStack = () => {
         component={TeamManagerView}
         options={{
           headerBackTitle: 'Retour',
-          title: 'Mon équipe'
+          title: 'Mon équipe',
+          headerBackTitleStyle:{ color: "#ffaf31"}
         }}
       />
 
@@ -42,7 +44,8 @@ export const ProfilStack = () => {
         component={RegistrationView}
         options={{
           headerBackTitle: 'Retour',
-          title: "Formulaire d'inscription"
+          title: "Formulaire d'inscription",
+          headerBackTitleStyle:{ color: "#ffaf31"}
         }}
       />
     </ProfilStackNav.Navigator>

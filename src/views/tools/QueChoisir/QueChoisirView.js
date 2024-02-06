@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react"
 import {
     StyleSheet,
     Text,
@@ -5,9 +6,8 @@ import {
     View,
     ScrollView,
     SafeAreaView,
-    Image, ActivityIndicator, Dimensions,
+    Image, Dimensions,
 } from "react-native"
-import React, { useEffect, useRef, useState } from "react"
 import { useQuery } from "react-query"
 import { getAPIqueChoisirRedFlags, getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
 import BottomArrow from '../../../../assets/queChoisir/bottom_arrow.svg'
@@ -40,20 +40,17 @@ export const QueChoisirView = ({ navigation, route }) => {
 
     const { width } = Dimensions.get('window');
     const helpWidth = width * 0.8;
-
     useQuery(['Tools', 'GET', 'queChoisirStep', category], () => getAPIqueChoisirStep(category), {
         onSuccess: (data) => {
             setGlobalSteps(data);
             setToolIsLoaded(true);
         }
     })
-    
     useQuery(['Tools', 'GET', 'currentImage', category], () => getAPIqueChoisirRedFlags(category), {
         onSuccess: (data) => {
             setContraindicationArray(data);
         }
     })
-    
     const products = useQuery(['Tools', 'GET', 'getProducts', category], () => getAPIgetProducts(category), {
         onSuccess: (data) => {
             setFiltredProducts(data)
@@ -65,9 +62,6 @@ export const QueChoisirView = ({ navigation, route }) => {
             setStepImage(data)
         }
     })
-
-
-
 
     const filterProduct = () => {
         if (products.data && globalSteps) {
@@ -105,6 +99,7 @@ export const QueChoisirView = ({ navigation, route }) => {
             setCurrentContraindicationArray(updateArray);
     }
 
+
     useEffect(() => {
         filterProduct()
         findContreIndications()
@@ -118,7 +113,8 @@ export const QueChoisirView = ({ navigation, route }) => {
                     userHistory,
                     filtredProducts,
                 },
-                filtersConfig
+                filtersConfig,
+                category
             });
         }
     }, [isFinished])
@@ -128,7 +124,6 @@ export const QueChoisirView = ({ navigation, route }) => {
     useEffect(() => {
         setStepImage(null)
     }, [questionIndex])
-
 
     if (globalSteps === null) return;
     return (<SafeAreaView style={styles.safeAreaContainer}>
@@ -319,7 +314,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                 }
                 } helpWidth={helpWidth} response={responseHelp} /> : null}
             <NavbarQC global={globalSteps} questionIndex={questionIndex} />
-
+            
         </View>
 
     </SafeAreaView >)

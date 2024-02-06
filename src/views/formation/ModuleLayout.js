@@ -44,7 +44,7 @@ const MainQuizButton = ({
         <TouchableOpacity
             style={[styles.mainQuizButtonContainer, {
                 //marginBottom: quizType == 'final' ? 100 : 40,
-                backgroundColor: quizIsDone ? '#ffffff' : quizIsDone == 0 ? '#F76F10' : '#D2D2D2',
+                backgroundColor: quizIsDone ? '#ffffff' : quizIsDone == 0 ? '#ffaf31' : '#D2D2D2',
 
             }]}
             onPress={() => {
@@ -59,10 +59,11 @@ const MainQuizButton = ({
                     : quizIsDone ? require('../../../assets/formation/final_quiz_done.png') : require('../../../assets/formation/final_quiz.png')
                 }
                 style={[styles.mainQuizButtonImg, {
+                    tintColor: quizIsDone ? '#ffaf31' : "#fff"
                 }]}
             />
             <Text style={[styles.mainQuizButtonText, {
-                color: quizIsDone ? '#E75A08' : '#ffffff'
+                color: quizIsDone ? '#ffaf31' : '#ffffff'
             }]}>
                 {quizType == 'initial' ?
                     'Le Quiz de bienvenue'
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-around',
         borderWidth: 0.5,
-        borderColor: '#E75A08'
+        borderColor: '#ffaf31'
     },
     mainQuizButtonImg: {
         resizeMode: 'contain',

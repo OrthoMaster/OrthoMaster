@@ -3,7 +3,7 @@ export const appDefault = {
         value: 'default',
         isLabo: false,
         colors: {
-            primary: '#F45B11'
+            primary: '#ffaf31'
         },
         logos: {
             text: require("../assets/logo-text.png"),

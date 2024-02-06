@@ -92,6 +92,6 @@ const styles = StyleSheet.create({
     },
     trophyProgression: {
         fontSize: 20,
-        color: '#F76F10'
+        color: '#ffaf31'
     }
 })

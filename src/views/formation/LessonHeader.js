@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
     },
     container: {
-        backgroundColor: '#F76F10',
+        backgroundColor: '#ffaf31',
         width: '100%',
         height: '12%',
 

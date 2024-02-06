@@ -18,6 +18,7 @@ import { useDispatch } from "react-redux";
 import { useQuery } from "react-query";
 
 import { getCustomerPortal } from "../../../services/SubscriptionService";
+import { useOrthoMasterRoles } from "../../../hooks/useOrthoMasterRoles";
 
 const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
     return (
@@ -42,6 +43,7 @@ export const AccountMenu = ({ navigation, user }) => {
     const dispatch = useDispatch()
     const [gettingCustomerPortal, setGettingCustomerPortal] = useState(false)
     const [errorMessage, setErrorMessage] = useState(null)
+    const roles = useOrthoMasterRoles()
     const customerPortal = useQuery(["GET", "Customer portal"], ()=>getCustomerPortal(user.office_id),
     {
         onSettled: () => setGettingCustomerPortal(false),
@@ -70,7 +72,7 @@ export const AccountMenu = ({ navigation, user }) => {
                     }}
                 />
                 {
-                    user.roles?.split(',').find(role => role == "primary_manager") &&
+                    roles.isPrimaryManager &&
                     <CustomMenuButton
                         icon={require('../../../../assets/settings/icon-espace-client.png')}
                         text={'Mon espace client'}
@@ -82,7 +84,7 @@ export const AccountMenu = ({ navigation, user }) => {
                     />
                 }
                 {
-                    user.roles?.split(',').find((element) => element == 'seller') &&
+                    roles.isSeller &&
                     <CustomMenuButton
                         icon={require('../../../../assets/settings/professional.png')}
                         text={"Formulaire d'inscription"}
@@ -155,7 +157,7 @@ export const AccountMenu = ({ navigation, user }) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#F76F10',
+        backgroundColor: '#ffaf31',
         width: '80%',
         height: Dimensions.get('screen').height,
         position: 'absolute',
@@ -179,9 +181,10 @@ const buttonStyles = StyleSheet.create({
     icon: {
         width: 20,
         height: 20,
+        tintColor: "#162754"
     },
     text: {
         paddingHorizontal: 10,
-        color: '#ffffff'
+        color: '#162754'
     }
 })

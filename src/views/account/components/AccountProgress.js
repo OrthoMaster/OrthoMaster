@@ -28,7 +28,7 @@ export const AccountProgress = ({ userId, refreshing }) => {
     return (
         <View style={styles.container}>
             <View style={[styles.statBox, {justifyContent: 'flex-start'}]}>
-                <View style={[styles.stat, {backgroundColor: '#E9600D'}]}>
+                <View style={[styles.stat, {backgroundColor: '#eb7b0f'}]}>
                     <Text style={styles.statText}><Text style={{fontWeight: 'bold'}}>{Math.round(progress.data.formation_logtime / 3600)}</Text>h</Text>
                     <Text style={styles.statText}><Text style={{fontWeight: 'bold'}}>{Math.round(progress.data.formation_logtime % 3600 / 60)}</Text>m</Text>
                 </View>
@@ -36,12 +36,12 @@ export const AccountProgress = ({ userId, refreshing }) => {
             </View>
             <View style={[styles.statBox, {justifyContent: 'flex-end'}]}>
                 <Text style={styles.statTitle}>ma formation complétée à</Text>
-                <View style={[styles.stat, {backgroundColor: '#E9841C'}]}>
+                <View style={[styles.stat, {backgroundColor: '#4BB6BE'}]}>
                     <Text style={styles.statText}><Text style={{fontWeight: 'bold'}}>{Math.round(progress.data.formation_progress)}</Text>%</Text>
                 </View>
             </View>
             <View style={[styles.statBox, {justifyContent: 'flex-start'}]}>
-                <View style={[styles.stat, {backgroundColor: '#215C9E'}]}>
+                <View style={[styles.stat, {backgroundColor: '#5696df'}]}>
                     <Text style={styles.statText}><Text style={{fontWeight: 'bold'}}>{Math.round(progress.data.app_logtime / 3600)}</Text>h</Text>
                     <Text style={styles.statText}> <Text style={{fontWeight: 'bold'}}>{Math.round(progress.data.app_logtime % 3600 / 60)}</Text>m</Text>
                 </View>

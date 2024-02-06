@@ -10,7 +10,7 @@ export const CertifiedFormationProgress = () => {
         <Text>Comment en avoir un ?</Text>
 
             <TouchableOpacity style={{
-                backgroundColor: "#EB7B10",
+                backgroundColor: "#ffaf31",
                 padding: 10,
                 borderRadius: 5,
                 marginTop: 20
@@ -37,6 +37,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 20,
         marginVertical: 20,
-        color: '#F76F10'
+        color: '#ffaf31'
     },
 })
