@@ -1,4 +1,4 @@
-import React, { } from "react";
+import React, {useState} from "react";
 import {
     View,
     TouchableOpacity,
@@ -8,15 +8,19 @@ import {
     Alert,
     Text,
     Linking,
-    ScrollView
+    ScrollView,
+    ActivityIndicator
 } from "react-native"
 
 
 import { logout } from '../../../actions/auth';
 import { useDispatch } from "react-redux";
+import { useQuery } from "react-query";
 
+import { getCustomerPortal } from "../../../services/SubscriptionService";
+import { useOrthoMasterRoles } from "../../../hooks/useOrthoMasterRoles";
 
-const CustomMenuButton = ({ icon, text, onPress, style }) => {
+const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
     return (
         <TouchableOpacity
             style={[buttonStyles.container, style]}
@@ -27,14 +31,33 @@ const CustomMenuButton = ({ icon, text, onPress, style }) => {
                 source={icon}
             />
             <Text style={buttonStyles.text}>{text}</Text>
+            {
+                loading &&
+                <ActivityIndicator color={"#fff"}/>
+            }
         </TouchableOpacity>
     )
 }
 
 export const AccountMenu = ({ navigation, user }) => {
     const dispatch = useDispatch()
-
-    console.log("Account menu :", user);
+    const [gettingCustomerPortal, setGettingCustomerPortal] = useState(false)
+    const [errorMessage, setErrorMessage] = useState(null)
+    const roles = useOrthoMasterRoles()
+    const customerPortal = useQuery(["GET", "Customer portal"], ()=>getCustomerPortal(user.office_id),
+    {
+        onSettled: () => setGettingCustomerPortal(false),
+        onSuccess: (url) => {
+            Linking.openURL(url)
+        },
+        onError: (err) => {
+            setErrorMessage(err.response?.data?.message)
+            setTimeout(()=>{
+                setErrorMessage(null)
+            }, 5000)
+        },
+        enabled: false
+    })
 
     return (
         <View style={styles.container}>
@@ -48,16 +71,20 @@ export const AccountMenu = ({ navigation, user }) => {
                         navigation.navigate('account-profile')
                     }}
                 />
-                {/* <CustomMenuButton
-                    icon={require('../../../../assets/settings/formation.png')}
-                    text={'Ma formation'}
-                /> */}
-                {/* <CustomMenuButton
-                    icon={require('../../../../assets/settings/activity.png')}
-                    text={'Mon activité'}
-                /> */}
                 {
-                    user.roles?.split(',').find((element) => element == 'seller') &&
+                    roles.isPrimaryManager &&
+                    <CustomMenuButton
+                        icon={require('../../../../assets/settings/icon-espace-client.png')}
+                        text={'Mon espace client'}
+                        loading={gettingCustomerPortal}
+                        onPress={()=>{
+                            customerPortal.refetch()
+                            setGettingCustomerPortal(true)
+                        }}
+                    />
+                }
+                {
+                    roles.isSeller &&
                     <CustomMenuButton
                         icon={require('../../../../assets/settings/professional.png')}
                         text={"Formulaire d'inscription"}
@@ -104,7 +131,22 @@ export const AccountMenu = ({ navigation, user }) => {
                         );
                     }}
                 />
-                <View style={{ height: 200 }} />
+                <View style={{ height: 150 }} />
+                {
+                    errorMessage &&
+                    <View style={{
+                        width: "90%",
+                        backgroundColor: '#fff',
+                        padding: 10,
+                        alignSelf: 'center',
+                        borderRadius: 10,
+                        alignItems: 'center'
+                    }}>
+                        <Text style={{
+                            color: 'red'
+                        }}>{errorMessage}</Text>
+                    </View>
+                }
             </ScrollView>
 
         </View>
@@ -115,7 +157,7 @@ export const AccountMenu = ({ navigation, user }) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#F76F10',
+        backgroundColor: '#ffaf31',
         width: '80%',
         height: Dimensions.get('screen').height,
         position: 'absolute',
@@ -139,9 +181,10 @@ const buttonStyles = StyleSheet.create({
     icon: {
         width: 20,
         height: 20,
+        tintColor: "#162754"
     },
     text: {
         paddingHorizontal: 10,
-        color: '#ffffff'
+        color: '#162754'
     }
 })

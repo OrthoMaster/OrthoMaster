@@ -12,7 +12,7 @@ export const ActivateAccountView = ({ route, navigation }) => {
             setErrorMsg(err.response.data.message)
         },
         onSuccess: () => {
-            navigation.navigate('auth-home', { message: "Félicitation !\nVotre compte à bien était activé !" })
+            navigation.navigate('auth-home', { message: "Félicitation !\nVotre compte a bien été activé !" })
         }
     })
     const [credentials, setCredentials] = useState({

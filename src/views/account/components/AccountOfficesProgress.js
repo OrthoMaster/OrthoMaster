@@ -40,7 +40,7 @@ const UserProgress = ({ user, refreshing }) => {
 
     return (
         <View style={styles.userProgressContainer}>
-            <Text style={styles.progressButtonText}>{user.name + ' ' + user.lastname}</Text>
+            <Text><Text style={{fontWeight: 'bold'}}>{user.name + ' ' + user.lastname}</Text> ({user.username})</Text>
 
             <View style={[styles.userProgressContainer]}>
                 <View style={styles.statsContainer}>
@@ -155,7 +155,7 @@ export const AccountOfficesProgress = ({ refreshing, navigation, enableConfig })
                             }}
                         >
                             <Text style={styles.headerButtonText}>Gérer</Text>
-                            <FontAwesome5 name="cog" size={20} color="#F76F11" />
+                            <FontAwesome5 name="cog" size={20} color="#ffaf31" />
                         </TouchableOpacity>
                     }
                 </View>
@@ -171,7 +171,7 @@ export const AccountOfficesProgress = ({ refreshing, navigation, enableConfig })
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#F76F10',
+        backgroundColor: '#ffaf31',
         width: '100%',
         alignItems: 'center',
     },
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     },
     headerButtonText: {
         fontWeight: 'bold',
-        color: '#F76F10',
+        color: '#ffaf31',
         marginEnd: 5
     },
     officeStat: {
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
         marginTop: 5
     },
     formationProgress: {
-        backgroundColor: '#E75A08',
+        backgroundColor: '#ffaf31',
         height: '100%',
 
     },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
         tintColor: '#F76F10'
     },
     trophiesTriggerText: {
-        color: '#F76F10',
+        color: '#ffaf31',
         marginTop: 10,
         marginBottom: 20
     }

@@ -7,6 +7,7 @@ import { LoginView } from '../../views/auth/LoginView';
 import { ResetPassword } from '../../views/auth/ResetPassword';
 import { AuthHome } from '../../views/auth/AuthHome';
 import { ActivateAccountView } from '../../views/auth/InitAccount';
+import { ForgotUsername } from '../../views/auth/ForgotUsername';
 
 
 const AuthStackNav = createStackNavigator();
@@ -36,6 +37,14 @@ export const AuthStack = () => {
         }}
       />
       <AuthStackNav.Screen
+        name="auth-forgot-username"
+        component={ForgotUsername}
+        options={{
+          headerBackTitle: 'retour',
+          headerTitle: "Nom d'utilisateur oublié"
+        }}
+      />
+      <AuthStackNav.Screen
         name="auth-account-activate"
         component={ActivateAccountView}
         options={{
@@ -43,13 +52,6 @@ export const AuthStack = () => {
         }}
         initialParams={{id_user: null, link: null}}
       />
-      {/* <AuthStackNav.Screen
-        name="auth-account-create"
-        component={CreateAccountView}
-        options={{
-          headerShown: false
-        }}
-      /> */}
     </AuthStackNav.Navigator>
   );
 }

@@ -22,6 +22,7 @@ import { useQuery } from 'react-query'
 import { useDispatch } from 'react-redux'
 import { getOfficeInfos } from '../../services/OfficeService'
 import { CertifiedFormationProgress } from './components/CertifiedFormationProgress';
+import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
 
 
 const AccountHeader = ({ user, menuActive, toggleMenu, officeInfo }) => {
@@ -32,7 +33,7 @@ const AccountHeader = ({ user, menuActive, toggleMenu, officeInfo }) => {
     <SafeAreaView style={[styles.header]} >
       <View style={styles.headerText}>
         <Text style={styles.profilName}>{user ? user.name + ' ' + user.lastname : ''}</Text>
-        <Text style={styles.officeName}>{officeInfo.data ? officeInfo.data.name : ''}</Text>
+        <Text style={styles.profilUsername}><Text style={{fontWeight: 'bold'}}>Nom d'utilisateur :</Text> {user.username}</Text>
       </View>
       <TouchableOpacity
         style={styles.headerLogoutButton}
@@ -61,6 +62,7 @@ export const AccountView = ({ navigation }) => {
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
   const infos = useQuery(['Account', 'GET', 'officeInfo'], () => getOfficeInfos(user.office_id))
+  const roles = useOrthoMasterRoles()
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -95,8 +97,7 @@ export const AccountView = ({ navigation }) => {
           <CertifiedFormationProgress />
 
           <AccountOfficesProgress
-            enableConfig={user.roles?.split(',')
-            .find((element) => element == 'primary_manager' || element == "secondary_manager")}
+            enableConfig={roles.isPrimaryManager || roles.isSecondaryManager}
             refreshing={refreshing}
             navigation={navigation}
           />
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     //height: Platform.OS === "android" ? StatusBar.currentHeight+100 : 120,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#F76F10'
+    backgroundColor: '#ffaf31'
   },
   headerLogoutButton: {
     marginRight: 20,
@@ -142,6 +143,13 @@ const styles = StyleSheet.create({
     color: '#ffffff'
   },
   officeName: {
+    fontSize: 15,
+    marginLeft: 10,
+    marginBottom: 10,
+    alignSelf: 'flex-start',
+    color: '#ffffff'
+  },
+  profilUsername: {
     fontSize: 15,
     marginLeft: 10,
     marginBottom: 10,
@@ -168,7 +176,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 20,
     marginVertical: 20,
-    color: '#F76F10'
+    color: '#ffaf31'
   },
 })
 

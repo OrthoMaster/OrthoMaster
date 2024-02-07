@@ -61,7 +61,7 @@ export const HomeView = ({ navigation }) => {
               Questions / réponses
             </Text>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
-              <Text style={[styles.carouselHeaderButtonText, {color: colors.primary}]}>Voir toutes</Text>
+              <Text style={[styles.carouselHeaderButtonText, {color: "#ffaf31"}]}>Voir toutes</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={qaPreview.data} navigation={navigation} />
@@ -73,7 +73,7 @@ export const HomeView = ({ navigation }) => {
               Flash ortho
             </Text>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
-              <Text style={[styles.carouselHeaderButtonText, {color: colors.primary}]}>Voir tous</Text>
+              <Text style={[styles.carouselHeaderButtonText, {color: "#ffaf31"}]}>Voir tous</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={flashPreview.data} navigation={navigation} />

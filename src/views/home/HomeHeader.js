@@ -13,11 +13,7 @@ import { HomeHeaderButton } from './components/HomeHeaderButton';
 
 import { useQuery } from 'react-query';
 import { getUserNextLesson } from '../../services/ContentService';
-import { useDispatch, useSelector } from 'react-redux';
-import { actionChangeAppMode } from '../../actions/appModeAction';
-import { MODES, selectModeValue } from '../../reducers/appModeReducer';
 import { useTheme } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 
 
@@ -27,8 +23,6 @@ export const HomeHeader = ({ navigation, userName }) => {
         enabled: false
     })
     const { colors, isLabo, logos } = useTheme()
-    const dispatch = useDispatch()
-    const currentMode = useSelector(selectModeValue)
 
     useEffect(() => {
         if (!nextLesson.isLoading && !nextLesson.error && nextLesson.data) {
@@ -43,6 +37,7 @@ export const HomeHeader = ({ navigation, userName }) => {
 
 
     let username = userName
+    
     return (
         <View>
 

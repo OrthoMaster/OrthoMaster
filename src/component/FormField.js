@@ -144,7 +144,7 @@ export const FormField = (props) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'transparent',
+        backgroundColor: '#fff',
         marginVertical: 5,
         marginHorizontal: 10
     },

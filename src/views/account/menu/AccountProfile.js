@@ -49,7 +49,7 @@ const DisplayUserInfo = ({ dataType, data }) => {
 
     return (
         <View style={{ paddingVertical: 10 }}>
-            <Text style={{ fontSize: 10, color: '#E75A08', fontWeight: 'bold' }}>{dataType}</Text>
+            <Text style={{ fontSize: 10, color: '#ffaf31', fontWeight: 'bold' }}>{dataType}</Text>
             <Text style={{ fontSize: 15 }}>{data}</Text>
         </View>
     )
@@ -136,7 +136,7 @@ export const AccountProfile = ({navigation}) => {
                             }}
                         >
                             <Text style={{
-                                color: '#E75A08'
+                                color: '#ffaf31'
                             }}>Changer de mot de passe</Text>
                         </TouchableOpacity>
 
@@ -218,10 +218,10 @@ export const AccountProfile = ({navigation}) => {
                                     >
                                         <Ionicons
                                             name={showPassword ? "eye-off" : "eye"}
-                                            size={24} color="#eb7b0f"
+                                            size={24} color="#ffaf31"
                                         />
                                         <Text style={{
-                                            color: '#eb7b0f',
+                                            color: '#ffaf31',
                                             marginLeft: 10
                                         }}>
                                             {showPassword ? "Cacher" : "Afficher"}
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
         marginVertical: 5
     },
     submitBtn: {
-        backgroundColor: '#E75A08',
+        backgroundColor: '#ffaf31',
         paddingVertical: 10,
         paddingHorizontal: 50,
         margin: 30

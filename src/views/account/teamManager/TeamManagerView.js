@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import {
     View,
-    TextInput,
     Text,
     StyleSheet,
     SafeAreaView,
@@ -10,34 +9,156 @@ import {
     Alert,
     FlatList,
     Dimensions,
-    RefreshControl,
-    ActivityIndicator
+    ActivityIndicator,
 } from 'react-native'
 import { useMutation, useQuery } from 'react-query';
 import { getUsersByOfficeId } from '../../../services/UserService';
-import { getOfficeByManager, getOfficeInvitationToken } from '../../../services/OfficeService';
+import {
+    getOfficeByManager,
+    getOfficeInvitationToken,
+    sendActivationLink,
+    removeUserFromAccount
+} from '../../../services/OfficeService';
 import AuthService from '../../../services/AuthService';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, FontAwesome5 } from '@expo/vector-icons';
 import { FormField } from '../../../component/FormField';
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 
-const UserCard = ({ user }) => {
+
+
+
+const UserCard = ({ user, onRemove }) => {
+    const [isEditing, setIsEditing] = useState(false)
+    const [statusMessage, setStatusMessage] = useState(null)
+    const sendActivation = useMutation(sendActivationLink, {
+        onSettled: () => setIsEditing(false),
+        onSuccess: (res) => {
+            setStatusMessage("Invitation envoyée")
+        },
+        onError: (e) => {
+            setStatusMessage("Erreur d'envoie")
+        }
+    })
+    const removeUser = useMutation(removeUserFromAccount, {
+        onSettled: ()=> setIsEditing(false),
+        onSuccess: (res) => {
+            if (res.status == 200) {
+                Alert.alert(
+                    "Utilisateur supprimé",
+                    `Nous vous confirmons que l'utilisateur : ${user.name} ${user.lastname} a bien été supprimé de votre espace.\n`
+                )
+                onRemove()
+            }
+        },
+        onError: (e) => {
+            Alert.alert(
+                "Impossible de supprimer l'utilisateur",
+                "Une erreur s'est produite lors de la suppression de l'utilisateur dans votre espace."
+            )
+        }
+    })
+
+
+
     return <View style={{
         margin: 5,
         borderWidth: 1,
-        borderColor: '#EA6812',
+        borderColor: user.enabled ? '#ffaf31' : "#B1B1B1",
         borderRadius: 10,
-        padding: 10,
-        opacity: user.enabled == 1 ? 1 : 0.3,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff'
-    }}>
-        <View style={{ flex: 2 }}>
-            <Text>{user.name} {user.lastname}</Text>
-            <Text>{user.email}</Text>
-            <Text>{user.job_function}</Text>
+        backgroundColor: '#fff',
+        justifyContent: 'center'
+    }}
+    >
+        <View style={{ flex: 2, padding: 10 }}>
+            <Text style={{ color: user.enabled ? "#000" : "#B1B1B1", fontSize: 18, fontWeight: 'bold' }}>{user.name} {user.lastname}</Text>
+            <Text style={{ color: user.enabled ? "#000" : "#B1B1B1" }}><Text style={{ fontWeight: 'bold' }}>Nom d'utilisateur :</Text> {user.username}</Text>
+            <Text style={{ color: user.enabled ? "#000" : "#B1B1B1" }}>{user.email}</Text>
+            {
+                statusMessage &&
+                <Text style={{
+                    color: "#eb7b0f",
+                    fontWeight: 'bold'
+                }}>{statusMessage}</Text>
+            }
         </View>
+        <View style={{
+            flex: 1,
+            height: '100%',
+            alignItems: 'center',
+            padding: 10,
+        }}>
+            <Text style={{
+                fontWeight: 'bold',
+                color: user.enabled ? "#ffaf31" : "#A1A1A1",
+                textAlign: 'center'
+            }}>{user.enabled ? "Compte activé" : "Compte désactivé"}</Text>
+            <TouchableOpacity style={{
+                padding: 5,
+                flexDirection: 'row',
+                alignItems: 'center'
+            }}
+                onPress={() => setIsEditing(true)}>
+                <Text style={{ marginRight: 5, color: "#162754" }}>Gérer</Text><FontAwesome5 name="cog" size={15} color="#000" />
+            </TouchableOpacity>
+        </View>
+        {
+            isEditing &&
+            <View style={{
+                backgroundColor: "#fff",
+                position: 'absolute',
+                flexDirection: 'row',
+                height: '100%', width: '100%',
+                borderRadius: 10,
+            }}>
+                {
+                    isEditing &&
+                    <View style={{
+                        flex: 2,
+                        justifyContent: 'space-around',
+                        paddingLeft: 20,
+                        alignItems: 'center'
+                    }}>
+                        {
+                            user.enabled == false &&
+                            <TouchableOpacity style={styles.actionButton}
+                                onPress={() => sendActivation.mutate(user.username)}>
+                                <Text style={{ fontSize: 12 }}>Envoyer un lien d'activation</Text>
+                            </TouchableOpacity>
+                        }
+                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F45C43' }]}
+                            onPress={() => {
+                                Alert.alert(
+                                    'Supprimer un collaborateur',
+                                    `Êtes-vous sûr de vouloir supprimer ${user.name} ${user.lastname} de votre espace ?`,
+                                    [{
+                                        text: 'Supprimer',
+                                        onPress: () => {
+                                            removeUser.mutate(user.id_user)
+                                        }
+                                    },
+                                    {
+                                        text: 'Annuler'
+                                    }
+                                    ]
+                                );
+                            }}>
+                            <Text style={{
+                                color: "#fff",
+                                fontSize: 12,
+                                textAlign: 'center'
+                            }}>Supprimer le compte de mon espace</Text>
+                        </TouchableOpacity>
+                    </View>
+                }
+                <TouchableOpacity
+                    style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+                    onPress={() => setIsEditing(false)}>
+                    <AntDesign name="close" size={30} color="black" />
+                </TouchableOpacity>
+            </View>
+        }
     </View>
 }
 
@@ -118,7 +239,7 @@ const OfficeManager = ({ office }) => {
                         data={users?.data}
                         key={(key) => key}
                         renderItem={(item) => (<UserCard user={item.item} onRemove={() => {
-
+                            users.refetch()
                         }} />)}
                     />
                     <View style={{ marginVertical: 10 }}>
@@ -127,7 +248,7 @@ const OfficeManager = ({ office }) => {
                             width: '60%',
                             textAlign: 'center'
                         }}>
-                            Nombre d'invitations restantes :
+                            Nombre de comptes restants :
                         </Text>
                         <Text style={{
                             alignSelf: 'center',
@@ -167,8 +288,8 @@ const OfficeManager = ({ office }) => {
 
                                 {
                                     registerUser.isLoading ?
-                                        <ActivityIndicator style={{marginVertical: 30, alignSelf: 'center'}}/>
-                                        : <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
+                                        <ActivityIndicator style={{ marginVertical: 30, alignSelf: 'center' }} />
+                                        : <View style={{ flexDirection: 'row', alignSelf: 'center', backgroundColor: '#F0F0F0' }}>
                                             <TouchableOpacity style={[styles.buttonContainer, { alignSelf: 'center', backgroundColor: '#828282' }]} onPress={async () => {
                                                 setRegisteringUser(false)
                                                 setNewUser({})
@@ -232,8 +353,7 @@ export const TeamManagerView = ({ route }) => {
                 data={office.data}
                 renderItem={({ item }) => <OfficeManager office={item} />}
                 keyExtractor={item => item.id_office}
-                style={{ width: '100%' }}
-
+                style={{ width: '100%', backgroundColor: '#fff' }}
             />
         </SafeAreaView>
     );
@@ -279,4 +399,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginVertical: 30
     },
+    actionButton: {
+        backgroundColor: '#fff',
+        paddingVertical: 5, paddingHorizontal: 15,
+        borderRadius: 25,
+        shadowColor: '#000',
+        shadowRadius: 2,
+        shadowOffset: {
+            width: 2,
+            height: 2,
+        },
+        shadowOpacity: 0.5,
+    }
 })
