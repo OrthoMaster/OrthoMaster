@@ -1,5 +1,15 @@
-import React, { useState } from "react";
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Alert, ActivityIndicator } from "react-native";
+import React, { useState, useCallback } from "react";
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    Dimensions,
+    Alert,
+    ActivityIndicator,
+    RefreshControl
+} from "react-native";
 import { FormField } from "../../../../component/FormField";
 import { useQuery } from "react-query";
 import AuthService from "../../../../services/AuthService";
@@ -32,7 +42,7 @@ export const RegistrationForm = ({ onSubmit, isSubmitting, seller }) => {
             labo: seller.labos ? seller.labos[0] : ""
         }
     })
-
+    const [refreshing, setRefreshing] = useState(false)
     const [addingUser, setAddingUser] = useState(false)
     const [newUser, setNewUser] = useState({})
     const [isError, setIsError] = useState(false)
@@ -43,7 +53,7 @@ export const RegistrationForm = ({ onSubmit, isSubmitting, seller }) => {
         abonnement: [],
         fonctions: []
     })
-    useQuery('getSubscriptions', AuthService.getFormSubscriptions, {
+    const subscriptions = useQuery('getSubscriptions', AuthService.getFormSubscriptions, {
         onSuccess: (data) => {
             let subs = []
             if (Array.isArray(data.data)) {
@@ -58,7 +68,7 @@ export const RegistrationForm = ({ onSubmit, isSubmitting, seller }) => {
         }
     })
 
-    useQuery('getJobFunction', () => AuthService.getFormProperties({ objectType: 'contact', property: 'job_function' }), {
+    const jobFunctions = useQuery('getJobFunction', () => AuthService.getFormProperties({ objectType: 'contact', property: 'job_function' }), {
         onSuccess: (data) => {
             let functions = []
             if (Array.isArray(data.data)) {
@@ -73,7 +83,7 @@ export const RegistrationForm = ({ onSubmit, isSubmitting, seller }) => {
         }
     })
 
-    useQuery('getStructures', () => AuthService.getFormProperties({ objectType: 'company', property: 'structure' }), {
+    const structures = useQuery('getStructures', () => AuthService.getFormProperties({ objectType: 'company', property: 'structure' }), {
         onSuccess: (data) => {
             let structures = []
             if (Array.isArray(data.data)) {
@@ -87,6 +97,16 @@ export const RegistrationForm = ({ onSubmit, isSubmitting, seller }) => {
             }
         }
     })
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        subscriptions.refetch()
+        jobFunctions.refetch()
+        structures.refetch()
+        setTimeout(() => {
+          setRefreshing(false);
+        }, 1000);
+      }, []);
 
     const checkForm = async () => {
         const { office, manager } = formResult
@@ -131,7 +151,9 @@ export const RegistrationForm = ({ onSubmit, isSubmitting, seller }) => {
         }
     }
 
-    return <ScrollView automaticallyAdjustKeyboardInsets={true}>
+    return <ScrollView automaticallyAdjustKeyboardInsets={true}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
         <View style={{ width: '100%', backgroundColor: '#fff' }}>
             <Text style={styles.title}>Entreprise</Text>
             <FormField name={'Nom'} value={'name'} target={"office"} type={'text'} onChange={handleForm} required />
@@ -261,7 +283,7 @@ export const RegistrationForm = ({ onSubmit, isSubmitting, seller }) => {
                             text: 'Modifier',
                             style: 'destructive',
                         },
-                        { text: 'Valider le formulaire', onPress: () =>onSubmit(formResult)},
+                        { text: 'Valider le formulaire', onPress: () => onSubmit(formResult) },
                     ])
                 }
             }}>
