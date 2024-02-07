@@ -14,7 +14,7 @@ import {
 import { useMutation } from 'react-query'
 import { resetUserPassword } from '../../services/UserService'
 
-export const ResetPassword = () => {
+export const ResetPassword = ({navigation}) => {
     const [username, setUsername] = useState('')
     const [resetStatus, setResetStatus] = useState({
         status: false,
@@ -40,7 +40,12 @@ export const ResetPassword = () => {
         if (resetStatus.status) {
             Alert.alert(
                 "Nouveau mot de passe",
-                resetStatus.message
+                resetStatus.message, [{
+                    text: "OK",
+                    onPress:()=>{
+                        navigation.goBack()
+                    }
+                }]
             )
         }
     }, [resetStatus])
