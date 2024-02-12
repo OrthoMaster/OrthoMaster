@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 
-import { selectIsLoggedIn, selectIsLoading, selectUserCurrentSession } from './src/reducers/auth';
+import { selectIsLoggedIn } from './src/reducers/auth';
 import { checkToken, refreshUserSession, logout } from './src/actions/auth';
 
 import { useSelector, useDispatch } from 'react-redux';

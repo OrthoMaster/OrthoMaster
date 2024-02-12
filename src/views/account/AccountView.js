@@ -25,9 +25,7 @@ import { CertifiedFormationProgress } from './components/CertifiedFormationProgr
 import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
 
 
-const AccountHeader = ({ user, menuActive, toggleMenu, officeInfo }) => {
-
-
+const AccountHeader = ({ user, menuActive, toggleMenu }) => {
 
   return (
     <SafeAreaView style={[styles.header]} >
@@ -61,12 +59,10 @@ export const AccountView = ({ navigation }) => {
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
-  const infos = useQuery(['Account', 'GET', 'officeInfo'], () => getOfficeInfos(user.office_id))
   const roles = useOrthoMasterRoles()
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    infos.refetch(user.officeId)
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
@@ -80,7 +76,6 @@ export const AccountView = ({ navigation }) => {
         toggleMenu={() => {
           setMenuIsActive(!menuIsActive)
         }}
-        officeInfo={infos}
       />
       <View>
         <ScrollView

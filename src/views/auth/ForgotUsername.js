@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Text, View, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from "react-native";
+import {
+    Text,
+    StatusBar,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    SafeAreaView,
+    ActivityIndicator
+} from "react-native";
 
 import { useMutation } from "react-query";
 import AuthService from "../../services/AuthService";
