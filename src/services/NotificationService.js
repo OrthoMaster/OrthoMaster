@@ -8,7 +8,7 @@ const baseurl = process.env.EXPO_PUBLIC_API_URL + "/notification"
 
 
 
-export const registerUserToNotification = async (pushToken) => {
+export const saveUserExpoPushToken = async (pushToken) => {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
 
