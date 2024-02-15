@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Linking, ScrollView, Text, TouchableOpacity, View, Alert } from "react-native";
 import { FormField } from "../../../../component/FormField";
-import { useMutation, useQuery } from "react-query";
+import { useMutation } from "react-query";
 
 
 import AuthService from "../../../../services/AuthService";
