@@ -18,7 +18,7 @@ import { FontAwesome } from '@expo/vector-icons';
 
 
 export const HomeHeader = ({ navigation, userName }) => {
-    const nextLesson = useQuery(['Home', 'GET', 'userNextLesson'], getUserNextLesson, {
+    const nextLesson = useQuery(['Home', 'GET', 'userNextLesson'], ()=>getUserNextLesson(), {
         refetchOnWindowFocus: false,
         enabled: false
     })

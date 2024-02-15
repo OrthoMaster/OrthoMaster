@@ -17,47 +17,14 @@ export const sendNotification = (notif) => (dispatch) => {
     })
 }
 
-export const registerForNotification = () => async (dispatch) => {
-    let finalToken = "";
-    let finalStatus;
-
-    if (Device.isDevice) {
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        finalStatus = existingStatus;
-
-        if (Platform.OS === 'android') {
-            Notifications.setNotificationChannelAsync('default', {
-                name: 'default',
-                importance: Notifications.AndroidImportance.MAX,
-                vibrationPattern: [0, 250, 250, 250],
-                lightColor: '#FF231F7C',
-                showBadge: true
-            });
-        }
-        
-        if (existingStatus !== 'granted') {
-            const { status } = await Notifications.requestPermissionsAsync();
-            finalStatus = status;
-        }
-
-        
-
-        if (finalStatus == 'granted') {
-            finalToken = (await Notifications.getDevicePushTokenAsync()).data;
-        }
-    }
-
-    if (finalToken != "") {
-        const req = await registerUserToNotification(finalToken)
-            
-    }
-
-    dispatch({
-        type: NOTIFICATION_REGISTER,
-        payload:{
-            isActive: finalToken != "" ? true : false
-        }
-    })
+export const activateNotification = () => async (dispatch) => {
+    console.log('holla');
+    // dispatch({
+    //     type: NOTIFICATION_REGISTER,
+    //     payload:{
+    //         isActive: finalToken != "" ? true : false
+    //     }
+    // })
 }
 
 export const receiveNotification = (notif) => (dispatch) => {

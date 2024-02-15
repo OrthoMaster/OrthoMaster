@@ -1,98 +1,122 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
+import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { useDispatch } from "react-redux";
-import { registerForNotification } from "../actions/notificationActions";
-
-import { useNavigation } from "@react-navigation/native";
+import Constants from 'expo-constants';
+import { useMutation } from 'react-query';
+import { saveUserExpoPushToken } from '../services/NotificationService';
+import { useNavigation } from '@react-navigation/native';
+import * as SecureStore from 'expo-secure-store';
 
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
   }),
 });
 
 
+
+
+
 export const NotificationHandler = ({ children }) => {
-  //const notificationListener = useRef();
+  // const notificationListener = useRef();
   const responseListener = useRef();
   const nav = useNavigation()
+  const savePushToken = useMutation(saveUserExpoPushToken)
 
-  const dispatch = useDispatch()
-
-
-  const handleNotif = (redirectContent) => {
-    if (redirectContent != null) {
-      let rootView = ''
-      let screenView = ''
-      switch (redirectContent.type) {
-        case 'lesson':
+  const handleNotif = (redirect) => {
+    if (redirect == null) {
+      nav.navigate('Accueil')
+      return
+    }
+    switch (redirect.type) {
+      case "page":
+        nav.navigate(redirect.page)
+        break;
+      case "content":
+        let rootView;
+        let screenView;
+        if (redirect.content.type == "lesson") {
           rootView = 'Formation'
           screenView = 'formation-content'
-          break;
-        case 'flash':
-          rootView = 'Flash ortho'
-          screenView = 'flash-content-viewer'
-          break;
-        case 'qa':
+        } else {
           rootView = 'Accueil'
           screenView = 'home-content'
-          break;
-        default:
-          rootView = 'Accueil'
-          screenView = 'home-home'
-          break;
-      }
-      nav.navigate(rootView, {
+        }
+        nav.navigate(rootView, {
           screen: screenView,
           params: {
-              content: redirectContent,
-          },
-          initial: false
-      });
-      //nav.navigate()
-    } else {
-      nav.navigate('Accueil')
+            content: redirect.content,
+          }
+        })
+        break;
+      default:
+        nav.navigate('Accueil')
+        break;
     }
   }
 
-  const getNotifDataByPlatform = (notification) => {
-    if (notification.request.trigger.payload) {
-      handleNotif(notification.request.trigger.payload.redirect_content)
-    } else if (notification.request.trigger.remoteMessage) {
-      handleNotif(JSON.parse(notification.request.trigger.remoteMessage.data.body).redirect_content)
-    } else {
-      console.log('Undefined');
+  async function registerForPushNotificationsAsync() {
+    let token;
+
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
     }
+
+    if (Device.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        alert('Activation des notifications indisponible');
+        return;
+      }
+      token = await Notifications.getExpoPushTokenAsync({
+        projectId: Constants.expoConfig.extra.eas.projectId,
+      });
+    } else {
+      alert('Must use physical device for Push Notifications');
+    }
+
+    return token.data;
   }
+
 
   useEffect(() => {
-    dispatch(registerForNotification())
+    registerForPushNotificationsAsync().then(token => {
+      SecureStore.setItemAsync("expoPushToken", token)
+      savePushToken.mutate(token)
+    });
 
-
-    // Notifications.getBadgeCountAsync().then((val)=>(console.log(val)))
-    Notifications.setBadgeCountAsync(0)
-
-    
-    // notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-    //   console.log('notif received'); //notif received while navigatng in the app
-    //   console.log(notification.request);
+    // notificationListener.current = Notifications.addNotificationReceivedListener(notification => { // triggered on notif reception
+    //   console.log("notification listener");
+    //   console.log(notification);
+    //   // setNotification(notification);
     // });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      // triggered while the notif has been clicked
-      getNotifDataByPlatform(response.notification)
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => { // triggered while notification clicked
+      handleNotif(response.notification.request.content.data.redirect)
     });
 
     return () => {
-      //Notifications.removeNotificationSubscription(notificationListener.current);
+      // Notifications.removeNotificationSubscription(notificationListener.current);
       Notifications.removeNotificationSubscription(responseListener.current);
     };
   }, []);
 
-
-  return children
+  return (
+    children
+  );
 }
 

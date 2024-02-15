@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { restoreLocalConfigAsync } from "../utils";
 import { osName } from 'expo-device';
 import { Buffer } from "buffer";
+import { deleteUserExpoPushToken } from "./NotificationService";
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL
 
@@ -22,7 +23,8 @@ class AuthService {
   }
 
 
-  logout() {
+  async logout() {
+    await deleteUserExpoPushToken()
     AsyncStorage.clear()
     SecureStore.deleteItemAsync('JWT')
     SecureStore.deleteItemAsync('refreshToken')
@@ -124,14 +126,6 @@ class AuthService {
 
     return axios.get(baseurl + `/v2/registration/get-hs-properties?objectType=${objectType}&property=${property}`,
       { headers: { Authorization: authHeader } })
-  }
-
-  async retreiveUsernameByEmail(email) {
-    try {
-      return await axios.post(baseurl + '/user/email/username', {email});
-    } catch (e) {
-      throw e;
-    }
   }
 
 }

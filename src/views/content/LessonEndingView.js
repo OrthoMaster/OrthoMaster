@@ -18,7 +18,7 @@ import { postUserLessonStatus } from "../../services/ProgressionService";
 import { valideMainQuizStatusByFormation } from "../../services/FormationService";
 import { getTrophyProgressBasedOnModule } from "../../services/TrophyService";
 
-import { getUserNextLesson } from "../../services/ContentService";
+import { getNextLesson } from "../../services/ContentService";
 import { exitContent, restartContent, nextContent } from "../../actions/contentAction";
 
 const successElements = [
@@ -122,7 +122,7 @@ export const LessonEndingView = ({ navigation, route }) => {
   const dispatch = useDispatch()
   const saveContentMutation = useMutation(postUserLessonStatus);
 
-  const trophyProgression = useQuery(['Lesson','GET', 'trophyProgressBasedOnModule'], () => getTrophyProgressBasedOnModule(stateContent.content.module_num))
+  const trophyProgression = useQuery(['Lesson', 'GET', 'trophyProgressBasedOnModule'], () => getTrophyProgressBasedOnModule(stateContent.content.module_num))
 
 
   const valideMainQuiz = useMutation(valideMainQuizStatusByFormation);
@@ -132,27 +132,24 @@ export const LessonEndingView = ({ navigation, route }) => {
     saveContentMutation.mutateAsync({ status: data.status, id: data.id })
   };
 
-  const nextLesson = useQuery(['Lesson', 'GET', 'nextLesson'], () => getUserNextLesson(), {
-    enabled: false,
-    onSuccess: (lesson) => {
-      dispatch(nextContent(lesson))
-      if (route.name == 'home-content-result') {
-        navigation.navigate('home-content', {
-          content: lesson
-        });
-      } else {
-        navigation.navigate('formation-content', {
-          content: lesson
-        });
-      }
-    }
-  });
+  const nextLesson = useQuery(['Lesson', 'GET', 'nextLesson', stateContent.content.id_content], () => getNextLesson(stateContent.content.module_num, stateContent.content.order));
 
 
   const handleLessonEnding = async (handleType) => {
     switch (handleType) {
       case 'next':
-        nextLesson.refetch()
+        if (nextLesson.data && nextLesson.data.length > 0) {
+          dispatch(nextContent(nextLesson.data[0]))
+          if (route.name == 'home-content-result') {
+            navigation.navigate('home-content', {
+              content: nextLesson.data[0]
+            });
+          } else {
+            navigation.navigate('formation-content', {
+              content: nextLesson.data[0]
+            });
+          }
+        }
         break;
 
       case 'restart':
@@ -269,17 +266,22 @@ export const LessonEndingView = ({ navigation, route }) => {
 
               <Text style={styles.navigationTxt}>Recommencer</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.navigationBox}
-              onPress={() => handleLessonEnding('next')}
-            >
+            {
+              nextLesson.data && nextLesson.data.length > 0 ?
+                <TouchableOpacity
+                  style={styles.navigationBox}
+                  onPress={() => handleLessonEnding('next')}
+                >
 
-              <Image
-                source={require('../../../assets/formation/arrow.png')}
-                style={styles.navigationImg}
-              />
-              <Text style={styles.navigationTxt}>Leçon suivante</Text>
-            </TouchableOpacity>
+                  <Image
+                    source={require('../../../assets/formation/arrow.png')}
+                    style={styles.navigationImg}
+                  />
+                  <Text style={styles.navigationTxt}>Leçon suivante</Text>
+                </TouchableOpacity>
+                : null
+            }
+
 
           </View>
           : <TouchableOpacity
