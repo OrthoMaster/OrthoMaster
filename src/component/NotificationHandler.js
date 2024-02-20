@@ -1,12 +1,15 @@
-import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
-import * as Device from 'expo-device';
+import { useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
+import { Platform, View, Text } from 'react-native';
+import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { useMutation } from 'react-query';
 import { saveUserExpoPushToken } from '../services/NotificationService';
-import { useNavigation } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
+import { useNavigation } from '@react-navigation/native';
+
+
+import AppModal from './AppModal';
 
 
 Notifications.setNotificationHandler({
@@ -19,15 +22,17 @@ Notifications.setNotificationHandler({
 
 
 
-
-
 export const NotificationHandler = ({ children }) => {
-  // const notificationListener = useRef();
+  const [showModal, setShowModal] = useState(false)
+  const [modalObj, setModalObj] = useState(null)
+  const notificationListener = useRef();
   const responseListener = useRef();
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const nav = useNavigation()
   const savePushToken = useMutation(saveUserExpoPushToken)
 
   const handleNotif = (redirect) => {
+    console.log("REDIRECT OBJ :", redirect);
     if (redirect == null) {
       nav.navigate('Accueil')
       return
@@ -39,13 +44,9 @@ export const NotificationHandler = ({ children }) => {
       case "content":
         let rootView;
         let screenView;
-        if (redirect.content.type == "lesson") {
-          rootView = 'Formation'
-          screenView = 'formation-content'
-        } else {
-          rootView = 'Accueil'
-          screenView = 'home-content'
-        }
+
+        rootView = 'Accueil'
+        screenView = 'home-content'
         nav.navigate(rootView, {
           screen: screenView,
           params: {
@@ -94,29 +95,80 @@ export const NotificationHandler = ({ children }) => {
 
 
   useEffect(() => {
+    console.log("Register for push notif");
     registerForPushNotificationsAsync().then(token => {
       SecureStore.setItemAsync("expoPushToken", token)
       savePushToken.mutate(token)
     });
 
-    // notificationListener.current = Notifications.addNotificationReceivedListener(notification => { // triggered on notif reception
-    //   console.log("notification listener");
-    //   console.log(notification);
+    // notificationListener.current = Notifications.addNotificationReceivedListener(response => { // triggered on notif reception
+    //   //console.log("setModalObj", response.request.content.data.modal);
     //   // setNotification(notification);
     // });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => { // triggered while notification clicked
-      handleNotif(response.notification.request.content.data.redirect)
-    });
+    // responseListener.current = Notifications.addNotificationResponseReceivedListener(response => { // triggered while notification clicked
+    //   setShowModal(true)
+    //   setModalObj(response.notification.request.content.data.modal)
+    //   handleNotif(response.notification.request.content.data.redirect)
+
+    // });
+    // Notifications.getLastNotificationResponseAsync()
+    //   .then(response => {
+    //     console.log(response);
+    //     if (response?.notification) {
+    //       setShowModal(true)
+    //       setModalObj(response.notification.request.content.data.modal)
+    //       handleNotif(response.notification.request.content.data.redirect)
+    //     }
+    //   })
 
     return () => {
       // Notifications.removeNotificationSubscription(notificationListener.current);
-      Notifications.removeNotificationSubscription(responseListener.current);
+      // Notifications.removeNotificationSubscription(responseListener.current);
     };
   }, []);
 
-  return (
-    children
+  useEffect(() => {
+    if (
+      lastNotificationResponse &&
+      lastNotificationResponse.notification.request.content.data &&
+      lastNotificationResponse.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER
+    ) {
+
+      console.log("LAST NOTIF RES :", lastNotificationResponse.notification.request.content.data);
+      setModalObj(lastNotificationResponse.notification.request.content.data.modal)
+      setShowModal(true)
+      handleNotif(lastNotificationResponse.notification.request.content.data.redirect)
+    }
+
+  }, [lastNotificationResponse])
+
+
+  return (<View style={{ height: "100%" }}>
+    {children}
+    <AppModal
+      isVisible={modalObj != null && showModal}
+      customRender={<View style={{
+        width: "90%",
+        paddingHorizontal: 20, paddingBottom: 10,
+        alignItems: 'center'
+      }}>
+        <Text style={{
+          fontWeight: "bold",
+          fontSize: 16,
+          color: "#eb7b0f",
+          textAlign: 'center',
+          paddingHorizontal: 20
+        }}>{modalObj?.title}</Text>
+        <Text style={{ marginTop: 20 }}>{modalObj?.text}</Text>
+      </View>}
+      onClose={() => {
+        console.log("close notif modal");
+        setShowModal(false)
+        setModalObj(null)
+      }}
+    />
+  </View>
   );
 }
 

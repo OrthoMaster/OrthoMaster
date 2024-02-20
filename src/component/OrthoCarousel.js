@@ -4,7 +4,8 @@ import {
     Dimensions,
     StyleSheet,
     Image,
-    TouchableOpacity
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useQuery } from 'react-query';
 import Carousel from '../../snap-carousel/src/carousel/Carousel';
@@ -14,7 +15,6 @@ import { getS3Image } from '../services/S3Service'
 
 const CarousselCard = ({ item, navigation }) => {
     const imageUrl = useQuery(['Home','GET','contentThumbnail', item.id_content, item.title], () => getS3Image(`${item.s3_path}/${item.title}/logo.png`))
-    
 
     return (
         <TouchableOpacity style={styles.card}
@@ -22,11 +22,15 @@ const CarousselCard = ({ item, navigation }) => {
                 content: item
             })}
         >
+            {
+                imageUrl.data ?
+                <Image
+                    style={styles.thumbnail}
+                    source={{ uri: imageUrl?.data }}
+                />
+                :<View style={[styles.thumbnail, {backgroundColor: '#F1F1F1'}]}/>
 
-            <Image
-                style={styles.thumbnail}
-                source={{ uri: imageUrl.data }}
-            />
+            }
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.description}>{item.description}</Text>
         </TouchableOpacity>

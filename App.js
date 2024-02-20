@@ -22,6 +22,9 @@ import { useQuery } from 'react-query';
 import { getCurrentUser } from './src/services/UserService';
 const prefix = Linking.createURL('/');
 
+import * as Notifications from 'expo-notifications';
+
+
 export default function App({ navigation }) {
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isEnabled = useSelector(state => state.auth.userCurrentSession?.enabled)
@@ -30,7 +33,7 @@ export default function App({ navigation }) {
   const appMode = useSelector(selectModeValue)
   const dispatch = useDispatch()
   const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
-  const currentUser = useQuery(["init", "GET", "user"], () => getCurrentUser(),{
+  const currentUser = useQuery(["init", "GET", "user"], () => getCurrentUser(), {
     enabled: false
   })
 
@@ -57,12 +60,12 @@ export default function App({ navigation }) {
           },
         }
       },
-    },
+    }
   };
 
   const init = async () => {
     try {
-      currentUser.refetch().then(res=>{
+      currentUser.refetch().then(res => {
         if (res && res.data) {
           dispatch(refreshUserSession(res.data))
         } else {
@@ -70,7 +73,6 @@ export default function App({ navigation }) {
         }
         setIsLoading(false)
       })
-
       const check = await checkVersion({
         version: Application.nativeApplicationVersion, // app local version
         //version: '1.1.0', // app local version
@@ -88,16 +90,22 @@ export default function App({ navigation }) {
 
   useEffect(() => {
     init();
+    // const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+    //   console.log("App.js", response.notification.request.content.data);
+    // });
+    // return () => subscription.remove();
   }, []);
 
 
   if (isLoading)
     return <LoadingContent />
 
+
   return (
     <NavigationContainer linking={linking} onUnhandledAction={(action) => { console.log('App.js -> navigation container', action) }}
       theme={appMode == 'default' ? appDefault : thuasne}
     >
+
       {
         isLoggedIn && isEnabled == 1 ?
           <NotificationHandler>
@@ -106,7 +114,10 @@ export default function App({ navigation }) {
           : <AuthStack />
       }
 
-      <AlertVersion isVisible={modalVersionIsVisible} onClose={() => setmodalVersionIsVisible(false)} />
+      <AlertVersion isVisible={modalVersionIsVisible} onClose={() => {
+        setmodalVersionIsVisible(false)
+        console.log("Close app version modal");
+        }} />
     </NavigationContainer>
   );
 }

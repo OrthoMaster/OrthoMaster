@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, Pressable, View, Image, TouchableOpacity } from 'react-native';
+import { Alert, Modal, StyleSheet, Text, Pressable, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default AppModal = ({ isVisible, onClose, customRender, style, title, subtitle, text }) => {
+    if (!isVisible)
+        return null
     return (
-        <Modal
-            animationType="slide"
-            transparent={true}
-            visible={isVisible}
-            onRequestClose={() => {
-                Alert.alert('Modal has been closed.');
-                onClose()
-            }}>
+        <View
+            style={{
+                backgroundColor: 'rgba(0,0,0,0.2)',
+                position: 'absolute',
+                height: Dimensions.get('screen').height,
+                width: Dimensions.get('screen').width,
+            }}
+        >
             <View style={styles.centeredView}>
                 <View style={[styles.modalView, style]}>
                     {
@@ -26,17 +28,19 @@ export default AppModal = ({ isVisible, onClose, customRender, style, title, sub
                     }
                     <TouchableOpacity
                         style={{
-                        padding: 10,
-                        position: 'absolute',
-                        top: 0,left: 0
-                    }}
-                        onPress={() => onClose()}
+                            padding: 10,
+                            position: 'absolute',
+                            top: 0, left: 0
+                        }}
+                        onPress={() => {
+                            onClose()
+                        }}
                     >
                         <Ionicons name="close" size={24} color="black" />
                     </TouchableOpacity>
                 </View>
             </View>
-        </Modal>
+        </View>
     );
 };
 

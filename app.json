@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "1.9.1",
+    "version": "1.9.2",
     "orientation": "portrait",
     "scheme": "orthomaster",
     "icon": "./assets/appicon.png",
@@ -11,13 +11,16 @@
       "**/*"
     ],
     "notification": {
-      "icon": "./assets/icon.png",
-      "color": "#FFFFFF"
+      "icon": "./assets/notification/icon.png",
+      "color": "#FFAF31",
+      "sounds": [
+        "./assets/notification/UIAlert_1.wav"
+      ]
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hugotaieb.OrthoMaster",
-      "buildNumber": "40",
+      "buildNumber": "42",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -32,7 +35,7 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.hugotaieb.OrthoMaster",
-      "versionCode": 49,
+      "versionCode": 52,
       "googleServicesFile": "./google-services.json"
     },
     "extra": {

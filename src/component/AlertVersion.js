@@ -12,12 +12,17 @@ import {
 
 
 export const AlertVersion = ({isVisible, onClose}) => {
-
+    console.log("Alerte version is visible "+isVisible);
     return (
         <Modal
             animationType="slide"
             visible={isVisible}
             transparent={true}
+            onRequestClose={() => {
+                console.log("alerte close request");
+                onClose()
+            }}
+            onShow={()=>{console.log("alert version");}}
         >
             <View style={styles.centeredContainer}>
                 <View style={styles.modalContainer}>

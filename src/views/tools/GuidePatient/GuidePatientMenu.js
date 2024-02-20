@@ -35,7 +35,7 @@ const PURCHASE_LINKS = [
 ]
 
 const PurchaseStickerView = () => {
-  return <View style={{ width: '100%', paddingVertical: 20 }}>
+  return <View style={{ width: '95%', paddingVertical: 20, backgroundColor: '#fff', marginVertical: 10, borderRadius: 5 }}>
     <Text style={{ alignSelf: 'center', fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }}>Comment se procurer des étiquettes vierges à imprimer :</Text>
 
     <Text style={{ width: '90%', alignSelf: 'center', fontSize: 15 }}><Text style={{ fontWeight: 'bold' }}>Option 1 :</Text> Commandez sur une plateforme en ligne (liens ci-dessous)</Text>
@@ -70,11 +70,9 @@ const PurchaseStickerView = () => {
   </View>
 }
 
-const GuideCard = ({ config }) => {
+const GuideCard = ({ config, showGuide }) => {
   const guide = useQuery(['Guide patient', 'GET', 'QR', config.name], () => getS3Image(config.s3_guide_path))
   const fileUri = FileSystem.cacheDirectory + `guide-patient-${config.name.replace(' ', '-')}.png`
-  const [showGuide, setShowGuide] = useState(false)
-
 
   const onShare = async () => {
     try {
@@ -106,8 +104,7 @@ const GuideCard = ({ config }) => {
       }}>
         <TouchableOpacity
           onPress={() => {
-            setShowGuide(true)
-            guide.refetch()
+            showGuide(guide.data)
           }}
         >
           <Image
@@ -135,9 +132,9 @@ const GuideCard = ({ config }) => {
             borderRadius: 5,
             marginVertical: 5
           }}
-          onPress={()=>{
-            Linking.openURL(config.redirect_link)
-          }}
+            onPress={() => {
+              Linking.openURL(config.redirect_link)
+            }}
           >
             <Ionicons name="open-outline" size={20} color="black" />
             <Text style={styles.subToolButtonText}>Ouvrir</Text>
@@ -145,7 +142,7 @@ const GuideCard = ({ config }) => {
         </View>
 
 
-        <View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center'}]}>
+        <View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center' }]}>
           <TouchableOpacity style={[{
             width: '80%',
             height: '80%',
@@ -163,24 +160,13 @@ const GuideCard = ({ config }) => {
 
 
 
-    <AppModal isVisible={showGuide} style={{
-      width: '90%', height: '90%',
-      justifyContent: 'center'
-    }}
-      onClose={() => setShowGuide(false)}
-      customRender={<Image
-        source={{ uri: guide.data }}
-        style={{ flex: 1, resizeMode: 'contain', width: '90%' }}
-      />}
-    />
-
-
   </View>
 }
 
 export const GuidePatientMenu = () => {
   const [purchaseSticker, setPurchaseSticker] = useState(false)
   const [showPrintModal, setShowPrintModal] = useState(false)
+  const [guideToDisplay, setGuideToDisplay] = useState(null)
 
 
   return <LinearGradient
@@ -189,75 +175,27 @@ export const GuidePatientMenu = () => {
     end={{ x: 1, y: 0 }}
     style={styles.containerTool}
   >
-    <Image
-      style={styles.toolQCImage}
-      source={require('../../../../assets/tools/guide-patient.png')}
-    />
-    <Text style={styles.toolTitle}>
-      Guide patient
-    </Text>
 
-    <FlatList
-      data={GUIDES}
-      keyExtractor={(item, index) => index}
-      renderItem={(item) => (<GuideCard config={item.item} />)
-      }
-      scrollEnabled={false}
-      style={{ width: '100%' }}
-      contentContainerStyle={{ alignItems: 'center' }}
-    />
-
-    <TouchableOpacity style={[{
-      backgroundColor: '#fff',
-      padding: 10,
-      borderRadius: 100,
-      position: 'absolute',
-      right: 10,
-      top: 10,
-      shadowOpacity: 0.25,
-      shadowOffset: { width: 5, height: 5 }
-    }]}
-      onPress={() => {
-        setPurchaseSticker(true)
+    {
+      (guideToDisplay != null && showPrintModal == false && purchaseSticker == false) &&
+      <Image
+        source={{ uri: guideToDisplay }}
+        style={{ width: "95%", resizeMode: 'contain', height: 250, marginVertical: 20 }}
+      />
+    }
+    {
+      (purchaseSticker == true && showPrintModal == false && guideToDisplay == null) &&
+      <PurchaseStickerView />
+    }
+    {
+      (showPrintModal == true && purchaseSticker == false && guideToDisplay == null) &&
+      <View style={{
+        width: '95%',
+        backgroundColor: '#fff',
+        marginVertical: 10,
+        padding: 20,
+        borderRadius: 5
       }}>
-      <AntDesign name="shoppingcart" size={24} color="#FBB200" />
-
-    </TouchableOpacity>
-
-    <TouchableOpacity style={[{
-      backgroundColor: '#fff',
-      padding: 10,
-      borderRadius: 100,
-      position: 'absolute',
-      right: 10,
-      top: 70,
-      shadowOpacity: 0.25,
-      shadowOffset: { width: 5, height: 5 }
-    }]}
-      onPress={() => {
-        setShowPrintModal(true)
-      }}>
-      <AntDesign name="printer" size={20} color="#FBB200" />
-
-    </TouchableOpacity>
-
-
-
-
-
-
-    <AppModal isVisible={purchaseSticker} style={{
-      width: '90%'
-    }}
-      onClose={() => setPurchaseSticker(false)}
-      customRender={<PurchaseStickerView />}
-    />
-
-    <AppModal isVisible={showPrintModal} style={{
-      width: '90%',
-    }}
-      onClose={() => setShowPrintModal(false)}
-      customRender={<View style={{ width: '90%', paddingVertical: 20 }}>
         <Text>Le modèle suivant permet d'imprimer vous-même des planches d'étiquettes.</Text>
         <Text>Êtes-vous sûrs d'avoir le bon format d'étiquettes vierges ?</Text>
         <Text>Si non, le bouton « panier » de la page précédente contient des liens vers des magasins / sites marchands proposant le bon format :</Text>
@@ -289,8 +227,90 @@ export const GuidePatientMenu = () => {
 
         <Text style={{ fontSize: 10, color: '#394149', fontStyle: 'italic', textAlign: 'center', width: '60%', alignSelf: 'center' }}>L'usage et la diffusion des étiquettes Guide Patient sont réservés aux clients OrthoMaster.</Text>
       </View>
-      }
-    />
+    }
+    {
+      (showPrintModal == false && purchaseSticker == false && guideToDisplay == null) &&
+      <View style={{
+        width: '100%',
+        alignItems: 'center',
+        paddingVertical: 20
+      }}>
+        <Image
+          style={styles.toolQCImage}
+          source={require('../../../../assets/tools/guide-patient.png')}
+        />
+        <Text style={styles.toolTitle}>
+          Guide patient
+        </Text>
+
+        <FlatList
+          data={GUIDES}
+          keyExtractor={(item, index) => index}
+          renderItem={(item) => (<GuideCard config={item.item} showGuide={(guide) => {
+            setGuideToDisplay(guide)
+          }} />)
+          }
+          scrollEnabled={false}
+          style={{ width: '100%' }}
+          contentContainerStyle={{ alignItems: 'center' }}
+        />
+
+        <TouchableOpacity style={[{
+          backgroundColor: '#fff',
+          padding: 10,
+          borderRadius: 100,
+          position: 'absolute',
+          right: 10,
+          top: 10,
+          shadowOpacity: 0.25,
+          shadowOffset: { width: 5, height: 5 }
+        }]}
+          onPress={() => {
+            setPurchaseSticker(true)
+          }}>
+          <AntDesign name="shoppingcart" size={24} color="#FBB200" />
+
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[{
+          backgroundColor: '#fff',
+          padding: 10,
+          borderRadius: 100,
+          position: 'absolute',
+          right: 10,
+          top: 70,
+          shadowOpacity: 0.25,
+          shadowOffset: { width: 5, height: 5 }
+        }]}
+          onPress={() => {
+            setShowPrintModal(true)
+          }}>
+          <AntDesign name="printer" size={20} color="#FBB200" />
+
+        </TouchableOpacity>
+      </View>
+    }
+    {
+      (showPrintModal == true || purchaseSticker == true || guideToDisplay != null) &&
+      <TouchableOpacity onPress={() => {
+        setPurchaseSticker(false)
+        setShowPrintModal(false)
+        setGuideToDisplay(null)
+      }}
+        style={{
+          backgroundColor: "#eb7b0f",
+          padding: 10,
+          borderRadius: 5,
+          borderColor: "#fff",
+          borderWidth: 2,
+          marginVertical: 10
+
+        }}>
+        <Text style={{
+          color: '#fff'
+        }}>Fermer</Text>
+      </TouchableOpacity>
+    }
   </LinearGradient>
 }
 
@@ -312,7 +332,6 @@ const styles = StyleSheet.create({
   containerTool: {
     width: '80%',
     alignItems: 'center',
-    paddingVertical: 30,
     borderRadius: 16
   },
   toolQCImage: {

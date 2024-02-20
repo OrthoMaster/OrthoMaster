@@ -40,15 +40,11 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
         return <View
             key={getIndex()}
             onTouchStart={drag}
-            //onLongPress={drag}
-            // onResponderMove={drag}
-            //disabled={isActive}
-
             style={{
                 backgroundColor: "#F1F1F1",
                 margin: 5,
                 alignItems: 'center',
-                width: '70%',
+                width: '90%',
                 alignSelf: 'center',
                 paddingHorizontal: 20,
                 borderRadius: 5,
@@ -76,8 +72,12 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
 
 
     return <View style={{
-        width: '100%',
-        marginTop: 10
+        backgroundColor: '#fff',
+        width: "95%",
+        marginVertical: 50,
+        paddingHorizontal: 10,
+        paddingVertical: 20,
+        borderRadius: 5
     }}>
         <Text style={{
             alignSelf: 'center',
@@ -166,7 +166,7 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
             flexDirection: 'row',
             flexWrap: 'wrap',
             justifyContent: 'center',
-            marginTop: 30
+            marginTop: 30,
         }}>
             {
                 selection.map((value, index) => {
@@ -194,10 +194,5 @@ export default FiltersQC = ({ onChange, filterConfig }) => {
                 })
             }
         </View>
-
-
     </View>
-
-
-
 }
