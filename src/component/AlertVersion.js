@@ -12,7 +12,6 @@ import {
 
 
 export const AlertVersion = ({isVisible, onClose}) => {
-    console.log("Alerte version is visible "+isVisible);
     return (
         <Modal
             animationType="slide"

@@ -1,22 +1,28 @@
 import React, { useEffect, useState } from 'react'
 import { Text, View, Pressable, StyleSheet, Linking, Image, TouchableOpacity } from 'react-native'
 import BouncyCheckbox from "react-native-bouncy-checkbox";
+import {
+    CopilotStep,
+    walkthroughable,
+    useCopilot
+} from "react-native-copilot";
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useTheme } from '@react-navigation/native'
 
 import { ModuleLayout } from './ModuleLayout'
 import { MenuLayout } from './menu/MenuLayout'
-
-import { useTheme } from '@react-navigation/native'
 import LaboFormationView from './labo/LaboFormationView'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import AppModal from '../../component/AppModal'
 
 const FORMATION_TYPE_MODULE = 'formation-module'
 const FORMATION_TYPE_MENU = 'formation-menu'
 
+const CopilotText = walkthroughable(Text);
+
 
 const FormationTypeNav = ({ displayView, navigation }) => {
     const [selected, setselected] = useState('lesson')
-
+    const copilot = useCopilot()
 
     return <View style={styles.formationTypeNavContainer}>
         <Pressable
@@ -27,9 +33,10 @@ const FormationTypeNav = ({ displayView, navigation }) => {
                 }
             ]}
             onPress={() => {
-                displayView(FORMATION_TYPE_MODULE)
-                setselected('lesson')
-                navigation.setParams({ title: 'Se former' })
+                copilot.start()
+                // displayView(FORMATION_TYPE_MODULE)
+                // setselected('lesson')
+                // navigation.setParams({ title: 'Se former' })
             }}>
             <Text
                 style={[styles.formationTypeNavText, { color: selected == 'lesson' ? '#20113A' : '#ffffff' }]}>
@@ -42,10 +49,14 @@ const FormationTypeNav = ({ displayView, navigation }) => {
                 displayView(FORMATION_TYPE_MENU)
                 setselected('menu')
             }}>
-            <Text
+            <CopilotStep text='la step 3 sur une autre page' order={1} name='formation'>
+                <CopilotText style={[styles.formationTypeNavText, { color: selected == 'menu' ? '#20113A' : '#ffffff' }]}>
+                    A la carte</CopilotText>
+            </CopilotStep>
+            {/* <Text
                 style={[styles.formationTypeNavText, { color: selected == 'menu' ? '#20113A' : '#ffffff' }]}>
                 A la carte
-            </Text>
+            </Text> */}
         </Pressable>
     </View>
 }

@@ -25,8 +25,6 @@ Notifications.setNotificationHandler({
 export const NotificationHandler = ({ children }) => {
   const [showModal, setShowModal] = useState(false)
   const [modalObj, setModalObj] = useState(null)
-  const notificationListener = useRef();
-  const responseListener = useRef();
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const nav = useNavigation()
   const savePushToken = useMutation(saveUserExpoPushToken)
@@ -86,46 +84,23 @@ export const NotificationHandler = ({ children }) => {
       token = await Notifications.getExpoPushTokenAsync({
         projectId: Constants.expoConfig.extra.eas.projectId,
       });
-    } else {
-      alert('Must use physical device for Push Notifications');
     }
+    //  else {
+    //   alert('Must use physical device for Push Notifications');
+    // }
 
-    return token.data;
+    return token?.data;
   }
 
 
   useEffect(() => {
-    console.log("Register for push notif");
     registerForPushNotificationsAsync().then(token => {
-      SecureStore.setItemAsync("expoPushToken", token)
-      savePushToken.mutate(token)
+      if (token) {
+        SecureStore.setItemAsync("expoPushToken", token)
+        savePushToken.mutate(token)
+      }
     });
 
-    // notificationListener.current = Notifications.addNotificationReceivedListener(response => { // triggered on notif reception
-    //   //console.log("setModalObj", response.request.content.data.modal);
-    //   // setNotification(notification);
-    // });
-
-    // responseListener.current = Notifications.addNotificationResponseReceivedListener(response => { // triggered while notification clicked
-    //   setShowModal(true)
-    //   setModalObj(response.notification.request.content.data.modal)
-    //   handleNotif(response.notification.request.content.data.redirect)
-
-    // });
-    // Notifications.getLastNotificationResponseAsync()
-    //   .then(response => {
-    //     console.log(response);
-    //     if (response?.notification) {
-    //       setShowModal(true)
-    //       setModalObj(response.notification.request.content.data.modal)
-    //       handleNotif(response.notification.request.content.data.redirect)
-    //     }
-    //   })
-
-    return () => {
-      // Notifications.removeNotificationSubscription(notificationListener.current);
-      // Notifications.removeNotificationSubscription(responseListener.current);
-    };
   }, []);
 
   useEffect(() => {
