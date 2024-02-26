@@ -8,8 +8,8 @@ import { useQuery } from 'react-query';
 import { Alert } from 'react-native';
 import * as Application from 'expo-application';
 
-import { selectIsLoggedIn } from './src/reducers/auth';
-import { refreshUserSession, logout } from './src/actions/auth';
+import { selectDisplayIntro, selectIsLoggedIn } from './src/reducers/auth';
+import { refreshUserSession, logout, startIntro, stopIntro } from './src/actions/auth';
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingContent } from './src/component/LoadingContent';
@@ -19,14 +19,14 @@ import { appDefault, thuasne } from './src/AppMode';
 import { selectModeValue } from './src/reducers/appModeReducer';
 import { getCurrentUser } from './src/services/UserService';
 import { IntroView } from './src/views/intro/IntroView';
-import useAsyncStorage from './src/hooks/useAsyncStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const prefix = Linking.createURL('/');
 
 
 export default function App({ navigation }) {
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isEnabled = useSelector(state => state.auth.userCurrentSession?.enabled)
-  const [introHasBeenDisplayed, setIntroDisplayed] = useAsyncStorage('intro-slider-displayed', false)
+  const displayIntro = useSelector(selectDisplayIntro)
 
   const [isLoading, setIsLoading] = useState(true)
   const appMode = useSelector(selectModeValue)
@@ -83,10 +83,15 @@ export default function App({ navigation }) {
     const init = async () => {
       await retreiveSession();
       await verifyCurrentDeviceVersion();
+      const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
+      if (!displayIntro){
+        dispatch(startIntro())
+      }
       setIsLoading(false)
     }
     init()
   }, []);
+
 
   useEffect(() => {
     if (url) {
@@ -108,13 +113,14 @@ export default function App({ navigation }) {
 
       {
         isLoggedIn && isEnabled == 1 ?
-          introHasBeenDisplayed ?
-            <NotificationHandler>
-                <AppTab />
-            </NotificationHandler>
-            : <IntroView onClose={() => {
-              setIntroDisplayed(true)
+          displayIntro ?
+            <IntroView onClose={() => {
+              dispatch(stopIntro())
             }} />
+            :
+            <NotificationHandler>
+              <AppTab />
+            </NotificationHandler>
           : <AuthStack />
       }
 

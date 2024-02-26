@@ -5,7 +5,8 @@ import Animated, { useSharedValue, withTiming, useAnimatedStyle, runOnUI } from 
 
 export const FlipCard = ({
     frontComponent,
-    backComponent
+    backComponent,
+    onFlip
 }) => {
     const rotateFront = useSharedValue(0);
     const rotateBack = useSharedValue(180);
@@ -38,7 +39,7 @@ export const FlipCard = ({
     return <View style={styles.container}>
 
         <Animated.View style={[styles.boxContainer, frontStyle]}>
-            <View style={{ flex: 1}}>
+            <View style={{ flex: 1 }}>
                 {frontComponent}
                 <TouchableOpacity
                     style={styles.button}
@@ -53,7 +54,10 @@ export const FlipCard = ({
             </View>
             <TouchableOpacity
                 style={styles.button}
-                onPress={animate}>
+                onPress={() => {
+                    animate()
+                    onFlip()
+                }}>
                 <AntDesign name="closecircle" size={40} color="#FFAF31" />
             </TouchableOpacity>
         </Animated.View>
@@ -67,12 +71,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
     boxContainer: {
-        width: "95%",
-        height: "95%",
+        width: "100%",
+        height: "100%",
         backfaceVisibility: "hidden",
         position: 'absolute',
         borderRadius: 20,
-        padding: 10
     },
     button: {
         alignSelf: 'center',

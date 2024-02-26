@@ -1,36 +1,26 @@
 import {
-    REGISTER_SUCCESS,
-    REGISTER_FAIL,
     LOGIN_SUCCESS,
     LOGIN_FAIL,
     LOGOUT,
-    TOKEN_VALID,
-    TOKEN_INVALID,
-    REFRESH_SESSION
+    REFRESH_SESSION,
+    START_INTRO,
+    STOP_INTRO
 } from "../actions/types";
 
-
-
-//const user = JSON.parse(localStorage.getItem("user"));
-
-
-//const user = null
-
-// const initialState = user
-//     ? { isLoggedIn: true, user }
-//     : { isLoggedIn: false, user: null };
 
 const initialState = {
     isLoggedIn: false,
     userTopAccount: null,
     userCurrentSession: null,
-    authMessage: ""
+    authMessage: "",
+    displayIntro: false
 }
 
 
 export const selectIsLoggedIn = state => state.auth.isLoggedIn
 export const selectAuthMessage = state => state.auth.authMessage
 export const selectUserCurrentSession = state => state.auth.userCurrentSession
+export const selectDisplayIntro = state => state.auth.displayIntro
 
 
 export const authReducer = (state = initialState, action) => {
@@ -69,6 +59,16 @@ export const authReducer = (state = initialState, action) => {
                 userCurrentSession: null,
                 accessToken: null
             };
+            case START_INTRO: 
+            return {
+                ...state,
+                displayIntro: true
+            }
+            case STOP_INTRO: 
+            return {
+                ...state,
+                displayIntro: false
+            }
         default:
             return state;
     }

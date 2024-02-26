@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     signInButton: {
         width: '90%',
         height: 60,
-        backgroundColor: "#EA6911",
+        backgroundColor: "#FFAF31",
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 12,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     signInButtonText: {
         fontWeight: '600',
         fontSize: 18,
-        color: '#fffefd',
+        color: '#FFF',
     },
     forgetButton: {
         marginBottom: 50

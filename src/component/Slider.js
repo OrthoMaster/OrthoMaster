@@ -65,7 +65,7 @@ export const Slider = ({
                 (sliderState.currentPage + 1 == pagesArray.length) &&
                 <TouchableOpacity style={endButtonStyle.container}
                     onPress={onQuit}>
-                    <Text style={endButtonStyle.text}>Ok</Text>
+                    <Text style={endButtonStyle.text}>Terminer le tutoriel</Text>
                 </TouchableOpacity>
             }
             {
@@ -73,7 +73,7 @@ export const Slider = ({
                     customPaginationComponent
                     : <View style={styles.paginationWrapper}>
                         {pagesArray.map((key, index) => (
-                            <View style={[styles.paginationBar, { opacity: pageIndex === index ? 1 : 0.2 }]} key={index} />
+                            <View style={[styles.paginationBar, { opacity: pageIndex === index ? 1 : 0.4 }]} key={index} />
                         ))}
                     </View>
             }

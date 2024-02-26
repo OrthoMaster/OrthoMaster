@@ -2,10 +2,9 @@ import {
   LOGIN_SUCCESS,
   LOGIN_FAIL,
   LOGOUT,
-  SET_MESSAGE,
-  TOKEN_INVALID,
-  TOKEN_VALID,
-  REFRESH_SESSION
+  REFRESH_SESSION,
+  START_INTRO,
+  STOP_INTRO
 } from "./types";
 
 import AuthService from "../services/AuthService";
@@ -64,4 +63,16 @@ export const refreshUserSession = (user) => async (dispatch) => {
       payload: { msg: "Impossible de retrouver l'utilisateur" }
     });
   }
+}
+
+export const startIntro = () => (dispatch) => {
+  dispatch({
+    type: START_INTRO
+  })
+}
+
+export const stopIntro = () => (dispatch) => {
+  dispatch({
+    type: STOP_INTRO
+  })
 }

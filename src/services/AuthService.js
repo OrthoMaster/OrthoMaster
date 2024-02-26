@@ -24,7 +24,7 @@ class AuthService {
 
 
   async logout() {
-    await deleteUserExpoPushToken()
+    deleteUserExpoPushToken()
     AsyncStorage.clear()
     SecureStore.deleteItemAsync('JWT')
     SecureStore.deleteItemAsync('refreshToken')

@@ -37,6 +37,9 @@ export const deleteUserExpoPushToken = async () => {
     const authHeader = 'Bearer ' + config.JWT;
     const expoPushToken = await SecureStore.getItemAsync("expoPushToken")
 
+    if (config.JWT == null || config.user == null) {
+        return
+    }
     return axios
         .delete(baseurl + "/unregister",
             {

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Slider } from "../../component/Slider";
+import { useAsyncStorage } from "../../hooks/useAsyncStorage";
 
 import IntroPage1 from "./pages/IntroPage1";
 import IntroPage2 from "./pages/IntroPage2";
@@ -18,12 +19,18 @@ const INTRO_PAGES_ARRAY = [
     <IntroPage6 />
 ]
 
-export const IntroView = ({ onClose }) => {
+export const IntroView = ({ navigation, onClose }) => {
     const [currentPageIndex, setCurrentPageIndex] = useState(0)
+    const [introHasBeenDisplayed, setIntroDisplayed] = useAsyncStorage('intro-slider-displayed', false)
+
+
     return <>
         <Slider
             pagesArray={INTRO_PAGES_ARRAY}
-            onQuit={onClose}
+            onQuit={() => {
+                onClose()
+                setIntroDisplayed(true)
+            }}
             isSkipable={false}
             getCurrentPageIndex={(page) => {
                 setCurrentPageIndex(page)
@@ -33,16 +40,16 @@ export const IntroView = ({ onClose }) => {
                     <View
                         style={[index >= 2 && index <= 4 ? styles.paginationBarNumber : styles.paginationBar,
                         {
-                            opacity: currentPageIndex === index ? 1 : 0.2,
+                            opacity: currentPageIndex === index ? 1 : 0.4,
                         }]}
-                        key={index} >
-                            {
-                                (index >= 2 && index <= 4) &&
-                                <Text style={{
-                                    color: '#000',
-                                    fontWeight: 'bold'
-                                }}>{index - 1}</Text>
-                            }
+                        key={index+key} >
+                        {
+                            (index >= 2 && index <= 4) &&
+                            <Text style={{
+                                color: '#fff',
+                                fontWeight: 'bold'
+                            }}>{index - 1}</Text>
+                        }
                     </View>
                 ))}
             </View>}
@@ -60,14 +67,14 @@ const styles = StyleSheet.create({
     paginationBar: {
         height: 15,
         width: 15,
-        backgroundColor: '#FFAF31',
+        backgroundColor: '#162754',
         borderRadius: 50,
         marginHorizontal: 5
     },
     paginationBarNumber: {
         height: 30,
         width: 30,
-        backgroundColor: '#FFAF31',
+        backgroundColor: '#162754',
         borderRadius: 50,
         marginHorizontal: 5,
         alignItems: 'center',

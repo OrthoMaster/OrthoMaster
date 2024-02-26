@@ -6,6 +6,8 @@ export const TOKEN_VALID = "TOKEN_VALID";
 export const TOKEN_INVALID = "TOKEN_INVALID";
 export const SET_MESSAGE = "SET_MESSAGE";
 export const CLEAR_MESSAGE = "CLEAR_MESSAGE";
+export const START_INTRO = "START_INTRO"
+export const STOP_INTRO = "STOP_INTRO"
 
 
 export const API_SEARCH_REQUEST = "API_SEARCH_REQUEST";
