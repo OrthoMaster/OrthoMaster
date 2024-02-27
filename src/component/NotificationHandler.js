@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
-import { Platform, View, Text } from 'react-native';
+import { Platform, View, Text, Image, Dimensions } from 'react-native';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { useMutation } from 'react-query';
@@ -30,7 +30,6 @@ export const NotificationHandler = ({ children }) => {
   const savePushToken = useMutation(saveUserExpoPushToken)
 
   const handleNotif = (redirect) => {
-    console.log("REDIRECT OBJ :", redirect);
     if (redirect == null) {
       nav.navigate('Accueil')
       return
@@ -85,9 +84,6 @@ export const NotificationHandler = ({ children }) => {
         projectId: Constants.expoConfig.extra.eas.projectId,
       });
     }
-    //  else {
-    //   alert('Must use physical device for Push Notifications');
-    // }
 
     return token?.data;
   }
@@ -110,7 +106,6 @@ export const NotificationHandler = ({ children }) => {
       lastNotificationResponse.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER
     ) {
 
-      console.log("LAST NOTIF RES :", lastNotificationResponse.notification.request.content.data);
       setModalObj(lastNotificationResponse.notification.request.content.data.modal)
       setShowModal(true)
       handleNotif(lastNotificationResponse.notification.request.content.data.redirect)
@@ -128,6 +123,15 @@ export const NotificationHandler = ({ children }) => {
         paddingHorizontal: 20, paddingBottom: 10,
         alignItems: 'center'
       }}>
+        <Image
+          source={require("../../assets/notification/message.png")}
+          style={{
+            width: Dimensions.get("screen").width * 0.2,
+            height: Dimensions.get("screen").width * 0.2,
+            resizeMode: 'contain',
+            marginBottom: 20
+          }}
+        />
         <Text style={{
           fontWeight: "bold",
           fontSize: 16,
@@ -138,7 +142,6 @@ export const NotificationHandler = ({ children }) => {
         <Text style={{ marginTop: 20 }}>{modalObj?.text}</Text>
       </View>}
       onClose={() => {
-        console.log("close notif modal");
         setShowModal(false)
         setModalObj(null)
       }}

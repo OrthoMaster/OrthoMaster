@@ -18,10 +18,8 @@ export const AlertVersion = ({isVisible, onClose}) => {
             visible={isVisible}
             transparent={true}
             onRequestClose={() => {
-                console.log("alerte close request");
                 onClose()
             }}
-            onShow={()=>{console.log("alert version");}}
         >
             <View style={styles.centeredContainer}>
                 <View style={styles.modalContainer}>

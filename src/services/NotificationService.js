@@ -28,7 +28,7 @@ export const saveUserExpoPushToken = async (pushToken) => {
             return response.data;
         })
         .catch((e) => {
-            throw e
+            return
         });
 }
 
