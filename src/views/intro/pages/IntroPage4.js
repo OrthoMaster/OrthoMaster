@@ -25,7 +25,7 @@ export default IntroPage4 = () => {
                         colors={['#3F70A7', '#162754']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
-                        style={{ flex: 1, borderRadius: 20, padding: 30, justifyContent: 'space-around' }}
+                        style={{ flex: 1, borderRadius: 20, padding: 20 }}
                     >
                         <Image
                             source={require('../../../../assets/logo-text-white.png')}
@@ -38,6 +38,8 @@ export default IntroPage4 = () => {
                             }}
                         />
                         <View style={{
+                           flex: 1,
+                           paddingTop: 50
                         }}>
                             <Text style={{
                                 fontSize: 25,
@@ -64,7 +66,8 @@ export default IntroPage4 = () => {
                         <View style={{
                             flexDirection: 'row',
                             justifyContent: 'space-around',
-                            alignItems: 'center',
+                            alignItems: 'flex-start',
+                            flex: 1
                         }}>
                             <Image
                                 source={require('../../../../assets/intro/loupe.png')}

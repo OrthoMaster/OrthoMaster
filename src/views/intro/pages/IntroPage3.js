@@ -28,7 +28,7 @@ export default IntroPage3 = () => {
                         colors={['#3F70A7', '#162754']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
-                        style={{ flex: 1, borderRadius: 20, padding: 30, justifyContent: 'space-around' }}
+                        style={{ flex: 1, borderRadius: 20, padding: 20 }}
                     >
                         <Image
                             source={require('../../../../assets/logo-text-white.png')}
@@ -41,6 +41,8 @@ export default IntroPage3 = () => {
                             }}
                         />
                         <View style={{
+                            paddingTop: 50,
+                            flex: 1
                         }}>
                             <Text style={{
                                 fontSize: 25,
@@ -69,7 +71,8 @@ export default IntroPage3 = () => {
                         <View style={{
                             flexDirection: 'row',
                             justifyContent: 'space-around',
-                            alignItems: 'center',
+                            alignItems: 'flex-start',
+                            flex: 1
                         }}>
                             <Image
                                 source={require('../../../../assets/intro/formation.png')}

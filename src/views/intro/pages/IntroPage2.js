@@ -32,7 +32,7 @@ export default IntroPage2 = () => {
                     votre délivrance en orthopédie
                 </Text>
                 <Text style={{ color: '#fff', fontSize: 16, width: '90%' }}>
-                    plus efficace...
+                    plus efficace <Text style={{color:"#FFAF31", fontWeight: 'bold'}}>en 3 temps</Text>...
                 </Text>
             </LinearGradient>
         </View>

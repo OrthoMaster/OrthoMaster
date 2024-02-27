@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native"
 import { AntDesign } from '@expo/vector-icons';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle, runOnUI } from "react-native-reanimated";
@@ -8,6 +9,8 @@ export const FlipCard = ({
     backComponent,
     onFlip
 }) => {
+    const [flipped, setFlipped] = useState(false)
+
     const rotateFront = useSharedValue(0);
     const rotateBack = useSharedValue(180);
 
@@ -32,13 +35,14 @@ export const FlipCard = ({
         rotateBack.value = withTiming(360, { duration: 1000 });
     };
     const animate = () => {
+        setFlipped(!flipped)
         runOnUI(onAnimate)();
     };
 
 
     return <View style={styles.container}>
 
-        <Animated.View style={[styles.boxContainer, frontStyle]}>
+        <Animated.View style={[styles.boxContainer, frontStyle]} >
             <View style={{ flex: 1 }}>
                 {frontComponent}
                 <TouchableOpacity
@@ -48,9 +52,9 @@ export const FlipCard = ({
                 </TouchableOpacity>
             </View>
         </Animated.View>
-        <Animated.View style={[styles.boxContainer, backStyle]}>
-            <View style={{ flex: 1 }}>
-                {backComponent}
+        <Animated.View style={[styles.boxContainer, backStyle]} >
+            <View style={{ flex: 1 }} pointerEvents={flipped ? "auto" : "none"}>
+                    {backComponent}
             </View>
             <TouchableOpacity
                 style={styles.button}
