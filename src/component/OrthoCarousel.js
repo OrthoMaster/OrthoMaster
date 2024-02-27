@@ -39,7 +39,6 @@ const CarousselCard = ({ item, navigation }) => {
 
 
 export const OrthoCarousel = ({ entries, navigation }) => {
-
     if (!entries) {
         return null
     }

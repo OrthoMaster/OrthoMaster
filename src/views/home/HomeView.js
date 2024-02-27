@@ -5,13 +5,18 @@ import {
   View,
   Text,
   Pressable,
-  SafeAreaView,
-  Image,
   Platform,
   StatusBar,
   RefreshControl
 } from 'react-native';
 import { useStore } from 'react-redux';
+import {
+  CopilotStep,
+  walkthroughable,
+  useCopilot
+} from "react-native-copilot";
+
+
 
 import { useQuery } from "react-query"
 import { fetchFlashContent } from '../../services/FlashService';
@@ -19,18 +24,16 @@ import { fetchQa } from '../../services/QaService';
 
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
-import { LoadingContent } from '../../component/LoadingContent'
-import { useTheme } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
+const CopilotText = walkthroughable(Text);
 
-
-export const HomeView = ({ navigation }) => {
+export const HomeView = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
   const store = useStore()
   const authState = store.getState().auth
   const qaPreview = useQuery(['Home', 'GET', "qaPreview"], () => fetchQa(5));
   const flashPreview = useQuery(['Home', 'GET', "flashPreview"], () => fetchFlashContent(0, 5));
-  const {colors} = useTheme();
+  const copilote = useCopilot()
+
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -42,26 +45,33 @@ export const HomeView = ({ navigation }) => {
   }, []);
 
 
+  // if (introHasBeenDisplayed == false) {
+
+  // }
+
   return (
+
     <View>
       <StatusBar
         animated={true}
-        barStyle={Platform.OS === "android" ? 'light-content' :'dark-content'}
+        barStyle={Platform.OS === "android" ? 'light-content' : 'dark-content'}
         backgroundColor={"#000"}
       />
-      
-
       <ScrollView style={{ backgroundColor: 'white' }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <HomeHeader navigation={navigation} userName={authState.userCurrentSession.name} />
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-            <Text style={styles.carouselHeaderTitle}>
+            {/* <Text style={styles.carouselHeaderTitle}>
               Questions / réponses
-            </Text>
-            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
-              <Text style={[styles.carouselHeaderButtonText, {color: "#ffaf31"}]}>Voir toutes</Text>
+            </Text> */}
+            <CopilotStep text="This is a hello world example!" order={1} name="hello">
+              <CopilotText style={styles.carouselHeaderTitle}>Questions / réponses</CopilotText>
+            </CopilotStep>
+            <Pressable style={styles.carouselHeaderButton} onPress={() => copilote.start()}>
+              {/* <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}> */}
+              <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir toutes</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={qaPreview.data} navigation={navigation} />
@@ -69,11 +79,14 @@ export const HomeView = ({ navigation }) => {
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-            <Text style={[styles.carouselHeaderTitle]}>
+            <CopilotStep text="step 2" order={2} name="flash">
+              <CopilotText style={styles.carouselHeaderTitle}>Flash ortho</CopilotText>
+            </CopilotStep>
+            {/* <Text style={[styles.carouselHeaderTitle]}>
               Flash ortho
-            </Text>
+            </Text> */}
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
-              <Text style={[styles.carouselHeaderButtonText, {color: "#ffaf31"}]}>Voir tous</Text>
+              <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={flashPreview.data} navigation={navigation} />

@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import {
     View,
     TouchableOpacity,
@@ -11,14 +11,15 @@ import {
     ScrollView,
     ActivityIndicator
 } from "react-native"
-
-
-import { logout } from '../../../actions/auth';
-import { useDispatch } from "react-redux";
 import { useQuery } from "react-query";
+import { useDispatch } from "react-redux";
 
+
+import { logout, startIntro } from '../../../actions/auth';
 import { getCustomerPortal } from "../../../services/SubscriptionService";
 import { useOrthoMasterRoles } from "../../../hooks/useOrthoMasterRoles";
+import { useAsyncStorage } from "../../../hooks/useAsyncStorage";
+import { reloadAsync } from "expo-updates";
 
 const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
     return (
@@ -33,7 +34,7 @@ const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
             <Text style={buttonStyles.text}>{text}</Text>
             {
                 loading &&
-                <ActivityIndicator color={"#fff"}/>
+                <ActivityIndicator color={"#fff"} />
             }
         </TouchableOpacity>
     )
@@ -44,20 +45,22 @@ export const AccountMenu = ({ navigation, user }) => {
     const [gettingCustomerPortal, setGettingCustomerPortal] = useState(false)
     const [errorMessage, setErrorMessage] = useState(null)
     const roles = useOrthoMasterRoles()
-    const customerPortal = useQuery(["GET", "Customer portal"], ()=>getCustomerPortal(user.office_id),
-    {
-        onSettled: () => setGettingCustomerPortal(false),
-        onSuccess: (url) => {
-            Linking.openURL(url)
-        },
-        onError: (err) => {
-            setErrorMessage(err.response?.data?.message)
-            setTimeout(()=>{
-                setErrorMessage(null)
-            }, 5000)
-        },
-        enabled: false
-    })
+    const customerPortal = useQuery(["GET", "Customer portal"], () => getCustomerPortal(user.office_id),
+        {
+            onSettled: () => setGettingCustomerPortal(false),
+            onSuccess: (url) => {
+                Linking.openURL(url)
+            },
+            onError: (err) => {
+                setErrorMessage(err.response?.data?.message)
+                setTimeout(() => {
+                    setErrorMessage(null)
+                }, 5000)
+            },
+            enabled: false
+        })
+
+    const [introHasBeenDisplayed, setIntroDisplayed] = useAsyncStorage('intro-slider-displayed')
 
     return (
         <View style={styles.container}>
@@ -77,7 +80,7 @@ export const AccountMenu = ({ navigation, user }) => {
                         icon={require('../../../../assets/settings/icon-espace-client.png')}
                         text={'Mon espace client'}
                         loading={gettingCustomerPortal}
-                        onPress={()=>{
+                        onPress={() => {
                             customerPortal.refetch()
                             setGettingCustomerPortal(true)
                         }}
@@ -147,6 +150,16 @@ export const AccountMenu = ({ navigation, user }) => {
                         }}>{errorMessage}</Text>
                     </View>
                 }
+
+                <CustomMenuButton
+                    icon={require('../../../../assets/settings/tutoriel.png')}
+                    text={'Revoir le tutoriel'}
+
+                    onPress={() => {
+                        dispatch(startIntro())
+                    }}
+                />
+
             </ScrollView>
 
         </View>
