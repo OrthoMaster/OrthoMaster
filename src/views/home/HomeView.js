@@ -69,8 +69,8 @@ export const HomeView = ({ navigation, route }) => {
             <CopilotStep text="This is a hello world example!" order={1} name="hello">
               <CopilotText style={styles.carouselHeaderTitle}>Questions / réponses</CopilotText>
             </CopilotStep>
-            <Pressable style={styles.carouselHeaderButton} onPress={() => copilote.start()}>
-              {/* <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}> */}
+            {/* <Pressable style={styles.carouselHeaderButton} onPress={() => copilote.start()}> */}
+              <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir toutes</Text>
             </Pressable>
           </View>

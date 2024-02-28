@@ -33,10 +33,10 @@ const FormationTypeNav = ({ displayView, navigation }) => {
                 }
             ]}
             onPress={() => {
-                copilot.start()
-                // displayView(FORMATION_TYPE_MODULE)
-                // setselected('lesson')
-                // navigation.setParams({ title: 'Se former' })
+                // copilot.start()
+                displayView(FORMATION_TYPE_MODULE)
+                setselected('lesson')
+                navigation.setParams({ title: 'Se former' })
             }}>
             <Text
                 style={[styles.formationTypeNavText, { color: selected == 'lesson' ? '#20113A' : '#ffffff' }]}>
