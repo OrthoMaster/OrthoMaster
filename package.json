@@ -1,6 +1,6 @@
 {
   "name": "orthomaster",
-  "version": "1.9.2",
+  "version": "1.9.4",
   "scripts": {
     "api-local": "npx expo start -c",
     "api-distant": "API_URL=https://api.orthomaster.fr npx expo start",

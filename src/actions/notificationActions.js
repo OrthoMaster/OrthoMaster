@@ -18,7 +18,6 @@ export const sendNotification = (notif) => (dispatch) => {
 }
 
 export const activateNotification = () => async (dispatch) => {
-    console.log('holla');
     // dispatch({
     //     type: NOTIFICATION_REGISTER,
     //     payload:{

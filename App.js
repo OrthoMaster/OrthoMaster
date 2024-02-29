@@ -31,7 +31,6 @@ export default function App({ navigation }) {
   const [isLoading, setIsLoading] = useState(true)
   const appMode = useSelector(selectModeValue)
   const dispatch = useDispatch()
-  const [modalVersionIsVisible, setmodalVersionIsVisible] = useState(false)
   const currentUser = useQuery(["init", "GET", "user"], () => getCurrentUser(), {
     enabled: false
   })
@@ -66,23 +65,10 @@ export default function App({ navigation }) {
     })
   }
 
-  const verifyCurrentDeviceVersion = async () => {
-    const check = await checkVersion({
-      version: Application.nativeApplicationVersion, // app local version
-      //version: '1.1.0', // app local version
-      iosStoreURL: 'https://apps.apple.com/us/app/orthomaster/id1644851864',
-      androidStoreURL: 'https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster&pli=1',
-      country: 'jp', // default value is 'jp'
-    });
-    if (check.result === 'new') {
-      setmodalVersionIsVisible(true)
-    }
-  };
 
   useEffect(() => {
     const init = async () => {
       await retreiveSession();
-      await verifyCurrentDeviceVersion();
       const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
       if (!displayIntro){
         dispatch(startIntro())
@@ -124,9 +110,9 @@ export default function App({ navigation }) {
           : <AuthStack />
       }
 
-      <AlertVersion isVisible={modalVersionIsVisible} onClose={() => {
+      {/* <AlertVersion isVisible={modalVersionIsVisible} onClose={() => {
         setmodalVersionIsVisible(false)
-      }} />
+      }} /> */}
     </NavigationContainer>
   );
 }
