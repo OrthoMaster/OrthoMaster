@@ -49,7 +49,7 @@ class AuthService {
   async getNewToken() {
     const config = await restoreLocalConfigAsync()
     const refreshToken = await SecureStore.getItemAsync('refreshToken')
-    const parts = config.JWT.split('.').map((part) => Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'),'base64').toString());
+    const parts = config.JWT.split('.').map((part) => Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString());
     const userId = JSON.parse(parts[1]).id_user;
 
 
@@ -107,7 +107,7 @@ class AuthService {
         data.body,
         {
           headers: {
-          "invitation-token": data.token
+            "invitation-token": data.token
           }
         })
   }
@@ -126,6 +126,14 @@ class AuthService {
 
     return axios.get(baseurl + `/v2/registration/get-hs-properties?objectType=${objectType}&property=${property}`,
       { headers: { Authorization: authHeader } })
+  }
+
+  async retreiveUsernameByEmail(email) {
+    try {
+      return await axios.post(baseurl + '/user/email/username', { email });
+    } catch (e) {
+      throw e;
+    }
   }
 
 }
