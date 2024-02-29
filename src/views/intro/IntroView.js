@@ -14,7 +14,7 @@ import IntroPage6 from "./pages/IntroPage6";
 export const IntroView = ({ navigation, onClose }) => {
     const [introHasBeenDisplayed, setIntroDisplayed] = useAsyncStorage('intro-slider-displayed', false)
     const [sliderState, setSliderState] = useState({ currentPage: 0 });
-    const { width, height } = Dimensions.get('window');
+    const { width } = Dimensions.get('window');
 
     const setSliderPage = (event) => {
         const { currentPage } = sliderState;
