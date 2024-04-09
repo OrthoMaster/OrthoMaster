@@ -14,7 +14,7 @@ import { useQuery } from 'react-query';
 
 
 
-const BoxNavigation = ({ currentNode, onSelect, isActive, history }) => {
+const BoxNavigation = ({ currentNode, onSelect, isActive, history, textDictionary }) => {
   return <View style={{ flex: 1, backgroundColor: 'pink' }}>
     <View style={{ display: 'flex', flexDirection: 'row', width: '100%', backgroundColor: "orange", flexWrap: 'wrap' }}>
       {
@@ -34,7 +34,7 @@ const BoxNavigation = ({ currentNode, onSelect, isActive, history }) => {
             onSelect(currentNode, value)
           }}
         >
-          <Text>{value.label}</Text>
+          <Text>{textDictionary[value.value]}</Text>
         </TouchableOpacity>
       })
     }
@@ -54,6 +54,7 @@ export const QueChoisirView = ({ navigation }) => {
   useQuery(["queChoisir", "GET", "init"], () => getQueChoisir(), {
     onSuccess: (data) => {
       queChoisir.current = data.que_choisir
+      dictionaryQueChoisir.current = data.dictionary
       initQueChoisirStep()
     }
   })
@@ -73,6 +74,7 @@ export const QueChoisirView = ({ navigation }) => {
   })
 
   const queChoisir = useRef(null)
+  const dictionaryQueChoisir = useRef(null)
   const stepIndex = useRef(0)
   const treeIndexNav = useRef(0)
 
@@ -131,7 +133,7 @@ export const QueChoisirView = ({ navigation }) => {
         [tree]: {
           ...treesNavigation[tree],
           currentNode: responseNode,
-          stack: [...treesNavigation[tree].stack, responseNode.label]
+          stack: [...treesNavigation[tree].stack, dictionaryQueChoisir.current[responseNode.value]]
         },
         [queChoisir.current[stepIndex.current].trees[newTreeIndex].tree]: {
           ...treesNavigation[queChoisir.current[stepIndex.current].trees[newTreeIndex].tree],
@@ -145,7 +147,7 @@ export const QueChoisirView = ({ navigation }) => {
         [tree]: {
           ...treesNavigation[tree],
           currentNode: responseNode,//responseNode.children ? responseNode : null,
-          stack: [...treesNavigation[tree].stack, responseNode.label]
+          stack: [...treesNavigation[tree].stack, dictionaryQueChoisir.current[responseNode.value]]
         }
       })
     }
@@ -262,7 +264,6 @@ export const QueChoisirView = ({ navigation }) => {
 
 
   useEffect(() => {
-    console.log("[NAV TREE] - ", treesNavigation);
     if (
       treesNavigation.patient.currentNode
       && treesNavigation.patient.currentNode.children == null
@@ -272,7 +273,6 @@ export const QueChoisirView = ({ navigation }) => {
       && treesNavigation.pathologie.currentNode.children == null
 
     ) {
-      console.log("ON DOIT CHANGER D'ETAPE !!!");
       if (stepIndex.current < queChoisir.current.length - 1) {
         stepIndex.current = stepIndex.current + 1
         initQueChoisirStep()
@@ -296,6 +296,7 @@ export const QueChoisirView = ({ navigation }) => {
             }}
             isActive={true}
             history={treesNavigation.patient.stack}
+            textDictionary={dictionaryQueChoisir.current}
           />
         </View>
         <View style={{ flex: 1 }}>
@@ -307,6 +308,7 @@ export const QueChoisirView = ({ navigation }) => {
             }}
             isActive={true}
             history={treesNavigation.localisation.stack}
+            textDictionary={dictionaryQueChoisir.current}
           />
 
         </View>
@@ -319,6 +321,7 @@ export const QueChoisirView = ({ navigation }) => {
             }}
             isActive={true}
             history={treesNavigation.pathologie.stack}
+            textDictionary={dictionaryQueChoisir.current}
           />
 
         </View>
