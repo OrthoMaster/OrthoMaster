@@ -13,15 +13,12 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getQCcategories } from '../../../services/tools/QueChoisirService';
 import { useQuery } from 'react-query';
 import { getProductsBrands } from '../../../services/ProductsService';
 import FiltersQC from './FiltersQC';
-import AppModal from '../../../component/AppModal';
 
 export const QueChoisirMenu = ({ navigation }) => {
-    const qcCategories = useQuery(['Tools', 'GET', 'QC categories'], () => getQCcategories())
-    const brandsAvailable = useQuery(['Tools', 'GET', 'Brands'], () => getProductsBrands(), {
+    useQuery(['Tools', 'GET', 'Brands'], () => getProductsBrands(), {
         onSuccess: (data) => {
             setFilters({
                 ...filters,
@@ -73,9 +70,11 @@ export const QueChoisirMenu = ({ navigation }) => {
                     filterConfig={filters.queChoisir}
                 />
                 : <View style={{
-                    width: "100%",
+                    width: "100%", height: '90%',
                     paddingVertical: 30,
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    display: 'flex',
+                    justifyContent: 'space-around'
                 }}>
                     <Image
                         style={styles.toolQCImage}
@@ -85,35 +84,14 @@ export const QueChoisirMenu = ({ navigation }) => {
                         Que choisir ?
                     </Text>
 
-                    <FlatList
-                        data={qcCategories.data}
-                        keyExtractor={(item) => item.id}
-                        renderItem={(item) => (<TouchableOpacity
-                            style={styles.containerButtons}
-                            onPress={() => navigation.navigate('tools-que-choisir', {
-                                category: item.item.name,
-                                filtersConfig: filters.queChoisir
-                            })}
-                        >
-                            <Text style={styles.toolButtonText}>{item.item.name}</Text>
-                        </TouchableOpacity>)
-                        }
-                        scrollEnabled={false}
-                        numColumns={2}
-                        columnWrapperStyle={{
-                            flex: 1,
-                            justifyContent: 'space-evenly',
-                            paddingVertical: 10
-                        }}
-                        style={{ width: '70%' }}
-                    />
-
-                    <Text style={{ fontSize: 10, color: '#394149', fontStyle: 'italic', textAlign: 'center', width: '60%' }}>Consultez nos Conditions Générales d'Utilisation pour l'outil Que choisir ?</Text>
-                    <Pressable onPress={() => {
-                        Linking.openURL("https://www.orthomaster.fr/cgu-que-choisir")
-                    }}>
-                        <Text style={{ fontSize: 12, color: '#394149', textAlign: 'center', width: '60%', textDecorationLine: 'underline' }}>ICI</Text>
-                    </Pressable>
+                    <TouchableOpacity
+                        style={styles.containerButtons}
+                        onPress={() => navigation.navigate('tools-que-choisir', {
+                            filtersConfig: filters.queChoisir
+                        })}
+                    >
+                        <Text style={styles.toolButtonText}>Go</Text>
+                    </TouchableOpacity>
                 </View>
         }
         <TouchableOpacity style={[{
@@ -131,7 +109,7 @@ export const QueChoisirMenu = ({ navigation }) => {
         >
             {
                 showFilters == true ?
-                    <Text style={{fontWeight: 'bold', color: '#33C0B7', margin: 5}}>Ok</Text>
+                    <Text style={{ fontWeight: 'bold', color: '#33C0B7', margin: 5 }}>Ok</Text>
                     :
                     <View style={{ alignItems: 'center' }}>
                         <Text style={{
@@ -157,6 +135,14 @@ export const QueChoisirMenu = ({ navigation }) => {
                     </View>
             }
         </TouchableOpacity>
+        <View style={{ width: "100%", alignItems: 'center', position: 'absolute', bottom: 20 }}>
+            <Text style={{ fontSize: 10, color: '#394149', fontStyle: 'italic', textAlign: 'center', width: '60%' }}>Consultez nos Conditions Générales d'Utilisation pour l'outil Que choisir ?</Text>
+            <Pressable onPress={() => {
+                Linking.openURL("https://www.orthomaster.fr/cgu-que-choisir")
+            }}>
+                <Text style={{ fontSize: 12, color: '#394149', textAlign: 'center', width: '60%', textDecorationLine: 'underline' }}>ICI</Text>
+            </Pressable>
+        </View>
     </LinearGradient>
 }
 
@@ -176,7 +162,7 @@ const styles = StyleSheet.create({
         marginVertical: 30
     },
     containerTool: {
-        width: '80%',
+        width: '80%', height: "80%",
         alignItems: 'center',
         borderRadius: 16
     },
@@ -192,7 +178,7 @@ const styles = StyleSheet.create({
         marginVertical: 20
     },
     containerButtons: {
-        backgroundColor: '#F97302',
+        backgroundColor: '#FFAF31',
         width: 80, height: 80,
         borderRadius: 11,
         alignItems: 'center',

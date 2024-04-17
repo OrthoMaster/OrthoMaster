@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useMutation } from "react-query";
 import { LinearGradient } from "expo-linear-gradient";
-import { evaluateExpression } from "../tools";
+// import { evaluateExpression } from "../tools";
 import { saveQCEntries } from "../../../../services/tools/QueChoisirService";
 import { FinalHeader } from "./FinalHeader";
 import { ProductCard } from "./FinalProductCard";
@@ -44,8 +44,9 @@ const DisplaySubHeader = ({ title }) => {
 
 
 export const FinalQC = ({ route, navigation }) => {
-    const { userHistory, filtredProducts } = route.params.content
-    const { filtersConfig, category } = route.params
+    const userHistory = route.params.history
+    const filtredProducts = route.params.products
+    const filtersConfig = route.params.filters
     const saveEntries = useMutation(saveQCEntries)
     const [productsPref, setProductsPref] = useState([]);
     const [productsOther, setProductsOther] = useState([]);
@@ -131,8 +132,7 @@ export const FinalQC = ({ route, navigation }) => {
             allFinalProductsSections.push(...productsPref)
             setOrthoRefProductSelected(selectedProduct)
 
-            saveEntries.mutateAsync({
-                category,
+            saveEntries.mutateAsync({ // Objet est trop trop grand... à revoir
                 allFinalProductsSections,
                 selectedProduct,
                 userHistory,
@@ -148,43 +148,36 @@ export const FinalQC = ({ route, navigation }) => {
 
     useEffect(() => {
         setTimeout(() => setIsLoading(false), 1000)
-        formatUserHistory(userHistory)
-            .then((formattedHistory) => {
-                startFilterProduct(formattedHistory)
-                    .then((finalProducts) => {
-
-                        let listPref = []
-                        let listOther = []
-                        let nbPrd = 0
-                        filtersConfig.selected.forEach(element => {
-                            let toPush = finalProducts.filter((value) => value.brand === element)
-                            nbPrd = nbPrd + toPush.length
-                            listPref.push({
-                                brand: element,
-                                products: toPush
-                            })
-
-                        });
-                        setProductsPref(listPref)
-
-                        let purgedBrandList = filtersConfig.default
-                        purgedBrandList = purgedBrandList.filter(x => !filtersConfig.selected.includes(x));
-                        purgedBrandList = purgedBrandList.sort(() => Math.random() - 0.5);
-
-                        purgedBrandList.forEach(element => {
-                            let toPush = finalProducts.filter((value) => value.brand === element)
-                            nbPrd += toPush.length
-                            listOther.push({
-                                brand: element,
-                                products: toPush
-                            })
-                        })
-
-                        setNbProduct(nbPrd)
-                        setProductsOther(listOther)
-
-                    })
+        let listPref = []
+        let listOther = []
+        let nbPrd = 0
+        filtersConfig.selected.forEach(element => {
+            let toPush = filtredProducts.filter((value) => value.brand === element)
+            nbPrd = nbPrd + toPush.length
+            listPref.push({
+                brand: element,
+                products: toPush
             })
+
+        });
+        setProductsPref(listPref)
+
+        let purgedBrandList = filtersConfig.default
+        purgedBrandList = purgedBrandList.filter(x => !filtersConfig.selected.includes(x));
+        purgedBrandList = purgedBrandList.sort(() => Math.random() - 0.5);
+
+        purgedBrandList.forEach(element => {
+            let toPush = filtredProducts.filter((value) => value.brand === element)
+            nbPrd += toPush.length
+            listOther.push({
+                brand: element,
+                products: toPush
+            })
+        })
+
+        setNbProduct(nbPrd)
+        setProductsOther(listOther)
+
     }, [])
 
 

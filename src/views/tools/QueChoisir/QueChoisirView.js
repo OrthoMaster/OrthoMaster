@@ -4,53 +4,28 @@ import {
   StyleSheet,
   StatusBar,
   SafeAreaView,
-  ScrollView,
   View,
-  TouchableOpacity
+  TouchableOpacity,
+  Dimensions
 } from 'react-native';
 
 import { getQueChoisir } from '../../../services/tools/QueChoisirService';
+import { getProducts } from '../../../services/ProductsService';
 import { useQuery } from 'react-query';
 
+import { BoxNavigation, TreeType } from './BoxNavigation';
+import AppModal from '../../../component/AppModal';
+
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { HelpModal } from './HelpModal';
+
+const { width, height } = Dimensions.get('window')
+const treeNavBoxDiameter = height * 0.5
 
 
-const BoxNavigation = ({ currentNode, onSelect, isActive, history, textDictionary }) => {
-  return <View style={{ flex: 1, backgroundColor: 'pink' }}>
-    <View style={{ display: 'flex', flexDirection: 'row', width: '100%', backgroundColor: "orange", flexWrap: 'wrap' }}>
-      {
-        history?.map((value, index) => {
-          return <Text key={index} style={{ marginHorizontal: 2 }}>{value}</Text>
-        })
-      }
 
-    </View>
-    {
-      currentNode?.children?.map((value, index) => {
-        return <TouchableOpacity key={index} style={{
-          padding: 10, margin: 5,
-          backgroundColor: '#F1F1F1',
-        }}
-          onPress={() => {
-            onSelect(currentNode, value)
-          }}
-        >
-          <Text>{textDictionary[value.value]}</Text>
-        </TouchableOpacity>
-      })
-    }
-    {
-      isActive == false &&
-      <View style={{
-        backgroundColor: '#000',
-        position: 'absolute',
-        height: "100%", width: "100%",
-        opacity: 0.2
-      }} />
-    }
-  </View>
-}
-
-export const QueChoisirView = ({ navigation }) => {
+export const QueChoisirView = ({ navigation, route }) => {
+  const selectedFilters = route.params.filtersConfig
   useQuery(["queChoisir", "GET", "init"], () => getQueChoisir(), {
     onSuccess: (data) => {
       queChoisir.current = data.que_choisir
@@ -58,6 +33,12 @@ export const QueChoisirView = ({ navigation }) => {
       initQueChoisirStep()
     }
   })
+  const products = useQuery(["GET", "products", metaObject], () => getProducts(metaObject.current), {
+    onSuccess: data => {
+      setProductSelection(data)
+    }
+  })
+
   const [treesNavigation, setTreesNavigation] = useState({
     patient: {
       currentNode: null,
@@ -72,7 +53,8 @@ export const QueChoisirView = ({ navigation }) => {
       stack: [],
     }
   })
-
+  const [productSelection, setProductSelection] = useState([])
+  const [helpTextToDisplayed, sethelpTextToDisplayed] = useState([])
   const queChoisir = useRef(null)
   const dictionaryQueChoisir = useRef(null)
   const stepIndex = useRef(0)
@@ -261,9 +243,78 @@ export const QueChoisirView = ({ navigation }) => {
     }
   }
 
+  const filterProducts = async () => {
+    let newSelection = []
+    products.data.forEach((product, index) => {
+      let isValidProduct = true;
+      for (const [key, value] of Object.entries(metaObject.current)) {
+        // console.log("looking for :", key, value);
+        if (product[key]) {
+          // console.log(product.brand, " | ", product.model, " | ", product.type);
+          // console.log(key + " : " + product[key]);
+          let productTags = product[key].split(";")
+          let validTag = productTags.filter(tag => tag.indexOf(value) == 0)
 
+          if (validTag.length > 0) {
+            let tag = validTag[0]
+            if (tag[value.length] == "(") {
+              //TODO gérer si les condition sont multiples
+              let conditions = tag.slice(value.length + 1, - 1)
+              conditions = conditions.split("=")
+              if (metaObject.current[conditions[0]] && metaObject.current[conditions[0]] == conditions[1]) {
+                isValidProduct = true;
+              } else {
+                isValidProduct = false;
+                break;
+              }
+            } else if (tag[value.length] == undefined) {
+              isValidProduct = true;
+            } else {
+              isValidProduct = false;
+              break;
+            }
+          } else {
+            isValidProduct = false;
+            break;
+          }
+        } else {
+          isValidProduct = true;
+        }
+      }
+      // if (product.patient) {
+      //   console.log(product.brand, " | ", product.model, " | ", product.type);
+      //   console.log(product.patient, product.age_patient);
+      //   console.log(metaObject.current);
+      //   console.log(isValidProduct);
+      // }
+      if (isValidProduct == true) {
+        newSelection.push(product)
+      }
+    })
+    setProductSelection(newSelection)
+  }
+
+  const displayCurrentHelpOnSpecificTree = (tree) => {
+    console.log("------------------------------");
+    console.log("Display help for tree :", tree);
+    console.log("---");
+    let newHelpArray = []
+    treesNavigation[tree].currentNode?.children?.forEach((value, index) => {
+      console.log(value);
+      if (value.help) {
+        newHelpArray.push(value.help)
+      }
+    })
+    if (newHelpArray.length == 0) {
+      newHelpArray = ["Aucun article d'aide n'a été trouvé"]
+    }
+    sethelpTextToDisplayed(newHelpArray)
+  }
 
   useEffect(() => {
+    if (products.data) {
+      filterProducts()
+    }
     if (
       treesNavigation.patient.currentNode
       && treesNavigation.patient.currentNode.children == null
@@ -280,27 +331,77 @@ export const QueChoisirView = ({ navigation }) => {
     }
   }, [treesNavigation])
 
+  useEffect(() => {
+    navigation.getParent().setOptions({ tabBarStyle: { display: 'none' } });
+
+    return () => {
+      navigation.getParent().setOptions({ tabBarStyle: { display: 'flex' } });
+    }
+  }, [])
+
 
   return (
-    <SafeAreaView style={{ backgroundColor: 'blue', flex: 1 }}>
-
-      <Text style={styles.containerTitle}>
-        Que choisir ?
-      </Text>
-      <View style={{ backgroundColor: 'yellow', flex: 1, display: 'flex' }}>
-        <View style={{ flex: 1 }}>
-          <Text>Patient</Text>
-          <BoxNavigation currentNode={treesNavigation.patient.currentNode}
-            onSelect={(node, responseNode) => {
-              addStep(node, responseNode, "patient")
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <View style={{ flex: 1, display: 'flex', flexDirection: 'row' }}>
+        <View style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <View style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', paddingBottom: 10 }}>
+            <BoxNavigation currentNode={treesNavigation.patient.currentNode}
+              onSelect={(node, responseNode) => {
+                addStep(node, responseNode, "patient")
+              }}
+              isActive={true}
+              history={treesNavigation.patient.stack}
+              textDictionary={dictionaryQueChoisir.current}
+              treeContainerStyle={{
+                left: 20,
+                // left: -width * 0.3,
+                height: treeNavBoxDiameter,
+                width: treeNavBoxDiameter,
+                //borderRadius: treeNavBoxRadius,
+              }}
+              tree={TreeType.PATIENT}
+            />
+            <TouchableOpacity style={{
+              position: 'absolute',
+              left: 10,
+              bottom: 20
             }}
-            isActive={true}
-            history={treesNavigation.patient.stack}
-            textDictionary={dictionaryQueChoisir.current}
-          />
+              onPress={() => displayCurrentHelpOnSpecificTree(TreeType.PATIENT)}
+            >
+              <FontAwesome5 name="info-circle" size={24} color="#DEDEDE" />
+            </TouchableOpacity>
+          </View>
+          <View style={{ flex: 1, display: 'flex', display: 'flex', alignItems: 'flex-end', paddingTop: 10 }}>
+            <BoxNavigation
+              currentNode={treesNavigation.pathologie.currentNode}
+              onSelect={(node, responseNode) => {
+                addStep(node, responseNode, "pathologie")
+              }}
+              isActive={true}
+              history={treesNavigation.pathologie.stack}
+              textDictionary={dictionaryQueChoisir.current}
+              treeContainerStyle={{
+                // left: -width * 0.2,
+                left: 20,
+                // top: 50,
+                height: treeNavBoxDiameter,
+                width: treeNavBoxDiameter,
+                //borderRadius: treeNavBoxRadius,
+              }}
+              tree={TreeType.PATHOLOGIE}
+            />
+            <TouchableOpacity style={{
+              position: 'absolute',
+              left: 10,
+              bottom: 10
+            }}
+              onPress={() => displayCurrentHelpOnSpecificTree(TreeType.PATHOLOGIE)}
+            >
+              <FontAwesome5 name="info-circle" size={24} color="#DEDEDE" />
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text>Localisation</Text>
+        <View style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: "flex-start" }}>
           <BoxNavigation
             currentNode={treesNavigation.localisation.currentNode}
             onSelect={(node, responseNode) => {
@@ -309,28 +410,107 @@ export const QueChoisirView = ({ navigation }) => {
             isActive={true}
             history={treesNavigation.localisation.stack}
             textDictionary={dictionaryQueChoisir.current}
-          />
-
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text>Pathologie</Text>
-          <BoxNavigation
-            currentNode={treesNavigation.pathologie.currentNode}
-            onSelect={(node, responseNode) => {
-              addStep(node, responseNode, "pathologie")
+            treeContainerStyle={{
+              // right: -width * 0.2,
+              left: -20,
+              height: treeNavBoxDiameter,
+              width: treeNavBoxDiameter,
+              //borderRadius: treeNavBoxRadius,
             }}
-            isActive={true}
-            history={treesNavigation.pathologie.stack}
-            textDictionary={dictionaryQueChoisir.current}
+            tree={TreeType.LOCALISATION}
           />
-
+          <TouchableOpacity style={{
+            position: 'absolute',
+            right: 10,
+            bottom: height / 4
+          }}
+            onPress={() => displayCurrentHelpOnSpecificTree(TreeType.LOCALISATION)}
+          >
+            <FontAwesome5 name="info-circle" size={24} color="#DEDEDE" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={{ padding: 10, alignSelf: 'center' }}
-          onPress={removeStep}
-        >
-          <Text>Retour</Text>
-        </TouchableOpacity>
       </View>
+
+      <TouchableOpacity style={{
+        position: 'absolute',
+        backgroundColor: "#999999",
+        borderColor: '#656565',
+        borderWidth: 3,
+        bottom: height / 4 - 100,
+        right: 0,
+        display: 'flex',
+        alignItems: 'center',
+        padding: 10
+      }}
+        disabled={false}
+        onPress={()=>{
+          navigation.navigate("tools-que-choisir-final", {
+            history: {
+              patient: treesNavigation.patient.stack,
+              localisation: treesNavigation.localisation.stack[treesNavigation.localisation.stack.length - 1] || null,
+              pathologie: treesNavigation.pathologie.stack
+            },
+            products: productSelection,
+            filters: selectedFilters
+          })
+        }}
+      >
+        <Text style={{ color: '#fff' }}>Produits trouvés</Text>
+        <Text style={{ color: '#fff' }}>{productSelection.length}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={{
+        position: 'absolute',
+        backgroundColor: "#999999",
+        borderColor: '#656565',
+        borderWidth: 3,
+        bottom: height / 4 - 150,
+        right: 0,
+        display: 'flex',
+        alignItems: 'center',
+        padding: 10
+      }}
+        disabled={true}
+      >
+        <Text style={{ color: '#fff' }}>Nos guides</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={{
+        paddingVertical: 5, paddingHorizontal: 15,
+        backgroundColor: '#fff',
+        borderColor: 'red',
+        borderWidth: 2,
+        borderRadius: 50,
+        position: 'absolute',
+        bottom: 30,
+        display: "flex",
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'center'
+      }}
+        onPress={removeStep}
+      >
+        <FontAwesome5 name="step-backward" size={20} color="#000" />
+      </TouchableOpacity>
+      <TouchableOpacity style={{
+        paddingVertical: 5, paddingHorizontal: 15,
+        backgroundColor: '#FFAF31',
+        borderRadius: 50,
+        position: 'absolute',
+        top: 50, right: 20,
+        display: "flex",
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'center'
+      }}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="exit" size={20} color="black" />
+        <Text style={{ marginLeft: 5 }}>Quitter</Text>
+      </TouchableOpacity>
+      <HelpModal
+      isVisible={helpTextToDisplayed.length > 0}
+      onClose={() => { sethelpTextToDisplayed([]) }}
+      helpToDisplay={helpTextToDisplayed}
+      />
     </SafeAreaView>
   );
 }
@@ -344,11 +524,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   containerTitle: {
-    fontSize: 30,
+    fontSize: 20,
     fontWeight: 'bold',
     alignSelf: 'flex-start',
     marginLeft: 40,
-    marginVertical: 30
   }
 
 })

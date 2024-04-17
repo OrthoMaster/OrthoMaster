@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
 
@@ -42,23 +42,69 @@ const DisplayHistory = ({ userHistory, onClose, onEdit }) => {
         paddingTop: 20
     }}>
         <Text style={{ color: '#fff', fontSize: 22 }}>Votre récapitulatif</Text>
-        {
-            userHistory.map((value, index) => {
-                return <View key={index} style={{ marginVertical: 5 }}>
-                    <Text style={{ color: '#fff' }}><Text style={{ fontWeight: 'bold' }}>Etape {index + 1} :</Text> {value.question.question}</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                        {
-                            value.responses.map((value, index) => {
-                                return <View style={{ backgroundColor: '#FBAF31', borderRadius: 50, padding: 5, margin: 2 }} key={index}>
-                                    <Text style={{ color: '#fff', fontSize: 12 }}>{value.response.response}</Text>
-                                </View>
-
-                            })
-                        }
-                    </View>
+        <View style={{marginBottom: 5}}>
+            <Text style={{ fontWeight: 'bold', color: '#fff' }}>Patient</Text>
+            <View style={{
+                display: 'flex', flexDirection: 'row',
+                flexWrap: 'wrap'
+            }}>
+                {
+                    userHistory.patient.map((value, index) => {
+                        return <View key={index} style={{
+                            backgroundColor: "#FFAF31",
+                            paddingHorizontal: 10, paddingVertical: 2,
+                            margin: 2,
+                            borderRadius: 50,
+                        }}>
+                            <Text style={{
+                                color: '#fff',
+                                fontSize: 10
+                            }}>{value}</Text>
+                        </View>
+                    })
+                }
+            </View>
+        </View>
+        <View style={{display: 'flex', alignItems: 'flex-start', marginBottom: 5}}>
+            <Text style={{ fontWeight: 'bold', color: '#fff' }}>Localisation</Text>
+            {
+                userHistory.localisation &&
+                <View style={{
+                    backgroundColor: "#FFAF31",
+                    paddingHorizontal: 10, paddingVertical: 2,
+                    margin: 2,
+                    borderRadius: 50,
+                }}>
+                    <Text style={{
+                        color: '#fff',
+                        fontSize: 10
+                    }}>{userHistory.localisation}</Text>
                 </View>
-            })
-        }
+            }
+        </View>
+        <View>
+            <Text style={{ fontWeight: 'bold', color: '#fff' }}>Pathologie</Text>
+            <View style={{
+                display: 'flex', flexDirection: 'row',
+                flexWrap: 'wrap'
+            }}>
+                {
+                    userHistory.pathologie.map((value, index) => {
+                        return <View key={index} style={{
+                            backgroundColor: "#FFAF31",
+                            paddingHorizontal: 10, paddingVertical: 2,
+                            margin: 2,
+                            borderRadius: 50,
+                        }}>
+                            <Text style={{
+                                color: '#fff',
+                                fontSize: 10
+                            }}>{value}</Text>
+                        </View>
+                    })
+                }
+            </View>
+        </View>
         <View style={{ flexDirection: 'row' }}>
             <TouchableOpacity style={[styles.historyButton, { alignSelf: 'center' }]}
                 onPress={onClose}

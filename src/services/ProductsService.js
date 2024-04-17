@@ -38,3 +38,22 @@ export const getProductsBrands = async () => {
         })
 
 }
+
+export const getProducts = async (filters = {}) => {
+    const config = await restoreLocalConfigAsync()
+
+    const authHeader = 'Bearer ' + config.JWT;
+    return axios
+        .get(baseurl + "/", {
+            headers: {
+                Authorization: authHeader
+            },
+            params: {
+                filters
+            }
+        })
+        .then((response) => {
+            return response.data;
+        })
+
+}
