@@ -18,12 +18,14 @@ import {
 
 
 
+
 import { useQuery } from "react-query"
 import { fetchFlashContent } from '../../services/FlashService';
 import { fetchQa } from '../../services/QaService';
 
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
+import FeedDisplayer from './components/FeedDisplayer';
 const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
@@ -61,37 +63,32 @@ export const HomeView = ({ navigation, route }) => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <HomeHeader navigation={navigation} userName={authState.userCurrentSession.name} />
-        <View style={styles.carouselContainer}>
+        {/* <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-            {/* <Text style={styles.carouselHeaderTitle}>
-              Questions / réponses
-            </Text> */}
+
             <CopilotStep text="This is a hello world example!" order={1} name="hello">
               <CopilotText style={styles.carouselHeaderTitle}>Questions / réponses</CopilotText>
             </CopilotStep>
-            {/* <Pressable style={styles.carouselHeaderButton} onPress={() => copilote.start()}> */}
               <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir toutes</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={qaPreview.data} navigation={navigation} />
-        </View>
+        </View> */}
 
-        <View style={styles.carouselContainer}>
+        {/* <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
             <CopilotStep text="step 2" order={2} name="flash">
               <CopilotText style={styles.carouselHeaderTitle}>Flash ortho</CopilotText>
             </CopilotStep>
-            {/* <Text style={[styles.carouselHeaderTitle]}>
-              Flash ortho
-            </Text> */}
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={flashPreview.data} navigation={navigation} />
-        </View>
-        <View style={{ height: 200 }} />
+        </View> */}
+        
+        <FeedDisplayer />
       </ScrollView>
 
     </View>

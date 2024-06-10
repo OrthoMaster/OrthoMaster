@@ -9,7 +9,7 @@
     "dev-cli": "npx expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "start": "npx expo start --dev-client",
+    "start": "npx expo start -c",
     "eas-build-on-success": "npx bugsnag-eas-build-on-success"
   },
   "dependencies": {
