@@ -47,7 +47,7 @@
       }
     },
     "plugins": [
-      "@bugsnag/plugin-expo-eas-sourcemaps"
+      
     ],
     "runtimeVersion": {
       "policy": "appVersion"

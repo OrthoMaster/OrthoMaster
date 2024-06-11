@@ -29,12 +29,12 @@ const ArticleCard = ({ config }) => {
         "instagram": require('../../../../assets/social/instagram_icon.png'),
     }
 
-    const like = useMutation(likeArticle,{
+    const like = useMutation(likeArticle, {
         onSuccess: val => {
             setIsLiked(true)
         }
     })
-    const dislike = useMutation(dislikeArticle,{
+    const dislike = useMutation(dislikeArticle, {
         onSuccess: val => {
             setIsLiked(false)
         }
@@ -42,6 +42,9 @@ const ArticleCard = ({ config }) => {
 
 
     useEffect(() => {
+        if (config.liked && config.liked == true) {
+            setIsLiked(true)
+        }
         Image.prefetchWithMetadata(config.image_url)
             .then(val => {
                 setImgUrl(config.image_url)
@@ -68,17 +71,18 @@ const ArticleCard = ({ config }) => {
         shadowOffset: {
             height: 5
         },
-        padding: 15
+        paddingTop: 5,
+        paddingHorizontal: 10
     }}>
-        <TouchableOpacity style={{zIndex: 1, position: "absolute", right: 20, bottom: 20}}
-        onPress={()=>{
-            console.log(isLiked);
-            if (isLiked) {
-                dislike.mutate(config.id)
-            } else {
-                like.mutate(config.id)
-            }
-        }}
+        <TouchableOpacity style={{ zIndex: 1, position: "absolute", right: 10, bottom: 10 }}
+            onPress={() => {
+                console.log(isLiked);
+                if (isLiked) {
+                    dislike.mutate(config.id)
+                } else {
+                    like.mutate(config.id)
+                }
+            }}
         >
             {
                 isLiked ?
@@ -97,28 +101,39 @@ const ArticleCard = ({ config }) => {
                 top: 5, right: 5
             }}
         />
-        {
-            imgUrl &&
-            <Image
-                source={{
-                    uri: imgUrl
-                }}
-                style={{
-                    height: 200,
-                    width: "95%",
-                    alignSelf: 'center'
-                }}
-                resizeMode="contain"
-            />
-        }
-        <Text style={{ fontSize: 13, marginTop: 10 }}>{config.author}</Text>
-        <Text style={{
-            fontWeight: 'bold',
-            fontSize: 15
-        }}>{config.title}</Text>
-        <Text style={{ fontSize: 12 }}>🗓️ {new Date(config.created).toLocaleString('fr-FR', { timeZone: 'UTC', hour12: false })}</Text>
-        <Text numberOfLines={showingMore ? 0 : 3} style={{
-            marginTop: 15,
+        <View style={{
+            flexDirection: 'row',
+            display: 'flex'
+        }}>
+            <View style={{ flex: 1 }}>
+                {
+                    imgUrl &&
+                    <Image
+                        source={{
+                            uri: imgUrl
+                        }}
+                        style={{
+                            height: 150,
+                            width: "95%",
+                            alignSelf: 'center'
+                        }}
+                        resizeMode="contain"
+                    />
+                }
+            </View>
+            <View style={{ flex: 2 }}>
+                <Text style={{ fontSize: 12, marginTop: 10 }}>{config.author}</Text>
+                <Text style={{
+                    fontWeight: 'bold',
+                    fontSize: 13
+                }}>{config.title}</Text>
+                <Text style={{ fontSize: 12 }}>🗓️ {new Date(config.created).toLocaleString('fr-FR', { timeZone: 'UTC', hour12: false })}</Text>
+
+
+            </View>
+        </View>
+        <Text numberOfLines={3} style={{
+            marginTop: 5,
             fontSize: 13
         }}>{config.content}</Text>
 
@@ -127,7 +142,8 @@ const ArticleCard = ({ config }) => {
             <TouchableOpacity style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                alignSelf: 'flex-end'
+                alignSelf: 'flex-end',
+                marginBottom: 5
             }}
                 onPress={() => {
                     Linking.openURL(config.href)
@@ -143,7 +159,6 @@ const ArticleCard = ({ config }) => {
         <TouchableOpacity
             style={{
                 alignSelf: 'center',
-                marginVertical: 10,
                 padding: 10
 
             }}
@@ -152,6 +167,7 @@ const ArticleCard = ({ config }) => {
             <Text style={{
                 color: "#ffaf31",
                 fontWeight: 'bold',
+                marginBottom: 10
             }}>{showingMore ? "Voir moins" : "Voir plus"}</Text>
         </TouchableOpacity>
     </View>

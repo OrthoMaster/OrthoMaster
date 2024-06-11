@@ -14,10 +14,12 @@ export const fetchFeedsFromCategory = async (id_category) => {
         Authorization: authHeader
       },
       params:{
-        id_feed_category: id_category
+        id_feed_category: id_category,
+        id_user: config.user.id_user
       }
     })
     .then((response) => {
+        console.log(response.data);
       return response.data;
     })
 

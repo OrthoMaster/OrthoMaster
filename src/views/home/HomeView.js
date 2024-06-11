@@ -15,6 +15,7 @@ import {
   walkthroughable,
   useCopilot
 } from "react-native-copilot";
+import { WebView } from 'react-native-webview';
 
 
 
@@ -54,6 +55,13 @@ export const HomeView = ({ navigation, route }) => {
   return (
 
     <View>
+      <WebView source={{ uri: 'https://feedly.com/i/subscription/feed%2Fhttps%3A%2F%2Ffeedly.com%2Ff%2FhT2KTj9EWmrJADk1AzNQJAwt' }} style={{
+        flex: 1,
+        backgroundColor: 'red',
+        height: 100,
+        width: 100
+      }} />
+
       <StatusBar
         animated={true}
         barStyle={Platform.OS === "android" ? 'light-content' : 'dark-content'}
@@ -63,20 +71,8 @@ export const HomeView = ({ navigation, route }) => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <HomeHeader navigation={navigation} userName={authState.userCurrentSession.name} />
-        {/* <View style={styles.carouselContainer}>
-          <View style={styles.carouselHeader}>
 
-            <CopilotStep text="This is a hello world example!" order={1} name="hello">
-              <CopilotText style={styles.carouselHeaderTitle}>Questions / réponses</CopilotText>
-            </CopilotStep>
-              <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
-              <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir toutes</Text>
-            </Pressable>
-          </View>
-          <OrthoCarousel entries={qaPreview.data} navigation={navigation} />
-        </View> */}
-
-        {/* <View style={styles.carouselContainer}>
+        <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
             <CopilotStep text="step 2" order={2} name="flash">
               <CopilotText style={styles.carouselHeaderTitle}>Flash ortho</CopilotText>
@@ -86,8 +82,8 @@ export const HomeView = ({ navigation, route }) => {
             </Pressable>
           </View>
           <OrthoCarousel entries={flashPreview.data} navigation={navigation} />
-        </View> */}
-        
+        </View>
+
         <FeedDisplayer />
       </ScrollView>
 
