@@ -19,7 +19,6 @@ export const fetchFeedsFromCategory = async (id_category) => {
       }
     })
     .then((response) => {
-        console.log(response.data);
       return response.data;
     })
 

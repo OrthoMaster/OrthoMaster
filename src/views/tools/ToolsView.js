@@ -5,7 +5,8 @@ import {
   StatusBar,
   SafeAreaView,
   ScrollView,
-  View
+  View,
+  Platform
 } from 'react-native';
 
 

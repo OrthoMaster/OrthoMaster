@@ -6,7 +6,8 @@ import {
     Image,
     SafeAreaView,
     TouchableOpacity,
-    StatusBar
+    StatusBar,
+    Platform
 } from "react-native";
 
 export const ContentHeader = ({title, onReturn}) => {

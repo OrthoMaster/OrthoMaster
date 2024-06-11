@@ -7,7 +7,8 @@ import {
   StyleSheet,
   Dimensions,
   Image,
-  StatusBar
+  StatusBar,
+  Platform
 } from "react-native";
 import { TrophyProgression } from "./trophy/TrophyProgression";
 

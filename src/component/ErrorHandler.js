@@ -4,7 +4,7 @@ import { View, StyleSheet, Button, Text, Alert, Linking, SafeAreaView } from "re
 import { setJSExceptionHandler } from 'react-native-exception-handler';
 import { logout } from "../actions/auth";
 import store from "../store";
-// import Bugsnag from '@bugsnag/js'
+import Bugsnag from '@bugsnag/expo';
 import axios from 'axios';
 import { useStore } from 'react-redux';
 
@@ -64,16 +64,15 @@ export const ErrorHandler = ({ children }) => {
     }
 
     useEffect(() => {
-        // Bugsnag.start({
-        //     apiKey: "cca81158d4e6406408911e2fa54edadc",
-        //     onError: function (event) {
-        //         const user = store.getState().auth.userCurrentSession
-        //         if (user) {
-        //             event.setUser(user.id_user, user.email, user.name + ' ' + user.lastname)
-        //         }
-        //     },
-        //     autoDetectErrors: false
-        // });
+        Bugsnag.start({
+            onError: function (event) {
+                const user = store.getState().auth.userCurrentSession
+                if (user) {
+                    event.setUser(user.id_user, user.email, user.name + ' ' + user.lastname)
+                }
+            },
+            autoDetectErrors: false
+        });
     }, [])
 
 
