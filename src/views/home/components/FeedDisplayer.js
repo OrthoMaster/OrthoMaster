@@ -27,6 +27,7 @@ const ArticleCard = ({ config }) => {
     const socialNetworkIcons = {
         "facebook": require('../../../../assets/social/facebook_icon.png'),
         "instagram": require('../../../../assets/social/instagram_icon.png'),
+        "internet": require('../../../../assets/social/internet.png')
     }
 
     const like = useMutation(likeArticle, {
@@ -51,10 +52,16 @@ const ArticleCard = ({ config }) => {
             })
             .catch(e => {
             })
+            let mediaIcon = null
         for (const [key, value] of Object.entries(socialNetworkIcons)) {
             if (config.href.includes(key)) {
-                setAssociatedMedia(value)
+                mediaIcon = value
             }
+        }
+        if (mediaIcon == null) {
+            setAssociatedMedia(socialNetworkIcons.internet)
+        } else {
+            setAssociatedMedia(mediaIcon)
         }
     }, [])
 
@@ -74,38 +81,49 @@ const ArticleCard = ({ config }) => {
         paddingTop: 5,
         paddingHorizontal: 10
     }}>
-        <TouchableOpacity style={{ zIndex: 1, position: "absolute", right: 10, bottom: 10 }}
-            onPress={() => {
-                console.log(isLiked);
-                if (isLiked) {
-                    dislike.mutate(config.id)
-                } else {
-                    like.mutate(config.id)
+        <View style={{
+            display: 'flex',
+            flexDirection: 'row',
+            position: 'absolute',
+            zIndex: 1,
+            right: 10, bottom: 10,
+            alignItems: 'center',
+        }}>
+            <Image
+                source={associatedMedia}
+                style={{
+                    height: 20,
+                    width: 20,
+                    resizeMode: 'contain',
+                }}
+            />
+            <TouchableOpacity style={{marginLeft: 10}}
+                onPress={() => {
+                    console.log(isLiked);
+                    if (isLiked) {
+                        dislike.mutate(config.id)
+                    } else {
+                        like.mutate(config.id)
+                    }
+                }}
+            >
+                {
+                    isLiked ?
+                        <AntDesign name="heart" size={24} color="#FF495C" />
+                        : <AntDesign name="hearto" size={24} color="#FF495C" />
                 }
-            }}
-        >
-            {
-                isLiked ?
-                    <AntDesign name="heart" size={24} color="#FF495C" />
-                    : <AntDesign name="hearto" size={24} color="#FF495C" />
-            }
-        </TouchableOpacity>
-        <Image
-            source={associatedMedia}
-            style={{
-                height: 20,
-                width: 20,
-                resizeMode: 'contain',
-                position: 'absolute',
-                zIndex: 2,
-                top: 5, right: 5
-            }}
-        />
+            </TouchableOpacity>
+        </View>
+
         <View style={{
             flexDirection: 'row',
             display: 'flex'
         }}>
-            <View style={{ flex: 1 }}>
+            <View style={{
+                backgroundColor: '#F1F1F1',
+                borderRadius: 10,
+                width: "35%", height: 100
+                }}>
                 {
                     imgUrl &&
                     <Image
@@ -113,28 +131,31 @@ const ArticleCard = ({ config }) => {
                             uri: imgUrl
                         }}
                         style={{
-                            height: 150,
-                            width: "95%",
+                            width: "100%",
+                            height: "100%",
                             alignSelf: 'center'
                         }}
-                        resizeMode="contain"
+                        resizeMode="cover"
                     />
                 }
             </View>
-            <View style={{ flex: 2 }}>
-                <Text style={{ fontSize: 12, marginTop: 10 }}>{config.author}</Text>
+            <View style={{
+                width: "65%",
+                paddingLeft: 5
+                }}>
+                <Text style={{ fontSize: 10, color: "#FFAF31", fontWeight: 'bold'}}>{config.author}</Text>
                 <Text style={{
                     fontWeight: 'bold',
-                    fontSize: 13
+                    fontSize: 12
                 }}>{config.title}</Text>
-                <Text style={{ fontSize: 12 }}>🗓️ {new Date(config.created).toLocaleString('fr-FR', { timeZone: 'UTC', hour12: false })}</Text>
+                <Text style={{ fontSize: 10, fontStyle: 'italic' }}>{new Date(config.created).toLocaleString('fr-FR', { timeZone: 'UTC', hour12: false })}</Text>
 
 
             </View>
         </View>
-        <Text numberOfLines={3} style={{
+        <Text numberOfLines={showingMore ? 0 : 3} style={{
             marginTop: 5,
-            fontSize: 13
+            fontSize: 12
         }}>{config.content}</Text>
 
         {
@@ -143,7 +164,7 @@ const ArticleCard = ({ config }) => {
                 flexDirection: 'row',
                 alignItems: 'center',
                 alignSelf: 'flex-end',
-                marginBottom: 5
+                marginVertical: 10
             }}
                 onPress={() => {
                     Linking.openURL(config.href)
@@ -238,12 +259,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 22,
         width: '80%',
-        marginLeft: 10
+        marginLeft: 20
     },
     headerSubtext: {
         fontSize: 18,
         width: '80%',
-        marginLeft: 10
+        marginLeft: 20
     },
     filterButton: {
         backgroundColor: "#F1F1F1",

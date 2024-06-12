@@ -48,20 +48,10 @@ export const HomeView = ({ navigation, route }) => {
   }, []);
 
 
-  // if (introHasBeenDisplayed == false) {
-
-  // }
 
   return (
 
     <View>
-      <WebView source={{ uri: 'https://feedly.com/i/subscription/feed%2Fhttps%3A%2F%2Ffeedly.com%2Ff%2FhT2KTj9EWmrJADk1AzNQJAwt' }} style={{
-        flex: 1,
-        backgroundColor: 'red',
-        height: 100,
-        width: 100
-      }} />
-
       <StatusBar
         animated={true}
         barStyle={Platform.OS === "android" ? 'light-content' : 'dark-content'}
@@ -75,7 +65,7 @@ export const HomeView = ({ navigation, route }) => {
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
             <CopilotStep text="step 2" order={2} name="flash">
-              <CopilotText style={styles.carouselHeaderTitle}>Flash ortho</CopilotText>
+              <CopilotText style={styles.carouselHeaderTitle}>Nos derniers contenus</CopilotText>
             </CopilotStep>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
@@ -85,6 +75,7 @@ export const HomeView = ({ navigation, route }) => {
         </View>
 
         <FeedDisplayer />
+        
       </ScrollView>
 
     </View>
@@ -94,7 +85,7 @@ export const HomeView = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   carouselContainer: {
-    marginTop: 30
+    marginVertical: 40
   },
   carouselHeader: {
     width: '100%',
@@ -106,7 +97,6 @@ const styles = StyleSheet.create({
     flex: 2,
     alignSelf: 'flex-start',
     marginLeft: 20,
-    fontWeight: '600',
     fontSize: 18,
   },
   carouselHeaderButton: {
