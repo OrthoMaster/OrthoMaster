@@ -128,5 +128,14 @@ class AuthService {
       { headers: { Authorization: authHeader } })
   }
 
+  async retreiveUsernameByEmail(email) {
+    try {
+      return await axios.post(baseurl + '/user/email/username', { email });
+    } catch (e) {
+      throw e;
+    }
+  }
+
+
 }
 export default new AuthService();
