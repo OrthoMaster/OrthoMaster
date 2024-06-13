@@ -75,3 +75,21 @@ export const fetchFeedCategories = async () => {
       })
   }
 
+  export const fetchLikedArticles = async () => {
+    const config = await restoreLocalConfigAsync()
+    const authHeader = 'Bearer ' + config.JWT;
+  
+    return axios
+      .get(baseurl + "/liked", {
+        headers: {
+          Authorization: authHeader
+        },
+        params:{
+          id_user: config.user.id_user
+        }
+      })
+      .then((response) => {
+        return response.data;
+      })
+  
+  }
