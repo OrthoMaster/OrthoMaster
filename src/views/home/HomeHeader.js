@@ -7,7 +7,8 @@ import {
     SafeAreaView,
     Alert,
     Linking,
-    StatusBar, ImageBackground, TouchableOpacity, Dimensions
+    StatusBar, ImageBackground, TouchableOpacity, Dimensions,
+    Platform
 } from 'react-native';
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 

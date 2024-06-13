@@ -8,7 +8,8 @@ import {
   Image,
   Linking,
   ActivityIndicator,
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from 'react-query';

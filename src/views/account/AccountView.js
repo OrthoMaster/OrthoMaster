@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   StatusBar,
   Image,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from 'react-native';
 import { useStore } from 'react-redux';
 

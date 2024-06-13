@@ -10,7 +10,8 @@ import {
     Dimensions,
     KeyboardAvoidingView,
     TouchableWithoutFeedback,
-    Keyboard
+    Keyboard,
+    Platform
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectAuthMessage } from '../../reducers/auth';

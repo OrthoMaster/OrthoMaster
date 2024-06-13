@@ -6,7 +6,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StatusBar,
-  Image
+  Image,
+  Platform
 } from 'react-native';
 
 import { FlashCategoriesView } from './FlashCategoriesView';

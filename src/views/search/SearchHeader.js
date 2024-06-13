@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react'
-import { Text, SafeAreaView, View, StyleSheet, TouchableOpacity, Image, TextInput, StatusBar } from 'react-native'
+import { Text, SafeAreaView, View, StyleSheet, TouchableOpacity, Image, TextInput, StatusBar, Platform } from 'react-native'
 
 
 export const SearchHeader = ({ navigation, onReturn, placeholder, onChangeText }) => {

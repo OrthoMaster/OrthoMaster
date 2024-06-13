@@ -7,7 +7,8 @@ import {
     View,
     TouchableOpacity,
     StatusBar,
-    Alert
+    Alert,
+    Platform
 } from 'react-native'
 
 

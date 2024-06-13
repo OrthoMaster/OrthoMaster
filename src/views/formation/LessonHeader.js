@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, TouchableOpacity, Image, StyleSheet, Text, SafeAreaView, StatusBar } from 'react-native'
+import { View, TouchableOpacity, Image, StyleSheet, Text, SafeAreaView, StatusBar, Platform } from 'react-native'
 
 export const LessonHeader = ({ onSearch, title, navigation }) => {
     useEffect(() => {

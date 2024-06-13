@@ -11,7 +11,7 @@ import { useStore } from 'react-redux';
 
 
 const myErrorHandler = (error, info) => {
-    Bugsnag.notify(error)
+    //Bugsnag.notify(error)
 
 };
 
@@ -38,7 +38,7 @@ export const ErrorHandler = ({ children }) => {
         if (isFatal) {
             alertAboutFatalError()
         }
-        Bugsnag.notify(e)
+        //Bugsnag.notify(e)
     };
 
     useEffect(() => {

@@ -6,7 +6,8 @@ import {
     TouchableOpacity,
     StyleSheet,
     SafeAreaView,
-    ActivityIndicator
+    ActivityIndicator,
+    Platform
 } from "react-native";
 
 import { useMutation } from "react-query";
