@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react'
 import {
   Image,
   AppState,
-  Text
+  Platform
 } from 'react-native'
 import { useMutation } from 'react-query';
 import { saveLogtimeOnApp } from '../services/LogsService';
@@ -63,7 +63,7 @@ export const AppTab = ({ }) => {
     <Tab.Navigator
       initialRouteName='Accueil'
       screenOptions={({ route }) => ({
-        tabBarStyle: { backgroundColor: 'white', height: 80 },
+        tabBarStyle: { backgroundColor: 'white', height: Platform.OS === 'ios' ? 80 : 60},
         tabBarItemStyle: {
         },
         tabBarIcon: ({ focused, color, size }) => {

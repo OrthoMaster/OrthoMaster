@@ -85,14 +85,18 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
             right: 10, bottom: 10,
             alignItems: 'center',
         }}>
-            <Image
-                source={associatedMedia}
-                style={{
-                    height: 20,
-                    width: 20,
-                    resizeMode: 'contain',
-                }}
-            />
+            <TouchableOpacity
+                onPress={()=>Linking.openURL(config.href)}
+            >
+                <Image
+                    source={associatedMedia}
+                    style={{
+                        height: 20,
+                        width: 20,
+                        resizeMode: 'contain',
+                    }}
+                />
+            </TouchableOpacity>
             <TouchableOpacity style={{ marginLeft: 10 }}
                 onPress={() => {
                     if (isLiked) {
@@ -114,11 +118,13 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
             flexDirection: 'row',
             display: 'flex'
         }}>
-            <View style={{
+            <TouchableOpacity style={{
                 backgroundColor: '#F1F1F1',
                 borderRadius: 10,
                 width: "35%", height: 100
-            }}>
+            }}
+                onPress={() => Linking.openURL(config.href)}
+            >
                 {
                     <Image
                         source={{
@@ -133,7 +139,7 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
                         defaultSource={require('../../../../assets/default-feed-thumbnail.png')}
                     />
                 }
-            </View>
+            </TouchableOpacity>
             <View style={{
                 width: "65%",
                 paddingLeft: 5
