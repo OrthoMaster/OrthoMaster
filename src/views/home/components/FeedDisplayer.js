@@ -7,7 +7,7 @@ import {
     StyleSheet,
     ActivityIndicator,
     FlatList,
-    Button,
+    Dimensions,
     Linking
 } from "react-native";
 import { Feather, AntDesign } from '@expo/vector-icons';
@@ -23,7 +23,7 @@ import {
 const ArticleCard = ({ config, onLikeOrDislike }) => {
     const [associatedMedia, setAssociatedMedia] = useState(null)
     const [showingMore, setShowingMore] = useState(false)
-    const [imgUrl, setImgUrl] = useState(null)
+    const [img, setImg] = useState(null)
     const [isLiked, setIsLiked] = useState(false)
     const socialNetworkIcons = {
         "facebook": require('../../../../assets/social/facebook_icon.png'),
@@ -54,12 +54,7 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
         if (config.liked && config.liked == true) {
             setIsLiked(true)
         }
-        Image.prefetchWithMetadata(config.image_url)
-            .then(val => {
-                setImgUrl(config.image_url)
-            })
-            .catch(e => {
-            })
+
         let mediaIcon = null
         for (const [key, value] of Object.entries(socialNetworkIcons)) {
             if (config.href.includes(key)) {
@@ -73,21 +68,14 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
         }
     }, [])
 
-
-
     return <View style={{
         width: '90%',
         alignSelf: 'center',
         marginVertical: 5,
         borderRadius: 5,
-        shadowRadius: 5,
-        shadowOpacity: 0.15,
         backgroundColor: '#fff',
-        shadowOffset: {
-            height: 5
-        },
-        paddingTop: 5,
-        paddingHorizontal: 10
+        paddingTop: 10,
+        paddingHorizontal: 10,
     }}>
         <View style={{
             display: 'flex',
@@ -132,10 +120,9 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
                 width: "35%", height: 100
             }}>
                 {
-                    imgUrl &&
                     <Image
                         source={{
-                            uri: imgUrl
+                            uri: config.image_url
                         }}
                         style={{
                             width: "100%",
@@ -143,6 +130,7 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
                             alignSelf: 'center'
                         }}
                         resizeMode="cover"
+                        defaultSource={require('../../../../assets/default-feed-thumbnail.png')}
                     />
                 }
             </View>
@@ -218,7 +206,7 @@ export default FeedDisplayer = ({ }) => {
         if (articles.isLoading || savedArticles.isLoading)
             return <ActivityIndicator color={"#ffaf31"} size={50} />
 
-        if ((selectedCategoryId != LIKE_CATEGORY_ID &&  Array.isArray(articles.data) && Object.keys(articles.data).length == 0) ||
+        if ((selectedCategoryId != LIKE_CATEGORY_ID && Array.isArray(articles.data) && Object.keys(articles.data).length == 0) ||
             (selectedCategoryId == LIKE_CATEGORY_ID && Array.isArray(savedArticles.data) && Object.keys(savedArticles.data).length == 0)
         )
             return <Text style={{
@@ -241,12 +229,13 @@ export default FeedDisplayer = ({ }) => {
 
     return (<View style={styles.container}>
         <Text style={styles.headerText}>L'actualité de l'orthopédie</Text>
-        <Text style={styles.headerSubtext}>Sélectionnée rien que pour vous</Text>
+        <Text style={styles.headerSubtext}>sélectionnée rien que pour vous...</Text>
         <View style={{
             display: 'flex',
             flexDirection: 'row',
             flexWrap: 'wrap',
-            marginLeft: 10
+            marginLeft: 10,
+            marginVertical: 20
         }}>
             {
                 (categories.isLoading == false && categories.data) &&
@@ -254,22 +243,22 @@ export default FeedDisplayer = ({ }) => {
                     return <TouchableOpacity key={index} style={{
                         paddingVertical: 5, paddingHorizontal: 10,
                         borderRadius: 5,
-                        backgroundColor: selectedCategoryId == value.id ? "#ffaf31" : "#F1F1F1",
-                        marginHorizontal: 5, marginVertical: 5
+                        backgroundColor: selectedCategoryId == value.id ? "#ffaf31" : "#fff",
+                        marginHorizontal: 2, marginVertical: 2,
                     }}
                         onPress={() => setSelectedCategoryId(value.id)}>
-                        <Text style={{ color: selectedCategoryId == value.id ? "#fff" : "#000", }}>{value.name}</Text>
+                        <Text style={{ color: selectedCategoryId == value.id ? "#fff" : "#000", fontSize: 10 }}>{value.name}</Text>
                     </TouchableOpacity>
                 })
             }
             <TouchableOpacity style={{
                 paddingVertical: 5, paddingHorizontal: 10,
                 borderRadius: 5,
-                backgroundColor: selectedCategoryId == LIKE_CATEGORY_ID ? "#ffaf31" : "#F1F1F1",
-                marginHorizontal: 5, marginVertical: 5
+                backgroundColor: selectedCategoryId == LIKE_CATEGORY_ID ? "#ffaf31" : "#fff",
+                marginHorizontal: 2, marginVertical: 2
             }}
                 onPress={() => setSelectedCategoryId(LIKE_CATEGORY_ID)}>
-                <Text style={{ color: selectedCategoryId == LIKE_CATEGORY_ID ? "#fff" : "#000", }}>❤️ Articles sauvegardés ({savedArticles.data?.length})</Text>
+                <Text style={{ color: selectedCategoryId == LIKE_CATEGORY_ID ? "#fff" : "#000", fontSize: 10 }}>❤️ Articles sauvegardés ({savedArticles.data?.length})</Text>
             </TouchableOpacity>
         </View>
         {
@@ -280,6 +269,9 @@ export default FeedDisplayer = ({ }) => {
 
 const styles = StyleSheet.create({
     container: {
+        backgroundColor: '#E3E3F1',
+        paddingTop: 20,
+        minHeight: Dimensions.get('screen').height
     },
     headerText: {
         fontWeight: 'bold',
@@ -288,7 +280,7 @@ const styles = StyleSheet.create({
         marginLeft: 20
     },
     headerSubtext: {
-        fontSize: 18,
+        fontSize: 15,
         width: '80%',
         marginLeft: 20
     },

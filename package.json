@@ -1,6 +1,6 @@
 {
   "name": "orthomaster",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "scripts": {
     "api-local": "npx expo start -c",
     "api-distant": "API_URL=https://api.orthomaster.fr npx expo start",
@@ -44,6 +44,7 @@
     "expo-status-bar": "~1.12.1",
     "expo-task-manager": "~11.8.2",
     "expo-updates": "~0.25.16",
+    "fs-extra": "^11.2.0",
     "i": "^0.3.7",
     "metro": "~0.80.9",
     "npm": "^10.8.1",
