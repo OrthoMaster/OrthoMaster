@@ -53,3 +53,19 @@ export const valideMainQuizStatusByFormation = async (data) => {
       return response.data;
     })
 }
+
+export const getUserRegisteredFormation = async () => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
+
+  return axios
+    .get(baseurl+"/user", {
+      headers: { Authorization: authHeader },
+      params: {
+        id_user: config.user.id_user
+      }
+    })
+    .then((response) => {
+      return response.data;
+    })
+}

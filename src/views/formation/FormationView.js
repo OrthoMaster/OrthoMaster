@@ -76,7 +76,6 @@ export const FormationView = ({ navigation, route }) => {
     const [showCertifInfosModal, setshowCertifInfosModal] = useState(false)
     const [disableModal, setDisableModal] = useState(false)
 
-
     useEffect(() => {
         const displayCertifModal = async () => {
             const visitOnce = await AsyncStorage.getItem('certif')
