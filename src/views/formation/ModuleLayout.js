@@ -104,14 +104,7 @@ export const ModuleLayout = ({ navigation, route }) => {
     const formationMainQuiz = useQuery(['getFormationMainQuiz'], () => getFormationMainQuizStatus(1))
 
 
-    // const userRegistredFormations = useQuery(["GET", "user formations"], () => getUserRegisteredFormation(), {
-    //     onSuccess: (data) => {
-    //         console.log("data", data);
-    //     },
-    //     onError: e => {
-    //         console.log("err", e);
-    //     }
-    // })
+
 
 
     const onRefresh = useCallback(() => {
