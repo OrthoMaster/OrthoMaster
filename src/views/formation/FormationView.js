@@ -1,185 +1,184 @@
 import React, { useEffect, useState } from 'react'
-import { Text, View, Pressable, StyleSheet, Linking, Image, TouchableOpacity } from 'react-native'
-import BouncyCheckbox from "react-native-bouncy-checkbox";
-import {
-    CopilotStep,
-    walkthroughable,
-    useCopilot
-} from "react-native-copilot";
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useTheme } from '@react-navigation/native'
-
+import { Text, View, Pressable, StyleSheet, Linking, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Dimensions } from 'react-native'
+import { Feather } from '@expo/vector-icons';
 import { ModuleLayout } from './ModuleLayout'
-import { MenuLayout } from './menu/MenuLayout'
-import LaboFormationView from './labo/LaboFormationView'
-import AppModal from '../../component/AppModal'
+import { useQuery } from 'react-query'
+import { getUserRegisteredFormation, getFormations } from '../../services/FormationService'
+import AppModal from '../../component/AppModal';
+import { PaymentFormationModal } from './modal/PaymentFormationModal';
+import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
 
-const FORMATION_TYPE_MODULE = 'formation-module'
-const FORMATION_TYPE_MENU = 'formation-menu'
+const RegisteredFormationCard = ({ params }) => {
+    const startDate = new Date(params.start_date_theorical).toLocaleDateString()
+    const endDate = new Date(params.end_date_theorical).toLocaleDateString()
 
-const CopilotText = walkthroughable(Text);
+    // console.log(params);
+    return <View style={{ alignItems: 'center' }}>
+        {
+            params.certifying &&
+            <View>
+                <Text>Formation certifiante</Text>
+                <Text>Dates de formation : {startDate} {"->"} {endDate}</Text>
+                <Text>Progression : {Math.round(params.progress_rate * 100)} %</Text>
+            </View>
+        }
 
-
-const FormationTypeNav = ({ displayView, navigation }) => {
-    const [selected, setselected] = useState('lesson')
-    const copilot = useCopilot()
-
-    return <View style={styles.formationTypeNavContainer}>
-        <Pressable
-            style={[
-                styles.formationTypeNavButton,
-                {
-                    backgroundColor: selected == 'lesson' ? '#ffffff' : '#20113A'
-                }
-            ]}
-            onPress={() => {
-                // copilot.start()
-                displayView(FORMATION_TYPE_MODULE)
-                setselected('lesson')
-                navigation.setParams({ title: 'Se former' })
+        <TouchableOpacity style={{
+            backgroundColor: '#ffaf31'
+        }}>
+            <Text style={{
+                color: '#FFF',
+                fontWeight: 'bold'
             }}>
-            <Text
-                style={[styles.formationTypeNavText, { color: selected == 'lesson' ? '#20113A' : '#ffffff' }]}>
-                Parcours
+                Commencer
             </Text>
-        </Pressable>
-        <Pressable
-            style={[styles.formationTypeNavButton, { backgroundColor: selected == 'menu' ? '#ffffff' : '#20113A' }]}
+        </TouchableOpacity>
+    </View>
+}
+
+const UnregisteredFormationCard = ({ params, onPaymentRequest }) => {
+    const roles = useOrthoMasterRoles()
+
+    return <View style={{ alignItems: 'center' }}>
+        <Text>{params.price} € HT / utilisateur</Text>
+        {
+            roles.isPrimaryManager ?
+                <TouchableOpacity style={{
+                    backgroundColor: '#ffaf31'
+                }}
+                    onPress={() => { onPaymentRequest(params) }}>
+                    <Text style={{
+                        color: '#FFF',
+                        fontWeight: 'bold'
+                    }}>
+                        Payer
+                    </Text>
+                </TouchableOpacity>
+                : <Text>Vous n'avez pas les droits. Contactez votre responsable.</Text>
+        }
+
+        <Text>ou</Text>
+        <Text>J'engage un dossier de formation continue</Text>
+        <Image
+            source={require("../../../assets/formation/partner-certif.png")}
+            style={{ height: 50, width: '90%', objectFit: 'contain' }}
+        />
+        <TouchableOpacity style={{
+            backgroundColor: '#ffaf31',
+        }}
             onPress={() => {
-                displayView(FORMATION_TYPE_MENU)
-                setselected('menu')
+                Linking.openURL("https://www.orthomaster.fr/parcour-certifiant")
             }}>
-            <CopilotStep text='la step 3 sur une autre page' order={1} name='formation'>
-                <CopilotText style={[styles.formationTypeNavText, { color: selected == 'menu' ? '#20113A' : '#ffffff' }]}>
-                    A la carte</CopilotText>
-            </CopilotStep>
-            {/* <Text
-                style={[styles.formationTypeNavText, { color: selected == 'menu' ? '#20113A' : '#ffffff' }]}>
-                A la carte
-            </Text> */}
-        </Pressable>
+            <Text style={{
+                color: '#FFF',
+                fontWeight: 'bold'
+            }}>
+                Faire une demande
+            </Text>
+        </TouchableOpacity>
+
     </View>
 }
 
 
-const FormationTypeDisplay = ({ type, navigation, route }) => {
-    if (type == FORMATION_TYPE_MODULE) {
-        return <ModuleLayout navigation={navigation} route={route} />
-    } else {
-        return <MenuLayout navigation={navigation} route={route} />
-    }
+const FormationCard = ({ formation, onPaymentRequest }) => {
+    return <View style={{
+        backgroundColor: 'red',
+        width: "90%",
+        height: 200,
+        alignSelf: 'center',
+        marginVertical: 5,
+        borderRadius: 15,
+        padding: 10
+    }}>
+        <Text>{formation.formation_name}</Text>
+
+        {
+            formation.status ?
+                <RegisteredFormationCard params={formation} />
+                : <UnregisteredFormationCard params={formation} onPaymentRequest={(formation) => onPaymentRequest(formation)} />
+        }
+        <TouchableOpacity style={{
+            padding: 5,
+            position: 'absolute',
+            top: 5, right: 5
+        }}>
+            <Feather name="info" size={24} color="#ffaf31" />
+        </TouchableOpacity>
+    </View>
 }
 
 export const FormationView = ({ navigation, route }) => {
-    const [formationType, setformationType] = useState(FORMATION_TYPE_MODULE)
-    const { isLabo } = useTheme()
-    const [showCertifInfosModal, setshowCertifInfosModal] = useState(false)
-    const [disableModal, setDisableModal] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [activatePayment, setActivatePayment] = useState({isActivate: false, formation: null})
+    const [userFormations, setUserFormations] = useState([])
+    const [userRegistredFormations, setUserRegistredFormations] = useState([])
+    const [formations, setFormations] = useState([])
+    useQuery(["GET", "formations"], () => getFormations(), {
+        onSuccess: (data) => {
+            setFormations(data)
+        }
+    })
+    useQuery(["GET", "user formations"], () => getUserRegisteredFormation(), {
+        onSuccess: (data) => {
+            setUserRegistredFormations(data)
+        }
+    })
+
 
     useEffect(() => {
-        const displayCertifModal = async () => {
-            const visitOnce = await AsyncStorage.getItem('certif')
-
-            if (JSON.parse(visitOnce) == true) {
-                return
-            }
-            setshowCertifInfosModal(true)
+        if (Array.isArray(formations) && formations.length > 0 && userRegistredFormations) {
+            let formationArray = []
+            formations.forEach(formation => {
+                const isUserRegistred = userRegistredFormations.find(elem => elem.id_formation == formation.id_formation)
+                if (isUserRegistred) {
+                    formationArray.push(isUserRegistred)
+                } else {
+                    formationArray.push(formation)
+                }
+            });
+            setUserFormations(formationArray)
+            setIsLoading(false)
+        } else {
+            setIsLoading(true)
         }
-        displayCertifModal()
-    }, [])
+    }, [formations, userRegistredFormations])
 
 
-    if (isLabo == false) {
-        return <View style={styles.container}>
-            <FormationTypeDisplay type={formationType} navigation={navigation} route={route} />
+    return <SafeAreaView style={styles.container}>
 
-            <FormationTypeNav displayView={(view) => { setformationType(view) }}
-                navigation={navigation}
+        {
+            isLoading &&
+            <ActivityIndicator color={"#ffaf31"} size={"large"} style={{
+                position: 'absolute',
+                top: Dimensions.get("window").height / 2
+            }} />
+        }
+        <FlatList
+            data={userFormations}
+            renderItem={item => <FormationCard
+                formation={item.item}
+                key={item.index}
+                onPaymentRequest={(formation) => { setActivatePayment({isActivate: true, formation: formation}) }}
             />
-            <AppModal
-                isVisible={showCertifInfosModal}
-                onClose={() => {
-                    if (disableModal === true) {
-                        AsyncStorage.setItem("certif", JSON.stringify(true), (error) => {
-                            if (error)
-                                throw error
-                        })
-                    }
-                    setshowCertifInfosModal(false)
-                }}
-                style={{ width: '90%' }}
-                customRender={<View style={{
-                    display: 'flex',
-                    paddingHorizontal: 10,
-                    width: '100%'
-                }}
-                >
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', alignSelf: 'center' }}>Le savez-vous ?</Text>
-                    <Text style={{ marginTop: 10, }}>Vous pouvez suivre ce parcours pédagogique et obtenir un certificat de formation DPC.</Text>
-
-                    <Image
-                        source={require('../../../assets/formation/logo-dpc.png')}
-                        style={{
-                            height: 70,
-                            resizeMode: 'contain',
-                            marginVertical: 20,
-                            alignSelf: 'center'
-                        }}
-                    />
-                    <Text style={{ fontSize: 13, alignSelf: 'center', textAlign: 'center' }}>Il en va de même pour chaque membre de votre équipe.</Text>
-                    <Text style={{ fontSize: 15, fontWeight: 'bold', marginVertical: 10 }}>Inscrivez-vous dès maintenant !</Text>
-                    <Text style={{}}>C'est simple, <Text style={{ textDecorationLine: 'underline' }}>gratuit</Text> et nous vous accompagnons dans les démarches d'inscription / validation.</Text>
-
-                    <TouchableOpacity style={{
-                        backgroundColor: "#EB7B10",
-                        padding: 10,
-                        borderRadius: 5,
-                        width: "30%",
-                        alignSelf: 'center',
-                        alignItems: 'center',
-                        marginTop: 20
-                    }}
-                        onPress={() => {
-                            Linking.openURL("https://orthomaster.fr/parcour-certifiant")
-                        }}
-                    >
-                        <Text style={{
-                            color: '#fff',
-                            textAlign: 'center',
-                        }}>En savoir +</Text>
-                    </TouchableOpacity>
-
-
-                    <BouncyCheckbox
-                        onPress={isChecked => { setDisableModal(isChecked) }}
-                        text='ne plus me montrer ce message pour le moment'
-                        size={15}
-                        fillColor="#EB7B10"
-                        unfillColor="#FFFFFF"
-                        textStyle={{
-                            color: '#000',
-                            fontSize: 12,
-                            textDecorationLine: "none"
-                        }}
-                        style={{
-                            alignSelf: 'center',
-                            marginTop: 20
-                        }}
-                    />
-                </View>}
-            />
-        </View>
-    } else {
-        return <LaboFormationView navigation={navigation} />
-    }
+            }
+            keyExtractor={(item, index) => index}
+            style={{ backgroundColor: '#F1F1F1', width: '100%' }}
+        />
+        <AppModal
+            isVisible={activatePayment.isActivate}
+            onClose={() => setActivatePayment({isActivate: false, formation: null})}
+            customRender={<PaymentFormationModal formation={activatePayment.formation}/>}
+        />
+    </SafeAreaView>
 }
 
 const styles = StyleSheet.create({
     container: {
-        height: '100%',
         alignItems: 'center',
         width: '100%',
-        backgroundColor: '#fffefd'
+        backgroundColor: '#fffefd',
+
     },
     formationTypeNavContainer: {
         backgroundColor: '#1F113A',

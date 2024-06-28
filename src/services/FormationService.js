@@ -69,3 +69,16 @@ export const getUserRegisteredFormation = async () => {
       return response.data;
     })
 }
+
+export const getFormations = async () => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
+
+  return axios
+    .get(baseurl+"/", {
+      headers: { Authorization: authHeader }
+    })
+    .then((response) => {
+      return response.data;
+    })
+}
