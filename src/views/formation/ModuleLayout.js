@@ -18,9 +18,6 @@ import { useQuery } from 'react-query';
 import { fetchModules } from '../../services/ModuleService';
 import { getFormationMainQuizStatus } from '../../services/FormationService';
 
-import { AntDesign } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
-
 const MainQuizButton = ({
     quizType,
     onClick,
