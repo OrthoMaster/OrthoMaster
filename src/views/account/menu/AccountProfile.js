@@ -12,7 +12,8 @@ import {
     Alert,
     KeyboardAvoidingView,
     TouchableWithoutFeedback,
-    Keyboard
+    Keyboard,
+    Platform
 } from "react-native";
 
 import { useStore } from "react-redux";

@@ -14,8 +14,8 @@ import ModuleButton from './components/ModuleButton';
 import { MainQuizUnlockModal } from './modal/MainQuizUnlockModal';
 
 import { useIsFocused } from '@react-navigation/native';
-import { isError, useQuery } from 'react-query';
-import { fetchModulesWithUserProgression } from '../../services/ModuleService';
+import { useQuery } from 'react-query';
+import { fetchModules } from '../../services/ModuleService';
 import { getFormationMainQuizStatus } from '../../services/FormationService';
 
 import { AntDesign } from '@expo/vector-icons';
@@ -96,11 +96,14 @@ const MainQuizButton = ({
 
 
 export const ModuleLayout = ({ navigation, route }) => {
+    const { idFormation, formationName, demoMode } = route.params
     const [refreshing, setRefreshing] = useState(false)
     const isFocused = useIsFocused();
     const [modalVisible, setModalVisible] = useState(true)
     const [formationPercentage, setFormationPercentage] = useState(0)
-    const modules = useQuery(['Formation', 'GET', 'modulesProgress'], () => fetchModulesWithUserProgression(), {
+    const modules = useQuery(['Formation', idFormation, 'modules'], () => fetchModules({
+        idFormation: idFormation
+    }), {
         onSuccess: (modules) => {
             let totalLesson = 0
             let finishLesson = 0
@@ -114,10 +117,6 @@ export const ModuleLayout = ({ navigation, route }) => {
     })
 
     const formationMainQuiz = useQuery(['getFormationMainQuiz'], () => getFormationMainQuizStatus(1))
-
-
-
-
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -141,23 +140,30 @@ export const ModuleLayout = ({ navigation, route }) => {
         <View style={styles.container}>
             <LessonHeader
                 onSearch={() => (navigation.navigate('formation-search'))}
-                title={"Se former"}
+                title={formationName}
                 navigation={navigation}
+                returnEnabed={true}
             />
 
             <FlatList
                 data={modules.data}
                 renderItem={(item) => <ModuleButton
-                    item={item}
-                    onPress={(item) => navigation.navigate('formation-lessons', {
-                        module: item
-                    })}
+                    module={item.item}
+                    index={item.index}
+                    isBlocked={demoMode && item.item.demo_access == 0}
+                    onPress={(module) => {
+                        navigation.navigate('formation-lessons', {
+                            module: module,
+                            demoMode: demoMode
+                        })
+                    }}
                 />}
                 style={styles.listContainer}
                 keyExtractor={(item, index) => index}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 ListHeaderComponent={
+                    !demoMode &&
                     <MainQuizButton
                         quizType={'initial'}
                         quizData={formationMainQuiz.data}
@@ -174,6 +180,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                     />
                 }
                 ListFooterComponent={
+                    !demoMode &&
                     <MainQuizButton
                         quizType={'final'}
                         quizData={formationMainQuiz.data}
@@ -192,7 +199,7 @@ export const ModuleLayout = ({ navigation, route }) => {
             />
 
             {
-                formationMainQuiz.data && formationMainQuiz.data.quiz_initial_status == null ?
+                !demoMode && formationMainQuiz.data && formationMainQuiz.data.quiz_initial_status == null ?
                     <MainQuizUnlockModal
                         visible={modalVisible}
                         onExit={() => {
@@ -214,7 +221,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                     : null
             }
             {
-                formationPercentage > 60 && formationMainQuiz.data && formationMainQuiz.data.quiz_final_status == null ?
+                !demoMode && formationPercentage > 60 && formationMainQuiz.data && formationMainQuiz.data.quiz_final_status == null ?
                     <MainQuizUnlockModal
                         visible={modalVisible}
                         onExit={() => {

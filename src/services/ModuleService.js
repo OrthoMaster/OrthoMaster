@@ -4,7 +4,7 @@ import { restoreLocalConfigAsync } from "../utils";
 const baseurl = process.env.EXPO_PUBLIC_API_URL+"/modules"
 
 
-export const fetchModulesWithUserProgression = async () => {
+export const fetchModules = async ({idFormation}) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 

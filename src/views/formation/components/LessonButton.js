@@ -3,7 +3,8 @@ import {
     TouchableOpacity,
     Text,
     StyleSheet,
-    View
+    View,
+    Image
 } from 'react-native'
 
 import Svg, { Path } from 'react-native-svg'
@@ -22,44 +23,66 @@ const LessonFailureIndicator = () => {
 }
 
 
-export const LessonButton = ({ item, onPress }) => {
+export const LessonButton = ({ lesson, isBlocked, onPress }) => {
     return <TouchableOpacity
         style={[styles.button, {
-            backgroundColor: item.item.content.published == true ?'#F1F1F1' : '#FFF9F9'
+            backgroundColor: lesson.content.published == true ? '#F1F1F1' : '#FFF9F9'
         }]}
-        onPress={onPress}>
-        {item.item.status == null
+        onPress={() => {
+            if (!isBlocked)
+                onPress(lesson)
+        }}>
+        {lesson.status == null
             ? <LessonNotStartedIndicator style={styles.statusIdicator} />
-            : item.item.status == 1
+            : lesson.status == 1
                 ? <LessonValidateIndicator style={styles.statusIdicator} />
                 : <LessonFailureIndicator style={styles.statusIdicator} />}
 
-        <Text style={[styles.text, {color: item.item.content.published == false ? '#9C9C9C': '#000000'}]}>{item.item.content.title}</Text>
+        <Text style={[styles.text, { color: lesson.content.published == false ? '#9C9C9C' : '#000000' }]}>{lesson.content.title}</Text>
         {
-            item.item.content.published == true ?
-            <Svg
-            width={20}
-            height={20}
-            viewBox={`0 0 50 50`}
-            style={styles.rightArrow}
-        >
-            <Path stroke='#000000' strokeWidth={5} strokeLinecap='round' strokeLinejoin='round' d='M20 10 L35 25 L20 40' />
-        </Svg>
-        : <View style={{
-            backgroundColor: '#F76F10',
-            padding: 5,
-            marginHorizontal: 10,
-            borderRadius: 5
-        }}>
-            <Text style={{
-                fontSize: 10,
-                color: '#ffffff',
-                fontWeight: 'bold'
+            lesson.content.published == true ?
+                <Svg
+                    width={20}
+                    height={20}
+                    viewBox={`0 0 50 50`}
+                    style={styles.rightArrow}
+                >
+                    <Path stroke='#000000' strokeWidth={5} strokeLinecap='round' strokeLinejoin='round' d='M20 10 L35 25 L20 40' />
+                </Svg>
+                : <View style={{
+                    backgroundColor: '#F76F10',
+                    padding: 5,
+                    marginHorizontal: 10,
+                    borderRadius: 5
+                }}>
+                    <Text style={{
+                        fontSize: 10,
+                        color: '#ffffff',
+                        fontWeight: 'bold'
+                    }}>
+                        Bientôt disponible
+                    </Text>
+                </View>
+        }
+        {
+            isBlocked &&
+            <View style={{
+                backgroundColor: 'rgba(255,255,255,0.8)',
+                position: 'absolute',
+                zIndex: 1,
+                height: '100%', width: '100%',
+                alignItems: 'center',
+                justifyContent: 'center'
+
             }}>
-                Bientôt disponible
-                </Text>
+                <Image
+                    source={require('../../../../assets/locker-icon.png')}
+                    style={{
+                        height: 30, width: 30
+                    }}
+                />
             </View>
-    }
+        }
     </TouchableOpacity>
 }
 

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, Image, StyleSheet, Text, SafeAreaView, StatusBar, Platform } from 'react-native'
+import { Feather } from '@expo/vector-icons';
 
-export const LessonHeader = ({ onSearch, title, navigation }) => {
+export const LessonHeader = ({ onSearch, title, navigation, searchEnabled = true, returnEnabed = false }) => {
     useEffect(() => {
         navigation.setParams({ search: false })
     }, [])
@@ -9,19 +10,37 @@ export const LessonHeader = ({ onSearch, title, navigation }) => {
 
     return <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
         <View style={styles.header}>
+            {
+                returnEnabed &&
+                < TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={{
+                        padding: 10
+                    }}
+                >
+                    <Feather name="arrow-left" size={25} color="#fff" />
+                </TouchableOpacity>
+            }
 
             <Text style={styles.title}>{title}</Text>
-            <TouchableOpacity
-                onPress={onSearch}
-            >
-                <Image
-                    source={require('../../../assets/navigation/search.png')}
-                    style={styles.search}
-                />
-            </TouchableOpacity>
+            {
+                searchEnabled &&
+                < TouchableOpacity
+                    onPress={onSearch}
+                    style={{
+                        padding: 10,
+                        position: 'absolute',
+                        right: 5
+                    }}
+                >
+                    <Image
+                        source={require('../../../assets/navigation/search.png')}
+                    />
+                </TouchableOpacity>
+            }
 
         </View>
-    </SafeAreaView>
+    </SafeAreaView >
 }
 
 const styles = StyleSheet.create({
@@ -37,15 +56,13 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between'
+        alignItems: 'center',
     },
     title: {
         marginLeft: 15,
         fontWeight: '600',
-        fontSize: 22,
-        color: '#fffeee'
-    },
-    search: {
-        marginRight: 20
+        fontSize: 18,
+        color: '#fffeee',
+        width:"70%",
     }
 })
