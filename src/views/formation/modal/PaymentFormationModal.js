@@ -15,7 +15,7 @@ import {
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useMutation, useQuery } from "react-query";
 import { getUsersByOfficeId } from "../../../services/UserService";
-import { buyFormationLicence } from "../../../services/FormationService";
+import { buyFormationLicence } from "../../../services/PaymentService";
 import { useStore } from 'react-redux';
 
 

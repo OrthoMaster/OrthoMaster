@@ -103,30 +103,3 @@ export const registerAsFormationDemo = async ({id_formation, formation_name}) =>
       return response.data;
     })
 }
-
-
-export const buyFormationLicence = async ({id_formation, selectedUsers}) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
-
-  let usersIdsArray = []
-
-  selectedUsers.forEach(user => {
-    usersIdsArray.push(user.id_user)
-  });
-
-  const body = {
-    id_formation: id_formation,
-    relatedUser: usersIdsArray,
-    id_user: config.user.id_user
-  }
-
-  return axios
-    .post(baseurl+"/pay", body, {
-      headers: { Authorization: authHeader },
-    })
-    .then((response) => {
-      return response.data;
-    })
-}
-
