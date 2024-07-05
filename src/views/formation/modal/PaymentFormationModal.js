@@ -8,11 +8,14 @@ import {
     TouchableOpacity,
     StyleSheet,
     Dimensions,
-    FlatList
+    FlatList,
+    Linking,
+    ActivityIndicator
 } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useMutation, useQuery } from "react-query";
 import { getUsersByOfficeId } from "../../../services/UserService";
+import { buyFormationLicence } from "../../../services/PaymentService";
 import { useStore } from 'react-redux';
 
 
@@ -22,9 +25,17 @@ export const PaymentFormationModal = ({
     const store = useStore()
     const managerUser = store.getState().auth.userCurrentSession
     const officeUsers = useQuery(["GET", "USER", "OFFICE", managerUser.office_id], () => getUsersByOfficeId(managerUser.office_id))
+    const buyLicence = useMutation(buyFormationLicence, {
+        onSuccess: paymentUrl=>{
+            setIsLoading(false)
+            Linking.openURL(paymentUrl)
+        }
+    })
     const [selectedCollaborators, setSelectedCollaborators] = useState([])
     const unitPrice = formation.price
     const [priceArray, setPriceArray] = useState([])
+    const [errorMessage, setErrorMessage] = useState(null)
+    const [isLoading, setIsLoading] = useState(false)
 
     const addCollaborator = (id, completeName) => {
         if (selectedCollaborators.find(val => val.id == id))
@@ -65,6 +76,7 @@ export const PaymentFormationModal = ({
             })
         });
         setPriceArray(finalPricesArray)
+        setErrorMessage(null)
     }, [selectedCollaborators])
 
 
@@ -175,11 +187,32 @@ export const PaymentFormationModal = ({
             </View>
             <Text>Prix total : {getFinalPrice()} € HT</Text>
 
+            {
+                errorMessage &&
+                <Text>{errorMessage}</Text>
+            }
+            {
+                isLoading &&
+                <ActivityIndicator />
+            }
+
             <TouchableOpacity style={{
                 padding: 5,
                 backgroundColor: '#ffaf31',
                 alignSelf: 'center',
                 borderRadius: 5
+            }}
+            onPress={()=>{
+                if (selectedCollaborators.length > 0) {
+                    if (selectedCollaborators.length <= 2) {
+                        setIsLoading(true)
+                        buyLicence.mutate({id_formation: formation.id_formation, selectedUsers: selectedCollaborators})
+                    } else {
+                        setErrorMessage("Vous pouvez acheter jusqu'à 10 packs en une fois")
+                    }
+                } else {
+                    setErrorMessage("1 utilisateur doit être séléctionné au minimum.")
+                }
             }}>
                 <Text style={{color: '#fff', fontWeight: "bold"}}>Payer</Text>
             </TouchableOpacity>

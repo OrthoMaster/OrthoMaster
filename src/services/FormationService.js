@@ -70,6 +70,7 @@ export const getUserRegisteredFormation = async () => {
     })
 }
 
+
 export const getFormations = async () => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
@@ -77,6 +78,26 @@ export const getFormations = async () => {
   return axios
     .get(baseurl+"/", {
       headers: { Authorization: authHeader }
+    })
+    .then((response) => {
+      return response.data;
+    })
+};
+
+
+export const registerAsFormationDemo = async ({id_formation, formation_name}) => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
+
+  const body = {
+    id_formation: id_formation,
+    formation_name: formation_name,
+    id_user: config.user.id_user
+  }
+
+  return axios
+    .post(baseurl+"/create", body, {
+      headers: { Authorization: authHeader },
     })
     .then((response) => {
       return response.data;

@@ -10,6 +10,7 @@ import {
     Dimensions,
     Linking
 } from "react-native";
+import { getLinkPreview, getPreviewFromContent } from "link-preview-js";
 import { Feather, AntDesign } from '@expo/vector-icons';
 import { useQuery, useMutation } from "react-query";
 import {
@@ -25,6 +26,7 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
     const [showingMore, setShowingMore] = useState(false)
     const [img, setImg] = useState(null)
     const [isLiked, setIsLiked] = useState(false)
+    const [article, setArticle] = useState(null)
     const socialNetworkIcons = {
         "facebook": require('../../../../assets/social/facebook_icon.png'),
         "instagram": require('../../../../assets/social/instagram_icon.png'),
@@ -66,8 +68,14 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
         } else {
             setAssociatedMedia(mediaIcon)
         }
+        getLinkPreview(config.href).then((data) => {
+            setArticle(data)
+        });
+
     }, [])
 
+    if (!article)
+        return <ActivityIndicator />
     return <View style={{
         width: '90%',
         alignSelf: 'center',
@@ -86,7 +94,7 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
             alignItems: 'center',
         }}>
             <TouchableOpacity
-                onPress={()=>Linking.openURL(config.href)}
+                onPress={() => Linking.openURL(article.url)}
             >
                 <Image
                     source={associatedMedia}
@@ -123,12 +131,12 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
                 borderRadius: 10,
                 width: "35%", height: 100
             }}
-                onPress={() => Linking.openURL(config.href)}
+                onPress={() => Linking.openURL(article.url)}
             >
                 {
                     <Image
                         source={{
-                            uri: config.image_url
+                            uri: article.title == "YouTube" ? config.image_url : article.images[0]
                         }}
                         style={{
                             width: "100%",
@@ -209,6 +217,7 @@ export default FeedDisplayer = ({ }) => {
 
     const articleView = () => {
 
+
         if (articles.isLoading || savedArticles.isLoading)
             return <ActivityIndicator color={"#ffaf31"} size={50} />
 
@@ -219,6 +228,7 @@ export default FeedDisplayer = ({ }) => {
                 alignSelf: 'center',
                 margin: 20
             }}>Aucun article trouvé</Text>
+
 
         return <View>
             <FlatList
@@ -232,6 +242,7 @@ export default FeedDisplayer = ({ }) => {
             />
         </View>
     }
+
 
     return (<View style={styles.container}>
         <Text style={styles.headerText}>L'actualité de l'orthopédie</Text>

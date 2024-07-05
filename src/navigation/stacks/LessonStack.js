@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import { LessonsView } from "../../views/formation/LessonsView";
 import { FormationView } from '../../views/formation/FormationView';
+import { ModuleLayout } from '../../views/formation/ModuleLayout';
 
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 
@@ -35,6 +36,13 @@ export const LessonStack = () => {
           component={FormationView}
           options={{
             headerShown: false
+          }}
+        />
+        <LessonStackNav.Screen
+          name="formation-modules"
+          component={ModuleLayout}
+          options={{
+            headerShown: false,
           }}
         />
         <LessonStackNav.Screen
