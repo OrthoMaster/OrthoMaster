@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { TextInput, View, Text, StyleSheet } from "react-native";
 import SelectDropdown from 'react-native-select-dropdown'
-
+import { AntDesign } from '@expo/vector-icons';
 
 const DropDownField = ({ props }) => {
     const [alertError, setAlertError] = useState(false)
@@ -10,16 +10,7 @@ const DropDownField = ({ props }) => {
         onSelect={(selectedItem, index) => {
             props.onChange({ text: selectedItem.value, value: props.value, target: props.target })
         }}
-        buttonTextAfterSelection={(selectedItem, index) => {
-            // text represented after item is selected
-            // if data array is an array of objects then return selectedItem.property to render after item is selected
-            return selectedItem.name
-        }}
-        rowTextForSelection={(item, index) => {
-            // text represented for each item in dropdown
-            // if data array is an array of objects then return item.property to represent item in dropdown
-            return item.name
-        }}
+
         onBlur={(data) => {
             if (props.required) {
                 if (data == 'undefined') {
@@ -29,31 +20,26 @@ const DropDownField = ({ props }) => {
                 }
             }
         }}
-        buttonStyle={{
-            borderColor: alertError ? 'red' : '#828282',
-            borderWidth: 0.5,
-            borderRadius: 5,
-            width: '100%',
-            height: 40,
-            marginTop: 5,
-            backgroundColor: '#fff'
+        renderButton={(selectedItem, isOpened) => {
+            return (
+                <View style={stylesDropdown.dropdownButtonStyle}>
+
+                    <Text style={stylesDropdown.dropdownButtonTxtStyle}>
+                        {(selectedItem && selectedItem.name) || 'Sélectionnez une option'}
+                    </Text>
+                    <AntDesign name={isOpened ? 'caretup' : 'caretdown'} size={15} color="black" />
+                </View>
+            );
         }}
-        buttonTextStyle={{
-            fontSize: 13
+        renderItem={(item, index, isSelected) => {
+            return (
+                <View style={{ ...stylesDropdown.dropdownItemStyle, ...(isSelected && { backgroundColor: '#D2D9DF' }) }}>
+                    <Text style={stylesDropdown.dropdownItemTxtStyle}>{item.name}</Text>
+                </View>
+            );
         }}
-        rowStyle={{
-            backgroundColor: '#fff',
-            height: 40,
-            width: '100%',
-            alignSelf: 'center'
-        }}
-        rowTextStyle={{
-            fontSize: 12
-        }}
-        dropdownStyle={{
-            backgroundColor: '#fff',
-        }}
-        defaultButtonText="Sélectionnez une option"
+        showsVerticalScrollIndicator={false}
+        dropdownStyle={stylesDropdown.dropdownMenuStyle}
     />
 }
 
@@ -159,3 +145,52 @@ const styles = StyleSheet.create({
         paddingLeft: 10
     }
 })
+
+const stylesDropdown = StyleSheet.create({
+    dropdownButtonStyle: {
+        width: 300,
+        height: 30,
+        backgroundColor: '#fff',
+        borderRadius: 5,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        borderBottomWidth: 1,
+        borderColor: "#ffaf31",
+        alignSelf: 'center',
+        marginVertical: 10
+    },
+    dropdownButtonTxtStyle: {
+        flex: 1,
+        fontSize: 15,
+        color: '#000',
+    },
+    dropdownButtonArrowStyle: {
+        fontSize: 15,
+    },
+    dropdownButtonIconStyle: {
+        fontSize: 28,
+        marginRight: 8,
+    },
+    dropdownMenuStyle: {
+        backgroundColor: '#E9ECEF',
+        borderRadius: 8,
+    },
+    dropdownItemStyle: {
+        width: '100%',
+        flexDirection: 'row',
+        paddingHorizontal: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 8,
+        backgroundColor: '#fff',
+        marginVertical: 2
+    },
+    dropdownItemTxtStyle: {
+        flex: 1,
+        fontSize: 15,
+        color: '#000',
+    },
+
+});
