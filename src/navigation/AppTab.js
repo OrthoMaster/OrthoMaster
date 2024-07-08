@@ -54,7 +54,7 @@ export const AppTab = ({ }) => {
     } catch (error) {
       throw error
     } finally {
-      console.log('[ LOG App ]:', log)
+      //console.log('[ LOG App ]:', log)
     }
   }
 

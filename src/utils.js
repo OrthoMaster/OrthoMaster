@@ -13,7 +13,6 @@ export const restoreLocalConfigAsync = async () => {
 
 	let config = await AsyncStorage.getItem('user', (error, result) => {
 		if (error) {
-			console.log(error);
 			throw error
 		}
 		return result

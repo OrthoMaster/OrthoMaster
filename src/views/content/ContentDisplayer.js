@@ -49,7 +49,7 @@ export function ContentDisplayer({ route, navigation }) {
 
   const saveLogs = async (log) => {
     await mutation.mutateAsync(log)
-    console.log('[ LOG lesson ]:', log)
+    //console.log('[ LOG lesson ]:', log)
   };
 
 
