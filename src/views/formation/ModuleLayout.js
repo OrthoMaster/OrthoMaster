@@ -20,6 +20,8 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getUserRegisteredFormation } from '../../services/FormationService';
 
+import { AntDesign } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 const MainQuizButton = ({
     quizType,
