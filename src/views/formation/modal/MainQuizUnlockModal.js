@@ -73,7 +73,7 @@ export const MainQuizUnlockModal = ({
                                 :
                                 <View style={styles.textBox}>
                                     <Text style={styles.textPrimary}>Félicitations !</Text>
-                                    <Text style={[styles.textSecondary, { textAlign: 'center', marginBottom: 30 }]}>Tu as complété 80% de la formation OrthoMaster</Text>
+                                    <Text style={[styles.textSecondary, { textAlign: 'center', marginBottom: 30 }]}>Tu as complété 60% de la formation OrthoMaster</Text>
                                     <Text style={styles.textTertiary}>Tu peux maintenant accéder au quiz final pour évaluer tes progrès, ou continuer à avancer sur les dernières leçons.</Text>
                                     <Text style={[styles.textTertiary, { marginTop: 20 }]}>Cette évaluation est indispensable pour les professionels qui se forment avec une prise en charge DPC</Text>
                                     <Text style={[styles.textTertiary, { marginTop: 10 }]}>Durée estimée (10 min)</Text>
