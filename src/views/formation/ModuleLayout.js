@@ -17,13 +17,15 @@ import { useIsFocused } from '@react-navigation/native';
 import { useQuery } from 'react-query';
 import { fetchModules } from '../../services/ModuleService';
 import { getFormationMainQuizStatus } from '../../services/FormationService';
-import { LoadingContent } from '../../component/LoadingContent';
 
+import { AntDesign } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 const MainQuizButton = ({
     quizType,
     onClick,
-    quizData
+    quizData,
+    enabled = true
 }) => {
     const [quizIsDone, setquizIsDone] = useState(false)
 
@@ -42,11 +44,11 @@ const MainQuizButton = ({
         <TouchableOpacity
             style={[styles.mainQuizButtonContainer, {
                 //marginBottom: quizType == 'final' ? 100 : 40,
-                backgroundColor: quizIsDone ? '#ffffff' : quizIsDone == 0 ? '#ffaf31' : '#D2D2D2',
+                backgroundColor: enabled ? (quizIsDone ? '#ffffff' : '#ffaf31') : "#D2D2D2"
 
             }]}
             onPress={() => {
-                if (quizIsDone == 0 || (quizIsDone == 1 && quizType == 'final')) {
+                if (enabled && (quizIsDone == 0 || (quizIsDone == 1 && quizType == 'final'))) {
                     onClick()
                 }
             }}
@@ -68,12 +70,24 @@ const MainQuizButton = ({
                     : 'Le Quiz final'
                 }
             </Text>
-            <Image
-                source={quizIsDone ?
-                    require('../../../assets/formation/quiz_done.png')
-                    : require('../../../assets/formation/quiz_play.png')}
-                style={styles.mainQuizButtonImg}
-            />
+            {
+                enabled ?
+                    <Image
+                        source={quizIsDone ?
+                            require('../../../assets/formation/quiz_done.png')
+                            : require('../../../assets/formation/quiz_play.png')}
+                        style={styles.mainQuizButtonImg}
+                    />
+                    : <AntDesign name="lock" size={30} color="white" />
+            }
+            {
+                (quizType == "final" && quizIsDone) &&
+                <Ionicons style={{
+                    position: 'absolute',
+                    right: -10, bottom: -10,
+                    backgroundColor: '#fff'
+                }} name="reload" size={24} color="#ffaf31" />
+            }
         </TouchableOpacity>
     )
 }
@@ -97,7 +111,6 @@ export const ModuleLayout = ({ navigation, route }) => {
                 totalLesson += element.total_lesson
                 finishLesson += element.lesson_succeed
             });
-
             setFormationPercentage(finishLesson * 100 / totalLesson)
             setModalVisible(true)
         }
@@ -163,6 +176,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                                 }
                             })
                         }}
+                        enabled={true}
                     />
                 }
                 ListFooterComponent={
@@ -179,6 +193,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                                 }
                             })
                         }}
+                        enabled={formationPercentage >= 60 ? true : false}
                     />
                 }
             />
@@ -219,7 +234,8 @@ export const ModuleLayout = ({ navigation, route }) => {
                             navigation.navigate('formation-content', {
                                 content: {
                                     type: 'lesson',
-                                    title: 'final'
+                                    title: 'final',
+                                    s3_path: 'lesson'
                                 }
                             })
                         }}
