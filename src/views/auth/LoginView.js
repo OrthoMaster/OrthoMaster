@@ -11,7 +11,8 @@ import {
     KeyboardAvoidingView,
     TouchableWithoutFeedback,
     Keyboard,
-    Platform
+    Platform,
+    Linking
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectAuthMessage } from '../../reducers/auth';
@@ -21,7 +22,7 @@ import { login } from '../../actions/auth';
 
 
 export const LoginView = ({ navigation, route }) => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [statusMessage, setStatusMessage] = useState('')
     const authMessage = useSelector(selectAuthMessage)
@@ -30,7 +31,7 @@ export const LoginView = ({ navigation, route }) => {
 
 
     const handleClick = () => {
-        dispatch(login(username, password))
+        dispatch(login(email, password))
 
     }
 
@@ -62,12 +63,12 @@ export const LoginView = ({ navigation, route }) => {
                             <Text style={styles.title}>Connexion</Text>
                             <TextInput
                                 style={[styles.intputField]}
-                                placeholder="Nom d'utilisateur"
-                                value={username}
-                                onChangeText={setUsername}
-                                textContentType="username"
+                                placeholder="Adresse e-mail"
+                                value={email}
+                                onChangeText={setEmail}
+                                textContentType="email"
                                 autoCapitalize={'none'}
-                                autoComplete='username'
+                                autoComplete='email'
 
                             />
 
@@ -106,21 +107,11 @@ export const LoginView = ({ navigation, route }) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => {
-                                    navigation.push("auth-reset-password")
+                                    Linking.openURL("https://orthomaster-saas.odoo.com/web/reset_password")
                                 }}
                             >
                                 <Text style={{ color: '#EA6910', fontSize: 18 }}>Mot de passe oublié</Text>
                             </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{ marginTop: 10 }}
-                                onPress={() => {
-                                    navigation.push("auth-forgot-username")
-                                }}
-                            >
-                                <Text style={{ color: '#EA6910', fontSize: 18 }}>Nom d'utilisateur oublié</Text>
-                            </TouchableOpacity>
-
                         </View>
                     </View>
 

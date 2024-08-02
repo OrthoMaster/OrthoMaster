@@ -11,9 +11,9 @@ import AuthService from "../services/AuthService";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
-export const login = (username, password) => async (dispatch) => {
+export const login = (email, password) => async (dispatch) => {
   try {
-    const data = await AuthService.login(username, password);
+    const data = await AuthService.login(email, password);
     if (data) {
       AsyncStorage.setItem('user', JSON.stringify(data.user), (error) => {
         if (error)
@@ -23,10 +23,17 @@ export const login = (username, password) => async (dispatch) => {
       await SecureStore.setItemAsync('refreshToken', data.token.refresh_token)
     }
 
-    dispatch({
-      type: LOGIN_SUCCESS,
-      payload: { user: data.user },
-    });
+    if (data.user.enabled) {
+      dispatch({
+        type: LOGIN_SUCCESS,
+        payload: { user: data.user },
+      });
+    } else {
+      dispatch({
+        type: LOGIN_FAIL,
+        payload: { msg: "Utilisateur désactivé" }
+      });
+    }
   } catch (e) {
     dispatch({
       type: LOGIN_FAIL,
