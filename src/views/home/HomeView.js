@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,13 +9,11 @@ import {
   StatusBar,
   RefreshControl
 } from 'react-native';
-import { useStore } from 'react-redux';
 import {
   CopilotStep,
   walkthroughable,
   useCopilot
 } from "react-native-copilot";
-import { WebView } from 'react-native-webview';
 
 
 
@@ -31,11 +29,9 @@ const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
-  const store = useStore()
-  const authState = store.getState().auth
   const qaPreview = useQuery(['Home', 'GET', "qaPreview"], () => fetchQa(5));
   const flashPreview = useQuery(['Home', 'GET', "flashPreview"], () => fetchFlashContent(0, 5));
-  const copilote = useCopilot()
+  // const copilote = useCopilot()
 
 
   const onRefresh = useCallback(() => {
@@ -60,7 +56,7 @@ export const HomeView = ({ navigation, route }) => {
       <ScrollView style={{ backgroundColor: 'white' }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <HomeHeader navigation={navigation} userName={authState.userCurrentSession.name} />
+        <HomeHeader navigation={navigation} />
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>

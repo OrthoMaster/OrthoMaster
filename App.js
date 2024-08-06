@@ -2,24 +2,22 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
-import checkVersion from 'react-native-store-version';
 import * as Linking from 'expo-linking';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { Alert } from 'react-native';
-import * as Application from 'expo-application';
 
 import { selectDisplayIntro, selectIsLoggedIn } from './src/reducers/auth';
 import { refreshUserSession, logout, startIntro, stopIntro } from './src/actions/auth';
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { LoadingContent } from './src/component/LoadingContent';
-import { AlertVersion } from './src/component/AlertVersion';
 import { NotificationHandler } from './src/component/NotificationHandler';
 import { appDefault, thuasne } from './src/AppMode';
 import { selectModeValue } from './src/reducers/appModeReducer';
 import { getCurrentUser } from './src/services/UserService';
 import { IntroView } from './src/views/intro/IntroView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
 const prefix = Linking.createURL('/');
 
 
@@ -27,11 +25,12 @@ export default function App({ navigation }) {
   const isLoggedIn = useSelector(selectIsLoggedIn)
   const isEnabled = useSelector(state => state.auth.userCurrentSession?.enabled)
   const displayIntro = useSelector(selectDisplayIntro)
-
+  const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const appMode = useSelector(selectModeValue)
   const dispatch = useDispatch()
-  const currentUser = useQuery(["init", "GET", "user"], () => getCurrentUser(), {
+  const queryCli = useQueryClient()
+  const currentUser = useQuery(["current-user"], () => getCurrentUser(), {
     enabled: false
   })
 
@@ -52,6 +51,7 @@ export default function App({ navigation }) {
   };
 
   const retreiveSession = async () => {
+    console.log("retrive user..");
     return await new Promise((resolve, reject) => {
       currentUser.refetch().then(res => {
         if (res && res.data) {
@@ -59,7 +59,7 @@ export default function App({ navigation }) {
         } else {
           dispatch(logout())
         }
-        resolve()
+        resolve(res.data)
       })
 
     })
@@ -68,11 +68,20 @@ export default function App({ navigation }) {
 
   useEffect(() => {
     const init = async () => {
-      await retreiveSession();
+      AsyncStorage.clear()
+      const user = await retreiveSession();
+      const displayInitialConfigForm = await AsyncStorage.getItem("initial-conf-slider-displayed")
       const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
-      if (!displayIntro){
+
+      // if (!displayInitialConfigForm ) {
+        if (!displayInitialConfigForm && user.office_id == null) {
+        setShowInitialConfigForm(true)
+      }
+
+      if (!displayIntro) {
         dispatch(startIntro())
       }
+
       setIsLoading(false)
     }
     init()
@@ -108,6 +117,15 @@ export default function App({ navigation }) {
               <AppTab />
             </NotificationHandler>
           : <AuthStack />
+      }
+
+      {
+        showInitialConfigForm &&
+        <InitialConfigForm onFinish={() => {
+          AsyncStorage.setItem("initial-conf-slider-displayed", "true")
+          queryCli.invalidateQueries({ queryKey: ['current-user'] })
+          setShowInitialConfigForm(false)
+        }} />
       }
 
       {/* <AlertVersion isVisible={modalVersionIsVisible} onClose={() => {
