@@ -16,6 +16,7 @@ import { useQuery } from 'react-query';
 import { getUserNextLesson } from '../../services/ContentService';
 import { useTheme } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
+import { getCurrentUser } from '../../services/UserService';
 
 
 export const HomeHeader = ({ navigation, userName }) => {
@@ -24,6 +25,7 @@ export const HomeHeader = ({ navigation, userName }) => {
         enabled: false
     })
     const { colors, isLabo, logos } = useTheme()
+    const user = useQuery("current-user", ()=>getCurrentUser())
 
     useEffect(() => {
         if (!nextLesson.isLoading && !nextLesson.error && nextLesson.data) {
@@ -37,7 +39,7 @@ export const HomeHeader = ({ navigation, userName }) => {
     }, [nextLesson])
 
 
-    let username = userName
+    let username = user.data.name
     
     return (
         <View>
