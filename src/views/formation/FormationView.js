@@ -4,22 +4,40 @@ import { Feather } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { getUserRegisteredFormation, getFormations, registerAsFormationDemo } from '../../services/FormationService'
 import AppModal from '../../component/AppModal';
-import { PaymentFormationModal } from './modal/PaymentFormationModal';
+import { PaymentFormationModal } from './modal/paymentModal/PaymentFormationModal';
 import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
 import { useNavigation } from '@react-navigation/native';
 import { LessonHeader } from './LessonHeader';
 
-const RegisteredFormationCard = ({ params }) => {
+const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
     const startDate = new Date(params.start_date_theorical).toLocaleDateString()
     const endDate = new Date(params.end_date_theorical).toLocaleDateString()
     const navigation = useNavigation()
+    const isCertifying = params.certifying
+    const isPaid = params.is_paid
+    const isDemo = !params.certifying && !params.is_paid
+
+    const getMode = () => {
+        if (isDemo) {
+            return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Mode démo</Text>
+        } else {
+            if (isCertifying) {
+                return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Dossier pris en charge</Text>
+            } else {
+                if (isPaid) {
+                    return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Acheté</Text>
+                }
+            }
+        }
+    }
+
 
     return <View style={{ alignItems: 'center' }}>
+        {getMode()}
+
+
         <TouchableOpacity style={cardStyle.buttonStyle}
             onPress={() => {
-                let isDemo = true;
-                if (params.certifying || params.is_paid)
-                    isDemo = false
                 navigation.navigate("formation-modules", {
                     idFormation: params.id_formation,
                     formationName: params.formation_name,
@@ -28,11 +46,40 @@ const RegisteredFormationCard = ({ params }) => {
             }}>
             <Text style={{
                 color: '#FFF',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
             }}>
-                Commencer
+                Accéder
             </Text>
         </TouchableOpacity>
+        {
+            isDemo &&
+            <View>
+                <Text style={cardStyle.textStyle}> {params.price} € HT / utilisateur</Text>
+                <TouchableOpacity style={cardStyle.buttonStyle}
+                    onPress={() => { onPaymentRequest(params) }}>
+                    <Text style={{
+                        color: '#FFF',
+                        fontWeight: 'bold'
+                    }}>
+                        Payer
+                    </Text>
+                </TouchableOpacity>
+
+                <Text style={[cardStyle.textStyle, { fontWeight: "bold" }]}>ou</Text>
+                <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
+                <TouchableOpacity style={cardStyle.buttonStyle}
+                    onPress={() => {
+                        Linking.openURL("https://www.orthomaster.fr/parcour-certifiant")
+                    }}>
+                    <Text style={{
+                        color: '#FFF',
+                        fontWeight: 'bold'
+                    }}>
+                        Faire une demande
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        }
     </View>
 }
 
@@ -120,7 +167,7 @@ const FormationCard = ({ formation, onPaymentRequest, registered }) => {
 
         {
             registered ?
-                <RegisteredFormationCard params={formation} />
+                <RegisteredFormationCard params={formation} onPaymentRequest={(formation) => onPaymentRequest(formation)} />
                 : <UnregisteredFormationCard params={formation} onPaymentRequest={(formation) => onPaymentRequest(formation)} />
         }
         <TouchableOpacity style={{
@@ -247,6 +294,6 @@ const cardStyle = StyleSheet.create({
     buttonStyle: {
         backgroundColor: '#ffaf31',
         padding: 5,
-        borderRadius: 5
+        borderRadius: 5,
     }
 })

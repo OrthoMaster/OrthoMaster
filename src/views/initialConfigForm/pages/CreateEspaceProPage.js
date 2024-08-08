@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, View, ScrollView } from "react-native";
 import Toast from 'react-native-toast-message';
 import AddEspaceProForm from "../../../component/forms/AddEspaceProForm";
 
@@ -24,8 +24,8 @@ export default CreateEspaceProPage = ({ office, onFinish }) => {
             marginBottom: 100
         }}>Création d'espace pro</Text>
 
-        <View style={{
-            height: 300, width: "90%",
+        <ScrollView style={{
+            width: "90%",
             backgroundColor: '#fff',
             alignSelf: 'center',
             borderRadius: 10
@@ -48,7 +48,7 @@ export default CreateEspaceProPage = ({ office, onFinish }) => {
                     })
                 }}
             />
-        </View>
+        </ScrollView>
         <Toast position="bottom" />
     </View>
 }

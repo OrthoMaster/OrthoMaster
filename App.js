@@ -51,7 +51,6 @@ export default function App({ navigation }) {
   };
 
   const retreiveSession = async () => {
-    console.log("retrive user..");
     return await new Promise((resolve, reject) => {
       currentUser.refetch().then(res => {
         if (res && res.data) {
@@ -68,12 +67,11 @@ export default function App({ navigation }) {
 
   useEffect(() => {
     const init = async () => {
-      AsyncStorage.clear()
+      // AsyncStorage.clear()
       const user = await retreiveSession();
       const displayInitialConfigForm = await AsyncStorage.getItem("initial-conf-slider-displayed")
       const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
 
-      // if (!displayInitialConfigForm ) {
         if (!displayInitialConfigForm && user.office_id == null) {
         setShowInitialConfigForm(true)
       }
