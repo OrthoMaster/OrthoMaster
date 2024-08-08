@@ -7,12 +7,16 @@ import {
 } from "react-native";
 import { FormField } from "../FormField";
 import { useMutation } from "react-query";
-
+import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { createEspacePro } from "../../services/OfficeService";
 
 export default AddEspaceProForm = ({ onSuccess, onError, attachedOffice }) => {
-    const [name, setName] = useState("")
-    const [idOffice, setIdOffice] = useState(attachedOffice?.id_office)
+    const [formData, setFormData] = useState({
+        name: "",
+        autorizeStructurePayement: false,
+        autorizeMultipleMemberPayment: false
+    })
+
     const sendForm = useMutation(createEspacePro, {
         onSuccess: data => {
             onSuccess(data.data)
@@ -24,9 +28,14 @@ export default AddEspaceProForm = ({ onSuccess, onError, attachedOffice }) => {
     const [errorMessage, setErrorMessage] = useState(null)
 
     const validForm = () => {
-        if (name.trim().length > 0 &&
-            idOffice && idOffice > 0) {
-            sendForm.mutate({ name: name, id_office: idOffice })
+        if (formData.name.trim().length > 0 &&
+            attachedOffice?.id_office && attachedOffice?.id_office > 0) {
+            sendForm.mutate({
+                name: formData.name,
+                id_office: attachedOffice?.id_office,
+                autorizeStructurePayment: formData.autorizeStructurePayement,
+                autorizeMultipleUserPayment: formData.autorizeMultipleMemberPayment
+            })
         } else {
             setErrorMessage("Tous les champs obligatoire doivent être remplis")
         }
@@ -47,15 +56,45 @@ export default AddEspaceProForm = ({ onSuccess, onError, attachedOffice }) => {
                 borderWidth: 2,
                 marginTop: 20
             }}>
-                {/* <Text>dzdzdz</Text> */}
                 <Text>{attachedOffice?.name}</Text>
             </View>
         </View>
 
         <FormField type={"text"} name={"Nom de l'espace"} value={"name"}
             required={true}
-            onChange={(val) => setName(val.text)}
+            onChange={(val) => setFormData({
+                ...formData, name: val.text
+            })}
         />
+        <BouncyCheckbox
+            size={20}
+            fillColor="#ffaf31"
+            unFillColor="#FFFFFF"
+            text={"Permettre aux membres de l'espace d'utiliser l'adresse " +
+                "de facturation de la structure pour effectuer un paiement " +
+                "dans OrthoMaster.\n(Toute demande d'achat vous sera adressé avant paiement)"}
+            textStyle={styles.checkboxText}
+            innerIconStyle={{ borderWidth: 2 }}
+            style={styles.checkbox}
+            onPress={(isChecked) => {
+                setFormData({ ...formData, autorizeStructurePayement: isChecked })
+            }}
+        />
+        {
+            formData.autorizeStructurePayement &&
+            <BouncyCheckbox
+                size={20}
+                fillColor="#ffaf31"
+                unFillColor="#FFFFFF"
+                text={"Permettre aux utilisateurs de payer pour plusieurs membres"}
+                textStyle={styles.checkboxText}
+                innerIconStyle={{ borderWidth: 2 }}
+                style={styles.checkbox}
+                onPress={(isChecked) => {
+                    setFormData({ ...formData, autorizeMultipleMemberPayment: isChecked })
+                }}
+            />
+        }
 
         {
             errorMessage &&
@@ -81,3 +120,13 @@ export default AddEspaceProForm = ({ onSuccess, onError, attachedOffice }) => {
     </View>
 }
 
+const styles = StyleSheet.create({
+    checkbox: {
+        paddingHorizontal: 10,
+        marginVertical: 10
+    },
+    checkboxText: {
+        fontSize: 12,
+        textDecorationLine: "none"
+    }
+})

@@ -17,6 +17,8 @@ import { useIsFocused } from '@react-navigation/native';
 import { useQuery } from 'react-query';
 import { fetchModules } from '../../services/ModuleService';
 import { getFormationMainQuizStatus } from '../../services/FormationService';
+import AntDesign from '@expo/vector-icons/AntDesign';
+
 
 const MainQuizButton = ({
     quizType,
