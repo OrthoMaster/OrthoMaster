@@ -1,12 +1,12 @@
 import React from "react";
 import { Button, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import MemberEspaceProForm from "../../../component/forms/AddMemberEspaceProForm";
+import AddMemberOfficeForm from "../../../component/forms/AddMemberOfficeForm";
 import Toast from 'react-native-toast-message';
 
 import * as Sharing from 'expo-sharing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-export default AddMemberEspaceProPage = ({ espace, onFinish }) => {
+export default AddMemberOfficePage = ({ office, onFinish }) => {
     const showToast = ({
         type = 'success',
         text1 = 'Hello',
@@ -32,13 +32,13 @@ export default AddMemberEspaceProPage = ({ espace, onFinish }) => {
             marginTop: 50,
             marginLeft: 30,
             marginBottom: 20
-        }}>Ajoutez des membres à votre espace pro</Text>
+        }}>Ajoutez des membres à votre entreprise</Text>
         <Text style={{
             marginLeft: 30,
             marginBottom: 20
         }}>
-            Pour ajouter un membre à votre nouvel espace pro,
-            vérifiez que l'utilisateur se soit connecté au moin une fois à l'application.
+            Pour ajouter un membre à votre nouvel espace entreprise,
+            vérifiez que le compte de l'utilisateur soit bien activé.
         </Text>
         <View style={{
             alignItems: 'center',
@@ -81,8 +81,8 @@ export default AddMemberEspaceProPage = ({ espace, onFinish }) => {
             paddingHorizontal: 10
         }}>
 
-            <MemberEspaceProForm
-                attachedEspace={espace}
+            <AddMemberOfficeForm
+                attachedOffice={office}
                 onEnd={() => {
                     onFinish()
                 }}
@@ -93,11 +93,11 @@ export default AddMemberEspaceProPage = ({ espace, onFinish }) => {
                         text2: "Votre espace pro reste modifiable sur votre page entreprise"
                     })
                 }}
-                onError={() => {
+                onError={(errorMessage) => {
                     showToast({
                         type: "error",
-                        text1: "Utilisateur introuvable",
-                        text2: "Vérifiez que l'utilisater ai un compte activé."
+                        text1: "Echec de l'ajout",
+                        text2: errorMessage
                     })
                 }}
             />

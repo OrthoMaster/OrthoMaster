@@ -6,13 +6,11 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CreateOfficePage from "./pages/CreateOfficePage";
-import AddMemberEspaceProPage from "./pages/AddMemberEspaceProPage";
-import CreateEspaceProPage from "./pages/CreateEspaceProPage";
+import AddMemberOfficePage from "./pages/AddMemberOfficePage";
 import { useQueryClient } from "react-query";
 
 export const InitialConfigForm = ({onFinish}) => {
     const [officeCreated, setOfficeCreated] = useState(null)
-    const [espaceCreated, setEspaceCreated] = useState(null)
     const [pageIndex, setPageIndex] = useState(0)
 
 
@@ -31,21 +29,11 @@ export const InitialConfigForm = ({onFinish}) => {
         }
         {
             (pageIndex == 1 && officeCreated) &&
-            <CreateEspaceProPage onFinish={(newEspace) => {
-                //console.log("NEW", newEspace);
-                setEspaceCreated(newEspace)
-                setPageIndex(2)
-            }}
-                office={officeCreated}
-            />
-        }
-        {
-            (pageIndex == 2 && espaceCreated) &&
-            <AddMemberEspaceProPage onFinish={() => {
+            <AddMemberOfficePage onFinish={() => {
                 setPageIndex(3)
                 onFinish()
             }}
-                espace={espaceCreated}
+                office={officeCreated}
             />
         }
     </SafeAreaView>

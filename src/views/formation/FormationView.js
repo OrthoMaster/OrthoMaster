@@ -143,6 +143,7 @@ const UnregisteredFormationCard = ({ params, onPaymentRequest }) => {
 
 
 const FormationCard = ({ formation, onPaymentRequest, registered }) => {
+
     return <View style={{
         backgroundColor: '#27927E',
         width: "90%",
@@ -240,7 +241,16 @@ export const FormationView = ({ navigation, route }) => {
         <AppModal
             isVisible={activatePayment.isActivate}
             onClose={() => setActivatePayment({ isActivate: false, formation: null })}
-            customRender={<PaymentFormationModal formation={activatePayment.formation} />}
+            customRender={<PaymentFormationModal
+                formation={{
+                    name: activatePayment?.formation?.formation_name,
+                    idFormation: activatePayment?.formation?.id_formation,
+                    price: formations?.filter(elem=> elem.id_formation == activatePayment?.formation?.id_formation)[0]?.price
+                }}
+            />}
+            style={{
+                height: '70%'
+            }}
         />
     </View>
 }

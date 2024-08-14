@@ -11,14 +11,14 @@ import {
 import { FormField } from "../FormField";
 import { useQuery, useMutation } from "react-query";
 
-import { addMemberEspacePro } from "../../services/OfficeService";
+import { addMemberOffice } from "../../services/OfficeService";
 
-export default AddMemberEspaceProForm = ({ onSuccess, onError, attachedEspace, onEnd }) => {
+export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEnd }) => {
     const [userAdded, setUserAdded] = useState([])
     const [email, setEmail] = useState("")
-    const { status: formStatus, data: formData, isFetching, mutate: mutateForm } = useMutation(addMemberEspacePro, {
+    const { status: formStatus, data: formData, isFetching, mutate: mutateForm } = useMutation(addMemberOffice, {
         onError: error => {
-            onError(error)
+            onError(error.response.data.message)
         }
     })
     const [errorMessage, setErrorMessage] = useState(null)
@@ -43,7 +43,7 @@ export default AddMemberEspaceProForm = ({ onSuccess, onError, attachedEspace, o
 
     return <View>
         <View>
-            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Espace :</Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Entreprise :</Text>
             <View style={{
                 backgroundColor: "#fff",
                 alignSelf: 'center',
@@ -55,7 +55,7 @@ export default AddMemberEspaceProForm = ({ onSuccess, onError, attachedEspace, o
                 borderWidth: 2,
                 marginTop: 20
             }}>
-                <Text>{attachedEspace?.name}</Text>
+                <Text>{attachedOffice?.name}</Text>
             </View>
         </View>
 
@@ -101,7 +101,7 @@ export default AddMemberEspaceProForm = ({ onSuccess, onError, attachedEspace, o
             borderRadius: 5
         }} onPress={() => {
             if (!isFetching) {
-                mutateForm({ email: email, id_espace: attachedEspace.id })
+                mutateForm({ email: email, id_office: attachedOffice.id_office })
             }
         }}>
             {
@@ -136,7 +136,7 @@ export default AddMemberEspaceProForm = ({ onSuccess, onError, attachedEspace, o
             {
                 isFetching ?
                     <ActivityIndicator />
-                    : <Text>Terminer la configuration de mon espace</Text>
+                    : <Text>Terminer la configuration</Text>
             }
         </TouchableOpacity>
     </View>
