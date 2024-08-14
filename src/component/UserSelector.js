@@ -2,27 +2,15 @@ import React, { useEffect, useState } from "react";
 
 import {
     View,
-    Image,
-    Text,
-    TouchableOpacity,
     StyleSheet,
     Dimensions,
     FlatList,
-    Linking,
-    ActivityIndicator
 } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
-import { useMutation, useQuery } from "react-query";
-import { getUsersByOfficeId } from "../../../../services/UserService";
-import { buyFormationLicence } from "../../../../services/PaymentService";
-import { useStore } from 'react-redux';
 
-export default EspaceProUserSelection = ({espace}) => {
+export default UserSelector = ({usersArray = [], onSelect}) => {
 
     const [selectedCollaborators, setSelectedCollaborators] = useState([])
-    const store = useStore()
-    const managerUser = store.getState().auth.userCurrentSession
-    const officeUsers = useQuery(["GET", "USER", "OFFICE", managerUser.office_id], () => getUsersByOfficeId(managerUser.office_id))
 
     const addCollaborator = (id, completeName) => {
         if (selectedCollaborators.find(val => val.id == id))
@@ -35,8 +23,8 @@ export default EspaceProUserSelection = ({espace}) => {
     }
     const addAllCollaborator = () => {
         const newArray = []
-        officeUsers.data.forEach(user => {
-            newArray.push({ id_user: user.id_user, complete_name: user.name + " " + user.lastname })
+        usersArray.forEach(user => {
+            newArray.push({ id_user: user.id_user, complete_name: user.name})
         });
 
         setSelectedCollaborators(newArray)
@@ -44,6 +32,11 @@ export default EspaceProUserSelection = ({espace}) => {
     const removeAllCollaborator = () => {
         setSelectedCollaborators([])
     }
+
+    useEffect(() => {
+      onSelect(selectedCollaborators)
+    }, [selectedCollaborators])
+    
 
     return <View style={{
         borderWidth: 1,
@@ -69,7 +62,7 @@ export default EspaceProUserSelection = ({espace}) => {
         />
         <View style={{ height: 0.2, width: '100%', backgroundColor: '#000', alignSelf: "center" }} />
         <FlatList
-            data={officeUsers.data}
+            data={usersArray}
             keyExtractor={(item, index) => index}
 
             renderItem={(item) => <BouncyCheckbox
@@ -77,14 +70,13 @@ export default EspaceProUserSelection = ({espace}) => {
                 fillColor="#ffaf31"
                 unFillColor="#FFFFFF"
                 textStyle={styles.checkBoxText}
-                text={item.item.name + " " + item.item.lastname +
-                    (managerUser.id_user == item.item.id_user ? " (vous)" : "")}
+                text={item.item.name} //+ (managerUser.id_user == item.item.id_user ? " (vous)" : "")}
                 innerIconStyle={{ borderWidth: 2 }}
                 style={{ marginVertical: 5 }}
                 isChecked={selectedCollaborators.find(user => user.id_user == item.item.id_user)}
                 onPress={(isChecked) => {
                     if (isChecked)
-                        addCollaborator(item.item.id_user, item.item.name + " " + item.item.lastname)
+                        addCollaborator(item.item.id_user, item.item.name)
                     else
                         removeCollaborator(item.item.id_user)
                 }}

@@ -72,7 +72,7 @@ export default function App({ navigation }) {
       const displayInitialConfigForm = await AsyncStorage.getItem("initial-conf-slider-displayed")
       const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
 
-        if (!displayInitialConfigForm && user.office_id == null) {
+        if (!displayInitialConfigForm) {
         setShowInitialConfigForm(true)
       }
 

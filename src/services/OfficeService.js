@@ -139,39 +139,15 @@ export const createOffice = async (office) => {
     });
 }
 
-export const createEspacePro = async ({
-  id_office, name,
-  autorizeStructurePayment, autorizeMultipleUserPayment
-}) => {
+
+export const addMemberOffice = async ({ email, id_office }) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .post(baseurl + "/office/espace-pro/create", {
-      name: name,
-      id_user_referent: config.user.id_user,
-      id_office_referent: id_office,
-      structure_payment: autorizeStructurePayment,
-      multipe_payment: autorizeMultipleUserPayment
-    }, {
-      headers: { Authorization: authHeader }
-    })
-    .then((response) => {
-      return response;
-    })
-    .catch((e) => {
-      throw e
-    });
-}
-
-export const addMemberEspacePro = async ({ email, id_espace }) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
-
-  return axios
-    .post(baseurl + "/office/espace-pro/add-member", {
+    .post(baseurl + "/office/v2/add-member", {
       email: email,
-      id_espace_pro: id_espace
+      id_office: id_office
     }, {
       headers: { Authorization: authHeader }
     })
@@ -183,31 +159,13 @@ export const addMemberEspacePro = async ({ email, id_espace }) => {
     });
 }
 
-export const removeMemberEspacePro = async ({ id_user, id_espace_pro }) => {
+export const removeMemberOffice = async ({ id_user, id_office }) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .post(baseurl + "/office/espace-pro/remove-member", {
+    .post(baseurl + "/office/v2/remove-member", {
       id_user: id_user,
-      id_espace_pro: id_espace_pro
-    }, {
-      headers: { Authorization: authHeader }
-    })
-    .then((response) => {
-      return response;
-    })
-    .catch((e) => {
-      throw e
-    });
-}
-
-export const getEspaceProByOffice = async ({ id_office }) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
-
-  return axios
-    .post(baseurl + "/office/espace-pro/list", {
       id_office: id_office
     }, {
       headers: { Authorization: authHeader }
