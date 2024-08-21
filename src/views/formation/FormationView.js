@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Text, View, Pressable, StyleSheet, Linking, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Dimensions, ScrollView } from 'react-native'
 import { Feather } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { getUserRegisteredFormation, getFormations, registerAsFormationDemo } from '../../services/FormationService'
+import { getUserRegisteredFormation, getFormations, registerFormation } from '../../services/FormationService'
 import AppModal from '../../component/AppModal';
 import { PaymentFormationModal } from './modal/paymentModal/PaymentFormationModal';
 import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
@@ -39,8 +39,7 @@ const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
         <TouchableOpacity style={cardStyle.buttonStyle}
             onPress={() => {
                 navigation.navigate("formation-modules", {
-                    idFormation: params.id_formation,
-                    formationName: params.formation_name,
+                    formation: params,
                     demoMode: isDemo
                 })
             }}>
@@ -86,12 +85,11 @@ const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
 const UnregisteredFormationCard = ({ params, onPaymentRequest }) => {
     const navigation = useNavigation()
     const queryClient = useQueryClient()
-    const registerDemo = useMutation(registerAsFormationDemo, {
+    const registerDemo = useMutation(registerFormation, {
         onSuccess: data => {
             queryClient.invalidateQueries(["formations", "user"])
             navigation.navigate("formation-modules", {
-                idFormation: params.id_formation,
-                formationName: params.formation_name,
+                formation: params,
                 demoMode: true
             })
         }
@@ -245,7 +243,7 @@ export const FormationView = ({ navigation, route }) => {
                 formation={{
                     name: activatePayment?.formation?.formation_name,
                     idFormation: activatePayment?.formation?.id_formation,
-                    price: formations?.filter(elem=> elem.id_formation == activatePayment?.formation?.id_formation)[0]?.price
+                    price: formations?.filter(elem => elem.id_formation == activatePayment?.formation?.id_formation)[0]?.price
                 }}
             />}
             style={{

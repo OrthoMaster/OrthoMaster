@@ -95,13 +95,14 @@ const MainQuizButton = ({
 
 
 export const ModuleLayout = ({ navigation, route }) => {
-    const { idFormation, formationName, demoMode } = route.params
+    const { formation, demoMode } = route.params
     const [refreshing, setRefreshing] = useState(false)
     const isFocused = useIsFocused();
     const [modalVisible, setModalVisible] = useState(true)
     const [formationPercentage, setFormationPercentage] = useState(0)
-    const modules = useQuery(['Formation', idFormation, 'modules'], () => fetchModules({
-        idFormation: idFormation
+    
+    const modules = useQuery(['Formation', formation.id_formation, 'modules'], () => fetchModules({
+        idFormation: formation.id_formation
     }), {
         onSuccess: (modules) => {
             let totalLesson = 0
@@ -139,7 +140,7 @@ export const ModuleLayout = ({ navigation, route }) => {
         <View style={styles.container}>
             <LessonHeader
                 onSearch={() => (navigation.navigate('formation-search'))}
-                title={formationName}
+                title={formation.formation_name}
                 navigation={navigation}
                 returnEnabed={true}
             />
@@ -153,7 +154,8 @@ export const ModuleLayout = ({ navigation, route }) => {
                     onPress={(module) => {
                         navigation.navigate('formation-lessons', {
                             module: module,
-                            demoMode: demoMode
+                            demoMode: demoMode,
+                            formation: formation
                         })
                     }}
                 />}
@@ -172,7 +174,9 @@ export const ModuleLayout = ({ navigation, route }) => {
                                     type: 'lesson',
                                     title: 'initial',
                                     s3_path: 'lesson'
-                                }
+                                },
+                                formation: formation,
+                                type: "quiz"
                             })
                         }}
                         enabled={true}
@@ -189,7 +193,9 @@ export const ModuleLayout = ({ navigation, route }) => {
                                     type: 'lesson',
                                     title: 'final',
                                     s3_path: 'lesson'
-                                }
+                                },
+                                formation: formation,
+                                type: "quiz"
                             })
                         }}
                         enabled={formationPercentage >= 60 ? true : false}
@@ -213,7 +219,9 @@ export const ModuleLayout = ({ navigation, route }) => {
                                     type: 'lesson',
                                     title: 'initial',
                                     s3_path: 'lesson'
-                                }
+                                },
+                                formation: formation,
+                                type: "quiz"
                             })
                         }}
                     />
@@ -235,7 +243,9 @@ export const ModuleLayout = ({ navigation, route }) => {
                                     type: 'lesson',
                                     title: 'final',
                                     s3_path: 'lesson'
-                                }
+                                },
+                                formation: formation,
+                                type: "quiz"
                             })
                         }}
                     />
