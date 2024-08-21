@@ -11,15 +11,14 @@ export const saveLogtimeOnLesson = async (log) => {
     const body = {
         login: log.login,
         logout: log.logout,
-        contentId: log.contentId
+        content_id: log.contentId,
+        id_user_registered_formation: log.idUserRegisteredFormation
     }
 
     return axios
         .post(baseurl + "/lesson/user/" + config.user.id_user, body, {
             headers: { Authorization: authHeader },
-        },
-        
-        )
+        })
         .then((response) => {
             return response.data;
         })

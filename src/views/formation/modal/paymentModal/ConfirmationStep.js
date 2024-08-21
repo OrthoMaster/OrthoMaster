@@ -6,16 +6,16 @@ import {
     StyleSheet
 } from "react-native";
 import PriceRecap from "../../components/PriceRecap";
+import { useMutation } from "react-query";
+import { createFormationOrder } from "../../../../services/FormationService";
+
 
 export default ConfirmationStep = ({
     formation,
     users,
     billingAddress
 }) => {
-
-    console.log(formation);
-    console.log(users);
-    console.log(billingAddress);
+    const sendOrder = useMutation(createFormationOrder)
 
 
     return <View style={{
@@ -74,9 +74,11 @@ export default ConfirmationStep = ({
             alignSelf: 'center'
         }}
         onPress={()=>{
-            console.log({
-                
-            });
+            sendOrder.mutate({
+                id_formation: formation.idFormation,
+                users: users,
+                billingAddress: billingAddress
+            })
             
         }}
         >

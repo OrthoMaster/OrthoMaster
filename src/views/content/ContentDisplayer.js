@@ -18,7 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 
 export function ContentDisplayer({ route, navigation }) {
-  var { content } = route.params;
+  var { content, formation, type } = route.params;
   const dispatch = useDispatch();
   const appState = useRef(AppState.currentState);
   const contentScrollRef = useRef();
@@ -48,17 +48,28 @@ export function ContentDisplayer({ route, navigation }) {
   const mutation = useMutation(saveLogtimeOnLesson);
 
   const saveLogs = async (log) => {
+    var inn = new Date(log.login)
+    var out = new Date(log.logout)
+    const timePassed = (out - inn) / 1000
+
+    
+    
     await mutation.mutateAsync(log)
-    //console.log('[ LOG lesson ]:', log)
+    if (timePassed >= 10) {
+    }
   };
 
 
   useEffect(() => {
     if (lessonIsFinish) {
       if (route.name == 'home-content') {
-        navigation.push('home-content-result')
+        navigation.push('home-content-result', {
+          formation: formation
+        })
       } else {
-        navigation.push('formation-content-result')
+        navigation.push('formation-content-result', {
+          formation: formation
+        })
       }
     } else {
       if (contentScrollRef.current) {
@@ -72,9 +83,11 @@ export function ContentDisplayer({ route, navigation }) {
 
 
   useEffect(() => {
-    if (content.type == 'lesson' && content.title != 'initial' && content.title != 'final') { // tmp handling of main quiz in the formation
-      launchDate = getCurrentDate()
+    // if (content.type == 'lesson' && content.title != 'initial' && content.title != 'final') { // tmp handling of main quiz in the formation
+    // console.log(formation, type);
 
+    if (formation && type == "lesson") { // tmp handling of main quiz in the formation
+      launchDate = getCurrentDate()
 
       const appStateListener = AppState.addEventListener("change", nextAppState => {
         if (
@@ -82,12 +95,12 @@ export function ContentDisplayer({ route, navigation }) {
           nextAppState === "active"
         ) {
           launchDate = getCurrentDate()
-
         } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
           saveLogs({
             login: launchDate,
             logout: getCurrentDate(),
-            contentId: content.id_content
+            contentId: content.id_content,
+            idUserRegisteredFormation: formation.id
           })
         }
 
@@ -98,7 +111,8 @@ export function ContentDisplayer({ route, navigation }) {
         saveLogs({
           login: launchDate,
           logout: getCurrentDate(),
-          contentId: content.id_content
+          contentId: content.id_content,
+          idUserRegisteredFormation: formation.id
         })
       })
       navigation.addListener('focus', (e) => {
@@ -138,7 +152,7 @@ export function ContentDisplayer({ route, navigation }) {
         }}
       />
       <ScrollView
-      overScrollMode="never"
+        overScrollMode="never"
         contentContainerStyle={styles.scrollContainer}
         ref={contentScrollRef}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}

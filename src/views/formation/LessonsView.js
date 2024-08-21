@@ -21,7 +21,7 @@ import { LoadingContent } from '../../component/LoadingContent';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 export function LessonsView({ route, navigation }) {
-    let { module, demoMode } = route.params
+    let { module, demoMode, formation } = route.params
     const lessons = useQuery(['Formation', 'GET', 'lessonProgress', module.module.module_num], () => fetchLessonByModuleWithProgression(module.module.module_num))
     const [refreshing, setRefreshing] = useState(false)
     const [moduleLogo, setModuleLogo] = useState(null)
@@ -117,7 +117,9 @@ export function LessonsView({ route, navigation }) {
                     onPress={(lesson) => {
                         if (lesson.content.published == true) {
                             navigation.navigate('formation-content', {
-                                content: lesson.content
+                                content: lesson.content,
+                                formation: formation,
+                                type: "lesson"
                             })
                         }
                     }}

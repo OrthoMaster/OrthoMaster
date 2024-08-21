@@ -116,9 +116,11 @@ const failureElements = [
 
 
 export const LessonEndingView = ({ navigation, route }) => {
+  var {formation} = route.params
   const store = useStore()
   const [successMessageIndex, setsuccessMessageIndex] = useState(Math.floor(Math.random() * successElements.length))
   const stateContent = store.getState().content
+  
   const [nbQuizValidated, setnbQuizValidated] = useState(0)
   const dispatch = useDispatch()
   const saveContentMutation = useMutation(postUserLessonStatus);
@@ -130,7 +132,7 @@ export const LessonEndingView = ({ navigation, route }) => {
   const [status, setStatus] = useState(false)
 
   const saveUserAnswer = async (data) => {
-    saveContentMutation.mutateAsync({ status: data.status, id: data.id })
+    saveContentMutation.mutateAsync({ status: data.status, id: data.id, userFormation: formation.id })
   };
 
   const nextLesson = useQuery(['Lesson', 'GET', 'nextLesson', stateContent.content.id_content], () => getNextLesson(stateContent.content.module_num, stateContent.content.order));
@@ -184,13 +186,18 @@ export const LessonEndingView = ({ navigation, route }) => {
     }
     setStatus(lessonStatus)
     if (stateContent.content.title != 'initial' && stateContent.content.title != 'final') {
-      saveUserAnswer({ status: lessonStatus ? 1 : 2, id: stateContent.content.id_content })
+      console.log(formation);
+      
+      saveUserAnswer({
+        status: lessonStatus ? 1 : 2,
+        id: stateContent.content.id_content
+      })
     } else {
       const nbQuizValidated = stateContent.quizPassed.filter(elem => elem.status === true).length
       setnbQuizValidated(nbQuizValidated)
 
       valideMainQuiz.mutate({
-        formation_id: 1,
+        formation_id: formation.id,
         quiz_type: stateContent.content.title,
         score: nbQuizValidated / stateContent.nbQuiz
       })
