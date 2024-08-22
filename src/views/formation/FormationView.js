@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { Text, View, Pressable, StyleSheet, Linking, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Dimensions, ScrollView } from 'react-native'
+import {
+    Text,
+    View,
+    StyleSheet,
+    Linking,
+    Image,
+    TouchableOpacity,
+    ActivityIndicator,
+    ScrollView,
+    RefreshControl
+} from 'react-native'
 import { Feather } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { getUserRegisteredFormation, getFormations, registerFormation } from '../../services/FormationService'
@@ -16,6 +26,9 @@ const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
     const isCertifying = params.certifying
     const isPaid = params.is_paid
     const isDemo = !params.certifying && !params.is_paid
+
+    console.log(params);
+
 
     const getMode = () => {
         if (isDemo) {
@@ -35,6 +48,10 @@ const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
     return <View style={{ alignItems: 'center' }}>
         {getMode()}
 
+        <View>
+            <Text>progress : {params.progress_rate}</Text>
+            <Text>time : {params.time_spent}</Text>
+        </View>
 
         <TouchableOpacity style={cardStyle.buttonStyle}
             onPress={() => {
@@ -52,31 +69,39 @@ const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
         </TouchableOpacity>
         {
             isDemo &&
-            <View>
-                <Text style={cardStyle.textStyle}> {params.price} € HT / utilisateur</Text>
-                <TouchableOpacity style={cardStyle.buttonStyle}
-                    onPress={() => { onPaymentRequest(params) }}>
-                    <Text style={{
-                        color: '#FFF',
-                        fontWeight: 'bold'
-                    }}>
-                        Payer
-                    </Text>
-                </TouchableOpacity>
+            <View style={{
+                flexDirection: 'row'
+            }}>
+                <View style={{ flex: 1 }}>
+                    <Text style={cardStyle.textStyle}> {params.price} € HT / utilisateur</Text>
+                    <TouchableOpacity style={cardStyle.buttonStyle}
+                        onPress={() => { onPaymentRequest(params) }}>
+                        <Text style={{
+                            color: '#FFF',
+                            fontWeight: 'bold'
+                        }}>
+                            Payer
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
                 <Text style={[cardStyle.textStyle, { fontWeight: "bold" }]}>ou</Text>
-                <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
-                <TouchableOpacity style={cardStyle.buttonStyle}
-                    onPress={() => {
-                        Linking.openURL("https://www.orthomaster.fr/parcour-certifiant")
-                    }}>
-                    <Text style={{
-                        color: '#FFF',
-                        fontWeight: 'bold'
-                    }}>
-                        Faire une demande
-                    </Text>
-                </TouchableOpacity>
+
+                <View style={{ flex: 1 }}>
+
+                    <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
+                    <TouchableOpacity style={cardStyle.buttonStyle}
+                        onPress={() => {
+                            Linking.openURL("https://www.orthomaster.fr/parcour-certifiant")
+                        }}>
+                        <Text style={{
+                            color: '#FFF',
+                            fontWeight: 'bold'
+                        }}>
+                            Faire une demande
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         }
     </View>
@@ -188,7 +213,17 @@ export const FormationView = ({ navigation, route }) => {
     const {
         isLoading: loadingUserFormations,
         data: userFormations
-    } = useQuery(["formations", "user"], () => getUserRegisteredFormation())
+    } = useQuery(["user-formations"], () => getUserRegisteredFormation())
+    const [refreshing, setRefreshing] = useState(false);
+    const queryClient = useQueryClient()
+
+    const onRefresh = React.useCallback(() => {
+        setRefreshing(true);
+        setTimeout(() => {
+            setRefreshing(false);
+            queryClient.invalidateQueries("user-formations")
+        }, 2000);
+    }, []);
 
     return <View style={styles.container}>
         <LessonHeader
@@ -196,7 +231,9 @@ export const FormationView = ({ navigation, route }) => {
             title={"Se former"}
             navigation={navigation}
         />
-        <ScrollView>
+        <ScrollView refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
 
             <View style={styles.sectionContainer}>
                 <Text style={styles.textSection}>En cours</Text>

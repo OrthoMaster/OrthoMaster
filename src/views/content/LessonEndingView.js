@@ -145,11 +145,13 @@ export const LessonEndingView = ({ navigation, route }) => {
           dispatch(nextContent(nextLesson.data[0]))
           if (route.name == 'home-content-result') {
             navigation.navigate('home-content', {
-              content: nextLesson.data[0]
+              content: nextLesson.data[0],
+              formation: formation
             });
           } else {
             navigation.navigate('formation-content', {
-              content: nextLesson.data[0]
+              content: nextLesson.data[0],
+              formation: formation
             });
           }
         }
