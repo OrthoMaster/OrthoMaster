@@ -12,6 +12,9 @@ export const fetchModules = async ({idFormation}) => {
   return axios
     .get(baseurl+"/user/"+config.user.id_user, {
       headers: { Authorization: authHeader },
+      params: {
+        id_formation: idFormation
+      }
 
     })
     .then((response) => {

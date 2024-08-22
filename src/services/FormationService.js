@@ -90,7 +90,7 @@ export const registerFormation = async ({ id_formation, formation_name }) => {
   const authHeader = 'Bearer ' + config.JWT;
 
   const body = {
-    usersIds: [config.user.id_user],
+    userId: config.user.id_user,
     formation: {
       id_formation: id_formation,
       formation_name: formation_name,
