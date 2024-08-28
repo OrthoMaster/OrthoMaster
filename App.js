@@ -73,7 +73,7 @@ export default function App({ navigation }) {
       const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
 
         if (!displayInitialConfigForm) {
-        //setShowInitialConfigForm(true)
+        // setShowInitialConfigForm(true)
       }
 
       if (!displayIntro) {

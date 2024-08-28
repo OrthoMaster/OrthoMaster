@@ -147,3 +147,21 @@ export const getCurrentUser = async () => {
         return null
     }
   }
+
+  export const getJobsFunction = async () => {
+    try {
+        const config = await restoreLocalConfigAsync()
+        const authHeader = 'Bearer ' + config.JWT;
+        
+        return axios
+            .get(baseurl + "/jobs/list",{
+                headers: { Authorization: authHeader }
+            })
+            .then((response) => {
+                return response.data;
+            })
+        
+    } catch (error) {
+        return null
+    }
+  }

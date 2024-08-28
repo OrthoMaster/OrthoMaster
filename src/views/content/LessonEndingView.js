@@ -13,14 +13,15 @@ import {
 import { TrophyProgression } from "./trophy/TrophyProgression";
 
 import { useStore, useDispatch } from "react-redux";
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 
 import { postUserLessonStatus } from "../../services/ProgressionService";
-import { valideMainQuizStatusByFormation } from "../../services/FormationService";
+import { updateUserFormationMainQuizStatus } from "../../services/FormationService";
 import { getTrophyProgressBasedOnModule } from "../../services/TrophyService";
 
 import { getNextLesson } from "../../services/ContentService";
 import { exitContent, restartContent, nextContent } from "../../actions/contentAction";
+
 
 const successElements = [
   {
@@ -116,42 +117,51 @@ const failureElements = [
 
 
 export const LessonEndingView = ({ navigation, route }) => {
-  var {formation} = route.params
+  var { formation } = route.params
+  const isDemo = !formation.certifying && !formation.is_paid
+
   const store = useStore()
   const [successMessageIndex, setsuccessMessageIndex] = useState(Math.floor(Math.random() * successElements.length))
   const stateContent = store.getState().content
-  
+
   const [nbQuizValidated, setnbQuizValidated] = useState(0)
   const dispatch = useDispatch()
   const saveContentMutation = useMutation(postUserLessonStatus);
+  const queryClient = useQueryClient()
+  const trophyProgression = useQuery(['Lesson', 'GET', 'trophyProgressBasedOnModule'], () => getTrophyProgressBasedOnModule(stateContent.content.module_num), {
+    enabled: stateContent.content.title != "final" && stateContent.content.title != "initial"
+  })
 
-  const trophyProgression = useQuery(['Lesson', 'GET', 'trophyProgressBasedOnModule'], () => getTrophyProgressBasedOnModule(stateContent.content.module_num))
 
-
-  const valideMainQuiz = useMutation(valideMainQuizStatusByFormation);
+  const valideMainQuiz = useMutation(updateUserFormationMainQuizStatus);
   const [status, setStatus] = useState(false)
 
   const saveUserAnswer = async (data) => {
     saveContentMutation.mutateAsync({ status: data.status, id: data.id, userFormation: formation.id })
   };
 
-  const nextLesson = useQuery(['Lesson', 'GET', 'nextLesson', stateContent.content.id_content], () => getNextLesson(stateContent.content.module_num, stateContent.content.order));
+  const { data: nextLesson, isFetching, isLoading } = useQuery(['Lesson', 'GET', 'nextLesson', stateContent.content.id_content],
+    () => getNextLesson(stateContent.content.module_num, stateContent.content.order, formation.id_formation), {
+    enabled: stateContent.content.title != "final" && stateContent.content.title != "initial"
+  });
 
 
   const handleLessonEnding = async (handleType) => {
     switch (handleType) {
       case 'next':
-        if (nextLesson.data && nextLesson.data.length > 0) {
-          dispatch(nextContent(nextLesson.data[0]))
+        if (nextLesson) {
+          dispatch(nextContent(nextLesson))
           if (route.name == 'home-content-result') {
             navigation.navigate('home-content', {
-              content: nextLesson.data[0],
-              formation: formation
+              content: nextLesson,
+              formation: formation,
+              type: "lesson"
             });
           } else {
             navigation.navigate('formation-content', {
-              content: nextLesson.data[0],
-              formation: formation
+              content: nextLesson,
+              formation: formation,
+              type: "lesson"
             });
           }
         }
@@ -164,7 +174,14 @@ export const LessonEndingView = ({ navigation, route }) => {
 
       case 'return':
         dispatch(exitContent())
-        navigation.popToTop()
+
+        queryClient.invalidateQueries(["user-formations", formation.id])
+        queryClient.invalidateQueries(["user-formations"])
+        queryClient.invalidateQueries(['formation-modules', formation.id_formation])
+        navigation.navigate("formation-modules", {
+          userFormationId: formation.id,
+          demoMode: !formation.certifying && !formation.is_paid
+        })
         break;
 
       default:
@@ -188,8 +205,7 @@ export const LessonEndingView = ({ navigation, route }) => {
     }
     setStatus(lessonStatus)
     if (stateContent.content.title != 'initial' && stateContent.content.title != 'final') {
-      console.log(formation);
-      
+
       saveUserAnswer({
         status: lessonStatus ? 1 : 2,
         id: stateContent.content.id_content
@@ -199,9 +215,9 @@ export const LessonEndingView = ({ navigation, route }) => {
       setnbQuizValidated(nbQuizValidated)
 
       valideMainQuiz.mutate({
-        formation_id: formation.id,
-        quiz_type: stateContent.content.title,
-        score: nbQuizValidated / stateContent.nbQuiz
+        idUserFormation: formation.id,
+        quizType: stateContent.content.title,
+        grade: nbQuizValidated / stateContent.nbQuiz
       })
     }
   }, [])
@@ -277,16 +293,32 @@ export const LessonEndingView = ({ navigation, route }) => {
               <Text style={styles.navigationTxt}>Recommencer</Text>
             </TouchableOpacity>
             {
-              nextLesson.data && nextLesson.data.length > 0 ?
+              nextLesson ?
                 <TouchableOpacity
                   style={styles.navigationBox}
-                  onPress={() => handleLessonEnding('next')}
+                  onPress={() => {
+                    if (isDemo == false) {
+                      handleLessonEnding('next')
+                    }
+                  }}
                 >
 
-                  <Image
-                    source={require('../../../assets/formation/arrow.png')}
-                    style={styles.navigationImg}
-                  />
+
+                  {
+                    isDemo ?
+                      <View style={[styles.navigationImg, {alignItems: 'center'}]}>
+                        <Image
+                          source={require('../../../assets/locker-icon.png')}
+                          style={[styles.navigationImg, {opacity: 0.7}]}
+                        />
+                        <Text style={{fontWeight: 'bold', color: '#fff', position: 'absolute', bottom: 0}}>Démo</Text>
+                      </View>
+                      : <Image
+                        source={require('../../../assets/formation/arrow.png')}
+                        style={styles.navigationImg}
+                      />
+
+                  }
                   <Text style={styles.navigationTxt}>Leçon suivante</Text>
                 </TouchableOpacity>
                 : null

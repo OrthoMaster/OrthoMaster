@@ -35,11 +35,6 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
         }
     }, [formStatus, formData]);
 
-    useEffect(() => {
-        console.log(userAdded);
-
-    }, [userAdded])
-
 
     return <View>
         <View>

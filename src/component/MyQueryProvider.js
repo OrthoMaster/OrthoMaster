@@ -90,7 +90,6 @@ export const MyQueryProvider = ({
             gettingNewToken = false
             
         } catch (error) {
-            //console.log('query provider', error);
         }
     }
 
