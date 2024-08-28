@@ -8,7 +8,7 @@ export const fetchModules = async ({idFormation}) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
-
+  
   return axios
     .get(baseurl+"/user/"+config.user.id_user, {
       headers: { Authorization: authHeader },

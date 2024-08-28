@@ -25,12 +25,13 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [filters, setFilters] = useState()
     const [searchText, setSearchText] = useState()
     const fetchContent = useQuery(["search", searchText, filters], () => fetchSearchList({
-        contentType: route.name == "formation-search" ? 'lesson' : null,
-        filters: filters,
+        contentType: filters,
         body: null,
         searchText: searchText
     }, page), {
         onSuccess: val => {
+            // console.log(val);
+
             if (val.length == 0) {
                 dispatch(listEnded())
             }
@@ -110,17 +111,30 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             default:
                 break;
         }
+
         navigation.navigate(nextView, {
-            content: card.content
+            content: {
+                id_content: card.id_content,
+                title: card.title,
+                type: card.type,
+                module_num: card.module_num,
+                demo_access: card.demo_access,
+                max_score: card.max_score,
+                s3_path: card.s3_path
+            },
+            formation: {
+                formation_name: card.formation_name,
+                id_formation: card.id_formation,
+                certifying: card.certifying,
+                id: card.id_user_formation,
+                is_paid: card.is_paid,
+                progress_rate: card.progress_rate,
+                time_spent: card.time_spent
+            }
         })
 
     }
 
-    // if (contentModel.error) {
-    //     dispatch({
-    //         type: API_SEARCH_CLEAN
-    //     })
-    // }
 
     return <View style={styles.container}>
         <SearchHeader

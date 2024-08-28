@@ -7,14 +7,12 @@ const baseurl = process.env.EXPO_PUBLIC_API_URL + "/progress"
 export const postUserLessonStatus = async (obj) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
-  console.log("obj", obj);
   
   const body = {
     status: obj.status,
     content_id: obj.id,
     id_user_registered_formation: obj.userFormation
   }
-  console.log(body);
   
   return axios
     .post(baseurl + "/v2/user/" + config.user.id_user, body, {

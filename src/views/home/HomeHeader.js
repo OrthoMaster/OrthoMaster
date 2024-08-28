@@ -39,7 +39,7 @@ export const HomeHeader = ({ navigation, userName }) => {
     }, [nextLesson])
 
 
-    let username = user.data.name
+    let username = user.data?.name
     
     return (
         <View>

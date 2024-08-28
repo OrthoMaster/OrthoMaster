@@ -3,19 +3,19 @@ import {
     View,
     Text,
     TouchableOpacity,
-    StyleSheet
+    StyleSheet,
+    ActivityIndicator
 } from "react-native";
 import PriceRecap from "../../components/PriceRecap";
-import { useMutation } from "react-query";
-import { createFormationOrder } from "../../../../services/FormationService";
 
 
 export default ConfirmationStep = ({
     formation,
     users,
-    billingAddress
+    billingAddress,
+    onConfirm,
+    isLoading
 }) => {
-    const sendOrder = useMutation(createFormationOrder)
 
 
     return <View style={{
@@ -73,16 +73,22 @@ export default ConfirmationStep = ({
             backgroundColor: '#ffaf31',
             alignSelf: 'center'
         }}
-        onPress={()=>{
-            sendOrder.mutate({
-                id_formation: formation.idFormation,
-                users: users,
-                billingAddress: billingAddress
-            })
-            
-        }}
+            onPress={() => {
+                if (isLoading == false)
+                    onConfirm({
+                        id_formation: formation.idFormation,
+                        users: users,
+                        billingAddress: billingAddress
+                    })
+
+            }}
         >
-            <Text style={{ color: '#fff' }}>Confirmer</Text>
+            {
+                isLoading ?
+                    <ActivityIndicator color={"#fff"}/>
+                    : <Text style={{ color: '#fff' }}>Confirmer</Text>
+            }
+
         </TouchableOpacity>
     </View>
 }

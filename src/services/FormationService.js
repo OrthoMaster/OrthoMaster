@@ -36,17 +36,18 @@ export const insertMainQuizStatusByFormation = async (data) => {
     });
 }
 
-export const valideMainQuizStatusByFormation = async (data) => {
+export const updateUserFormationMainQuizStatus = async ({idUserFormation, quizType, grade}) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
   const body = {
-    status: 1,
-    score: data.score
+    id_user_formation: idUserFormation,
+    quiz_type: quizType,
+    grade: grade
   }
 
   return axios
-    .post(baseurl + "/" + data.formation_id + "/user/" + config.user.id_user + "/update/" + data.quiz_type, body, {
+    .post(baseurl + "/v2/quiz/update", body, {
       headers: { Authorization: authHeader },
     })
     .then((response) => {
@@ -54,15 +55,17 @@ export const valideMainQuizStatusByFormation = async (data) => {
     })
 }
 
-export const getUserRegisteredFormation = async () => {
+export const getUserRegisteredFormation = async ({idUserFormation = 0}) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
+  
   return axios
     .get(baseurl + "/user", {
       headers: { Authorization: authHeader },
       params: {
-        id_user: config.user.id_user
+        id_user: config.user.id_user,
+        id_registered_formation: idUserFormation
       }
     })
     .then((response) => {
@@ -125,6 +128,31 @@ export const createFormationOrder = async ({ id_formation, users, billingAddress
       headers: { Authorization: authHeader },
     })
     .then((response) => {
+      return response.data;
+    })
+}
+
+export const demandeDeDossierFormation = async ({ id_formation, organisme, tel, note }) => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
+
+  
+
+  const body = {
+    id_formation: id_formation,
+    user: config.user.id_user,
+    organisme: organisme,
+    mobile: tel,
+    moment: note
+  }
+
+  return axios
+    .post(baseurl + "/notify/demand/certified", body, {
+      headers: { Authorization: authHeader },
+    })
+    .then((response) => {
+      console.log(response.data);
+      
       return response.data;
     })
 }

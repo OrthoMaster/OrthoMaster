@@ -176,7 +176,7 @@ export default BillingAddressSelection = ({ onValidation }) => {
     const [showAddBillingAddrForm, setShowAddBillingAddrForm] = useState(false)
 
     return <View style={{
-        width: "100%", height: '100%',
+        width: "100%", flex: 1,
         alignSelf: 'center',
     }}>
         <Text style={{
@@ -247,7 +247,7 @@ export default BillingAddressSelection = ({ onValidation }) => {
                 backgroundColor: '#ffaf31',
                 alignSelf: 'center',
                 borderRadius: 5,
-                marginTop: 20
+                marginVertical: 20
             }}
                 onPress={() => {
                     onValidation(selectedAddress)

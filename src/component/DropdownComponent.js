@@ -18,8 +18,10 @@ const DropdownComponent = ({
   data = [],
   onChange,
   label = "",
-  searchEnabled = false
+  searchEnabled = false,
+  containerStyle= {}
 }) => {
+  
   const [value, setValue] = useState(null);
   const [isFocus, setIsFocus] = useState(false);
 
@@ -32,7 +34,9 @@ const DropdownComponent = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {
+      // backgroundColor: 'red',
+    }]}>
       {renderLabel()}
       <Dropdown
         style={[styles.dropdown, isFocus && { borderColor: '#ffaf31' }]}

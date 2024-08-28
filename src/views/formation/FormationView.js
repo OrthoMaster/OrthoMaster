@@ -18,16 +18,15 @@ import { PaymentFormationModal } from './modal/paymentModal/PaymentFormationModa
 import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
 import { useNavigation } from '@react-navigation/native';
 import { LessonHeader } from './LessonHeader';
+import { SponsoredFormationModal } from './modal/sponsoredModal/SponsoredFormationModal';
 
-const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
+const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest }) => {
     const startDate = new Date(params.start_date_theorical).toLocaleDateString()
     const endDate = new Date(params.end_date_theorical).toLocaleDateString()
     const navigation = useNavigation()
     const isCertifying = params.certifying
     const isPaid = params.is_paid
     const isDemo = !params.certifying && !params.is_paid
-
-    console.log(params);
 
 
     const getMode = () => {
@@ -56,7 +55,7 @@ const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
         <TouchableOpacity style={cardStyle.buttonStyle}
             onPress={() => {
                 navigation.navigate("formation-modules", {
-                    formation: params,
+                    userFormationId: params.id,
                     demoMode: isDemo
                 })
             }}>
@@ -91,9 +90,7 @@ const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
 
                     <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
                     <TouchableOpacity style={cardStyle.buttonStyle}
-                        onPress={() => {
-                            Linking.openURL("https://www.orthomaster.fr/parcour-certifiant")
-                        }}>
+                        onPress={() => {onSponsoredRequest(params)}}>
                         <Text style={{
                             color: '#FFF',
                             fontWeight: 'bold'
@@ -107,14 +104,14 @@ const RegisteredFormationCard = ({ params, onPaymentRequest }) => {
     </View>
 }
 
-const UnregisteredFormationCard = ({ params, onPaymentRequest }) => {
+const UnregisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest }) => {
     const navigation = useNavigation()
     const queryClient = useQueryClient()
     const registerDemo = useMutation(registerFormation, {
         onSuccess: data => {
             queryClient.invalidateQueries(["formations", "user"])
             navigation.navigate("formation-modules", {
-                formation: params,
+                userFormationId: params.id,
                 demoMode: true
             })
         }
@@ -135,9 +132,7 @@ const UnregisteredFormationCard = ({ params, onPaymentRequest }) => {
         <Text style={[cardStyle.textStyle, { fontWeight: "bold" }]}>ou</Text>
         <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
         <TouchableOpacity style={cardStyle.buttonStyle}
-            onPress={() => {
-                Linking.openURL("https://www.orthomaster.fr/parcour-certifiant")
-            }}>
+            onPress={() => { onSponsoredRequest(params) }}>
             <Text style={{
                 color: '#FFF',
                 fontWeight: 'bold'
@@ -165,7 +160,7 @@ const UnregisteredFormationCard = ({ params, onPaymentRequest }) => {
 }
 
 
-const FormationCard = ({ formation, onPaymentRequest, registered }) => {
+const FormationCard = ({ formation, onPaymentRequest, onSponsoredRequest, registered }) => {
 
     return <View style={{
         backgroundColor: '#27927E',
@@ -191,8 +186,14 @@ const FormationCard = ({ formation, onPaymentRequest, registered }) => {
 
         {
             registered ?
-                <RegisteredFormationCard params={formation} onPaymentRequest={(formation) => onPaymentRequest(formation)} />
-                : <UnregisteredFormationCard params={formation} onPaymentRequest={(formation) => onPaymentRequest(formation)} />
+                <RegisteredFormationCard params={formation}
+                    onPaymentRequest={(formation) => onPaymentRequest(formation)}
+                    onSponsoredRequest={(formation) => onSponsoredRequest(formation)}
+                />
+                : <UnregisteredFormationCard params={formation}
+                    onPaymentRequest={(formation) => onPaymentRequest(formation)}
+                    onSponsoredRequest={(formation) => onSponsoredRequest(formation)}
+                />
         }
         <TouchableOpacity style={{
             padding: 5,
@@ -206,6 +207,7 @@ const FormationCard = ({ formation, onPaymentRequest, registered }) => {
 
 export const FormationView = ({ navigation, route }) => {
     const [activatePayment, setActivatePayment] = useState({ isActivate: false, formation: null })
+    const [activateSponsoredDemand, setActivateSponsoredDemand] = useState({ isActivate: false, formation: null })
     const {
         isLoading: loadingFormation,
         data: formations
@@ -213,7 +215,7 @@ export const FormationView = ({ navigation, route }) => {
     const {
         isLoading: loadingUserFormations,
         data: userFormations
-    } = useQuery(["user-formations"], () => getUserRegisteredFormation())
+    } = useQuery(["user-formations"], () => getUserRegisteredFormation({}))
     const [refreshing, setRefreshing] = useState(false);
     const queryClient = useQueryClient()
 
@@ -247,6 +249,7 @@ export const FormationView = ({ navigation, route }) => {
                             formation={value}
                             key={index}
                             onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
+                            onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
                             registered={true}
                         />
                     })
@@ -266,6 +269,7 @@ export const FormationView = ({ navigation, route }) => {
                                 formation={value}
                                 key={index}
                                 onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
+                                onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
                                 registered={false}
                             />
                     })
@@ -282,9 +286,26 @@ export const FormationView = ({ navigation, route }) => {
                     idFormation: activatePayment?.formation?.id_formation,
                     price: formations?.filter(elem => elem.id_formation == activatePayment?.formation?.id_formation)[0]?.price
                 }}
+                onClose={() => setActivatePayment({ isActivate: false, formation: null })}
             />}
             style={{
                 height: '70%'
+            }}
+        />
+
+        <AppModal
+            isVisible={activateSponsoredDemand.isActivate}
+            onClose={() => setActivateSponsoredDemand({ isActivate: false, formation: null })}
+            customRender={<SponsoredFormationModal
+                formation={{
+                    name: activateSponsoredDemand?.formation?.formation_name,
+                    idFormation: activateSponsoredDemand?.formation?.id_formation,
+                    price: formations?.filter(elem => elem.id_formation == activateSponsoredDemand?.formation?.id_formation)[0]?.price
+                }}
+                onClose={() => setActivateSponsoredDemand({ isActivate: false, formation: null })}
+            />}
+            style={{
+                height: '70%',
             }}
         />
     </View>
