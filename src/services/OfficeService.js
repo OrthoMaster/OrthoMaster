@@ -177,3 +177,22 @@ export const removeMemberOffice = async ({ id_user, id_office }) => {
       throw e
     });
 }
+
+
+export const getUserAttachedOffices = async ({ userId = 0 }) => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
+  
+  return axios
+    .get(baseurl + "/office/v2/list", {
+      headers: { Authorization: authHeader },
+      params: {
+        members: [userId > 0 ? userId : config.user.id_user]
+      }
+
+    })
+    .then((response) => {
+      return response.data;
+    })
+
+}

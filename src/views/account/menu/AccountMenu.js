@@ -11,15 +11,10 @@ import {
     ScrollView,
     ActivityIndicator
 } from "react-native"
-import { useQuery } from "react-query";
 import { useDispatch } from "react-redux";
 
 
 import { logout, startIntro } from '../../../actions/auth';
-import { getCustomerPortal } from "../../../services/SubscriptionService";
-import { useOrthoMasterRoles } from "../../../hooks/useOrthoMasterRoles";
-import { useAsyncStorage } from "../../../hooks/useAsyncStorage";
-import { reloadAsync } from "expo-updates";
 
 const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
     return (
@@ -44,23 +39,6 @@ export const AccountMenu = ({ navigation, user }) => {
     const dispatch = useDispatch()
     const [gettingCustomerPortal, setGettingCustomerPortal] = useState(false)
     const [errorMessage, setErrorMessage] = useState(null)
-    const roles = useOrthoMasterRoles()
-    const customerPortal = useQuery(["GET", "Customer portal"], () => getCustomerPortal(user.office_id),
-        {
-            onSettled: () => setGettingCustomerPortal(false),
-            onSuccess: (url) => {
-                Linking.openURL(url)
-            },
-            onError: (err) => {
-                setErrorMessage(err.response?.data?.message)
-                setTimeout(() => {
-                    setErrorMessage(null)
-                }, 5000)
-            },
-            enabled: false
-        })
-
-    const [introHasBeenDisplayed, setIntroDisplayed] = useAsyncStorage('intro-slider-displayed')
 
     return (
         <View style={styles.container}>
@@ -74,30 +52,13 @@ export const AccountMenu = ({ navigation, user }) => {
                         navigation.navigate('account-profile')
                     }}
                 />
-                {
-                    roles.isPrimaryManager &&
-                    <CustomMenuButton
+                <CustomMenuButton
                         icon={require('../../../../assets/settings/icon-espace-client.png')}
                         text={'Mon espace client'}
-                        loading={gettingCustomerPortal}
                         onPress={() => {
-                            customerPortal.refetch()
-                            setGettingCustomerPortal(true)
+                            Linking.openURL("https://orthomaster-dev.odoo.com/web/login")
                         }}
                     />
-                }
-                {
-                    roles.isSeller &&
-                    <CustomMenuButton
-                        icon={require('../../../../assets/settings/professional.png')}
-                        text={"Formulaire d'inscription"}
-                        onPress={() => {
-                            navigation.navigate('account-register-form', {
-                                seller: user
-                            })
-                        }}
-                    />
-                }
 
                 <CustomMenuButton
                     icon={require('../../../../assets/settings/legal-paper.png')}

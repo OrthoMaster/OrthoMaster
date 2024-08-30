@@ -16,13 +16,10 @@ import { useStore } from 'react-redux';
 import { AccountProgress } from './components/AccountProgress';
 import { Trophies } from './components/trophies/Trophies';
 
-import { AccountOfficesProgress } from './components/AccountOfficesProgress';
+import { CompanyArea } from './components/CompanyArea';
 
 import { AccountMenu } from './menu/AccountMenu';
-import { useQuery } from 'react-query'
-import { useDispatch } from 'react-redux'
-import { getOfficeInfos } from '../../services/OfficeService'
-import { CertifiedFormationProgress } from './components/CertifiedFormationProgress';
+// import { CertifiedFormationProgress } from './components/CertifiedFormationProgress';
 import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
 
 
@@ -60,8 +57,7 @@ export const AccountView = ({ navigation }) => {
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
-  const roles = useOrthoMasterRoles()
-
+  
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => {
@@ -90,10 +86,10 @@ export const AccountView = ({ navigation }) => {
 
           <Trophies refreshing={refreshing} />
 
-          <CertifiedFormationProgress />
+          {/* <CertifiedFormationProgress /> */}
 
-          <AccountOfficesProgress
-            enableConfig={roles.isPrimaryManager || roles.isSecondaryManager}
+          <CompanyArea
+            enableConfig={true}
             refreshing={refreshing}
             navigation={navigation}
           />

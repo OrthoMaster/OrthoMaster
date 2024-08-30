@@ -3,7 +3,8 @@ import {
     TouchableOpacity,
     View,
     Text,
-    StyleSheet
+    StyleSheet,
+    ActivityIndicator
 } from "react-native";
 import { FormField } from "../FormField";
 import { useQuery, useMutation } from "react-query";
@@ -125,9 +126,15 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
             marginTop: 20,
             borderRadius: 5
         }} onPress={() => {
-            validForm()
+            if (sendForm.isLoading == false) {
+                validForm()
+            }
         }}>
-            <Text>Valider</Text>
+            {
+                sendForm.isLoading ?
+                <ActivityIndicator />
+                :<Text>Valider</Text>
+            }
         </TouchableOpacity>
     </View>
 }

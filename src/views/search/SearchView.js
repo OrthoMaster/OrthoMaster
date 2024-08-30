@@ -10,7 +10,7 @@ import { useDispatch, useSelector, connect } from 'react-redux';
 
 //import { useQuery, useQueryClient } from "react-query"
 
-import { getSearchList, searchFailure, searchSuccess, listEnded } from '../../actions/searchAction';
+import { getSearchList, searchSuccess, listEnded } from '../../actions/searchAction';
 
 import { SearchFilters } from './components/SearchFilters'
 import { ContentSelection } from './components/ContentSelection'
@@ -19,11 +19,16 @@ import { LoadingContent } from '../../component/LoadingContent'
 import { API_SEARCH_CLEAN } from '../../actions/types';
 import { useQuery } from 'react-query';
 import { fetchSearchList } from '../../services/SearchService';
+import { getCurrentUser } from '../../services/UserService';
 
 const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState()
     const [searchText, setSearchText] = useState()
+    const [isStudent, setIsStudent] = useState(false)
+    useQuery("current-user", () => getCurrentUser(), {
+        onSuccess: user => { setIsStudent(user.is_student) }
+    })
     const fetchContent = useQuery(["search", searchText, filters], () => fetchSearchList({
         contentType: filters,
         body: null,
@@ -170,6 +175,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                     )
                 }}
                 onRetry={() => requestAPI()}
+                studentMode={isStudent}
             />}
     </View>
 }

@@ -26,7 +26,7 @@ export const postUserLessonStatus = async (obj) => {
 export const getUserProgression = async () => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
-
+  
   return axios
     .get(baseurl + "/user/" + config.user.id_user, {
       headers: { Authorization: authHeader },
@@ -45,23 +45,6 @@ export const getCollaboratorsProgression = async (officeId) => {
   return axios
     .get(baseurl + "/office/" + officeId + "/collaborators", {
       headers: { Authorization: authHeader },
-
-    })
-    .then((response) => {
-      return response.data;
-    })
-
-}
-
-export const getOfficesProgressionForManager = async (managerId) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
-  return axios
-    .get(baseurl + "/offices", {
-      headers: { Authorization: authHeader },
-      params: {
-        manager_id: config.user.id_user
-      }
 
     })
     .then((response) => {

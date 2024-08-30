@@ -15,18 +15,18 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { getUserRegisteredFormation, getFormations, registerFormation } from '../../services/FormationService'
 import AppModal from '../../component/AppModal';
 import { PaymentFormationModal } from './modal/paymentModal/PaymentFormationModal';
-import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
 import { useNavigation } from '@react-navigation/native';
 import { LessonHeader } from './LessonHeader';
 import { SponsoredFormationModal } from './modal/sponsoredModal/SponsoredFormationModal';
+import { getCurrentUser } from '../../services/UserService';
 
-const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest }) => {
+const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, isStudent }) => {
     const startDate = new Date(params.start_date_theorical).toLocaleDateString()
     const endDate = new Date(params.end_date_theorical).toLocaleDateString()
     const navigation = useNavigation()
     const isCertifying = params.certifying
     const isPaid = params.is_paid
-    const isDemo = !params.certifying && !params.is_paid
+    const isDemo = !params.certifying && !params.is_paid && isStudent == false
 
 
     const getMode = () => {
@@ -35,10 +35,12 @@ const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest 
         } else {
             if (isCertifying) {
                 return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Dossier pris en charge</Text>
-            } else {
-                if (isPaid) {
-                    return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Acheté</Text>
-                }
+            }
+            if (isPaid) {
+                return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Acheté</Text>
+            }
+            if (isStudent) {
+                return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Etudiant</Text>
             }
         }
     }
@@ -67,7 +69,7 @@ const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest 
             </Text>
         </TouchableOpacity>
         {
-            isDemo &&
+            (isDemo && isStudent == false) &&
             <View style={{
                 flexDirection: 'row'
             }}>
@@ -90,7 +92,7 @@ const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest 
 
                     <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
                     <TouchableOpacity style={cardStyle.buttonStyle}
-                        onPress={() => {onSponsoredRequest(params)}}>
+                        onPress={() => { onSponsoredRequest(params) }}>
                         <Text style={{
                             color: '#FFF',
                             fontWeight: 'bold'
@@ -104,63 +106,67 @@ const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest 
     </View>
 }
 
-const UnregisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest }) => {
+const UnregisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, isStudent }) => {
+
     const navigation = useNavigation()
     const queryClient = useQueryClient()
-    const registerDemo = useMutation(registerFormation, {
+    const startFormation = useMutation(registerFormation, {
         onSuccess: data => {
             queryClient.invalidateQueries(["formations", "user"])
             navigation.navigate("formation-modules", {
                 userFormationId: params.id,
-                demoMode: true
+                demoMode: isStudent ? false : true
             })
         }
     })
 
     return <View style={{ alignItems: 'center' }}>
-        <Text style={cardStyle.textStyle}> {params.price} € HT / utilisateur</Text>
-        <TouchableOpacity style={cardStyle.buttonStyle}
-            onPress={() => { onPaymentRequest(params) }}>
-            <Text style={{
-                color: '#FFF',
-                fontWeight: 'bold'
-            }}>
-                Payer
-            </Text>
-        </TouchableOpacity>
+        {
+            isStudent == false &&
+            <View>
+                <Text style={cardStyle.textStyle}> {params.price} € HT / utilisateur</Text>
+                <TouchableOpacity style={cardStyle.buttonStyle}
+                    onPress={() => { onPaymentRequest(params) }}>
+                    <Text style={{
+                        color: '#FFF',
+                        fontWeight: 'bold'
+                    }}>
+                        Payer
+                    </Text>
+                </TouchableOpacity>
 
-        <Text style={[cardStyle.textStyle, { fontWeight: "bold" }]}>ou</Text>
-        <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
-        <TouchableOpacity style={cardStyle.buttonStyle}
-            onPress={() => { onSponsoredRequest(params) }}>
-            <Text style={{
-                color: '#FFF',
-                fontWeight: 'bold'
-            }}>
-                Faire une demande
-            </Text>
-        </TouchableOpacity>
+                <Text style={[cardStyle.textStyle, { fontWeight: "bold" }]}>ou</Text>
+                <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
+                <TouchableOpacity style={cardStyle.buttonStyle}
+                    onPress={() => { onSponsoredRequest(params) }}>
+                    <Text style={{
+                        color: '#FFF',
+                        fontWeight: 'bold'
+                    }}>
+                        Faire une demande
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        }
         <TouchableOpacity style={cardStyle.buttonStyle}
             onPress={() => {
-                registerDemo.mutate({
+                startFormation.mutate({
                     id_formation: params.id_formation,
                     formation_name: params.formation_name
                 })
-
             }}>
             <Text style={{
                 color: '#FFF',
                 fontWeight: 'bold'
             }}>
-                Accès démo
+                {isStudent == true ? "Accès" : "Accès démo"}
             </Text>
         </TouchableOpacity>
-
     </View>
 }
 
 
-const FormationCard = ({ formation, onPaymentRequest, onSponsoredRequest, registered }) => {
+const FormationCard = ({ formation, onPaymentRequest, onSponsoredRequest, registered, isStudent }) => {
 
     return <View style={{
         backgroundColor: '#27927E',
@@ -189,10 +195,12 @@ const FormationCard = ({ formation, onPaymentRequest, onSponsoredRequest, regist
                 <RegisteredFormationCard params={formation}
                     onPaymentRequest={(formation) => onPaymentRequest(formation)}
                     onSponsoredRequest={(formation) => onSponsoredRequest(formation)}
+                    isStudent={isStudent}
                 />
                 : <UnregisteredFormationCard params={formation}
                     onPaymentRequest={(formation) => onPaymentRequest(formation)}
                     onSponsoredRequest={(formation) => onSponsoredRequest(formation)}
+                    isStudent={isStudent}
                 />
         }
         <TouchableOpacity style={{
@@ -208,6 +216,10 @@ const FormationCard = ({ formation, onPaymentRequest, onSponsoredRequest, regist
 export const FormationView = ({ navigation, route }) => {
     const [activatePayment, setActivatePayment] = useState({ isActivate: false, formation: null })
     const [activateSponsoredDemand, setActivateSponsoredDemand] = useState({ isActivate: false, formation: null })
+    const [isStudent, setIsStudent] = useState(false)
+    useQuery("current-user", () => getCurrentUser(), {
+        onSuccess: user => { setIsStudent(user.is_student) }
+    })
     const {
         isLoading: loadingFormation,
         data: formations
@@ -251,6 +263,7 @@ export const FormationView = ({ navigation, route }) => {
                             onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
                             onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
                             registered={true}
+                            isStudent={isStudent}
                         />
                     })
                 }
@@ -271,6 +284,7 @@ export const FormationView = ({ navigation, route }) => {
                                 onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
                                 onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
                                 registered={false}
+                                isStudent={isStudent}
                             />
                     })
                 }
