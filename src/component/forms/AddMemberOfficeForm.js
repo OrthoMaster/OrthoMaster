@@ -3,25 +3,31 @@ import {
     TouchableOpacity,
     View,
     Text,
-    StyleSheet,
     FlatList,
     ActivityIndicator,
-    TextInput
+    TextInput,
 } from "react-native";
-import { FormField } from "../FormField";
-import { useQuery, useMutation } from "react-query";
+import { useMutation } from "react-query";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Sharing from 'expo-sharing';
 
 import { addMemberOffice } from "../../services/OfficeService";
 
 export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEnd }) => {
     const [userAdded, setUserAdded] = useState([])
     const [email, setEmail] = useState("")
-    const { status: formStatus, data: formData, isFetching, mutate: mutateForm } = useMutation(addMemberOffice, {
+    const { status: formStatus, data: formData, isLoading, mutate: mutateForm } = useMutation(addMemberOffice, {
         onError: error => {
             onError(error.response.data.message)
         }
     })
     const [errorMessage, setErrorMessage] = useState(null)
+
+    const shareInvite = async () => {
+        let isOk = await Sharing.isAvailableAsync()
+        if (isOk)
+            Sharing.shareAsync("https://orthomaster-saas.odoo.com/inscription")
+    }
 
     useEffect(() => {
         if (formStatus === 'success') {
@@ -36,22 +42,61 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
     }, [formStatus, formData]);
 
 
-    return <View>
+    return <View style={{
+        paddingVertical: 10
+    }}>
+        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Entreprise :</Text>
+        <View style={{
+            backgroundColor: "#fff",
+            alignSelf: 'center',
+            width: "80%", height: 40,
+            justifyContent: 'center',
+            paddingHorizontal: 10,
+            borderRadius: 5,
+            borderColor: "#ffaf31",
+            borderWidth: 2,
+            marginVertical: 20
+        }}>
+            <Text>{attachedOffice?.name}</Text>
+        </View>
         <View>
-            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Entreprise :</Text>
-            <View style={{
-                backgroundColor: "#fff",
-                alignSelf: 'center',
-                width: "80%", height: 40,
-                justifyContent: 'center',
-                paddingHorizontal: 10,
-                borderRadius: 5,
-                borderColor: "#ffaf31",
-                borderWidth: 2,
-                marginTop: 20
+            <Text style={{
+                marginLeft: 30,
+                marginBottom: 20
             }}>
-                <Text>{attachedOffice?.name}</Text>
+                Pour ajouter un membre à votre nouvel espace entreprise,
+                vérifiez que le compte de l'utilisateur soit bien activé.
+            </Text>
+            <View style={{
+                alignItems: 'center',
+                marginBottom: 20
+            }}>
+                <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>Pas encore de compte ?</Text>
+                <TouchableOpacity
+                    style={{
+                        width: "50%",
+                        alignItems: 'center',
+                        backgroundColor: '#fff',
+                        padding: 5,
+                        borderRadius: 10
+                    }}
+                    onPress={() => {
+                        shareInvite()
+                    }}
+                >
+                    <Ionicons name="person-add-outline" size={20} color="#eb7b0f" />
+                    <Text style={{
+                        color: '#eb7b0f',
+                        textAlign: 'center',
+                        marginVertical: 5,
+                        fontSize: 12
+                    }}>
+                        Invitez votre votre collaborateur sur orthomaster
+                    </Text>
+                </TouchableOpacity>
+
             </View>
+
         </View>
 
         <View style={{
@@ -95,12 +140,12 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
             marginTop: 20,
             borderRadius: 5
         }} onPress={() => {
-            if (!isFetching) {
+            if (!isLoading) {
                 mutateForm({ email: email, id_office: attachedOffice.id_office })
             }
         }}>
             {
-                isFetching ?
+                isLoading ?
                     <ActivityIndicator />
                     : <Text>Ajouter</Text>
             }
@@ -128,11 +173,7 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
         }} onPress={() => {
             onEnd()
         }}>
-            {
-                isFetching ?
-                    <ActivityIndicator />
-                    : <Text>Terminer la configuration</Text>
-            }
+            <Text>Terminer</Text>
         </TouchableOpacity>
     </View>
 }

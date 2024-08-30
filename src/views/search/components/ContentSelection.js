@@ -16,8 +16,8 @@ import { getS3Image } from '../../../services/S3Service'
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from 'react-query';
 
-const SearchCardDefault = ({ card, onSelect }) => {
-    const isDemo = !card.certifying && !card.is_paid
+const SearchCardDefault = ({ card, onSelect, studentMode }) => {
+    const isDemo = !card.certifying && !card.is_paid && studentMode == false
 
     const thumbnail = useQuery(['ContentSelection', 'GET', 'contentThumbnail', card.id_content, card.title],
         () => getS3Image(createS3Path(card)))
@@ -191,7 +191,16 @@ const QaCard = ({ card, onSelect, color }) => {
     )
 }
 
-export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, onMoreLoading, onRetry, color }) => {
+export const ContentSelection = ({
+    content,
+    onSelect,
+    cardLayout,
+    onEndReached,
+    onMoreLoading,
+    onRetry,
+    color,
+    studentMode = false
+}) => {
     const renderEmpty = () => {
         return (
             <View>
@@ -211,7 +220,7 @@ export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, 
                             return <QaCard card={item.item} onSelect={(card) => onSelect(card)} color={color} />
 
                         default:
-                            return <SearchCardDefault card={item.item} onSelect={(card) => onSelect(card)} />
+                            return <SearchCardDefault card={item.item} onSelect={(card) => onSelect(card)} studentMode={studentMode}/>
                     }
                 }}
                 keyExtractor={(item, index) => index}

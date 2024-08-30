@@ -55,7 +55,7 @@ export const updateUserFormationMainQuizStatus = async ({idUserFormation, quizTy
     })
 }
 
-export const getUserRegisteredFormation = async ({idUserFormation = 0}) => {
+export const getUserRegisteredFormation = async ({idUserFormation = 0, idUser = 0}) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
@@ -64,7 +64,7 @@ export const getUserRegisteredFormation = async ({idUserFormation = 0}) => {
     .get(baseurl + "/user", {
       headers: { Authorization: authHeader },
       params: {
-        id_user: config.user.id_user,
+        id_user: idUser > 0 ? idUser : config.user.id_user,
         id_registered_formation: idUserFormation
       }
     })

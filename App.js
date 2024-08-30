@@ -18,6 +18,7 @@ import { getCurrentUser } from './src/services/UserService';
 import { IntroView } from './src/views/intro/IntroView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
+import { getUserAttachedOffices } from './src/services/OfficeService';
 const prefix = Linking.createURL('/');
 
 
@@ -32,6 +33,18 @@ export default function App({ navigation }) {
   const queryCli = useQueryClient()
   const currentUser = useQuery(["current-user"], () => getCurrentUser(), {
     enabled: false
+  })
+  useQuery("user-offices", () => getUserAttachedOffices({ userId: currentUser.data.id_user }), {
+    enabled: currentUser.isSuccess,
+    onSuccess: async offices => {
+      const displayInitialConfigForm = await AsyncStorage.getItem("initial-conf-slider-displayed")
+      
+      if (!displayInitialConfigForm &&
+        offices && Array.isArray(offices) && offices.length == 0) {
+        setShowInitialConfigForm(true)
+      }
+
+    }
   })
 
   const url = Linking.useURL()
@@ -67,14 +80,8 @@ export default function App({ navigation }) {
 
   useEffect(() => {
     const init = async () => {
-      // AsyncStorage.clear()
-      const user = await retreiveSession();
-      const displayInitialConfigForm = await AsyncStorage.getItem("initial-conf-slider-displayed")
+      await retreiveSession();
       const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
-
-        if (!displayInitialConfigForm) {
-        // setShowInitialConfigForm(true)
-      }
 
       if (!displayIntro) {
         dispatch(startIntro())
@@ -126,9 +133,6 @@ export default function App({ navigation }) {
         }} />
       }
 
-      {/* <AlertVersion isVisible={modalVersionIsVisible} onClose={() => {
-        setmodalVersionIsVisible(false)
-      }} /> */}
     </NavigationContainer>
   );
 }

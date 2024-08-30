@@ -5,8 +5,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import { AccountView } from '../../views/account/AccountView';
 import { AccountProfile } from '../../views/account/menu/AccountProfile';
-import { TeamManagerView } from '../../views/account/teamManager/TeamManagerView';
-import { RegistrationView } from '../../views/account/menu/registrationForm/RegistrationView';
+import { TeamManagerView } from '../../views/account/office/OfficeManagerView';
+import AddOfficeView from '../../views/account/office/AddOfficeView';
+import { OfficeManagerView } from '../../views/account/office/OfficeManagerView';
 
 const ProfilStackNav = createStackNavigator();
 
@@ -26,26 +27,34 @@ export const ProfilStack = () => {
         options={{
           headerBackTitle: 'Retour',
           title: 'Mon profile',
-          headerBackTitleStyle:{ color: "#ffaf31"},
-        }}
-      />
-      <ProfilStackNav.Screen
-        name="account-team-manager"
-        component={TeamManagerView}
-        options={{
-          headerBackTitle: 'Retour',
-          title: 'Mon équipe',
-          headerBackTitleStyle:{ color: "#ffaf31"}
+          headerBackTitleStyle: { color: "#ffaf31" },
         }}
       />
 
       <ProfilStackNav.Screen
-        name="account-register-form"
-        component={RegistrationView}
+        name="account-add-office"
+        component={AddOfficeView}
         options={{
           headerBackTitle: 'Retour',
-          title: "Formulaire d'inscription",
-          headerBackTitleStyle:{ color: "#ffaf31"}
+          title: 'Ajouter une entreprise',
+          headerBackTitleStyle: { color: "#ffaf31" },
+          cardStyle: {
+            backgroundColor: '#fff'
+          },
+          headerStyle: {
+            backgroundColor: '#fff'
+          }
+        }}
+      />
+      <ProfilStackNav.Screen
+        name="account-office"
+        component={OfficeManagerView}
+        options={{
+          headerBackTitle: 'Retour',
+          headerBackTitleStyle: { color: "#ffaf31" },
+          headerStyle: {
+            backgroundColor: '#fff'
+          }
         }}
       />
     </ProfilStackNav.Navigator>
