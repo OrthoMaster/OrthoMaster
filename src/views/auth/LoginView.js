@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#F1F1F1',
         flex: 1,
-        alignItems: 'center',
+        alignItems: 'center'
     },
     logo: {
         flex: 1,

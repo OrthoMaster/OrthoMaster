@@ -51,14 +51,22 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
         }
     })
 
+    const getPreview = async () => {
+        await getLinkPreview(config.href)
+            .then((data) => {
+                setArticle(data)
+            })
+    }
 
     useEffect(() => {
+
         if (config.liked && config.liked == true) {
             setIsLiked(true)
         }
 
         let mediaIcon = null
         for (const [key, value] of Object.entries(socialNetworkIcons)) {
+
             if (config.href.includes(key)) {
                 mediaIcon = value
             }
@@ -68,13 +76,14 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
         } else {
             setAssociatedMedia(mediaIcon)
         }
-        getLinkPreview(config.href).then((data) => {
-            setArticle(data)
-        });
+        getPreview()
+
+
 
     }, [])
 
-    if (!article)
+
+    if (article == null)
         return <ActivityIndicator />
     return <View style={{
         width: '90%',
@@ -131,12 +140,16 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
                 borderRadius: 10,
                 width: "35%", height: 100
             }}
-                onPress={() => Linking.openURL(article.url)}
+                onPress={() => Linking.openURL(article != null ? article.url : config.href)}
             >
                 {
                     <Image
                         source={{
-                            uri: article.title == "YouTube" ? config.image_url : article.images[0]
+                            uri: article.title == "YouTube" ?
+                                config.image_url :
+                                article.images ?
+                                    article.images[0]
+                                    : config.image_url
                         }}
                         style={{
                             width: "100%",
