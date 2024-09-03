@@ -150,7 +150,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                 })
                 navigation.goBack()
             }}
-            placeholder={'trouver une leçon...'}
+            placeholder={'trouver un contenu...'}
             onChangeText={(text) => searchWithText(text)}
         />
         <SearchFilters

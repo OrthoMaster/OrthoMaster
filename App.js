@@ -32,16 +32,26 @@ export default function App({ navigation }) {
   const dispatch = useDispatch()
   const queryCli = useQueryClient()
   const currentUser = useQuery(["current-user"], () => getCurrentUser(), {
-    enabled: false
+    onSuccess: user => {
+      if (user != null)
+        dispatch(refreshUserSession(user))
+      else
+        dispatch(logout())
+    },
+    onError: () => { dispatch(logout()) },
+    onSettled: () => { setIsLoading(false) }
   })
+
   useQuery("user-offices", () => getUserAttachedOffices({ userId: currentUser.data.id_user }), {
     enabled: currentUser.isSuccess && currentUser.data != null,
     onSuccess: async offices => {
       const displayInitialConfigForm = await AsyncStorage.getItem("initial-conf-slider-displayed")
-      
+
       if (!displayInitialConfigForm &&
         offices && Array.isArray(offices) && offices.length == 0) {
         setShowInitialConfigForm(true)
+      } else {
+        displayOmIntro()
       }
     }
   })
@@ -62,34 +72,36 @@ export default function App({ navigation }) {
     }
   };
 
-  const retreiveSession = async () => {
-    return await new Promise((resolve, reject) => {
-      currentUser.refetch().then(res => {
-        if (res && res.data) {
-          dispatch(refreshUserSession(res.data))
-        } else {
-          dispatch(logout())
-        }
-        resolve(res.data)
-      })
+  // const retreiveSession = async () => {
+  //   return await new Promise((resolve, reject) => {
+  //     currentUser.refetch().then(res => {
+  //       if (res && res.data) {
+  //         dispatch(refreshUserSession(res.data))
+  //       } else {
+  //         dispatch(logout())
+  //       }
+  //       resolve(res.data)
+  //     })
 
-    })
+  //   })
+  // }
+
+  const displayOmIntro = async () => {
+    const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
+
+    if (!displayIntro) {
+      dispatch(startIntro())
+    }
+
   }
 
+  // useEffect(() => {
+  //   const init = async () => {
+  //     await retreiveSession();
 
-  useEffect(() => {
-    const init = async () => {
-      await retreiveSession();
-      const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
-
-      if (!displayIntro) {
-        dispatch(startIntro())
-      }
-
-      setIsLoading(false)
-    }
-    init()
-  }, []);
+  //   }
+  //   init()
+  // }, []);
 
 
   useEffect(() => {
@@ -129,6 +141,7 @@ export default function App({ navigation }) {
           AsyncStorage.setItem("initial-conf-slider-displayed", "true")
           queryCli.invalidateQueries({ queryKey: ['current-user'] })
           setShowInitialConfigForm(false)
+          displayOmIntro()
         }} />
       }
 

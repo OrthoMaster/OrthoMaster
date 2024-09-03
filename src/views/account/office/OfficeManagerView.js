@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     Dimensions,
     ScrollView,
+    Platform
 } from 'react-native'
 import { useQuery, useQueryClient } from 'react-query';
 import { getUsersByOfficeId } from '../../../services/UserService';
@@ -23,6 +24,8 @@ const UserCard = ({ user, onRemove }) => {
     }), {
         enabled: isOpen
     })
+    console.log(user);
+
 
     return <View style={{
         margin: 5,
@@ -40,6 +43,19 @@ const UserCard = ({ user, onRemove }) => {
         >
             <Text style={{ color: "#000", fontSize: 15, fontWeight: 'bold' }}>{user.name} {user.lastname}</Text>
             <Text style={{ color: "#000" }}>{user.email}</Text>
+            {
+                user.is_office_manager == true &&
+                <View style={{
+                    position: 'absolute',
+                    justifyContent: 'center',
+                    bottom: 0, top: 0, right: 20
+                }}>
+                    <Text style={{
+                        color: '#ffaf31',
+                        fontWeight: 'bold', fontSize: 10
+                    }}>Manager</Text>
+                </View>
+            }
         </TouchableOpacity>
         {
             isOpen &&
@@ -130,6 +146,8 @@ export const OfficeManagerView = ({ route, navigation }) => {
     return (
         <View style={styles.container}>
 
+
+
             <ScrollView>
                 <View style={{
                     padding: 20,
@@ -137,7 +155,7 @@ export const OfficeManagerView = ({ route, navigation }) => {
                     borderWidth: 0.3,
                     margin: 20
                 }}>
-                    <Text style={{fontWeight: "bold"}}>{office.name}</Text>
+                    <Text style={{ fontWeight: "bold" }}>{office.name}</Text>
                     <View >
                         <Text>Adresse</Text>
                         <Text>{office.address_way}</Text>
@@ -184,38 +202,42 @@ export const OfficeManagerView = ({ route, navigation }) => {
                     </TouchableOpacity>
                 </View>
 
-                {
-                    addingMembers &&
-                    <View style={{
-                        backgroundColor: '#fff',
-                        flex: 1,
-                        position: 'absolute',
-                        alignSelf: 'center'
-                    }}>
-                        <AddMemberOfficeForm
-                            onSuccess={() => {
-                                showToast({
-                                    type: "success",
-                                    text1: "Utilisateur ajouté",
-                                    text2: "Votre espace pro reste modifiable sur votre page entreprise"
-                                })
-                            }}
-                            onError={(errorMessage) => {
-                                showToast({
-                                    type: "error",
-                                    text1: "Echec de l'ajout",
-                                    text2: errorMessage
-                                })
-                            }}
-                            attachedOffice={office}
-                            onEnd={() => {
-                                setAddingMembers(false)
-                                queryClient.invalidateQueries('office-users')
-                            }}
-                        />
-                    </View>
-                }
             </ScrollView>
+            {
+                addingMembers &&
+                <ScrollView
+                    contentContainerStyle={{}}
+                    automaticallyAdjustKeyboardInsets={true}
+                    style={{
+                        backgroundColor: '#fff',
+                        alignSelf: 'center',
+                        width: '100%', height: '100%',
+                        position: 'absolute'
+                    }}
+                >
+                    <AddMemberOfficeForm
+                        onSuccess={() => {
+                            showToast({
+                                type: "success",
+                                text1: "Utilisateur ajouté",
+                                text2: "Votre espace pro reste modifiable sur votre page entreprise"
+                            })
+                        }}
+                        onError={(errorMessage) => {
+                            showToast({
+                                type: "error",
+                                text1: "Echec de l'ajout",
+                                text2: errorMessage
+                            })
+                        }}
+                        attachedOffice={office}
+                        onEnd={() => {
+                            setAddingMembers(false)
+                            queryClient.invalidateQueries('office-users')
+                        }}
+                    />
+                </ScrollView>
+            }
             <Toast position="bottom" />
         </View>
     );

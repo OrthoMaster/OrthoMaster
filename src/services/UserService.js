@@ -78,6 +78,8 @@ export const getUsersByOfficeId = async (officeId) => {
 
 
 export const getCurrentUser = async () => {
+    console.log("get current");
+    
     try {
         const config = await restoreLocalConfigAsync()
         const authHeader = 'Bearer ' + config.JWT;

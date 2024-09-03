@@ -43,7 +43,7 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
 
 
     return <View style={{
-        paddingVertical: 10
+        paddingVertical: 10,
     }}>
         <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Entreprise :</Text>
         <View style={{

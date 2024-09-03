@@ -28,8 +28,8 @@ const AccountHeader = ({ user, menuActive, toggleMenu }) => {
   return (
     <SafeAreaView style={[styles.header]} >
       <View style={styles.headerText}>
-        <Text style={styles.profilName}>{user ? user.name + ' ' + user.lastname : ''}</Text>
-        <Text style={styles.profilUsername}><Text style={{fontWeight: 'bold'}}>Nom d'utilisateur :</Text> {user.username}</Text>
+        <Text style={styles.profilName}>{user ? user.name : ''}</Text>
+        <Text style={styles.profilEmail}><Text style={{fontWeight: 'bold'}}>Identifiant :</Text> {user.email}</Text>
       </View>
       <TouchableOpacity
         style={styles.headerLogoutButton}
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     color: '#ffffff'
   },
-  profilUsername: {
+  profilEmail: {
     fontSize: 15,
     marginLeft: 10,
     marginBottom: 10,
