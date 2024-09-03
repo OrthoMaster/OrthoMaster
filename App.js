@@ -35,7 +35,7 @@ export default function App({ navigation }) {
     enabled: false
   })
   useQuery("user-offices", () => getUserAttachedOffices({ userId: currentUser.data.id_user }), {
-    enabled: currentUser.isSuccess,
+    enabled: currentUser.isSuccess && currentUser.data != null,
     onSuccess: async offices => {
       const displayInitialConfigForm = await AsyncStorage.getItem("initial-conf-slider-displayed")
       
@@ -43,7 +43,6 @@ export default function App({ navigation }) {
         offices && Array.isArray(offices) && offices.length == 0) {
         setShowInitialConfigForm(true)
       }
-
     }
   })
 
