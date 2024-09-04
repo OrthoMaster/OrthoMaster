@@ -50,6 +50,15 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
 
 
     return <View >
+        <DropdownComponent required data={structures.data} label="Structure" onChange={(val) => {
+            setFormDatas({
+                ...formDatas,
+                office_structure: {
+                    id: val.value,
+                    label: val.label
+                }
+            })
+        }} />
         <FormField type={"text"} name={"Nom de structure"} value={"name"}
             required={true}
             onChange={handleFieldChange}
@@ -93,15 +102,7 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
         <FormField type={"text"} name={"Téléphone"} value={"tel"}
             onChange={handleFieldChange}
         />
-        <DropdownComponent required data={structures.data} label="Structure" onChange={(val) => {
-            setFormDatas({
-                ...formDatas,
-                office_structure: {
-                    id: val.value,
-                    label: val.label
-                }
-            })
-        }} />
+
         <FormField type={"text"} name={"N° TVA"} value={"tva"}
             onChange={handleFieldChange}
         />
@@ -132,8 +133,8 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
         }}>
             {
                 sendForm.isLoading ?
-                <ActivityIndicator />
-                :<Text>Valider</Text>
+                    <ActivityIndicator />
+                    : <Text>Valider</Text>
             }
         </TouchableOpacity>
     </View>

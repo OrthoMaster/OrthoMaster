@@ -21,8 +21,8 @@ export default CreateOfficePage = ({ onFinish }) => {
             fontWeight: 'bold',
             marginTop: 50,
             marginLeft: 30,
-            marginBottom: 150
-        }}>Création d'une entreprise</Text>
+            marginBottom: 20
+        }}>Création d'un espace-pro</Text>
 
         <ScrollView style={{
             width: "90%",

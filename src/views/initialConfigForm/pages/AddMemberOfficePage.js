@@ -26,7 +26,7 @@ export default AddMemberOfficePage = ({ office, onFinish }) => {
             marginTop: 50,
             marginLeft: 30,
             marginBottom: 20
-        }}>Ajoutez des membres à votre entreprise</Text>
+        }}>Ajoutez des membres à votre espace-pro</Text>
 
 
         <ScrollView style={{

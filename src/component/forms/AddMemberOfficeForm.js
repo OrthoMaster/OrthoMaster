@@ -41,11 +41,13 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
         }
     }, [formStatus, formData]);
 
+    console.log(attachedOffice);
+
 
     return <View style={{
         paddingVertical: 10,
     }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Entreprise :</Text>
+        <Text style={{ fontSize: 16, fontWeight: 'bold', marginLeft: 10 }}>Votre structure :</Text>
         <View style={{
             backgroundColor: "#fff",
             alignSelf: 'center',
@@ -54,48 +56,23 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
             paddingHorizontal: 10,
             borderRadius: 5,
             borderColor: "#ffaf31",
-            borderWidth: 2,
-            marginVertical: 20
+            borderBottomWidth: 1,
+            marginVertical: 20,
+            opacity: 0.5
         }}>
+            <Text>{attachedOffice.structure}</Text>
+
             <Text>{attachedOffice?.name}</Text>
         </View>
         <View>
             <Text style={{
-                marginLeft: 30,
-                marginBottom: 20
+                marginLeft: 10,
+                marginBottom: 20,
+                textAlign: 'left'
             }}>
-                Pour ajouter un membre à votre nouvel espace entreprise,
-                vérifiez que le compte de l'utilisateur soit bien activé.
+                Pour ajouter un collaborateur, son compte doit déjà être activé.
             </Text>
-            <View style={{
-                alignItems: 'center',
-                marginBottom: 20
-            }}>
-                <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>Pas encore de compte ?</Text>
-                <TouchableOpacity
-                    style={{
-                        width: "50%",
-                        alignItems: 'center',
-                        backgroundColor: '#fff',
-                        padding: 5,
-                        borderRadius: 10
-                    }}
-                    onPress={() => {
-                        shareInvite()
-                    }}
-                >
-                    <Ionicons name="person-add-outline" size={20} color="#eb7b0f" />
-                    <Text style={{
-                        color: '#eb7b0f',
-                        textAlign: 'center',
-                        marginVertical: 5,
-                        fontSize: 12
-                    }}>
-                        Invitez votre votre collaborateur sur orthomaster
-                    </Text>
-                </TouchableOpacity>
 
-            </View>
 
         </View>
 
@@ -103,7 +80,7 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
             paddingHorizontal: 10,
             marginTop: 30
         }}>
-            <Text>E-mail de l'utilisateur à ajouter</Text>
+            <Text>E-mail du membre à ajouter</Text>
             <TextInput
                 defaultValue={email}
                 style={{
@@ -135,41 +112,99 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
 
         <TouchableOpacity style={{
             backgroundColor: '#ffaf31',
-            paddingVertical: 10, paddingHorizontal: 15,
+            height: 40, width: 40,
             alignSelf: 'center',
             marginTop: 20,
-            borderRadius: 5
+            borderRadius: 100,
+            alignItems: 'center',
+            justifyContent: 'center'
         }} onPress={() => {
             if (!isLoading) {
                 mutateForm({ email: email, id_office: attachedOffice.id_office })
             }
         }}>
-            {
-                isLoading ?
-                    <ActivityIndicator />
-                    : <Text>Ajouter</Text>
-            }
+            <View style={{
+                backgroundColor: '#fff',
+                borderRadius: 100,
+                height: "90%", width: '90%',
+                alignItems: 'center', justifyContent: 'center'
+            }}>
+                {
+                    isLoading ?
+                        <ActivityIndicator />
+                        : <Text style={{ fontSize: 25, color: '#ffaf31' }}>+</Text>
+                }
+            </View>
         </TouchableOpacity>
 
         <View style={{
-            marginVertical: 30
+            marginVertical: 20,
+            paddingHorizontal: 10,
+            backgroundColor: '#F1F1F1',
+            paddingVertical: 10
         }}>
-            <Text>Utilisateur(s) ajouté(s) </Text>
+            <Text style={{textDecorationLine: 'underline', color: '#262626'}}>Utilisateur(s) ajouté(s) </Text>
             <FlatList
                 data={userAdded}
                 keyExtractor={(item, index) => index}
-                renderItem={(item) => <Text>{item.item}</Text>
+                renderItem={(item) => <Text style={{
+                    marginLeft: 10,
+                    marginVertical: 5,
+                    fontStyle: 'italic',
+                    color: '#262626'
+                }}>{item.item}</Text>
                 }
                 scrollEnabled={false}
             />
+        </View>
+
+        <View style={{
+            alignItems: 'center',
+            alignSelf: 'center',
+            backgroundColor: '#fff',
+            borderRadius: 10,
+            marginBottom: 20,
+            width: "60%",
+            padding: 5,
+            shadowOffset: {
+                width: 0, height: 0
+            },
+            shadowRadius: 10,
+            shadowOpacity: 0.2
+        }}>
+            <Text style={{ marginBottom: 10 }}>Pas encore de compte ?</Text>
+            <TouchableOpacity
+                style={{
+                    width: "90%",
+                    alignItems: 'center',
+                    backgroundColor: '#fff',
+                    padding: 5,
+                    borderRadius: 10
+                }}
+                onPress={() => {
+                    shareInvite()
+                }}
+            >
+                <Ionicons name="person-add-outline" size={20} color="#eb7b0f" />
+                <Text style={{
+                    color: '#eb7b0f',
+                    textAlign: 'center',
+                    marginVertical: 5,
+                    fontSize: 12
+                }}>
+                    Invitez votre votre collaborateur sur orthomaster
+                </Text>
+            </TouchableOpacity>
+
         </View>
 
         <TouchableOpacity style={{
             backgroundColor: '#ffaf31',
             paddingVertical: 15, paddingHorizontal: 15,
             alignSelf: 'center',
-            marginTop: 20,
-            borderRadius: 5
+            borderRadius: 5,
+            width: "95%",
+            alignItems: 'center'
         }} onPress={() => {
             onEnd()
         }}>

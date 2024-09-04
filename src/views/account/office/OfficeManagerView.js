@@ -24,8 +24,6 @@ const UserCard = ({ user, onRemove }) => {
     }), {
         enabled: isOpen
     })
-    console.log(user);
-
 
     return <View style={{
         margin: 5,
