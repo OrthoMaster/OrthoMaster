@@ -6,13 +6,17 @@ export default AskOfficeCreationPage = ({ onCreateOffice, onSkip }) => {
     return <View style={{ flex: 1 }}>
         <Text style={{
             textAlign: 'center',
-            marginTop: 100
-        }}>Vous êtes responsable d'une entreprise. Associez la à OrthoMaster pour gérer votre équipe</Text>
+            marginTop: 200,
+            fontSize: 20,
+            fontWeight: 'bold'
+        }}>Vous représentez une structure professionnelle ?</Text>
+        <Text style={[styles.subText, {marginTop: 50}]}>Créez votre espace-pro sur OrthoMaster</Text>
+        <Text style={styles.subText}>pour gérer votre équipe et bien plus encore.</Text>
         <View style={styles.buttonsContainer}>
             <TouchableOpacity style={[styles.button, { backgroundColor: '#ffaf31' }]}
                 onPress={() => onCreateOffice()}
             >
-                <Text>Je renseigne mon entreprise</Text>
+                <Text>Je renseigne mon espace-pro</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.button, { backgroundColor: '#F1F1F1' }]}
                 onPress={() => onSkip()}
@@ -35,5 +39,9 @@ const styles = StyleSheet.create({
     buttonsContainer: {
         position: 'absolute',
         bottom: 20, left: 0, right: 0
+    },
+    subText: {
+        fontSize: 16,
+        textAlign: 'center',
     }
 })

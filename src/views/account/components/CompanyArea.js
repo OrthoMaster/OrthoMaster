@@ -50,10 +50,13 @@ export const CompanyArea = ({ refreshing, navigation }) => {
         <View style={styles.container}>
             <View style={styles.displayContainer}>
                 <View style={styles.headerContainer}>
-                    <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mon espace pro</Text>
+                    <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mes espaces professionnel</Text>
                 </View>
                 <View>
-                    <Text>Entreprise(s) liée(s)</Text>
+                    <Text style={{
+                        marginBottom: 10,
+                        textDecorationLine: 'underline'
+                    }}>Espace(s) :</Text>
                     {
                         (offices && !isLoading && isFetched) &&
                         offices.map((value, key) => {
