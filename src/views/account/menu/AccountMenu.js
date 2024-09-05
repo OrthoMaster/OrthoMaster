@@ -9,9 +9,11 @@ import {
     Text,
     Linking,
     ScrollView,
-    ActivityIndicator
+    ActivityIndicator,
+    Share
 } from "react-native"
 import { useDispatch } from "react-redux";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 
 import { logout, startIntro } from '../../../actions/auth';
@@ -37,7 +39,6 @@ const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
 
 export const AccountMenu = ({ navigation, user }) => {
     const dispatch = useDispatch()
-    const [gettingCustomerPortal, setGettingCustomerPortal] = useState(false)
     const [errorMessage, setErrorMessage] = useState(null)
 
     return (
@@ -53,12 +54,12 @@ export const AccountMenu = ({ navigation, user }) => {
                     }}
                 />
                 <CustomMenuButton
-                        icon={require('../../../../assets/settings/icon-espace-client.png')}
-                        text={'Mon espace client'}
-                        onPress={() => {
-                            Linking.openURL("https://orthomaster-dev.odoo.com/web/login")
-                        }}
-                    />
+                    icon={require('../../../../assets/settings/icon-espace-client.png')}
+                    text={'Mon espace client'}
+                    onPress={() => {
+                        Linking.openURL("https://orthomaster-dev.odoo.com/web/login")
+                    }}
+                />
 
                 <CustomMenuButton
                     icon={require('../../../../assets/settings/legal-paper.png')}
@@ -121,6 +122,49 @@ export const AccountMenu = ({ navigation, user }) => {
                     }}
                 />
 
+                <View style={{
+                    alignItems: 'center',
+                    alignSelf: 'center',
+                    backgroundColor: '#fff',
+                    borderRadius: 10,
+                    marginVertical: 50,
+                    width: "60%",
+                    padding: 5,
+                    shadowOffset: {
+                        width: 0, height: 0
+                    },
+                    shadowRadius: 10,
+                    shadowOpacity: 0.2
+                }}>
+                    <TouchableOpacity
+                        style={{
+                            width: "90%",
+                            alignItems: 'center',
+                            backgroundColor: '#fff',
+                            padding: 5,
+                            borderRadius: 10
+                        }}
+                        onPress={() => {
+                            Share.share({
+                                message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
+                                    user.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
+                                    "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.",
+                                url: "https://orthomaster-saas.odoo.com/inscription"
+                            })
+                        }}
+                    >
+                        <Ionicons name="person-add-outline" size={20} color="#000" />
+                        <Text style={{
+                            color: '#000',
+                            textAlign: 'center',
+                            marginVertical: 5,
+                            fontSize: 12
+                        }}>
+                            Inviter à rejoindre OrthoMaster
+                        </Text>
+                    </TouchableOpacity>
+
+                </View>
             </ScrollView>
 
         </View>

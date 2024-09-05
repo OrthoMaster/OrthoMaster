@@ -25,7 +25,6 @@ export const PaymentFormationModal = ({
     const [stepIndex, setStepIndex] = useState(0)
     const sendOrder = useMutation(createFormationOrder, {
         onError: err => {
-            console.log(err);
             setStatusMessage("Une erreur est survenu lors de la génération et l'envoie du devis")
         },
         onSuccess: data => {
@@ -45,8 +44,6 @@ export const PaymentFormationModal = ({
             }])
         }
     }, [currentBillingAddress])
-
-    console.log(currentBillingAddress);
 
     return (
 

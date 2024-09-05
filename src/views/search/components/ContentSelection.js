@@ -84,8 +84,7 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
 
     return <TouchableOpacity style={stylesDefault.card}
         onPress={() => {
-            if ((isDemo && card.demo_access == true) || !isDemo)
-                onSelect(card)
+            onSelect(card)
         }}
     >
         <View style={{
@@ -220,7 +219,7 @@ export const ContentSelection = ({
                             return <QaCard card={item.item} onSelect={(card) => onSelect(card)} color={color} />
 
                         default:
-                            return <SearchCardDefault card={item.item} onSelect={(card) => onSelect(card)} studentMode={studentMode}/>
+                            return <SearchCardDefault card={item.item} onSelect={(card) => onSelect(card)} studentMode={studentMode} />
                     }
                 }}
                 keyExtractor={(item, index) => index}

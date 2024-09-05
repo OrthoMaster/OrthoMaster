@@ -178,10 +178,14 @@ export const LessonEndingView = ({ navigation, route }) => {
         queryClient.invalidateQueries(["user-formations", formation.id])
         queryClient.invalidateQueries(["user-formations"])
         queryClient.invalidateQueries(['formation-modules', formation.id_formation])
-        navigation.navigate("formation-modules", {
-          userFormationId: formation.id,
-          demoMode: !formation.certifying && !formation.is_paid
-        })
+        if (route.name == 'home-content-result') {
+          navigation.popToTop()
+        } else {
+          navigation.navigate("formation-modules", {
+            userFormationId: formation.id,
+            demoMode: !formation.certifying && !formation.is_paid
+          })
+        }
         break;
 
       default:

@@ -83,7 +83,7 @@ export function ContentDisplayer({ route, navigation }) {
 
   useEffect(() => {
     // if (content.type == 'lesson' && content.title != 'initial' && content.title != 'final') { // tmp handling of main quiz in the formation
-    // console.log(formation, type);
+    console.log("PROPS content displayer",content, formation, type);
 
     if (formation && type == "lesson") { // tmp handling of main quiz in the formation
       launchDate = getCurrentDate()

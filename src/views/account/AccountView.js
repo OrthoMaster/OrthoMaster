@@ -9,7 +9,8 @@ import {
   StatusBar,
   Image,
   RefreshControl,
-  Platform
+  Platform,
+  Share
 } from 'react-native';
 import { useStore } from 'react-redux';
 
@@ -29,7 +30,7 @@ const AccountHeader = ({ user, menuActive, toggleMenu }) => {
     <SafeAreaView style={[styles.header]} >
       <View style={styles.headerText}>
         <Text style={styles.profilName}>{user ? user.name : ''}</Text>
-        <Text style={styles.profilEmail}><Text style={{fontWeight: 'bold'}}>Identifiant :</Text> {user.email}</Text>
+        <Text style={styles.profilEmail}><Text style={{ fontWeight: 'bold' }}>Identifiant :</Text> {user.email}</Text>
       </View>
       <TouchableOpacity
         style={styles.headerLogoutButton}
@@ -57,7 +58,7 @@ export const AccountView = ({ navigation }) => {
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
   const user = store.getState().auth.userCurrentSession
-  
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => {
@@ -94,7 +95,7 @@ export const AccountView = ({ navigation }) => {
             navigation={navigation}
           />
 
-          <View style={{ height: 200 }} />
+          <View style={{height: 200}}/>
         </ScrollView>
         {
           menuIsActive ?
@@ -102,6 +103,7 @@ export const AccountView = ({ navigation }) => {
             : null
         }
       </View>
+
     </View>
   );
 }

@@ -50,13 +50,9 @@ export const CompanyArea = ({ refreshing, navigation }) => {
         <View style={styles.container}>
             <View style={styles.displayContainer}>
                 <View style={styles.headerContainer}>
-                    <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Mes espaces professionnel</Text>
+                    <Text style={[styles.sectionTitle, { color: '#fffefd' }]}>Espace pro</Text>
                 </View>
                 <View>
-                    <Text style={{
-                        marginBottom: 10,
-                        textDecorationLine: 'underline'
-                    }}>Espace(s) :</Text>
                     {
                         (offices && !isLoading && isFetched) &&
                         offices.map((value, key) => {
@@ -73,7 +69,7 @@ export const CompanyArea = ({ refreshing, navigation }) => {
                             navigation.navigate('account-add-office')
                         }}
                     >
-                        <Text>Ajouter une entreprise</Text>
+                        <Text>Ajouter un espace-pro</Text>
                         <Text>+</Text>
                     </TouchableOpacity>
                 </View>

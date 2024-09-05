@@ -151,8 +151,6 @@ export const demandeDeDossierFormation = async ({ id_formation, organisme, tel, 
       headers: { Authorization: authHeader },
     })
     .then((response) => {
-      console.log(response.data);
-      
       return response.data;
     })
 }

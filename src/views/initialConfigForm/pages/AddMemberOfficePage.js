@@ -48,7 +48,7 @@ export default AddMemberOfficePage = ({ office, onFinish }) => {
                     showToast({
                         type: "success",
                         text1: "Utilisateur ajouté",
-                        text2: "Votre espace pro reste modifiable sur votre page entreprise"
+                        text2: "Votre espace pro reste modifiable sur votre espace"
                     })
                 }}
                 onError={(errorMessage) => {

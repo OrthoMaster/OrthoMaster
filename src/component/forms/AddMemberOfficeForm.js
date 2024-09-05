@@ -6,10 +6,10 @@ import {
     FlatList,
     ActivityIndicator,
     TextInput,
+    Share
 } from "react-native";
 import { useMutation } from "react-query";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Sharing from 'expo-sharing';
 
 import { addMemberOffice } from "../../services/OfficeService";
 
@@ -21,12 +21,16 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
             onError(error.response.data.message)
         }
     })
+
     const [errorMessage, setErrorMessage] = useState(null)
 
     const shareInvite = async () => {
-        let isOk = await Sharing.isAvailableAsync()
-        if (isOk)
-            Sharing.shareAsync("https://orthomaster-saas.odoo.com/inscription")
+        Share.share({
+            message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
+                attachedOffice.structure + " " + attachedOffice.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
+                "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.",
+            url: "https://orthomaster-saas.odoo.com/inscription"
+        })
     }
 
     useEffect(() => {
@@ -41,39 +45,21 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
         }
     }, [formStatus, formData]);
 
-    console.log(attachedOffice);
-
 
     return <View style={{
         paddingVertical: 10,
     }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold', marginLeft: 10 }}>Votre structure :</Text>
+        <Text style={{ fontSize: 16, fontWeight: 'bold', marginLeft: 10 }}>Ajoutez des membres à votre espace :</Text>
         <View style={{
             backgroundColor: "#fff",
             alignSelf: 'center',
             width: "80%", height: 40,
-            justifyContent: 'center',
-            paddingHorizontal: 10,
-            borderRadius: 5,
-            borderColor: "#ffaf31",
-            borderBottomWidth: 1,
-            marginVertical: 20,
-            opacity: 0.5
+            alignItems: 'center',
+            marginVertical: 50
         }}>
-            <Text>{attachedOffice.structure}</Text>
+            <Text style={{ fontSize: 15 }}>{attachedOffice.structure}</Text>
 
-            <Text>{attachedOffice?.name}</Text>
-        </View>
-        <View>
-            <Text style={{
-                marginLeft: 10,
-                marginBottom: 20,
-                textAlign: 'left'
-            }}>
-                Pour ajouter un collaborateur, son compte doit déjà être activé.
-            </Text>
-
-
+            <Text style={{ fontSize: 30 }}>{attachedOffice?.name}</Text>
         </View>
 
         <View style={{
@@ -98,6 +84,12 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
                 inputMode={"text"}
                 autoCapitalize={'none'}
             />
+            <Text style={{
+                fontSize: 10,
+                fontStyle: 'italic',
+                color: 'gray',
+                paddingHorizontal: 10
+            }}>Attention, pour ajouter un nouveau membre, celui-ci doit déjà posséder un compte actif</Text>
         </View>
 
         {
@@ -137,33 +129,37 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
             </View>
         </TouchableOpacity>
 
-        <View style={{
-            marginVertical: 20,
-            paddingHorizontal: 10,
-            backgroundColor: '#F1F1F1',
-            paddingVertical: 10
-        }}>
-            <Text style={{textDecorationLine: 'underline', color: '#262626'}}>Utilisateur(s) ajouté(s) </Text>
-            <FlatList
-                data={userAdded}
-                keyExtractor={(item, index) => index}
-                renderItem={(item) => <Text style={{
-                    marginLeft: 10,
-                    marginVertical: 5,
-                    fontStyle: 'italic',
-                    color: '#262626'
-                }}>{item.item}</Text>
-                }
-                scrollEnabled={false}
-            />
-        </View>
+        {
+            (Array.isArray(userAdded) && userAdded.length > 0) &&
+            <View style={{
+                marginVertical: 20,
+                paddingHorizontal: 10,
+                backgroundColor: '#F1F1F1',
+                paddingVertical: 10
+            }}>
+                <Text style={{ textDecorationLine: 'underline', color: '#262626' }}>Utilisateur(s) ajouté(s) </Text>
+                <FlatList
+                    data={userAdded}
+                    keyExtractor={(item, index) => index}
+                    renderItem={(item) => <Text style={{
+                        marginLeft: 10,
+                        marginVertical: 5,
+                        fontStyle: 'italic',
+                        color: '#262626'
+                    }}>{item.item}</Text>
+                    }
+                    scrollEnabled={false}
+                />
+            </View>
+        }
+
 
         <View style={{
             alignItems: 'center',
             alignSelf: 'center',
             backgroundColor: '#fff',
             borderRadius: 10,
-            marginBottom: 20,
+            marginVertical: 50,
             width: "60%",
             padding: 5,
             shadowOffset: {
@@ -192,7 +188,7 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
                     marginVertical: 5,
                     fontSize: 12
                 }}>
-                    Invitez votre votre collaborateur sur orthomaster
+                    Envoyer une invitation à rejoindre OrthoMaster
                 </Text>
             </TouchableOpacity>
 

@@ -20,7 +20,7 @@ import { LessonHeader } from './LessonHeader';
 import { SponsoredFormationModal } from './modal/sponsoredModal/SponsoredFormationModal';
 import { getCurrentUser } from '../../services/UserService';
 
-const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, isStudent }) => {
+const RunningFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, isStudent }) => {
     const startDate = new Date(params.start_date_theorical).toLocaleDateString()
     const endDate = new Date(params.end_date_theorical).toLocaleDateString()
     const navigation = useNavigation()
@@ -106,7 +106,7 @@ const RegisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest,
     </View>
 }
 
-const UnregisteredFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, isStudent }) => {
+const CatalogFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, isStudent }) => {
 
     const navigation = useNavigation()
     const queryClient = useQueryClient()
@@ -192,12 +192,12 @@ const FormationCard = ({ formation, onPaymentRequest, onSponsoredRequest, regist
 
         {
             registered ?
-                <RegisteredFormationCard params={formation}
+                <RunningFormationCard params={formation}
                     onPaymentRequest={(formation) => onPaymentRequest(formation)}
                     onSponsoredRequest={(formation) => onSponsoredRequest(formation)}
                     isStudent={isStudent}
                 />
-                : <UnregisteredFormationCard params={formation}
+                : <CatalogFormationCard params={formation}
                     onPaymentRequest={(formation) => onPaymentRequest(formation)}
                     onSponsoredRequest={(formation) => onSponsoredRequest(formation)}
                     isStudent={isStudent}
@@ -217,6 +217,7 @@ export const FormationView = ({ navigation, route }) => {
     const [activatePayment, setActivatePayment] = useState({ isActivate: false, formation: null })
     const [activateSponsoredDemand, setActivateSponsoredDemand] = useState({ isActivate: false, formation: null })
     const [isStudent, setIsStudent] = useState(false)
+    const [formationCatalog, setFormationCatalog] = useState([])
     useQuery("current-user", () => getCurrentUser(), {
         onSuccess: user => { setIsStudent(user.is_student) }
     })
@@ -239,6 +240,24 @@ export const FormationView = ({ navigation, route }) => {
         }, 2000);
     }, []);
 
+    useEffect(() => {
+        if (userFormations && formations) {
+            let catalogue = []
+            userFormations.forEach(f => {
+                if (f.progress_rate == 0)
+                    catalogue.push(f)
+            });
+            formations.forEach(f => {
+                if (userFormations.find(uf => (uf.id_formation == f.id_formation)))
+                    return
+                else
+                    catalogue.push(f)
+            });
+            setFormationCatalog(catalogue)
+        }
+    }, [userFormations, formations])
+
+
     return <View style={styles.container}>
         <LessonHeader
             searchEnabled={false}
@@ -257,14 +276,15 @@ export const FormationView = ({ navigation, route }) => {
                 }
                 {
                     userFormations?.map((value, index) => {
-                        return <FormationCard
-                            formation={value}
-                            key={index}
-                            onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
-                            onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
-                            registered={true}
-                            isStudent={isStudent}
-                        />
+                        if (userFormations.find(f => f.progress_rate > 0))
+                            return <FormationCard
+                                formation={value}
+                                key={index}
+                                onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
+                                onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
+                                registered={true}
+                                isStudent={isStudent}
+                            />
                     })
                 }
             </View>
@@ -276,16 +296,15 @@ export const FormationView = ({ navigation, route }) => {
                     <ActivityIndicator color={"#ffaf31"} size={"small"} />
                 }
                 {
-                    formations?.map((value, index) => {
-                        if (!userFormations.find(f => f.id_formation == value.id_formation))
-                            return <FormationCard
-                                formation={value}
-                                key={index}
-                                onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
-                                onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
-                                registered={false}
-                                isStudent={isStudent}
-                            />
+                    formationCatalog?.map((value, index) => {
+                        return <FormationCard
+                            formation={value}
+                            key={index}
+                            onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
+                            onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
+                            registered={value.id_user ? true : false}
+                            isStudent={isStudent}
+                        />
                     })
                 }
             </View>
