@@ -22,10 +22,7 @@ export default AddOfficeView = ({ route, navigation }) => {
     return <View style={{
         flex: 1,
     }}>
-        <Text>
-            Ajouter une entreprise vous permet ensuite d'ajouter des membres afin d'avoir une gestion d'équipe complète.
-            En tant que créateur d'entreprise sur l'application OrthoMaster, vous serez en mesure de réaliser des actions pour vous et l'ensemble des membres de votre équipe.
-        </Text>
+
         <ScrollView style={{
             paddingBottom: 30
         }}>
@@ -35,7 +32,7 @@ export default AddOfficeView = ({ route, navigation }) => {
                     onError={(message) => {
                         showToast({
                             type: 'error',
-                            text1: "Entreprise non créée",
+                            text1: "Espace-pro non créé",
                             text2: message ?
                                 message
                                 : "Une erreur s'est produite lors de l'enregistrement."
@@ -45,8 +42,8 @@ export default AddOfficeView = ({ route, navigation }) => {
                         queryClient.invalidateQueries("user-offices")
                         showToast({
                             type: 'success',
-                            text1: "Entreprise créée",
-                            text2: "Modifiez-la depuis votre page entreprise 😉"
+                            text1: "Espace-pro créé",
+                            text2: "Modifiez-le depuis votre espace 😉"
                         })
                         setOffice(newOffice)
                     }}
@@ -59,7 +56,7 @@ export default AddOfficeView = ({ route, navigation }) => {
                         showToast({
                             type: "success",
                             text1: "Utilisateur ajouté",
-                            text2: "Votre espace pro reste modifiable sur votre page entreprise"
+                            text2: "Votre espace pro reste modifiable dans votre espace"
                         })
                     }}
                     onError={(errorMessage) => {

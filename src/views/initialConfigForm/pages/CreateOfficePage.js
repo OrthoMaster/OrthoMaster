@@ -37,14 +37,14 @@ export default CreateOfficePage = ({ onFinish }) => {
                     onFinish(newOffice)
                     showToast({
                         type: 'success',
-                        text1: "Entreprise créée",
-                        text2: "Modifiez-la depuis votre page entreprise 😉"
+                        text1: "Espace-pro créé",
+                        text2: "Modifiez-le depuis votre espace 😉"
                     })
                 }}
                 onError={(message) => {
                     showToast({
                         type: 'error',
-                        text1: "Entreprise non créée",
+                        text1: "Espace-pro non créé",
                         text2: message ?
                             message
                             : "Une erreur s'est produite lors de l'enregistrement."

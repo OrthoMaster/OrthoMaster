@@ -36,7 +36,7 @@ export const ProfilStack = () => {
         component={AddOfficeView}
         options={{
           headerBackTitle: 'Retour',
-          title: 'Ajouter une entreprise',
+          title: 'Ajouter un espace-pro',
           headerBackTitleStyle: { color: "#ffaf31" },
           cardStyle: {
             backgroundColor: '#fff'
