@@ -64,7 +64,7 @@ export default UserSelector = ({usersArray = [], onSelect}) => {
         <FlatList
             data={usersArray}
             keyExtractor={(item, index) => index}
-
+            scrollEnabled={false}
             renderItem={(item) => <BouncyCheckbox
                 size={20}
                 fillColor="#ffaf31"

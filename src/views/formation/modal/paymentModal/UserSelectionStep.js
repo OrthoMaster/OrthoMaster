@@ -4,7 +4,8 @@ import UserSelector from "../../../../component/UserSelector";
 import {
     View,
     Text,
-    TouchableOpacity
+    TouchableOpacity,
+    ScrollView
 } from "react-native";
 import { useQuery } from "react-query";
 import { getUsersByOfficeId } from "../../../../services/UserService";
@@ -17,7 +18,7 @@ export default UserSelectionStep = ({ formation, onSubmit, billingAddress }) => 
 
 
 
-    return <View style={{
+    return <ScrollView style={{
         width: '95%',
         alignSelf: 'center'
     }}>
@@ -53,5 +54,5 @@ export default UserSelectionStep = ({ formation, onSubmit, billingAddress }) => 
         >
             <Text style={{ fontWeight: 'bold', color: '#fff' }}>Continuer</Text>
         </TouchableOpacity>
-    </View>
+    </ScrollView>
 }
