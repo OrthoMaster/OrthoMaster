@@ -15,6 +15,7 @@ import {
 import { getS3Image } from '../../../services/S3Service'
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from 'react-query';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 const SearchCardDefault = ({ card, onSelect, studentMode }) => {
     const isDemo = !card.certifying && !card.is_paid && studentMode == false
@@ -134,10 +135,11 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
+                alignItems: 'center',
+                justifyContent: 'center'
             }}>
-                <Image
-                    src=''
-                />
+                <Text style={{ color: "#DEDEDE" }}>Débloquer le contenu</Text>
+                <AntDesign name="unlock" size={30} color="#DEDEDE" />
             </View>
         }
     </TouchableOpacity>

@@ -1,10 +1,11 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
-    Text
+    Text,
+    StyleSheet
 } from "react-native";
 
-export default PriceRecap = ({selectedCollaborators, unitPrice}) => {
+export default PriceRecap = ({ selectedCollaborators, unitPrice }) => {
     const [priceArray, setPriceArray] = useState([])
 
     const getFinalPrice = () => {
@@ -30,58 +31,91 @@ export default PriceRecap = ({selectedCollaborators, unitPrice}) => {
         setPriceArray(finalPricesArray)
     }, [selectedCollaborators])
 
-    return <View style={{ marginTop: 20 }}>
-        <Text>Nombre de licence : {selectedCollaborators.length}</Text>
+    return <View style={{  }}>
+        {/* <Text>Nombre de licence : {selectedCollaborators.length}</Text> */}
 
-        <Text>Details</Text>
         <View style={{
             display: 'flex',
             flexDirection: "row",
-            width: "95%",
+            width: "95%", height: 40,
             alignSelf: 'center',
-            justifyContent: 'space-between'
+            marginVertical: 10,
+            backgroundColor: '#ffaf31',
+            alignItems: 'center',
         }}>
-            <View>
-                <Text>Produit</Text>
-                {
-                    priceArray.map((value, index) => {
-                        return <Text key={index}>License formation</Text>
-                    })
-                }
+            <View style={[styles.recapHeaderBox, {flex: 2}]}>
+                <Text style={styles.recapHeaderLabel}>Produit</Text>
             </View>
-            <View>
-                <Text>Prix unitaire</Text>
-                {
-                    priceArray.map((value, index) => {
-                        return <Text key={index}>{unitPrice} €</Text>
-                    })
-                }
+            <View style={styles.recapHeaderBox}>
+                <Text style={styles.recapHeaderLabel}>Prix unitaire</Text>
             </View>
-            <View>
-                <Text>Quantité</Text>
-                {
-                    priceArray.map((value, index) => {
-                        return <Text key={index}>1</Text>
-                    })
-                }
+            <View style={styles.recapHeaderBox}>
+                <Text style={styles.recapHeaderLabel}>Quantité</Text>
             </View>
-            <View>
-                <Text>Remise</Text>
-                {
-                    priceArray.map((value, index) => {
-                        return <Text key={index}>{value.discount} %</Text>
-                    })
-                }
+            <View style={styles.recapHeaderBox}>
+                <Text style={styles.recapHeaderLabel}>Remise</Text>
             </View>
-            <View>
-                <Text>Prix final</Text>
-                {
-                    priceArray.map((value, index) => {
-                        return <Text key={index}>{value.finalPrice} €</Text>
-                    })
-                }
+            <View style={styles.recapHeaderBox}>
+                <Text style={styles.recapHeaderLabel}>Prix final</Text>
             </View>
         </View>
-        <Text>Prix total : {getFinalPrice()} € HT</Text>
+        {
+            priceArray.map((value, index) => {
+                return <View key={index} style={{
+                    display: 'flex',
+                    flexDirection: "row",
+                    width: "95%",
+                    alignSelf: 'center',
+                    marginVertical: 2,
+                    borderBottomWidth: 0.3
+                }}>
+                    <View style={[styles.recapBodyBox, {flex: 2}]}>
+                        <Text style={styles.recapBodyLabel}>License formation</Text>
+                    </View>
+                    <View style={styles.recapBodyBox}>
+                        <Text style={styles.recapBodyLabel}>{unitPrice} €</Text>
+                    </View>
+                    <View style={styles.recapBodyBox}>
+                        <Text style={styles.recapBodyLabel}>1</Text>
+                    </View>
+                    <View style={styles.recapBodyBox}>
+                        <Text style={styles.recapBodyLabel}>{value.discount} %</Text>
+                    </View>
+                    <View style={styles.recapBodyBox}>
+                        <Text style={styles.recapBodyLabel}>{value.finalPrice} €</Text>
+                    </View>
+                </View>
+            })
+        }
+        <Text style={{
+            marginTop: 20
+            }}>
+                <Text style={{
+                    fontWeight: 'bold',
+                    color: '#ffaf31'
+                }}>Prix total : </Text>{getFinalPrice()} € HT</Text>
     </View>
 }
+
+const styles = StyleSheet.create({
+    recapHeaderBox: {
+        flex: 1,
+        borderColor: '#fff',
+        borderWidth: 1,
+        height: "100%",
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    recapHeaderLabel: {
+        color: '#fff',
+        fontSize: 12
+    },
+    recapBodyBox: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    recapBodyLabel: {
+        fontSize: 12
+    }
+})

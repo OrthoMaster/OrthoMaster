@@ -17,7 +17,7 @@ import { ContentSelection } from './components/ContentSelection'
 import { SearchHeader } from './SearchHeader'
 import { LoadingContent } from '../../component/LoadingContent'
 import { API_SEARCH_CLEAN } from '../../actions/types';
-import { useMutation, useQuery } from 'react-query';
+import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { fetchSearchList } from '../../services/SearchService';
 import { getCurrentUser } from '../../services/UserService';
 import { registerFormation } from '../../services/FormationService';
@@ -120,8 +120,18 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             if (res)
                 userFormationId = res.insertId
         }
+        // TODO bug : ouverture contenu pas en en formation -> enregistrement formation + ouverture contenu
+        // Après première ouverture, les contenus ne peuvent pas s'ouvrir car aucun refetch n'est fait et l'id user formation est
+        // tjr null. -> cherche a créer formation mais déja existante -> return duplicate entry -> accès contenu impossible
 
-        if (userFormationId != null)
+        const isBlocked = card.demo_access == false && (card.certifying == false && card.is_paid == false)
+
+        if (isBlocked) {
+            navigation.navigate("Formation")
+            return
+        }
+
+        if (userFormationId != null) {
             navigation.navigate(nextView, {
                 content: {
                     id_content: card.id_content,
@@ -137,14 +147,12 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                 },
                 type: card.type
             })
-        else
-        showToast({
-            type: "error",
-            text1: "Echec ouverture",
-            text2: "Veuillez ré-essayer"
-        })
-
-
+        } else
+            showToast({
+                type: "error",
+                text1: "Echec ouverture",
+                text2: "Veuillez ré-essayer"
+            })
     }
 
 

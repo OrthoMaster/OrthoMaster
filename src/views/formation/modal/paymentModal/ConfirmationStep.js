@@ -4,7 +4,8 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    ActivityIndicator
+    ActivityIndicator,
+    ScrollView
 } from "react-native";
 import PriceRecap from "../../components/PriceRecap";
 
@@ -18,7 +19,7 @@ export default ConfirmationStep = ({
 }) => {
 
 
-    return <View style={{
+    return <ScrollView style={{
         width: '95%',
         alignSelf: 'center'
     }}>
@@ -50,8 +51,8 @@ export default ConfirmationStep = ({
             </View>
         </View>
 
-        <View>
-            <Text style={styles.text1}>Vont bénéficier de la formation :</Text>
+        <View style={{alignItems: 'center'}}>
+            <Text style={[styles.text1, {alignSelf: 'flex-start'}]}>Vont bénéficier de la formation :</Text>
             {
                 users.map((value, index) => {
                     return <Text key={index}>{value.complete_name}</Text>
@@ -90,7 +91,7 @@ export default ConfirmationStep = ({
             }
 
         </TouchableOpacity>
-    </View>
+    </ScrollView>
 }
 
 const styles = StyleSheet.create({
