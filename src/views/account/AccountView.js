@@ -128,7 +128,10 @@ const styles = StyleSheet.create({
     marginRight: 20,
     justifyContent: 'center'
   },
-
+  headerText: {
+    width: '85%',
+    paddingVertical: 10
+  },
   profilName: {
     fontWeight: 'bold',
     fontSize: 28,
