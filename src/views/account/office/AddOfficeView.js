@@ -25,7 +25,9 @@ export default AddOfficeView = ({ route, navigation }) => {
 
         <ScrollView style={{
             paddingBottom: 30
-        }}>
+        }}
+            automaticallyAdjustKeyboardInsets={true}
+        >
             {
                 office == null &&
                 <AddOfficeForm
