@@ -72,20 +72,6 @@ export default function App({ navigation }) {
     }
   };
 
-  // const retreiveSession = async () => {
-  //   return await new Promise((resolve, reject) => {
-  //     currentUser.refetch().then(res => {
-  //       if (res && res.data) {
-  //         dispatch(refreshUserSession(res.data))
-  //       } else {
-  //         dispatch(logout())
-  //       }
-  //       resolve(res.data)
-  //     })
-
-  //   })
-  // }
-
   const displayOmIntro = async () => {
     const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
 
@@ -95,15 +81,6 @@ export default function App({ navigation }) {
 
   }
 
-  // useEffect(() => {
-  //   const init = async () => {
-  //     await retreiveSession();
-
-  //   }
-  //   init()
-  // }, []);
-
-
   useEffect(() => {
     if (url) {
       const { hostname } = Linking.parse(url);
@@ -112,6 +89,27 @@ export default function App({ navigation }) {
       }
     }
   }, [url])
+
+  const displayView = () => {
+    if (displayIntro) {
+      return <IntroView onClose={() => {
+        dispatch(stopIntro())
+      }} />
+    }
+    if (showInitialConfigForm) {
+      <InitialConfigForm onFinish={() => {
+        AsyncStorage.setItem("initial-conf-slider-displayed", "true")
+        queryCli.invalidateQueries({ queryKey: ['current-user'] })
+        setShowInitialConfigForm(false)
+        displayOmIntro()
+      }} />
+    }
+    if (displayIntro == false && showInitialConfigForm == false)
+      return <NotificationHandler>
+        <AppTab />
+      </NotificationHandler>
+  }
+
 
   if (isLoading)
     return <LoadingContent />
@@ -123,26 +121,9 @@ export default function App({ navigation }) {
     >
 
       {
-        isLoggedIn && isEnabled == 1 ?
-          displayIntro ?
-            <IntroView onClose={() => {
-              dispatch(stopIntro())
-            }} />
-            :
-            <NotificationHandler>
-              <AppTab />
-            </NotificationHandler>
+        isLoggedIn ?
+          displayView()
           : <AuthStack />
-      }
-
-      {
-        showInitialConfigForm &&
-        <InitialConfigForm onFinish={() => {
-          AsyncStorage.setItem("initial-conf-slider-displayed", "true")
-          queryCli.invalidateQueries({ queryKey: ['current-user'] })
-          setShowInitialConfigForm(false)
-          displayOmIntro()
-        }} />
       }
 
     </NavigationContainer>
