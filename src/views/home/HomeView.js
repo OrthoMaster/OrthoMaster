@@ -29,15 +29,13 @@ const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
-  const qaPreview = useQuery(['Home', 'GET', "qaPreview"], () => fetchQa(5));
-  const flashPreview = useQuery(['Home', 'GET', "flashPreview"], () => fetchFlashContent(0, 5));
+  const flashPreview = useQuery(["flash-preview"], () => fetchFlashContent(0, 5));
   // const copilote = useCopilot()
 
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     flashPreview.refetch(0, 5)
-    qaPreview.refetch(5)
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
