@@ -39,7 +39,7 @@ export default function App({ navigation }) {
         dispatch(logout())
     },
     onError: () => { dispatch(logout()) },
-    onSettled: () => { setIsLoading(false) }
+    onSettled: () => {  }
   })
 
   useQuery("user-offices", () => getUserAttachedOffices({ userId: currentUser.data.id_user }), {
@@ -53,7 +53,8 @@ export default function App({ navigation }) {
       } else {
         displayOmIntro()
       }
-    }
+    },
+    onSettled: ()=> setIsLoading(false)
   })
 
   const url = Linking.useURL()
@@ -97,7 +98,7 @@ export default function App({ navigation }) {
       }} />
     }
     if (showInitialConfigForm) {
-      <InitialConfigForm onFinish={() => {
+      return <InitialConfigForm onFinish={() => {
         AsyncStorage.setItem("initial-conf-slider-displayed", "true")
         queryCli.invalidateQueries({ queryKey: ['current-user'] })
         setShowInitialConfigForm(false)
