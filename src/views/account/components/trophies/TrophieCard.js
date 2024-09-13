@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     ActivityIndicator,
     View,
@@ -21,30 +21,33 @@ export const TrophyCard = ({ item, refreshing }) => {
     }
 
     useEffect(() => {
-      var isMounted = true
-      fetchTrophyImg().then((url) =>{
-        if (isMounted)
-            setTrophyImgUrl(url)
-      })
-      return () => {
-        isMounted = false
-      }
+        var isMounted = true
+        fetchTrophyImg().then((url) => {
+            if (isMounted)
+                setTrophyImgUrl(url)
+        })
+        return () => {
+            isMounted = false
+        }
     }, [refreshing])
-    
+
     if (trophyImgUrl == null) return <ActivityIndicator />
 
 
     return (
         <View style={styles.trophyBox}>
             <View style={styles.trophyImgContainer}>
-                <Image
-                    style={styles.trophyImg}
-                    source={{uri: trophyImgUrl}}
-                />
+                {
+                    trophyImgUrl &&
+                    <Image
+                        style={styles.trophyImg}
+                        source={{ uri: trophyImgUrl }}
+                    />
+                }
                 {
                     item.unlock != true ?
-                    <View style={[styles.trophyImgCover, {height: (100 - item.progress - 3)+'%'}]} />
-                    : null
+                        <View style={[styles.trophyImgCover, { height: (100 - item.progress - 3) + '%' }]} />
+                        : null
                 }
             </View>
             <Text style={styles.trophyTitle} numberOfLines={2}>{item.trophy.title}</Text>
