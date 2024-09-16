@@ -38,7 +38,6 @@ const OfficeButton = ({ office, navigation }) => {
 
 export const CompanyArea = ({ refreshing, navigation }) => {
     const { data: offices, isLoading, isFetched, refetch } = useQuery(['user-offices'], () => getUserAttachedOffices({}))
-
     useEffect(() => {
         if (refreshing) {
             refetch()

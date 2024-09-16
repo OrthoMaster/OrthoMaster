@@ -1,132 +1,99 @@
 
 import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
-import { useSelector, useDispatch } from 'react-redux';
-import * as Linking from 'expo-linking';
 import { useQuery, useQueryClient } from 'react-query';
-import { Alert } from 'react-native';
 
-import { selectDisplayIntro, selectIsLoggedIn } from './src/reducers/auth';
-import { refreshUserSession, logout, startIntro, stopIntro } from './src/actions/auth';
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
+import { getUserAttachedOffices } from './src/services/OfficeService';
 import { LoadingContent } from './src/component/LoadingContent';
 import { NotificationHandler } from './src/component/NotificationHandler';
-import { appDefault, thuasne } from './src/AppMode';
-import { selectModeValue } from './src/reducers/appModeReducer';
-import { getCurrentUser } from './src/services/UserService';
-import { IntroView } from './src/views/intro/IntroView';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
-import { getUserAttachedOffices } from './src/services/OfficeService';
-const prefix = Linking.createURL('/');
+import { IntroView } from './src/views/intro/IntroView';
+import { useGetUser } from './src/hooks/useGetUser.hook';
+import { View } from 'react-native';
 
 
 export default function App({ navigation }) {
-  const isLoggedIn = useSelector(selectIsLoggedIn)
-  const isEnabled = useSelector(state => state.auth.userCurrentSession?.enabled)
-  const displayIntro = useSelector(selectDisplayIntro)
   const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const appMode = useSelector(selectModeValue)
-  const dispatch = useDispatch()
+  const [displayIntro, setDisplayIntro] = useState(false)
   const queryCli = useQueryClient()
-  const currentUser = useQuery(["current-user"], () => getCurrentUser(), {
-    onSuccess: user => {
-      if (user != null)
-        dispatch(refreshUserSession(user))
-      else
-        dispatch(logout())
-    },
-    onError: () => { dispatch(logout()) },
-    onSettled: () => {  }
+  const [initPhase, setInitPhase] = useState(true)
+  const { data: user, ...userQuery } = useGetUser()
+
+  const userOffices = useQuery("user-offices", () => getUserAttachedOffices({ userId: user.id_user }), {
+    enabled: userQuery.isSuccess && user != null
   })
-
-  useQuery("user-offices", () => getUserAttachedOffices({ userId: currentUser.data.id_user }), {
-    enabled: currentUser.isSuccess && currentUser.data != null,
-    onSuccess: async offices => {
-      const displayInitialConfigForm = await AsyncStorage.getItem("initial-conf-slider-displayed")
-
-      if (!displayInitialConfigForm &&
-        offices && Array.isArray(offices) && offices.length == 0) {
-        setShowInitialConfigForm(true)
-      } else {
-        displayOmIntro()
-      }
-    },
-    onSettled: ()=> setIsLoading(false)
-  })
-
-  const url = Linking.useURL()
-  const linking = {
-    prefixes: [prefix],
-    config: {
-      screens: {
-        'auth-account-activate': {
-          path: 'activate/user/:user_id/token/:token',
-          parse: {
-            user_id: (user_id) => user_id,
-            token: (token) => token,
-          },
-        }
-      },
-    }
-  };
-
-  const displayOmIntro = async () => {
-    const displayIntro = await AsyncStorage.getItem("intro-slider-displayed")
-
-    if (!displayIntro) {
-      dispatch(startIntro())
-    }
-
-  }
 
   useEffect(() => {
-    if (url) {
-      const { hostname } = Linking.parse(url);
-      if (isLoggedIn == true && (hostname == "activate" || hostname == 'create')) {
-        Alert.alert('Lien introuvable', "Le lien que vous essayez d'ouvrir n'est pas accessible. Vérifiez d'être déconnecté de la plateforme avant d'ouvrir le lien.")
+    if (userQuery.isSuccess) {
+      if (user != null) {
+        if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
+          AsyncStorage.getItem("initial-conf-slider-displayed")
+            .then(displayInitialConfigForm => {
+              if (!displayInitialConfigForm)
+                setShowInitialConfigForm(true)
+            })
+        }
       }
+      setInitPhase(false)
     }
-  }, [url])
+  }, [user, userOffices.data])
+
+
+
+
+  useEffect(() => {
+    AsyncStorage.getItem("intro-slider-displayed")
+      .then(displayIntro => {
+        if (!displayIntro) {
+          setDisplayIntro(true)
+        }
+      })
+  }, [])
+
 
   const displayView = () => {
-    if (displayIntro) {
-      return <IntroView onClose={() => {
-        dispatch(stopIntro())
-      }} />
-    }
     if (showInitialConfigForm) {
       return <InitialConfigForm onFinish={() => {
         AsyncStorage.setItem("initial-conf-slider-displayed", "true")
         queryCli.invalidateQueries({ queryKey: ['current-user'] })
         setShowInitialConfigForm(false)
-        displayOmIntro()
       }} />
     }
-    if (displayIntro == false && showInitialConfigForm == false)
+    if (showInitialConfigForm == false)
       return <NotificationHandler>
         <AppTab />
       </NotificationHandler>
   }
 
 
-  if (isLoading)
+  if (initPhase) {
     return <LoadingContent />
+  }
 
 
   return (
-    <NavigationContainer linking={linking} onUnhandledAction={(action) => { console.log('App.js -> navigation container', action) }}
-      theme={appMode == 'default' ? appDefault : thuasne}
-    >
-
+    <NavigationContainer >
       {
-        isLoggedIn ?
+        user ?
           displayView()
           : <AuthStack />
       }
+      {
+        (user && (displayIntro && !showInitialConfigForm)) &&
+        <View style={{
+          position: 'absolute',
+          height: '100%',
+          backgroundColor: '#fff'
+        }}>
 
+          <IntroView onClose={() => {
+            setDisplayIntro(false)
+          }} />
+        </View>
+      }
     </NavigationContainer>
   );
 }

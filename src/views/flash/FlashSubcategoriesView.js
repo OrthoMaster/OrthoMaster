@@ -25,10 +25,13 @@ const FlashContentButton = ({ config, onPress }) => {
             onPress={() => onPress(config)}
             style={styles.contentButton}
         >
-            <Image
-                style={styles.contentThumbnail}
-                source={{ uri: imageUrl.data }}
-            />
+            {
+                imageUrl.data &&
+                <Image
+                    style={styles.contentThumbnail}
+                    source={{ uri: imageUrl.data }}
+                />
+            }
             <Text style={styles.contentButtontext}>{config.title}</Text>
         </TouchableOpacity>
     )
@@ -53,7 +56,7 @@ const FlashSubcategoryButton = ({ item, onPress, theme_color, text_color }) => {
                 onPress={() => setIsOpen(!isOpen)}
                 style={[styles.subcategoryButton, { backgroundColor: theme_color }]}
             >
-                <Text style={[styles.subcategoryButtonText, {color: text_color}]}>{item.name}</Text>
+                <Text style={[styles.subcategoryButtonText, { color: text_color }]}>{item.name}</Text>
                 <Image
                     style={[styles.subcategoryButtonArrow,
                     {
@@ -104,8 +107,8 @@ export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, t
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={{margin: 20}} onPress={onReturn}>
-                <Text style={{color: theme_color, fontWeight: 'bold'}}> {'<'} Retour</Text>
+            <TouchableOpacity style={{ margin: 20 }} onPress={onReturn}>
+                <Text style={{ color: theme_color, fontWeight: 'bold' }}> {'<'} Retour</Text>
             </TouchableOpacity>
             <FlatList
                 data={subcategories.data}

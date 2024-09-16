@@ -12,11 +12,10 @@ import {
     ActivityIndicator,
     Share
 } from "react-native"
-import { useDispatch } from "react-redux";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-
-import { logout, startIntro } from '../../../actions/auth';
+import AuthService from "../../../services/AuthService";
+import { useLogout } from "../../../hooks/useLogout.hook";
 
 const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
     return (
@@ -38,7 +37,7 @@ const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
 }
 
 export const AccountMenu = ({ navigation, user }) => {
-    const dispatch = useDispatch()
+    const logout = useLogout()
     const [errorMessage, setErrorMessage] = useState(null)
 
     return (
@@ -88,8 +87,7 @@ export const AccountMenu = ({ navigation, user }) => {
                                 },
                                 {
                                     text: "Se déconnecter", onPress: async () => {
-                                        navigation.navigate('home-home')
-                                        dispatch(logout())
+                                        logout.mutate()
                                     }
                                 }
                             ]
@@ -118,7 +116,8 @@ export const AccountMenu = ({ navigation, user }) => {
                     text={'Revoir le tutoriel'}
 
                     onPress={() => {
-                        dispatch(startIntro())
+                        console.log("clicked");
+                        
                     }}
                 />
 

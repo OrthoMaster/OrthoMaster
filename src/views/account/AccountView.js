@@ -22,6 +22,8 @@ import { CompanyArea } from './components/CompanyArea';
 import { AccountMenu } from './menu/AccountMenu';
 // import { CertifiedFormationProgress } from './components/CertifiedFormationProgress';
 import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
+import { useQuery } from 'react-query';
+import { getCurrentUser } from '../../services/UserService';
 
 
 const AccountHeader = ({ user, menuActive, toggleMenu }) => {
@@ -57,7 +59,7 @@ export const AccountView = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false)
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
-  const user = store.getState().auth.userCurrentSession
+  const user = useQuery("current-user", ()=> getCurrentUser())
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -69,7 +71,7 @@ export const AccountView = ({ navigation }) => {
   return (
     <View style={{ flex: 1 }}>
       <AccountHeader
-        user={user}
+        user={user.data}
         menuActive={menuIsActive}
         toggleMenu={() => {
           setMenuIsActive(!menuIsActive)

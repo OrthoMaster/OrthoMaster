@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -15,16 +15,13 @@ import {
   useCopilot
 } from "react-native-copilot";
 
-
-
-
 import { useQuery } from "react-query"
 import { fetchFlashContent } from '../../services/FlashService';
-import { fetchQa } from '../../services/QaService';
 
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 import FeedDisplayer from './components/FeedDisplayer';
+
 const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
@@ -69,8 +66,9 @@ export const HomeView = ({ navigation, route }) => {
         </View>
 
         <FeedDisplayer />
-        
+
       </ScrollView>
+
 
     </View>
   );

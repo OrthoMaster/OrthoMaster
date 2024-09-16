@@ -13,7 +13,8 @@ import {
     KeyboardAvoidingView,
     TouchableWithoutFeedback,
     Keyboard,
-    Platform
+    Platform,
+    Linking
 } from "react-native";
 
 import { useStore } from "react-redux";
@@ -22,6 +23,7 @@ import { changeUserPassword } from "../../../services/UserService";
 
 import { Modal } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { useGetUser } from "../../../hooks/useGetUser.hook";
 
 const DisplayUserInfo = ({ dataType, data }) => {
 
@@ -58,41 +60,7 @@ const DisplayUserInfo = ({ dataType, data }) => {
 
 
 export const AccountProfile = ({navigation}) => {
-    const store = useStore()
-    const userState = store.getState().auth.userCurrentSession
-    const [changingPassword, setchangingPassword] = useState(false)
-
-    const [oldPassword, setOldPassword] = useState('')
-    const [newPassword, setNewPassword] = useState('')
-    const [confirmPassword, setconfirmPassword] = useState('')
-
-    const [statusText, setStatusText] = useState('')
-    const [showPassword, setShowPassword] = useState(false)
-
-    const changePasswordMutation = useMutation('changePassword', changeUserPassword, {
-        onSuccess: (msg) => {
-            setStatusText(msg)
-            Alert.alert(msg)
-            navigation.goBack()
-
-        },
-        onError: err => {
-            Alert.alert(err.response.data.message)
-        }
-    })
-
-    const handleChange = () => {
-        setStatusText('')
-        if (newPassword != confirmPassword) {
-            setStatusText("Les mots de passe ne correspondent pas.")
-            return
-        }
-
-        changePasswordMutation.mutate({ oldPassword: oldPassword, newPassword: newPassword })
-
-
-    }
-
+    const {data: user, ...userQuery} = useGetUser()
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
@@ -107,25 +75,25 @@ export const AccountProfile = ({navigation}) => {
                             }}
                             source={require('../../../../assets/settings/profile/user.png')}
                         />
-                        <Text style={styles.nameText}>{userState.name + ' ' + userState.lastname}</Text>
+                        <Text style={styles.nameText}>{user.name + ' ' + user.lastname}</Text>
                     </View>
                     <View style={styles.personalInfoContainer}>
                         <Text style={styles.primaryText}>Informations personnelles</Text>
-                        <DisplayUserInfo
+                        {/* <DisplayUserInfo
                             dataType={"Nom d'utilisateur"}
-                            data={userState.username}
-                        />
+                            data={user.username}
+                        /> */}
                         <DisplayUserInfo
                             dataType={"Fonction professionelle"}
-                            data={userState.job_function}
+                            data={user.job_function}
                         />
                         <DisplayUserInfo
                             dataType={"E-mail"}
-                            data={userState.email}
+                            data={user.email}
                         />
                         <DisplayUserInfo
                             dataType={"Téléphone"}
-                            data={userState.tel}
+                            data={user.tel}
                         />
 
                         <TouchableOpacity style={{
@@ -133,7 +101,7 @@ export const AccountProfile = ({navigation}) => {
                             paddingVertical: 10
                         }}
                             onPress={() => {
-                                setchangingPassword(prevState => !prevState)
+                                Linking.openURL("https://orthomaster-saas.odoo.com/web/reset_password")
                             }}
                         >
                             <Text style={{
@@ -144,108 +112,6 @@ export const AccountProfile = ({navigation}) => {
                     </View>
                 </View>
             </ScrollView>
-
-            <Modal
-                animationType="slide"
-                visible={changingPassword}
-                transparent={true}
-            >
-                <SafeAreaView style={styles.resetContainer}>
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        style={[styles.container, { width: '100%' }]}
-                    >
-                        <TouchableWithoutFeedback
-                            style={{ width: '100%', height: '100%', }}
-                            onPress={() => { Keyboard.dismiss() }}>
-                            <View style={{
-                                height: "100%", width: "100%",
-                                alignItems: 'center'
-                            }}>
-
-                                <View style={styles.resetView}>
-                                    <TouchableOpacity style={styles.resetReturnButton}
-                                        onPress={() => setchangingPassword(false)}
-                                    >
-                                        <Image
-                                            source={require('../../../../assets/navigation/right-arrow.png')}
-                                            style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                transform: [{ rotateZ: '180deg' }],
-
-                                            }}
-                                        />
-                                    </TouchableOpacity>
-
-                                    <Text style={{ fontWeight: 'bold', marginTop: 15, fontSize: 18 }}>Changer de mot de passe</Text>
-
-
-                                    <TextInput
-                                        style={[styles.inputFields, { marginTop: 100 }]}
-                                        value={oldPassword}
-                                        placeholder="Ancien mot de passe"
-                                        onChangeText={(value) => setOldPassword(value)}
-                                        textContentType="password"
-                                        secureTextEntry={!showPassword}
-                                    />
-
-                                    <TextInput
-                                        style={[styles.inputFields, { marginTop: 50 }]}
-                                        value={newPassword}
-                                        placeholder="Nouveau mot de passe "
-                                        onChangeText={(value) => setNewPassword(value)}
-                                        textContentType="newPassword"
-                                        secureTextEntry={!showPassword}
-
-                                    />
-
-                                    <TextInput
-                                        style={styles.inputFields}
-                                        value={confirmPassword}
-                                        placeholder="Confirmer nouveau mot de passe"
-                                        onChangeText={(value) => setconfirmPassword(value)}
-                                        textContentType="newPassword"
-                                        secureTextEntry={!showPassword}
-
-                                    />
-
-                                    <TouchableOpacity
-                                        onPress={() => setShowPassword(!showPassword)}
-                                        style={{
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            marginTop: 20
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name={showPassword ? "eye-off" : "eye"}
-                                            size={24} color="#ffaf31"
-                                        />
-                                        <Text style={{
-                                            color: '#ffaf31',
-                                            marginLeft: 10
-                                        }}>
-                                            {showPassword ? "Cacher" : "Afficher"}
-                                        </Text>
-                                    </TouchableOpacity>
-
-
-
-
-                                    <Text style={{ fontSize: 12, marginTop: 20 }}>{statusText}</Text>
-
-                                    <TouchableOpacity style={styles.submitBtn}
-                                        onPress={() => handleChange()}
-                                    >
-                                        <Text style={styles.submitBtnTxt}>Valider</Text>
-                                    </TouchableOpacity>
-
-                                </View>
-                            </View>
-                        </TouchableWithoutFeedback>
-                    </KeyboardAvoidingView>
-                </SafeAreaView>
-            </Modal>
 
         </SafeAreaView>
     )
