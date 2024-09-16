@@ -20,8 +20,6 @@ import { Trophies } from './components/trophies/Trophies';
 import { CompanyArea } from './components/CompanyArea';
 
 import { AccountMenu } from './menu/AccountMenu';
-// import { CertifiedFormationProgress } from './components/CertifiedFormationProgress';
-import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
 import { useQuery } from 'react-query';
 import { getCurrentUser } from '../../services/UserService';
 
@@ -89,7 +87,6 @@ export const AccountView = ({ navigation }) => {
 
           <Trophies refreshing={refreshing} />
 
-          {/* <CertifiedFormationProgress /> */}
 
           <CompanyArea
             enableConfig={true}
