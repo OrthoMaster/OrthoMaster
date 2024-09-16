@@ -8,37 +8,34 @@ import {
     TouchableOpacity,
     Image,
     Dimensions,
-    KeyboardAvoidingView,
     TouchableWithoutFeedback,
     Keyboard,
     Platform,
-    Linking
+    Linking,
+    ScrollView
 } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
-import { selectAuthMessage } from '../../reducers/auth';
 import { Ionicons } from '@expo/vector-icons';
-
-import { login } from '../../actions/auth';
+import { useLogin } from '../../hooks/useLogin.hook';
 
 
 export const LoginView = ({ navigation, route }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [statusMessage, setStatusMessage] = useState('')
-    const authMessage = useSelector(selectAuthMessage)
-    const dispatch = useDispatch()
     const [showPassword, setShowPassword] = useState(false)
+
+    const login = useLogin()
 
 
     const handleClick = () => {
-        dispatch(login(email, password))
-
+        login.mutate({email: email,password: password})
     }
 
     return (
         <SafeAreaView style={[styles.container]}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={[styles.container, { width: '100%' }]}
+            <ScrollView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={[ { width: '100%', height: "100%" }]}
+                automaticallyAdjustKeyboardInsets={true}
             >
                 <TouchableWithoutFeedback
                     style={{ width: '100%', height: '100%' }}
@@ -53,6 +50,7 @@ export const LoginView = ({ navigation, route }) => {
                             <Image
                                 style={{
                                     width: Dimensions.get('screen').width * 0.7,
+                                    height: 300,
                                     resizeMode: 'contain',
                                 }}
                                 source={require('../../../assets/logo-text.png')}
@@ -92,8 +90,8 @@ export const LoginView = ({ navigation, route }) => {
                             </View>
 
                             {
-                                authMessage?.length > 0 &&
-                                <Text style={styles.authText}>{authMessage}</Text>
+                                login.isError &&
+                                <Text style={styles.authText}>{login.error.response.data.message}</Text>
                             }
                             {
                                 statusMessage?.length > 0 &&
@@ -116,7 +114,7 @@ export const LoginView = ({ navigation, route }) => {
                     </View>
 
                 </TouchableWithoutFeedback>
-            </KeyboardAvoidingView>
+            </ScrollView>
         </SafeAreaView>
     );
 }

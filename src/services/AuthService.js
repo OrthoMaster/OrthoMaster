@@ -10,7 +10,7 @@ const baseurl = process.env.EXPO_PUBLIC_API_URL
 
 class AuthService {
 
-  async login(email, password) {
+  async login({email, password}) {
     return axios
       .post(baseurl + "/user/v3/login", { email, password }, {
         params: {

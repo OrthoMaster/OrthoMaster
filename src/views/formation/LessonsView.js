@@ -86,15 +86,18 @@ export function LessonsView({ route, navigation }) {
 
 
         <View style={styles.headerBox}>
-            <Image
-                source={{ uri: moduleLogo }}
-                style={{
-                    marginVertical: 5,
-                    width: 100,
-                    height: 100,
-                    resizeMode: 'contain'
-                }}
-            />
+            {
+                moduleLogo &&
+                <Image
+                    source={{ uri: moduleLogo }}
+                    style={{
+                        marginVertical: 5,
+                        width: 100,
+                        height: 100,
+                        resizeMode: 'contain'
+                    }}
+                />
+            }
             <Text style={styles.headerModule}>Module {module.module.module_num}</Text>
             <Text style={styles.headerTitle}>{module.module.title}</Text>
 

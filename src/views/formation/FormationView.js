@@ -3,7 +3,6 @@ import {
     Text,
     View,
     StyleSheet,
-    Linking,
     Image,
     TouchableOpacity,
     ActivityIndicator,
@@ -276,7 +275,11 @@ export const FormationView = ({ navigation, route }) => {
                 }
                 {
                     userFormations?.map((value, index) => {
-                        if (userFormations.find(f => f.progress_rate > 0))
+                        console.log(value.progress_rate);
+                        
+                        if (parseInt(value.progress_rate) > 0)
+                            console.log('Found : ', value);
+                            
                             return <FormationCard
                                 formation={value}
                                 key={index}
