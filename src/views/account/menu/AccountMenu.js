@@ -111,16 +111,6 @@ export const AccountMenu = ({ navigation, user }) => {
                     </View>
                 }
 
-                <CustomMenuButton
-                    icon={require('../../../../assets/settings/tutoriel.png')}
-                    text={'Revoir le tutoriel'}
-
-                    onPress={() => {
-                        console.log("clicked");
-                        
-                    }}
-                />
-
                 <View style={{
                     alignItems: 'center',
                     alignSelf: 'center',
