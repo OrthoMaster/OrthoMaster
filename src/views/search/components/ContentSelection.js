@@ -95,7 +95,7 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
         }}>
 
             {
-                thumbnail
+                thumbnail.data
                     ? <Image
                         style={{
                             width: Dimensions.get('screen').width * 0.4,
@@ -162,7 +162,7 @@ const QaCard = ({ card, onSelect, color }) => {
                 width: '100%',
             }}>
                 {
-                    thumbnail
+                    thumbnail.data
                         ? <Image
                             style={{
                                 width: "100%",
