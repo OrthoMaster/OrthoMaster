@@ -5,9 +5,7 @@ import {
     Text,
     View,
     TouchableOpacity,
-    StatusBar,
     StyleSheet,
-    Dimensions,
     Linking,
     Image
 } from "react-native";
@@ -50,16 +48,33 @@ export const AuthHome = ({ navigation }) => {
                     plus efficace, profitable et bénéfique
                 </Text>
             </View>
-            <TouchableOpacity style={[styles.button,
-            {
-                backgroundColor: '#FFAF31'
-            }]}
-                onPress={() => {
-                    navigation.navigate('auth-home')
-                }}
-            >
-                <Text style={styles.buttonText}>Se connecter</Text>
-            </TouchableOpacity>
+            <View style={{
+                width: "95%",
+                alignItems: 'center',
+                position: 'absolute',
+                bottom: 50
+            }}>
+                <TouchableOpacity style={[styles.button,
+                {
+                    backgroundColor: '#FFAF31'
+                }]}
+                    onPress={() => {
+                        navigation.navigate('auth-home')
+                    }}
+                >
+                    <Text style={styles.buttonText}>Se connecter</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.button,
+                {
+                    backgroundColor: '#DEDEDE'
+                }]}
+                    onPress={() => {
+                        Linking.openURL("https://espace.orthomaster.fr/inscription")
+                    }}
+                >
+                    <Text style={[styles.buttonText, {color: '#555555'}]}>S'inscrire</Text>
+                </TouchableOpacity>
+            </View>
 
         </SafeAreaView>
     )
@@ -86,10 +101,8 @@ const styles = StyleSheet.create({
         height: 90
     },
     button: {
-        marginHorizontal: 10,
         borderRadius: 5,
-        position: 'absolute',
-        bottom: 100,
+        marginVertical: 5,
         height: 60,
         width: '90%',
         alignItems: 'center',
