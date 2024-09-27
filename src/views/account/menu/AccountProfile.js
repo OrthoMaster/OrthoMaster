@@ -101,7 +101,7 @@ export const AccountProfile = ({navigation}) => {
                             paddingVertical: 10
                         }}
                             onPress={() => {
-                                Linking.openURL("https://orthomaster-saas.odoo.com/web/reset_password")
+                                Linking.openURL("https://espace.orthomaster.fr/web/reset_password")
                             }}
                         >
                             <Text style={{
