@@ -50,7 +50,7 @@ export default UserSelector = ({usersArray = [], onSelect}) => {
             fillColor="#ffaf31"
             unFillColor="#FFFFFF"
             text={"Tous"}
-            textStyle={styles.checkBoxText}
+            textStyle={[styles.checkBoxText, {color: '#ffaf31', fontWeight: 'bold'}]}
             innerIconStyle={{ borderWidth: 2 }}
             style={{ marginVertical: 5 }}
             onPress={(isChecked) => {

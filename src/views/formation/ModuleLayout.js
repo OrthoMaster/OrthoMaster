@@ -116,6 +116,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                 title={formation?.formation_name}
                 navigation={navigation}
                 returnEnabed={true}
+                searchEnabled={false}
             />
             {
                 modulesLoading && !modules ?
@@ -140,7 +141,6 @@ export const ModuleLayout = ({ navigation, route }) => {
                         showsVerticalScrollIndicator={false}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                         ListHeaderComponent={
-                            !demoMode &&
                             <MainQuizButton
                                 quizType={'initial'}
                                 onClick={() => {
@@ -154,12 +154,11 @@ export const ModuleLayout = ({ navigation, route }) => {
                                         type: "quiz"
                                     })
                                 }}
-                                enabled={formation?.initial_grade ? false : true}
+                                enabled={demoMode ? false : formation?.initial_grade ? false : true}
                                 isDone={formation?.initial_grade ? true : false}
                             />
                         }
                         ListFooterComponent={
-                            !demoMode &&
                             <MainQuizButton
                                 quizType={'final'}
                                 onClick={() => {
@@ -173,7 +172,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                                         type: "quiz"
                                     })
                                 }}
-                                enabled={formation?.progress_rate > 60 ? true : false}
+                                enabled={demoMode ? false : formation?.progress_rate > 60 ? true : false}
                                 isDone={formation?.final_grade ? true : false}
                             />
                         }
@@ -235,6 +234,7 @@ const styles = StyleSheet.create({
         display: 'flex',
         flex: 1,
         width: '100%',
+        backgroundColor: "#fff"
     },
     listContainer: {
         width: '80%',

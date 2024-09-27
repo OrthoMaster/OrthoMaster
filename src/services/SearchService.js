@@ -26,7 +26,6 @@ export const fetchSearchList = async ({ contentType = null, filters = null, sear
       return response.data;
     })
     .catch((e)=> {
-      //console.log('search err', e.response);
       throw e
     });
 }

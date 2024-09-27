@@ -17,23 +17,17 @@ import { createFormationOrder } from "../../../../services/FormationService";
 
 export const PaymentFormationModal = ({
     formation,
-    onClose
+    onClose,
+    navigation
 }) => {
     const { data: currentUser } = useQuery("current-user", () => getCurrentUser())
     const [currentBillingAddress, setCurrentBillingAddress] = useState(null)
     const [selectedUsers, setSelectedUsers] = useState(null)
     const [stepIndex, setStepIndex] = useState(0)
     const sendOrder = useMutation(createFormationOrder, {
-        onError: err => {
-            setStatusMessage("Une erreur est survenu lors de la génération et l'envoie du devis")
-        },
-        onSuccess: data => {
-            setStatusMessage(data)
-        },
         onSettled: () => setConfirmed(true)
     })
     const [confirmed, setConfirmed] = useState(false)
-    const [statusMessage, setStatusMessage] = useState("")
 
 
     useEffect(() => {
@@ -52,15 +46,21 @@ export const PaymentFormationModal = ({
                 fontWeight: 'bold',
                 fontSize: 20,
                 alignSelf: 'center'
-            }}>Achat formation</Text>
+            }}>Étape {stepIndex + 1}</Text>
 
 
             {
                 (currentBillingAddress == null && stepIndex == 0) &&
                 <BillingAddressSelection onValidation={(address) => {
-                    setCurrentBillingAddress(address)
-                    setStepIndex(1)
-                }} />
+                    if (address) {
+                        setCurrentBillingAddress(address)
+                        setStepIndex(1)
+                    }
+                }}
+                    onCreateEspace={() => {
+                        navigation.navigate("Mon espace")
+                    }}
+                />
             }
 
             {
@@ -72,6 +72,9 @@ export const PaymentFormationModal = ({
                         setStepIndex(2)
                     }}
                     billingAddress={currentBillingAddress}
+                    onAddMember2Espace={() => {
+                        navigation.navigate("Mon espace")
+                    }}
                 />
             }
             {
@@ -110,31 +113,44 @@ export const PaymentFormationModal = ({
                     backgroundColor: '#fff',
                     position: 'absolute',
                     height: '100%', width: "100%",
-                    alignItems: 'center', justifyContent: 'center'
+                    alignItems: 'center',
+                    paddingVertical: 50
                 }}>
-                    <Text style={{
-                        fontWeight: 'bold',
-                        fontSize: 22, color: '#ffaf31'
-                    }}>{statusMessage}</Text>
                     {
-                        sendOrder.isSuccess &&
-                        <View>
-                            <Text>Un email à été envoyé à :</Text>
-                            <Text>{currentBillingAddress.name} ({currentBillingAddress.email})</Text>
-                            {
-                                currentBillingAddress.type == "company" &&
-                                <Text>ainsi qu'au(x) manager(s) de cette société</Text>
-                            }
-                        </View>
+                        sendOrder.isSuccess ?
+                            <View style={{
+                                width: "90%"
+                            }}>
+                                <Text style={{
+                                    fontWeight: 'bold',
+                                    fontSize: 22, color: '#ffaf31', alignSelf: 'center', marginBottom: 20
+                                }}>Merci pour votre commande</Text>
+                                <Text style={{marginBottom: 5}}>Nous venons de vous envoyer un email comportant :</Text>
+                                <Text style={{}}>• Le lien pour signer & payer le devis</Text>
+                                <Text style={{}}>• Le devis au format PDF</Text>
+                                <Text style={{marginTop: 10}}>Vous n'avez plus qu'à suivre le lien de paiement pour débloquer la formation pour l'ensemble des bénéficiaires.</Text>
+                                <Text style={{marginTop: 40, textDecorationLine: 'underline'}}>Email envoyé à :</Text>
+                                <Text>{currentBillingAddress.name} ({currentBillingAddress.email})</Text>
+                                {
+                                    currentBillingAddress.type == "company" &&
+                                    <Text>ainsi qu'au(x) responsable(s) de cette société</Text>
+                                }
+                            </View>
+                            : <View>
+                                <Text style={{
+                                    fontWeight: 'bold',
+                                    fontSize: 22, color: '#ffaf31'
+                                }}>Une erreur est survenu lors de la génération et l'envoie du devis</Text>
+                            </View>
                     }
                     <TouchableOpacity style={{
                         paddingVertical: 10, paddingHorizontal: 30,
                         backgroundColor: '#ffaf31', borderRadius: 5,
                         position: 'absolute', bottom: 30
                     }}
-                        onPress={()=>onClose()}
+                        onPress={() => onClose()}
                     >
-                    <Text>Ok</Text>
+                        <Text>Ok</Text>
                     </TouchableOpacity>
                 </View>
             }
@@ -145,7 +161,7 @@ export const PaymentFormationModal = ({
 const styles = StyleSheet.create({
     container: {
         height: "100%",
-        width: Dimensions.get('screen').width * 0.9,
+        width: "100%",
     },
     checkBoxText: {
         textDecorationLine: 'none'

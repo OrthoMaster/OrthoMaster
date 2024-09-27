@@ -6,94 +6,83 @@ import {
 } from "react-native";
 
 export default PriceRecap = ({ selectedCollaborators, unitPrice }) => {
-    const [priceArray, setPriceArray] = useState([])
-
-    const getFinalPrice = () => {
-        return priceArray.reduce((a, b) => { return a + b.finalPrice }, 0)
-    }
-
+    const [reducedPrice, setReducedPrice] = useState([])
 
 
 
     useEffect(() => {
-        const packDiscountPercent = 5
-        let finalPricesArray = []
-        selectedCollaborators.forEach((user, index) => {
-            let discount = index * packDiscountPercent
-            if (discount > 50)
-                discount = 50
-            finalPricesArray.push({
-                unitPrice: unitPrice,
-                discount: discount,
-                finalPrice: Math.round((unitPrice - (unitPrice * discount / 100)) * 100) / 100
-            })
-        });
-        setPriceArray(finalPricesArray)
+        
+        if (selectedCollaborators.length <= 0) {
+            setReducedPrice(0)
+        } else {
+            if (selectedCollaborators.length < 11) {
+                const packDiscountPercentPerLicence = 2.5
+                const discount = packDiscountPercentPerLicence * (selectedCollaborators.length - 1 )
+                setReducedPrice(unitPrice * ((100 - discount) / 100))
+
+            } else {
+                setReducedPrice(unitPrice * ((100 - 25) / 100))
+            }
+        }
+
+
+        // let finalPricesArray = []
+        // selectedCollaborators.forEach((user, index) => {
+        //     let discount = index * packDiscountPercent
+        //     if (discount > 50)
+        //         discount = 50
+        //     finalPricesArray.push({
+        //         unitPrice: unitPrice,
+        //         discount: discount,
+        //         finalPrice: Math.round((unitPrice - (unitPrice * discount / 100)) * 100) / 100
+        //     })
+        // });
     }, [selectedCollaborators])
 
-    return <View style={{  }}>
-        {/* <Text>Nombre de licence : {selectedCollaborators.length}</Text> */}
-
+    return <View style={{}}>
         <View style={{
             display: 'flex',
             flexDirection: "row",
-            width: "95%", height: 40,
+            width: "100%", height: 30,
             alignSelf: 'center',
-            marginVertical: 10,
             backgroundColor: '#ffaf31',
             alignItems: 'center',
         }}>
-            <View style={[styles.recapHeaderBox, {flex: 2}]}>
+            <View style={[styles.recapHeaderBox, { flex: 2 }]}>
                 <Text style={styles.recapHeaderLabel}>Produit</Text>
             </View>
             <View style={styles.recapHeaderBox}>
-                <Text style={styles.recapHeaderLabel}>Prix unitaire</Text>
+                <Text style={styles.recapHeaderLabel}>Qté</Text>
             </View>
             <View style={styles.recapHeaderBox}>
-                <Text style={styles.recapHeaderLabel}>Quantité</Text>
-            </View>
-            <View style={styles.recapHeaderBox}>
-                <Text style={styles.recapHeaderLabel}>Remise</Text>
-            </View>
-            <View style={styles.recapHeaderBox}>
-                <Text style={styles.recapHeaderLabel}>Prix final</Text>
+                <Text style={styles.recapHeaderLabel}>Prix</Text>
             </View>
         </View>
-        {
-            priceArray.map((value, index) => {
-                return <View key={index} style={{
-                    display: 'flex',
-                    flexDirection: "row",
-                    width: "95%",
-                    alignSelf: 'center',
-                    marginVertical: 2,
-                    borderBottomWidth: 0.3
-                }}>
-                    <View style={[styles.recapBodyBox, {flex: 2}]}>
-                        <Text style={styles.recapBodyLabel}>License formation</Text>
-                    </View>
-                    <View style={styles.recapBodyBox}>
-                        <Text style={styles.recapBodyLabel}>{unitPrice} €</Text>
-                    </View>
-                    <View style={styles.recapBodyBox}>
-                        <Text style={styles.recapBodyLabel}>1</Text>
-                    </View>
-                    <View style={styles.recapBodyBox}>
-                        <Text style={styles.recapBodyLabel}>{value.discount} %</Text>
-                    </View>
-                    <View style={styles.recapBodyBox}>
-                        <Text style={styles.recapBodyLabel}>{value.finalPrice} €</Text>
-                    </View>
-                </View>
-            })
-        }
+        <View style={{
+            display: 'flex',
+            flexDirection: "row",
+            width: "100%",
+            alignSelf: 'center',
+        }}>
+            <View style={[styles.recapBodyBox, { flex: 2 }]}>
+                <Text style={styles.recapBodyLabel}>License formation</Text>
+            </View>
+            <View style={styles.recapBodyBox}>
+                <Text style={styles.recapBodyLabel}>{selectedCollaborators.length}</Text>
+            </View>
+            <View style={styles.recapBodyBox}>
+                <Text style={styles.recapBodyLabel}>{reducedPrice} €</Text>
+            </View>
+        </View>
+
         <Text style={{
-            marginTop: 20
-            }}>
-                <Text style={{
-                    fontWeight: 'bold',
-                    color: '#ffaf31'
-                }}>Prix total : </Text>{getFinalPrice()} € HT</Text>
+            marginTop: 20,
+            alignSelf: 'flex-end'
+        }}>
+            <Text style={{
+                fontWeight: 'bold',
+                color: '#ffaf31'
+            }}>Prix total : </Text>{reducedPrice * selectedCollaborators.length} € HT</Text>
     </View>
 }
 

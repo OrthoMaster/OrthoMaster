@@ -4,8 +4,7 @@ import {
     View,
     Text,
     TouchableOpacity,
-    ActivityIndicator,
-    ScrollView
+    ScrollView,
 } from "react-native";
 
 import { FormField } from "../../../../component/FormField";
@@ -38,7 +37,7 @@ export default AskSponsoredFormationForm = ({ onSubmit }) => {
                 required
                 data={jobFunctions}
                 label="Fonction professionnelle"
-                searchEnabled={true}
+                searchEnabled={false}
                 onChange={(val) => {
                     setContactObject({ ...contactObject, jobFunction: val.label })
 
@@ -91,48 +90,19 @@ export default AskSponsoredFormationForm = ({ onSubmit }) => {
     }
 
     return <View style={{
-        flex: 1
+        flex: 1,
+        width: "100%",
     }}>
-
-        <ScrollView>
-
-            <Text>Veuillez me contacter pour établir les dossiers ensemble :</Text>
-            <FormField name={'N° de téléphone pour me joindre'} value={'tel'} target={"test"} type={'text'} onChange={(val) => {
-                setFormDatas({ ...formDatas, tel: val.text })
-            }} required />
-            <FormField name={'Moment idéal pour me joindre'} value={'moment'} target={"moment"} type={'text'} onChange={(val) => {
-                setFormDatas({ ...formDatas, moment: val.text })
-            }} required
-                multiline={true}
-                numberOfLines={2}
-            />
-
-            <Text>Liste des bénéficiaires :</Text>
-
-            {
-                Object.entries(formDatas.organisme).map((value, index) => {
-                    if (Array.isArray(value[1]))
-                        return <View key={index}>
-                            {
-                                value[1].map((user, index) => {
-                                    return <View key={index} style={{
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        marginVertical: 2,
-                                        justifyContent: 'space-around'
-                                    }}>
-                                        <Text style={{ fontWeight: 'bold', flex: 1 }}>{user.name}</Text>
-                                        <Text style={{ flex: 1 }}>{user.jobFunction}</Text>
-                                        <Text style={{ flex: 1 }}>{user.organisme}</Text>
-                                    </View>
-                                })
-                            }
-
-                        </View>
-
-                })
-            }
-
+        <ScrollView style={{
+            width: "100%",
+            alignSelf: "center",
+            marginBottom: 30
+        }}
+            automaticallyAdjustKeyboardInsets={true}
+        >
+            <Text style={{ marginTop: 30 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 25, color: '#ffaf31' }}>1</Text> Pour qui souhaitez-vous réaliser un dossier de formation ?
+            </Text>
             {
                 addUserIsOpen &&
                 <ContactForm onSubmit={(data) => {
@@ -163,34 +133,78 @@ export default AskSponsoredFormationForm = ({ onSubmit }) => {
 
                 }} />
             }
+            <View style={{
+                alignSelf: 'center',
+                width: "100%",
+                marginVertical: 20
+            }}>
 
+                {
+                    Object.entries(formDatas.organisme).map((value, index) => {
+                        if (Array.isArray(value[1]))
+                            return <View key={index}>
+                                {
+                                    value[1].map((user, index) => {
+                                        return <View key={index} style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            marginVertical: 2,
+                                        }}>
+                                            <Text style={{ fontWeight: 'bold', flex: 1, textAlign: 'center' }}>{user.name}</Text>
+                                            <Text style={{ flex: 1, textAlign: 'center' }}>{user.jobFunction}</Text>
+                                            <Text style={{ flex: 1, textAlign: 'center' }}>{user.organisme}</Text>
+                                        </View>
+                                    })
+                                }
+
+                            </View>
+
+                    })
+                }
+            </View>
             {
                 !addUserIsOpen &&
                 <TouchableOpacity style={{
-                    padding: 10, backgroundColor: '#F1F1F1', borderRadius: 5,
+                    padding: 10, backgroundColor: '#ffaf31', borderRadius: 5,
                     alignSelf: 'center'
                 }}
                     onPress={() => {
                         setAddUserIsOpen(!addUserIsOpen)
                     }}
                 >
-                    <Text>{"Ajouter un dossier"}</Text>
-                </TouchableOpacity>}
+                    <Text style={{ color: '#fff' }}>{"Ajouter un bénéficiaire"}</Text>
+                </TouchableOpacity>
+            }
 
-        </ScrollView>
 
-        <TouchableOpacity style={{
-            padding: 10, backgroundColor: (addUserIsOpen  || (formDatas.moment.length == 0 && formDatas.tel.length == 0)) ? "#F1F1F1" : '#ffaf31',
-            borderRadius: 5,
-            alignSelf: 'center', width: '90%',
-            marginBottom: 10, alignItems: 'center'
-        }}
-            onPress={() => {
-                if (!addUserIsOpen && formDatas.moment.length > 0 && formDatas.tel.length > 0)
-                    onSubmit(formDatas)
+            <Text style={{ marginVertical: 30 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 25, color: '#ffaf31' }}>2</Text> Remplissez les champs ci-dessous. Nous vous contacterons pour établir les dossiers ensemble.
+            </Text>
+
+            <FormField name={'Téléphone'} value={'tel'} target={"test"} type={'text'} onChange={(val) => {
+                setFormDatas({ ...formDatas, tel: val.text })
+            }} required />
+            <FormField name={'Moment idéal pour me joindre'} value={'moment'} target={"moment"} type={'text'} onChange={(val) => {
+                setFormDatas({ ...formDatas, moment: val.text })
+            }} required
+                multiline={true}
+                numberOfLines={2}
+            />
+
+            <TouchableOpacity style={{
+                padding: 10, backgroundColor: (addUserIsOpen || (formDatas.moment.length == 0 && formDatas.tel.length == 0)) ? "#F1F1F1" : '#ffaf31',
+                borderRadius: 5,
+                alignSelf: 'center', width: '90%',
+                alignItems: 'center',
+                marginVertical: 30
             }}
-        >
-            <Text>Envoyer ma demande</Text>
-        </TouchableOpacity>
+                onPress={() => {
+                    if (!addUserIsOpen && formDatas.moment.length > 0 && formDatas.tel.length > 0)
+                        onSubmit(formDatas)
+                }}
+            >
+                <Text>Envoyer ma demande</Text>
+            </TouchableOpacity>
+        </ScrollView>
     </View>
 }

@@ -19,7 +19,7 @@ import ModuleProgress, {
 const ModuleButton = ({ module, index, onPress, isBlocked }) => {
     const imgUrl = useQuery(
         ['Formation', 'GET', "contentImage", module.module.module_order, module.lesson_succeed],
-        () => getS3Image('lesson/' + module.module.module_num + (module.lesson_succeed > 0 ? '/logo.png' : '/logo_not_started.png')))
+        () => getS3Image('lesson/' + module.module.module_num + '/logo.png'))
 
     return (
         <TouchableOpacity
