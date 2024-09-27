@@ -15,17 +15,21 @@ import {
 import { getS3Image } from '../../../services/S3Service'
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from 'react-query';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
-const SearchCardDefault = ({ card, onSelect }) => {
-    const thumbnail = useQuery(['ContentSelection', 'GET', 'contentThumbnail', card.content.id_content, card.content.title],
-    () => getS3Image(createS3Path(card)))
+const SearchCardDefault = ({ card, onSelect, studentMode }) => {
+    const isDemo = !card.certifying && !card.is_paid && studentMode == false
+
+    const thumbnail = useQuery(['ContentSelection', 'GET', 'contentThumbnail', card.id_content, card.title],
+        () => getS3Image(createS3Path(card)))
+
 
     const createS3Path = (cardInfo) => {
-        let path = cardInfo.content.s3_path
-        if (cardInfo.content.type == 'lesson') {
+        let path = cardInfo.s3_path
+        if (cardInfo.type == 'lesson') {
             path = path + '/logo_lesson.png'
         } else {
-            path = path + '/' + cardInfo.content.title + '/logo.png'
+            path = path + '/' + cardInfo.title + '/logo.png'
         }
         return path
     }
@@ -47,13 +51,10 @@ const SearchCardDefault = ({ card, onSelect }) => {
 
     const DisplayTags = ({ tags }) => {
         const [tagsString, setTagsString] = useState('')
-        const vals = tags.split(';')
-        const nbTags = vals.length
-
+        const vals = tags?.split(';')
+        const nbTags = vals?.length
         const setTags = async (vals) => {
             var str = ''
-
-
             vals.forEach((element, index) => {
                 str += (element.charAt(0).toUpperCase() + element.slice(1) + (index + 1 == nbTags ? '' : ', '))
             });
@@ -63,7 +64,9 @@ const SearchCardDefault = ({ card, onSelect }) => {
 
         useEffect(() => {
             var isDisplayed = true
-            setTags(vals)
+            if (vals) {
+                setTags(vals)
+            }
             return () => {
                 isDisplayed = false
             }
@@ -81,40 +84,64 @@ const SearchCardDefault = ({ card, onSelect }) => {
     }
 
     return <TouchableOpacity style={stylesDefault.card}
-        onPress={() => onSelect(card)}
+        onPress={() => {
+            onSelect(card)
+        }}
     >
-        {
-            thumbnail
-                ? <Image
-                    style={{
-                        width: Dimensions.get('screen').width * 0.4,
-                        height: Dimensions.get('screen').width * 0.15
-                    }}
-                    source={{
-                        uri: thumbnail.data
-                    }}
-                    resizeMode={'contain'}
-                />
-                : <ActivityIndicator />
-        }
+        <View style={{
+            width: '100%',
+            flexDirection: 'row',
+            paddingVertical: 10
+        }}>
 
-        <View style={stylesDefault.cardInfos}>
-            <Text style={stylesDefault.cardInfoTitle}>{card.content.title}</Text>
-            <Text
-                style={[stylesDefault.cardInfoDescText, { height: card.content.description != '' ? 'auto' : 0 }]}
-                numberOfLines={2}
-            >
-                {card.content.description}
-            </Text>
-            <View style={stylesDefault.cardInfoDesc}>
-                <View style={stylesDefault.contentTypeTag}>
-                    <Text style={stylesDefault.contentTypeTagText}>{formatType(card.content.type)}</Text>
+            {
+                thumbnail.data
+                    ? <Image
+                        style={{
+                            width: Dimensions.get('screen').width * 0.4,
+                            height: Dimensions.get('screen').width * 0.15
+                        }}
+                        source={{
+                            uri: thumbnail.data
+                        }}
+                        resizeMode={'contain'}
+                    />
+                    : <ActivityIndicator />
+            }
+
+            <View style={stylesDefault.cardInfos}>
+                <Text style={{ fontSize: 10 }}>{card.formation_name}</Text>
+                <Text style={stylesDefault.cardInfoTitle}>{card.title}</Text>
+                <Text
+                    style={[stylesDefault.cardInfoDescText, { height: card.description != '' ? 'auto' : 0 }]}
+                    numberOfLines={2}
+                >
+                    {card.description}
+                </Text>
+                <View style={stylesDefault.cardInfoDesc}>
+                    <View style={stylesDefault.contentTypeTag}>
+                        <Text style={stylesDefault.contentTypeTagText}>{formatType(card.type)}</Text>
+                    </View>
+                    <Text style={stylesDefault.cardInfoDescText}>⏱ {card.duration}</Text>
                 </View>
-                <Text style={stylesDefault.cardInfoDescText}>⏱ {card.content.duration}</Text>
-            </View>
-            <DisplayTags tags={card.tags} />
+                <DisplayTags tags={card.tags} />
 
+            </View>
         </View>
+        {
+            (isDemo && card.demo_access == false) &&
+            <View style={{
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <Text style={{ color: "#DEDEDE" }}>Débloquer le contenu</Text>
+                <AntDesign name="unlock" size={30} color="#DEDEDE" />
+            </View>
+        }
     </TouchableOpacity>
 }
 
@@ -123,18 +150,19 @@ const SearchCardDefault = ({ card, onSelect }) => {
 
 
 const QaCard = ({ card, onSelect, color }) => {
-    const thumbnail = useQuery(['Qa', 'GET', 'qaThumbnail', card.content.id_content, card.content.title],
-    () => getS3Image(`${card.content.s3_path}/${card.content.title}/logo.png`))
+    const thumbnail = useQuery(['Qa', 'GET', 'qaThumbnail', card.id_content, card.title],
+        () => getS3Image(`${card.s3_path}/${card.title}/logo.png`))
 
     return (
         <TouchableOpacity style={stylesQa.card}
             onPress={() => onSelect(card)}
         >
+
             <View style={{
                 width: '100%',
             }}>
                 {
-                    thumbnail
+                    thumbnail.data
                         ? <Image
                             style={{
                                 width: "100%",
@@ -152,19 +180,28 @@ const QaCard = ({ card, onSelect, color }) => {
                     // Button Linear Gradient
                     colors={['transparent', '#000000']}
                     style={stylesQa.cardTitleContainer}>
-                    <Text style={stylesQa.cardTitle} >{card.content.title}</Text>
+                    <Text style={stylesQa.cardTitle} >{card.title}</Text>
 
                 </LinearGradient>
             </View>
 
-            <View style={[stylesQa.cardDescriptionContainer, {backgroundColor: color}]}>
-                <Text>⏱ {card.content.duration} | {card.content.description}</Text>
+            <View style={[stylesQa.cardDescriptionContainer, { backgroundColor: color }]}>
+                <Text>⏱ {card.duration} | {card.description}</Text>
             </View>
         </TouchableOpacity>
     )
 }
 
-export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, onMoreLoading, onRetry, color }) => {
+export const ContentSelection = ({
+    content,
+    onSelect,
+    cardLayout,
+    onEndReached,
+    onMoreLoading,
+    onRetry,
+    color,
+    studentMode = false
+}) => {
     const renderEmpty = () => {
         return (
             <View>
@@ -184,7 +221,7 @@ export const ContentSelection = ({ content, onSelect, cardLayout, onEndReached, 
                             return <QaCard card={item.item} onSelect={(card) => onSelect(card)} color={color} />
 
                         default:
-                            return <SearchCardDefault card={item.item} onSelect={(card) => onSelect(card)} />
+                            return <SearchCardDefault card={item.item} onSelect={(card) => onSelect(card)} studentMode={studentMode} />
                     }
                 }}
                 keyExtractor={(item, index) => index}
@@ -207,9 +244,8 @@ const styles = StyleSheet.create({
 
 const stylesDefault = StyleSheet.create({
     card: {
-        flexDirection: 'row',
         width: '100%',
-        marginVertical: 10
+        marginVertical: 2
     },
     cardInfos: {
         width: '55%',

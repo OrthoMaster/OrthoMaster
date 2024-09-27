@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,39 +9,30 @@ import {
   StatusBar,
   RefreshControl
 } from 'react-native';
-import { useStore } from 'react-redux';
 import {
   CopilotStep,
   walkthroughable,
   useCopilot
 } from "react-native-copilot";
-import { WebView } from 'react-native-webview';
-
-
-
 
 import { useQuery } from "react-query"
 import { fetchFlashContent } from '../../services/FlashService';
-import { fetchQa } from '../../services/QaService';
 
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 import FeedDisplayer from './components/FeedDisplayer';
+
 const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
-  const store = useStore()
-  const authState = store.getState().auth
-  const qaPreview = useQuery(['Home', 'GET', "qaPreview"], () => fetchQa(5));
-  const flashPreview = useQuery(['Home', 'GET', "flashPreview"], () => fetchFlashContent(0, 5));
-  const copilote = useCopilot()
+  const flashPreview = useQuery(["flash-preview"], () => fetchFlashContent(0, 5));
+  // const copilote = useCopilot()
 
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     flashPreview.refetch(0, 5)
-    qaPreview.refetch(5)
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
@@ -60,7 +51,7 @@ export const HomeView = ({ navigation, route }) => {
       <ScrollView style={{ backgroundColor: 'white' }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <HomeHeader navigation={navigation} userName={authState.userCurrentSession.name} />
+        <HomeHeader navigation={navigation} />
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
@@ -75,8 +66,9 @@ export const HomeView = ({ navigation, route }) => {
         </View>
 
         <FeedDisplayer />
-        
+
       </ScrollView>
+
 
     </View>
   );

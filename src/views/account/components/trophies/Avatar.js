@@ -33,12 +33,13 @@ const AvatarTrophy = ({ trophy }) => {
     }, [trophy])
     if (trophy.unlock != 1) return null
 
-    return (
-        <Image
-            style={[styles.avatar, { position: 'absolute' }]}
-            source={{ uri: trophyImgUrl }}
-        />
-    )
+    if (trophyImgUrl)
+        return (
+            <Image
+                style={[styles.avatar, { position: 'absolute' }]}
+                source={{ uri: trophyImgUrl }}
+            />
+        )
 }
 
 

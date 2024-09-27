@@ -9,17 +9,13 @@ import {
     Text,
     Linking,
     ScrollView,
-    ActivityIndicator
+    ActivityIndicator,
+    Share
 } from "react-native"
-import { useQuery } from "react-query";
-import { useDispatch } from "react-redux";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
-
-import { logout, startIntro } from '../../../actions/auth';
-import { getCustomerPortal } from "../../../services/SubscriptionService";
-import { useOrthoMasterRoles } from "../../../hooks/useOrthoMasterRoles";
-import { useAsyncStorage } from "../../../hooks/useAsyncStorage";
-import { reloadAsync } from "expo-updates";
+import AuthService from "../../../services/AuthService";
+import { useLogout } from "../../../hooks/useLogout.hook";
 
 const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
     return (
@@ -41,26 +37,8 @@ const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
 }
 
 export const AccountMenu = ({ navigation, user }) => {
-    const dispatch = useDispatch()
-    const [gettingCustomerPortal, setGettingCustomerPortal] = useState(false)
+    const logout = useLogout()
     const [errorMessage, setErrorMessage] = useState(null)
-    const roles = useOrthoMasterRoles()
-    const customerPortal = useQuery(["GET", "Customer portal"], () => getCustomerPortal(user.office_id),
-        {
-            onSettled: () => setGettingCustomerPortal(false),
-            onSuccess: (url) => {
-                Linking.openURL(url)
-            },
-            onError: (err) => {
-                setErrorMessage(err.response?.data?.message)
-                setTimeout(() => {
-                    setErrorMessage(null)
-                }, 5000)
-            },
-            enabled: false
-        })
-
-    const [introHasBeenDisplayed, setIntroDisplayed] = useAsyncStorage('intro-slider-displayed')
 
     return (
         <View style={styles.container}>
@@ -74,30 +52,13 @@ export const AccountMenu = ({ navigation, user }) => {
                         navigation.navigate('account-profile')
                     }}
                 />
-                {
-                    roles.isPrimaryManager &&
-                    <CustomMenuButton
-                        icon={require('../../../../assets/settings/icon-espace-client.png')}
-                        text={'Mon espace client'}
-                        loading={gettingCustomerPortal}
-                        onPress={() => {
-                            customerPortal.refetch()
-                            setGettingCustomerPortal(true)
-                        }}
-                    />
-                }
-                {
-                    roles.isSeller &&
-                    <CustomMenuButton
-                        icon={require('../../../../assets/settings/professional.png')}
-                        text={"Formulaire d'inscription"}
-                        onPress={() => {
-                            navigation.navigate('account-register-form', {
-                                seller: user
-                            })
-                        }}
-                    />
-                }
+                <CustomMenuButton
+                    icon={require('../../../../assets/settings/icon-espace-client.png')}
+                    text={'Mon espace client'}
+                    onPress={() => {
+                        Linking.openURL("https://espace.orthomaster.fr/web/login")
+                    }}
+                />
 
                 <CustomMenuButton
                     icon={require('../../../../assets/settings/legal-paper.png')}
@@ -126,8 +87,7 @@ export const AccountMenu = ({ navigation, user }) => {
                                 },
                                 {
                                     text: "Se déconnecter", onPress: async () => {
-                                        navigation.navigate('home-home')
-                                        dispatch(logout())
+                                        logout.mutate()
                                     }
                                 }
                             ]
@@ -151,15 +111,49 @@ export const AccountMenu = ({ navigation, user }) => {
                     </View>
                 }
 
-                <CustomMenuButton
-                    icon={require('../../../../assets/settings/tutoriel.png')}
-                    text={'Revoir le tutoriel'}
+                <View style={{
+                    alignItems: 'center',
+                    alignSelf: 'center',
+                    backgroundColor: '#fff',
+                    borderRadius: 10,
+                    marginVertical: 50,
+                    width: "60%",
+                    padding: 5,
+                    shadowOffset: {
+                        width: 0, height: 0
+                    },
+                    shadowRadius: 10,
+                    shadowOpacity: 0.2
+                }}>
+                    <TouchableOpacity
+                        style={{
+                            width: "90%",
+                            alignItems: 'center',
+                            backgroundColor: '#fff',
+                            padding: 5,
+                            borderRadius: 10
+                        }}
+                        onPress={() => {
+                            Share.share({
+                                message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
+                                    user.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
+                                    "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.",
+                                url: "https://espace.orthomaster.fr/inscription"
+                            })
+                        }}
+                    >
+                        <Ionicons name="person-add-outline" size={20} color="#000" />
+                        <Text style={{
+                            color: '#000',
+                            textAlign: 'center',
+                            marginVertical: 5,
+                            fontSize: 12
+                        }}>
+                            Inviter à rejoindre OrthoMaster
+                        </Text>
+                    </TouchableOpacity>
 
-                    onPress={() => {
-                        dispatch(startIntro())
-                    }}
-                />
-
+                </View>
             </ScrollView>
 
         </View>

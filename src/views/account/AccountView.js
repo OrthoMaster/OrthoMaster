@@ -9,21 +9,19 @@ import {
   StatusBar,
   Image,
   RefreshControl,
-  Platform
+  Platform,
+  Share
 } from 'react-native';
 import { useStore } from 'react-redux';
 
 import { AccountProgress } from './components/AccountProgress';
 import { Trophies } from './components/trophies/Trophies';
 
-import { AccountOfficesProgress } from './components/AccountOfficesProgress';
+import { CompanyArea } from './components/CompanyArea';
 
 import { AccountMenu } from './menu/AccountMenu';
-import { useQuery } from 'react-query'
-import { useDispatch } from 'react-redux'
-import { getOfficeInfos } from '../../services/OfficeService'
-import { CertifiedFormationProgress } from './components/CertifiedFormationProgress';
-import { useOrthoMasterRoles } from '../../hooks/useOrthoMasterRoles';
+import { useQuery } from 'react-query';
+import { getCurrentUser } from '../../services/UserService';
 
 
 const AccountHeader = ({ user, menuActive, toggleMenu }) => {
@@ -31,8 +29,8 @@ const AccountHeader = ({ user, menuActive, toggleMenu }) => {
   return (
     <SafeAreaView style={[styles.header]} >
       <View style={styles.headerText}>
-        <Text style={styles.profilName}>{user ? user.name + ' ' + user.lastname : ''}</Text>
-        <Text style={styles.profilUsername}><Text style={{fontWeight: 'bold'}}>Nom d'utilisateur :</Text> {user.username}</Text>
+        <Text style={styles.profilName}>{user ? user.name : ''}</Text>
+        <Text style={styles.profilEmail}><Text style={{ fontWeight: 'bold' }}>Identifiant :</Text> {user.email}</Text>
       </View>
       <TouchableOpacity
         style={styles.headerLogoutButton}
@@ -59,8 +57,7 @@ export const AccountView = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false)
   const [menuIsActive, setMenuIsActive] = useState(false)
   const store = useStore()
-  const user = store.getState().auth.userCurrentSession
-  const roles = useOrthoMasterRoles()
+  const user = useQuery("current-user", ()=> getCurrentUser())
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -72,7 +69,7 @@ export const AccountView = ({ navigation }) => {
   return (
     <View style={{ flex: 1 }}>
       <AccountHeader
-        user={user}
+        user={user.data}
         menuActive={menuIsActive}
         toggleMenu={() => {
           setMenuIsActive(!menuIsActive)
@@ -90,15 +87,14 @@ export const AccountView = ({ navigation }) => {
 
           <Trophies refreshing={refreshing} />
 
-          <CertifiedFormationProgress />
 
-          <AccountOfficesProgress
-            enableConfig={roles.isPrimaryManager || roles.isSecondaryManager}
+          <CompanyArea
+            enableConfig={true}
             refreshing={refreshing}
             navigation={navigation}
           />
 
-          <View style={{ height: 200 }} />
+          <View style={{height: 200}}/>
         </ScrollView>
         {
           menuIsActive ?
@@ -106,6 +102,7 @@ export const AccountView = ({ navigation }) => {
             : null
         }
       </View>
+
     </View>
   );
 }
@@ -130,7 +127,10 @@ const styles = StyleSheet.create({
     marginRight: 20,
     justifyContent: 'center'
   },
-
+  headerText: {
+    width: '85%',
+    paddingVertical: 10
+  },
   profilName: {
     fontWeight: 'bold',
     fontSize: 28,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     color: '#ffffff'
   },
-  profilUsername: {
+  profilEmail: {
     fontSize: 15,
     marginLeft: 10,
     marginBottom: 10,

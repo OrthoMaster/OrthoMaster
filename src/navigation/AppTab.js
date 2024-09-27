@@ -53,8 +53,6 @@ export const AppTab = ({ }) => {
       await mutation.mutateAsync(log)
     } catch (error) {
       throw error
-    } finally {
-      //console.log('[ LOG App ]:', log)
     }
   }
 

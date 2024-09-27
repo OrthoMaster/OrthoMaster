@@ -1,186 +1,377 @@
 import React, { useEffect, useState } from 'react'
-import { Text, View, Pressable, StyleSheet, Linking, Image, TouchableOpacity } from 'react-native'
-import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {
-    CopilotStep,
-    walkthroughable,
-    useCopilot
-} from "react-native-copilot";
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useTheme } from '@react-navigation/native'
+    Text,
+    View,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    ScrollView,
+    RefreshControl,
+    FlatList
+} from 'react-native'
+import Feather from '@expo/vector-icons/Feather';
+import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { getUserRegisteredFormation, getFormations, registerFormation } from '../../services/FormationService'
+import AppModal from '../../component/AppModal';
+import { useNavigation } from '@react-navigation/native';
+import { LessonHeader } from './LessonHeader';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
-import { ModuleLayout } from './ModuleLayout'
-import { MenuLayout } from './menu/MenuLayout'
-import LaboFormationView from './labo/LaboFormationView'
-import AppModal from '../../component/AppModal'
+import GetFormationModal from './modal/GetFormationModal';
+import MoreInfosModal from './modal/MoreInfosModal';
+import { useGetUser } from '../../hooks/useGetUser.hook';
+import { LoadingContent } from '../../component/LoadingContent';
+import { getS3Image } from '../../services/S3Service';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-const FORMATION_TYPE_MODULE = 'formation-module'
-const FORMATION_TYPE_MENU = 'formation-menu'
+const RunningFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_url }) => {
+    const navigation = useNavigation()
+    const img = useQuery("formation-thumbnail-" + thumbnail_url, () => getS3Image(thumbnail_url))
 
-const CopilotText = walkthroughable(Text);
+    return <View style={{
+        backgroundColor: '#DEE0F3',
+        width: 250, height: 230,
+        padding: 10
+    }}>
+        <View style={{
+            width: '100%', height: '100%',
+            alignItems: 'center',
+            backgroundColor: '#203864',
+            borderRadius: 5,
+            shadowOffset: {
+                width: 0,
+                height: 5
+            },
+            shadowOpacity: 0.3,
+            padding: 10,
+            justifyContent: 'space-between'
+        }}>
 
-
-const FormationTypeNav = ({ displayView, navigation }) => {
-    const [selected, setselected] = useState('lesson')
-    const copilot = useCopilot()
-
-    return <View style={styles.formationTypeNavContainer}>
-        <Pressable
-            style={[
-                styles.formationTypeNavButton,
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{params.formation_name}</Text>
+            <TouchableOpacity
+                style={{
+                    width: "100%",
+                    height: 120,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
+                onPress={() => {
+                    navigation.navigate("formation-modules", {
+                        userFormationId: params.id,
+                        demoMode: false
+                    })
+                }}>
+                <Image
+                    src={img.data}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                    }}
+                    resizeMode='contain'
+                />
+                <AntDesign name="playcircleo" size={70} color="rgba(255,255,255,0.8)"
+                    style={{
+                        position: 'absolute',
+                    }} />
+            </TouchableOpacity>
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+            }}>
                 {
-                    backgroundColor: selected == 'lesson' ? '#ffffff' : '#20113A'
+                    params.progress_rate >= 100 ?
+                        <FontAwesome name="star" size={20} color="#B3AA4B" />
+                        : <Feather name="check-circle" size={20} color={params.progress_rate < 60 ? "#ffaf31" : "#92D050"} />
                 }
-            ]}
-            onPress={() => {
-                // copilot.start()
-                displayView(FORMATION_TYPE_MODULE)
-                setselected('lesson')
-                navigation.setParams({ title: 'Se former' })
+                <Text style={{ color: "#fff", marginHorizontal: 5 }}>
+                    {params.progress_rate >= 100 ? "terminé" : Math.round(params.progress_rate) + " %"}
+                </Text>
+            </View>
+        </View>
+    </View>
+}
+
+const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_url, onShowMore }) => {
+
+    const navigation = useNavigation()
+    const queryClient = useQueryClient()
+    const startFormation = useMutation(registerFormation, {
+        onSuccess: data => {
+            queryClient.invalidateQueries(["formations", "user"])
+            navigation.navigate("formation-modules", {
+                userFormationId: data.insertId,
+                demoMode: isStudent ? false : true
+            })
+        }
+    })
+    const img = useQuery("formation-thumbnail-" + thumbnail_url, () => getS3Image(thumbnail_url))
+
+
+
+    return <View style={{
+        backgroundColor: "#203864",
+        width: "95%", height: 200,
+        alignSelf: 'center',
+        borderRadius: 5,
+        margin: 15,
+        shadowOffset: {
+            height: 3
+        },
+        shadowOpacity: 0.3
+    }}>
+        <Text style={{ color: '#fff', fontWeight: 'bold', marginLeft: 10, marginVertical: 10 }}>{params.formation_name}</Text>
+        <View style={{ flexDirection: 'row', backgroundColor: '#6E7DA6', paddingVertical: 3, paddingHorizontal: 5, height: 35 }}>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}><Text style={{ fontSize: 20 }}>⏱️</Text> {params.time_needed}</Text>
+            </View>
+            <View style={{ flex: 2, alignItems: 'center', justifyContent: 'center' }}>
+                <Text numberOfLines={2} style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}><Text style={{ fontSize: 16 }}>👨‍⚕️</Text> {params.public}</Text>
+            </View>
+            <View style={{ flex: 2, alignItems: 'center', justifyContent: 'center' }}>
+                <Text numberOfLines={2} style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}><Text style={{ fontSize: 16 }}>🎓</Text> {params.organism}</Text>
+            </View>
+        </View>
+        <View style={{
+            flexDirection: 'row', flex: 1, backgroundColor: '#fff'
+        }}>
+            <View style={{ flex: 1, height: "100%" }}>
+                <Image
+                    src={img.data}
+                    resizeMode='contain'
+                    style={{
+                        width: "95%", height: "100%",
+                        alignSelf: 'flex-end'
+                    }}
+                />
+            </View>
+            <View style={{
+                flex: 1,
+                backgroundColor: '#fff',
+
+                borderBottomRightRadius: 5
             }}>
-            <Text
-                style={[styles.formationTypeNavText, { color: selected == 'lesson' ? '#20113A' : '#ffffff' }]}>
-                Parcours
-            </Text>
-        </Pressable>
-        <Pressable
-            style={[styles.formationTypeNavButton, { backgroundColor: selected == 'menu' ? '#ffffff' : '#20113A' }]}
-            onPress={() => {
-                displayView(FORMATION_TYPE_MENU)
-                setselected('menu')
-            }}>
-            <CopilotStep text='la step 3 sur une autre page' order={1} name='formation'>
-                <CopilotText style={[styles.formationTypeNavText, { color: selected == 'menu' ? '#20113A' : '#ffffff' }]}>
-                    A la carte</CopilotText>
-            </CopilotStep>
-            {/* <Text
-                style={[styles.formationTypeNavText, { color: selected == 'menu' ? '#20113A' : '#ffffff' }]}>
-                A la carte
-            </Text> */}
-        </Pressable>
+
+                <View style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1
+                }}>
+
+                    <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#92D050' }]}
+                        onPress={() => {
+                            if (params.id_user && params.id) {
+
+                                navigation.navigate("formation-modules", {
+                                    userFormationId: params.id,
+                                    demoMode: true
+                                })
+                            } else {
+                                startFormation.mutate({
+                                    id_formation: params.id_formation,
+                                    formation_name: params.formation_name
+                                })
+                            }
+                        }}>
+                        <Text style={{
+                            color: '#FFF',
+                            fontWeight: 'bold',
+                            fontSize: 12
+                        }}>Démo</Text>
+                        <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#8089D1' }]}
+                        onPress={() => {
+                            onShowMore()
+                        }}>
+                        <Text style={{
+                            color: '#FFF',
+                            fontWeight: 'bold',
+                            fontSize: 12
+                        }}>En savoir plus</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#FFAB00' }]}
+                        onPress={() => {
+                            onUnlockFormation()
+                        }}>
+                        <Text style={{
+                            color: '#FFF',
+                            fontWeight: 'bold',
+                            fontSize: 12
+                        }}>Obtenir</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+
     </View>
 }
 
 
-const FormationTypeDisplay = ({ type, navigation, route }) => {
-    if (type == FORMATION_TYPE_MODULE) {
-        return <ModuleLayout navigation={navigation} route={route} />
-    } else {
-        return <MenuLayout navigation={navigation} route={route} />
-    }
-}
-
 export const FormationView = ({ navigation, route }) => {
-    const [formationType, setformationType] = useState(FORMATION_TYPE_MODULE)
-    const { isLabo } = useTheme()
-    const [showCertifInfosModal, setshowCertifInfosModal] = useState(false)
-    const [disableModal, setDisableModal] = useState(false)
+    const [refreshing, setRefreshing] = useState(false);
+    const queryClient = useQueryClient()
+    const { data: user } = useGetUser()
+    const {
+        data: formations
+    } = useQuery(["formations"], () => getFormations())
+    const {
+        data: userFormations
+    } = useQuery(["user-formations"], () => getUserRegisteredFormation({}))
 
+    const [isLoading, setIsLoading] = useState(true)
+    const [unlockFormationModal, setUnlockFormationModal] = useState({ isActivate: false, formation: null })
+    const [showingMoreInfosModal, setShowingMoreInfosModal] = useState(false)
+    const [runningFormations, setRunningFormations] = useState(null)
+    const [catalogFormations, setCatalogFormations] = useState(null)
+
+    const onRefresh = React.useCallback(() => {
+        setRefreshing(true);
+        setTimeout(() => {
+            setRefreshing(false);
+            queryClient.invalidateQueries("user-formations")
+        }, 2000);
+    }, []);
 
     useEffect(() => {
-        const displayCertifModal = async () => {
-            const visitOnce = await AsyncStorage.getItem('certif')
+        if (formations && userFormations) {
+            var newRunningFormation = []
+            var newCatalogFormation = []
+            for (const uf of userFormations) {
+                if (uf.is_paid || uf.certifying) {
+                    newRunningFormation.push(uf)
 
-            if (JSON.parse(visitOnce) == true) {
-                return
+                } else {
+                    var formatFormation = { ...uf }
+                    const catalogRef = formations.find(f => f.id_formation === formatFormation.id_formation)
+
+                    formatFormation.public = catalogRef.public;
+                    formatFormation.time_needed = catalogRef.time_needed;
+                    formatFormation.organism = catalogRef.organism;
+                    formatFormation.competencies_obj = catalogRef.competencies_obj;
+                    formatFormation.description = catalogRef.description;
+                    formatFormation.learning_obj = catalogRef.learning_obj;
+                    formatFormation.learning_summary = catalogRef.learning_summary;
+                    formatFormation.public_desc = catalogRef.public_desc
+                    formatFormation.requirements = catalogRef.requirements
+                    formatFormation.trainer = catalogRef.trainer
+
+                    newCatalogFormation.push(formatFormation)
+                }
             }
-            setshowCertifInfosModal(true)
+
+            for (const f of formations) {
+                if (!userFormations.find(elem => elem.id_formation == f.id_formation))
+                    newCatalogFormation.push(f)
+            }
+            setCatalogFormations(newCatalogFormation)
+            setRunningFormations(newRunningFormation)
         }
-        displayCertifModal()
-    }, [])
+    }, [formations, userFormations])
+
+    useEffect(() => {
+        if (catalogFormations && runningFormations)
+            setIsLoading(false)
+    }, [catalogFormations, runningFormations])
 
 
-    if (isLabo == false) {
+
+    if (isLoading)
         return <View style={styles.container}>
-            <FormationTypeDisplay type={formationType} navigation={navigation} route={route} />
-
-            <FormationTypeNav displayView={(view) => { setformationType(view) }}
+            <LessonHeader
+                searchEnabled={false}
+                title={"Formations"}
                 navigation={navigation}
             />
-            <AppModal
-                isVisible={showCertifInfosModal}
-                onClose={() => {
-                    if (disableModal === true) {
-                        AsyncStorage.setItem("certif", JSON.stringify(true), (error) => {
-                            if (error)
-                                throw error
-                        })
-                    }
-                    setshowCertifInfosModal(false)
-                }}
-                style={{ width: '90%' }}
-                customRender={<View style={{
-                    display: 'flex',
-                    paddingHorizontal: 10,
-                    width: '100%'
-                }}
-                >
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', alignSelf: 'center' }}>Le savez-vous ?</Text>
-                    <Text style={{ marginTop: 10, }}>Vous pouvez suivre ce parcours pédagogique et obtenir un certificat de formation DPC.</Text>
-
-                    <Image
-                        source={require('../../../assets/formation/logo-dpc.png')}
-                        style={{
-                            height: 70,
-                            resizeMode: 'contain',
-                            marginVertical: 20,
-                            alignSelf: 'center'
-                        }}
-                    />
-                    <Text style={{ fontSize: 13, alignSelf: 'center', textAlign: 'center' }}>Il en va de même pour chaque membre de votre équipe.</Text>
-                    <Text style={{ fontSize: 15, fontWeight: 'bold', marginVertical: 10 }}>Inscrivez-vous dès maintenant !</Text>
-                    <Text style={{}}>C'est simple, <Text style={{ textDecorationLine: 'underline' }}>gratuit</Text> et nous vous accompagnons dans les démarches d'inscription / validation.</Text>
-
-                    <TouchableOpacity style={{
-                        backgroundColor: "#EB7B10",
-                        padding: 10,
-                        borderRadius: 5,
-                        width: "30%",
-                        alignSelf: 'center',
-                        alignItems: 'center',
-                        marginTop: 20
-                    }}
-                        onPress={() => {
-                            Linking.openURL("https://orthomaster.fr/parcour-certifiant")
-                        }}
-                    >
-                        <Text style={{
-                            color: '#fff',
-                            textAlign: 'center',
-                        }}>En savoir +</Text>
-                    </TouchableOpacity>
-
-
-                    <BouncyCheckbox
-                        onPress={isChecked => { setDisableModal(isChecked) }}
-                        text='ne plus me montrer ce message pour le moment'
-                        size={15}
-                        fillColor="#EB7B10"
-                        unfillColor="#FFFFFF"
-                        textStyle={{
-                            color: '#000',
-                            fontSize: 12,
-                            textDecorationLine: "none"
-                        }}
-                        style={{
-                            alignSelf: 'center',
-                            marginTop: 20
-                        }}
-                    />
-                </View>}
-            />
+            <LoadingContent />
         </View>
-    } else {
-        return <LaboFormationView navigation={navigation} />
-    }
+
+    return <View style={styles.container}>
+        <LessonHeader
+            searchEnabled={false}
+            title={"Formations"}
+            navigation={navigation}
+        />
+        <ScrollView refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+
+            <View style={[styles.sectionContainer, { backgroundColor: '#DEE0F3' }]}>
+                <Text style={styles.textSection}>Mes formations</Text>
+                <FlatList
+                    data={runningFormations}
+                    renderItem={(item) => <RunningFormationCard
+                        params={item.item}
+                        isStudent={user.is_student}
+                        thumbnail_url={formations.find(elem => elem.id_formation == item.item.id_formation).img_url}
+                    />
+                    }
+                    horizontal={true}
+                    keyExtractor={(item, index) => index}
+                />
+            </View>
+
+            <View style={[styles.sectionContainer, { backgroundColor: '#fff' }]}>
+                <Text style={styles.textSection}>Autres formations</Text>
+                <FlatList
+                    data={catalogFormations}
+                    renderItem={(item) => <CatalogFormationCard
+                        params={item.item}
+                        onUnlockFormation={() => {
+                            setUnlockFormationModal({ isActivate: true, formation: item.item })
+                        }}
+                        onShowMore={() => {
+                            setShowingMoreInfosModal({ isActivate: true, formation: item.item })
+                        }}
+                        isStudent={user.is_student}
+                        thumbnail_url={formations.find(elem => elem.id_formation == item.item.id_formation).img_url}
+                    />
+                    }
+                    scrollEnabled={false}
+                    keyExtractor={(item, index) => index}
+                />
+            </View>
+        </ScrollView>
+
+
+        <AppModal
+            isVisible={unlockFormationModal.isActivate}
+            onClose={() => setUnlockFormationModal({ isActivate: false, formation: null })}
+            customRender={<GetFormationModal
+                formation={{
+                    name: unlockFormationModal?.formation?.formation_name,
+                    idFormation: unlockFormationModal?.formation?.id_formation,
+                    price: formations?.filter(elem => elem.id_formation == unlockFormationModal?.formation?.id_formation)[0]?.price
+                }}
+                onClose={() => setUnlockFormationModal({ isActivate: false, formation: null })}
+                navigation={navigation}
+            />}
+            style={{
+                width: '90%', height: "70%",
+            }}
+        />
+
+        <AppModal
+            isVisible={showingMoreInfosModal.isActivate}
+            onClose={() => setShowingMoreInfosModal({ isActivate: false, formation: null })}
+            customRender={<MoreInfosModal
+                formation={showingMoreInfosModal.formation}
+                onClose={() => setShowingMoreInfosModal({ isActivate: false, formation: null })}
+            />}
+            style={{
+                height: '70%', width: '90%',
+                backgroundColor: "#fff"
+            }}
+        />
+    </View>
 }
 
 const styles = StyleSheet.create({
     container: {
-        height: '100%',
-        alignItems: 'center',
         width: '100%',
-        backgroundColor: '#fffefd'
+        display: 'flex',
+        flex: 1,
+        backgroundColor: '#fff'
+
     },
     formationTypeNavContainer: {
         backgroundColor: '#1F113A',
@@ -205,5 +396,29 @@ const styles = StyleSheet.create({
     },
     formationTypeNavText: {
         fontWeight: '600'
+    },
+    textSection: {
+        fontSize: 20,
+        color: "#000",
+        marginLeft: 10,
+        marginVertical: 10
+    },
+    sectionContainer: {
+        paddingVertical: 15,
+    }
+})
+
+const cardStyle = StyleSheet.create({
+    textStyle: {
+        color: "#fff"
+    },
+    buttonStyle: {
+        padding: 10,
+        borderRadius: 5,
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '60%',
+        marginVertical: 3,
+        justifyContent: 'center'
     }
 })

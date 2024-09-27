@@ -56,13 +56,16 @@ const TextField = ({ props }) => {
         }
     }
 
+
     return <View>
         <TextInput
             defaultValue={text}
             style={[{
                 borderColor: alertError.length > 0 ? 'red' : '#828282',
                 backgroundColor: '#fff'
-            }, styles.field]}
+            }, styles.field, {
+                height: 40 * (props.numberOfLines ? props.numberOfLines : 1)
+            }]}
             onChangeText={(text) => {
                 props.onChange({ text, value: props.value, target: props.target })
                 setText(text)
@@ -85,11 +88,14 @@ const TextField = ({ props }) => {
                 }
             }}
             inputMode={props.type}
+            placeholder={props.placeholder}
             autoCapitalize={'none'}
             autoComplete="off"
             autoCorrect={props.type == 'email' ? false : true}
             secureTextEntry={props.password ? true : false}
             editable={props.isActive}
+            multiline={props.multiline ? props.multiline : false}
+            numberOfLines={props.numberOfLines ? props.numberOfLines : 1}
         />
         {
             alertError.length > 0 &&
@@ -140,7 +146,6 @@ const styles = StyleSheet.create({
     field: {
         borderWidth: 0.5,
         borderRadius: 5,
-        height: 40,
         marginTop: 5,
         paddingLeft: 10
     }

@@ -2,10 +2,7 @@ import { ErrorBoundary } from 'react-error-boundary'
 import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, Button, Text, Alert, Linking, SafeAreaView } from "react-native";
 import { setJSExceptionHandler } from 'react-native-exception-handler';
-import { logout } from "../actions/auth";
-import store from "../store";
 import Bugsnag from '@bugsnag/expo';
-import axios from 'axios';
 import { useStore } from 'react-redux';
 
 

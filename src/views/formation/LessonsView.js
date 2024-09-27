@@ -18,16 +18,17 @@ import { fetchLessonByModuleWithProgression } from '../../services/ContentServic
 import { getS3Image } from '../../services/S3Service';
 import { LessonButton } from './components/LessonButton';
 import { LoadingContent } from '../../component/LoadingContent';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 export function LessonsView({ route, navigation }) {
-    let moduleInfos = route.params.module
-    const modules = useQuery(['Formation', 'GET', 'lessonProgress', moduleInfos.module.module_num], () => fetchLessonByModuleWithProgression(moduleInfos.module.module_num))
+    let { module, demoMode, formation } = route.params
+    const lessons = useQuery(['Formation', 'GET', 'lessonProgress', module.module.module_num], () => fetchLessonByModuleWithProgression(module.module.module_num))
     const [refreshing, setRefreshing] = useState(false)
     const [moduleLogo, setModuleLogo] = useState(null)
 
 
     const getModuleLogo = async () => {
-        let path = 'lesson/' + moduleInfos.module.module_num + '/logo.png'
+        let path = 'lesson/' + module.module.module_num + '/logo.png'
         try {
             const imageUrl = await getS3Image(path)
             return (imageUrl)
@@ -38,7 +39,7 @@ export function LessonsView({ route, navigation }) {
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        modules.refetch()
+        lessons.refetch()
         getModuleLogo().then((value) => {
             setModuleLogo(value)
         })
@@ -66,54 +67,62 @@ export function LessonsView({ route, navigation }) {
 
 
     return <View style={styles.container}>
-        <SafeAreaView style={[styles.headerContainer, { backgroundColor: moduleInfos.module.theme_color }]}>
+        <SafeAreaView style={[styles.headerContainer, { backgroundColor: module.module.theme_color }]}>
             <TouchableOpacity
-                style={styles.headerBackButton}
+                style={{
+                    alignSelf: 'flex-start',
+                    padding: 10,
+                    top: 20
+                }}
                 onPress={() => navigation.goBack()}
             >
-                <Svg
-                    height={25} width={15}
-                    viewBox={`0 0 30 40`}
-                    style={{ marginLeft: 30 }}
-                >
-                    <Path d='M20 5 L5 20 L20 35' stroke='white' strokeWidth={5} strokeLinejoin='round' strokeLinecap='round' />
-                </Svg>
+                <FontAwesome5 name="arrow-left" size={24} color="#fff" />
             </TouchableOpacity>
+            {
+                demoMode &&
+                <Text style={{ alignSelf: 'flex-end', right: 20 }}>Démo</Text>
+            }
         </SafeAreaView>
 
 
         <View style={styles.headerBox}>
-            <Image
-                source={{ uri: moduleLogo }}
-                style={{
-                    marginVertical: 5,
-                    width: 100,
-                    height: 100,
-                    resizeMode: 'contain'
-                }}
-            />
-            <Text style={styles.headerModule}>Module {moduleInfos.module.module_num}</Text>
-            <Text style={styles.headerTitle}>{moduleInfos.module.title}</Text>
+            {
+                moduleLogo &&
+                <Image
+                    source={{ uri: moduleLogo }}
+                    style={{
+                        marginVertical: 5,
+                        width: 100,
+                        height: 100,
+                        resizeMode: 'contain'
+                    }}
+                />
+            }
+            <Text style={styles.headerModule}>Module {module.module.module_num}</Text>
+            <Text style={styles.headerTitle}>{module.module.title}</Text>
 
             <View style={styles.progressContanier}>
                 <Text style={styles.progressIcons}>📚</Text>
                 <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressBar, { backgroundColor: moduleInfos.module.theme_color, width: (moduleInfos.lesson_succeed * 100 / moduleInfos.total_lesson).toString() + "%" }]} />
+                    <View style={[styles.progressBar, { backgroundColor: module.module.theme_color, width: (module.lesson_succeed * 100 / module.total_lesson).toString() + "%" }]} />
                 </View>
                 <Text style={styles.progressIcons}>👨‍🎓</Text>
             </View>
 
             <FlatList
-                data={modules.data}
+                data={lessons.data}
                 showsVerticalScrollIndicator={false}
                 ListFooterComponent={<View style={{ height: 100 }} />}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 renderItem={(item) => <LessonButton
-                    item={item}
-                    onPress={() => {
-                        if (item.item.content.published == true) {
+                    lesson={item.item}
+                    isBlocked={demoMode && item.item.demo_access == false}
+                    onPress={(lesson) => {
+                        if (lesson.content.published == true) {
                             navigation.navigate('formation-content', {
-                                content: item.item.content
+                                content: lesson.content,
+                                formation: formation,
+                                type: "lesson"
                             })
                         }
                     }}

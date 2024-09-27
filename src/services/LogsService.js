@@ -7,19 +7,18 @@ const baseurl = process.env.EXPO_PUBLIC_API_URL+"/logtime"
 export const saveLogtimeOnLesson = async (log) => {
     const config = await restoreLocalConfigAsync()
     const authHeader = 'Bearer ' + config.JWT;
-
+    
     const body = {
         login: log.login,
         logout: log.logout,
-        contentId: log.contentId
+        contentId: log.contentId,
+        id_user_registered_formation: log.idUserRegisteredFormation
     }
 
     return axios
-        .post(baseurl + "/lesson/user/" + config.user.id_user, body, {
+        .post(baseurl + "/v2/lesson/user/" + config.user.id_user, body, {
             headers: { Authorization: authHeader },
-        },
-        
-        )
+        })
         .then((response) => {
             return response.data;
         })

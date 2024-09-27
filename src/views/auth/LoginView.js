@@ -8,66 +8,65 @@ import {
     TouchableOpacity,
     Image,
     Dimensions,
-    KeyboardAvoidingView,
     TouchableWithoutFeedback,
     Keyboard,
-    Platform
+    Platform,
+    Linking,
+    ScrollView
 } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
-import { selectAuthMessage } from '../../reducers/auth';
 import { Ionicons } from '@expo/vector-icons';
-
-import { login } from '../../actions/auth';
+import { useLogin } from '../../hooks/useLogin.hook';
 
 
 export const LoginView = ({ navigation, route }) => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [statusMessage, setStatusMessage] = useState('')
-    const authMessage = useSelector(selectAuthMessage)
-    const dispatch = useDispatch()
     const [showPassword, setShowPassword] = useState(false)
+
+    const login = useLogin()
 
 
     const handleClick = () => {
-        dispatch(login(username, password))
-
+        login.mutate({ email: email, password: password })
     }
 
     return (
         <SafeAreaView style={[styles.container]}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={[styles.container, { width: '100%' }]}
+            <ScrollView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={[{ width: '100%' }]}
+                automaticallyAdjustKeyboardInsets={true}
+                contentContainerStyle={{ height: '100%' }}
             >
                 <TouchableWithoutFeedback
-                    style={{ width: '100%', height: '100%' }}
+                    style={{ width: '100%', backgroundColor: 'orange' }}
                     onPress={() => { Keyboard.dismiss() }}>
                     <View style={{
-                        height: "100%", width: "100%",
+                        width: "100%", flex: 1,
                         alignItems: 'center'
                     }}>
 
 
-                        <View style={styles.logo}>
+                        <View style={styles.logoContainer}>
                             <Image
                                 style={{
-                                    width: Dimensions.get('screen').width * 0.7,
+                                    width: '80%',
+                                    height: "100%",
                                     resizeMode: 'contain',
                                 }}
                                 source={require('../../../assets/logo-text.png')}
                             />
                         </View>
                         <View style={styles.connectionBox}>
-                            <Text style={styles.redirectMessage}>{route.params?.message}</Text>
                             <Text style={styles.title}>Connexion</Text>
                             <TextInput
                                 style={[styles.intputField]}
-                                placeholder="Nom d'utilisateur"
-                                value={username}
-                                onChangeText={setUsername}
-                                textContentType="username"
+                                placeholder="Adresse e-mail"
+                                value={email}
+                                onChangeText={setEmail}
+                                textContentType="email"
                                 autoCapitalize={'none'}
-                                autoComplete='username'
+                                autoComplete='email'
 
                             />
 
@@ -91,8 +90,8 @@ export const LoginView = ({ navigation, route }) => {
                             </View>
 
                             {
-                                authMessage?.length > 0 &&
-                                <Text style={styles.authText}>{authMessage}</Text>
+                                login.isError &&
+                                <Text style={styles.authText}>{login.error.response.data.message}</Text>
                             }
                             {
                                 statusMessage?.length > 0 &&
@@ -106,26 +105,32 @@ export const LoginView = ({ navigation, route }) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => {
-                                    navigation.push("auth-reset-password")
+                                    Linking.openURL("https://espace.orthomaster.fr/web/reset_password")
                                 }}
                             >
-                                <Text style={{ color: '#EA6910', fontSize: 18 }}>Mot de passe oublié</Text>
+                                <Text style={{ color: '#ffaf31', fontSize: 18 }}>Mot de passe oublié</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={{ marginTop: 10 }}
-                                onPress={() => {
-                                    navigation.push("auth-forgot-username")
-                                }}
-                            >
-                                <Text style={{ color: '#EA6910', fontSize: 18 }}>Nom d'utilisateur oublié</Text>
-                            </TouchableOpacity>
-
+                            <View style={{
+                                alignItems: 'center',
+                                marginVertical: 20
+                            }}>
+                                <Text>Pas encore de compte ?</Text>
+                                <Text
+                                    onPress={() => { Linking.openURL("https://espace.orthomaster.fr/inscription") }}
+                                    style={{
+                                        color: '#ffaf31',
+                                        fontWeight: 'bold',
+                                        textDecorationLine: 'underline'
+                                    }}>
+                                    Inscrivez-vous
+                                </Text>
+                            </View>
                         </View>
                     </View>
 
                 </TouchableWithoutFeedback>
-            </KeyboardAvoidingView>
+            </ScrollView>
         </SafeAreaView>
     );
 }
@@ -134,21 +139,20 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#F1F1F1',
         flex: 1,
-        alignItems: 'center',
+        alignItems: 'center'
     },
-    logo: {
-        flex: 1,
-        justifyContent: 'center',
-        flexGrow: 1
+    logoContainer: {
+        height: "30%",
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     connectionBox: {
         backgroundColor: '#FFFEFD',
         width: '95%',
         borderRadius: 24,
         alignItems: 'center',
-        paddingVertical: 15,
-        flex: 1,
-        flexGrow: 3
+        paddingVertical: 20,
     },
     title: {
         fontSize: 28,

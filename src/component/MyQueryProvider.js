@@ -15,10 +15,10 @@ import {
     QueryClientProvider,
     MutationCache
 } from 'react-query'
-import { QueryClient} from "react-query"
+import { QueryClient } from "react-query"
 import AuthService from '../services/AuthService';
-import { useDispatch } from 'react-redux';
-import { logout } from '../actions/auth';
+
+
 
 
 export const MyQueryProvider = ({
@@ -26,7 +26,6 @@ export const MyQueryProvider = ({
 }) => {
     const [isError, setIsError] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
-    const dispatch = useDispatch()
 
     var gettingNewToken = false
 
@@ -79,18 +78,18 @@ export const MyQueryProvider = ({
     }))
 
 
-   
+
 
     const getNewToken = async () => {
         try {
             const res = await AuthService.getNewToken()
             if (res == false) {
-                dispatch(logout())
+                AuthService.logout()
+                client.setQueryData(['current-user'], false); 
             }
             gettingNewToken = false
-            
+
         } catch (error) {
-            //console.log('query provider', error);
         }
     }
 

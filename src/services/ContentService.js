@@ -26,23 +26,23 @@ export const fetchLessonContent = async (content) => {
   return await getS3XML(content)
 }
 
-export const getNextLesson = async (currentModule, currentOrder) => {
+export const getNextLesson = async (currentModule, currentOrder, id_formation) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
   return axios
-    .get(baseurl + "/lesson/next", {
+    .get(baseurl + "/v2/lesson/next", {
       headers: { Authorization: authHeader },
       params: {
         currentModule: currentModule,
-        currentOrder: currentOrder
+        currentOrder: currentOrder,
+        currentFormation: id_formation
       }
     })
     .then((response) => {
       return response.data;
     })
     .catch(e=>{
-      //console.log(e);
     })
 }
 
