@@ -16,8 +16,6 @@ import { MainQuizUnlockModal } from './modal/MainQuizUnlockModal';
 
 import { useQuery } from 'react-query';
 import { fetchModules } from '../../services/ModuleService';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { getUserRegisteredFormation } from '../../services/FormationService';
 
 import { AntDesign } from '@expo/vector-icons';

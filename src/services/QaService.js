@@ -19,8 +19,5 @@ export const fetchQa = async (limit = 0) => {
     .then((response) => {
       return response.data;
     })
-    // .catch((e)=> {
-    //   //throw e
-    //   console.log('FetchQa ERROR', e);
-    // });
+
 }

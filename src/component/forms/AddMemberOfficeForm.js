@@ -49,13 +49,13 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
     return <View style={{
         paddingVertical: 10,
     }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold', marginLeft: 10 }}>Ajoutez des membres à votre espace :</Text>
+        <Text style={{ fontSize: 16, fontWeight: 'bold', marginLeft: 10 }}>Ajoutez des membres OrthoMaster à votre espace :</Text>
         <View style={{
             backgroundColor: "#fff",
             alignSelf: 'center',
             width: "80%", height: 40,
             alignItems: 'center',
-            marginVertical: 50
+            marginVertical: 30
         }}>
             <Text style={{ fontSize: 15 }}>{attachedOffice.structure}</Text>
 
@@ -67,6 +67,11 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
             marginTop: 30
         }}>
             <Text>E-mail du membre à ajouter</Text>
+            <Text style={{
+                fontSize: 10,
+                fontStyle: 'italic',
+                color: 'gray'
+            }}>Attention, pour ajouter un nouveau membre, celui-ci doit déjà posséder un compte actif</Text>
             <TextInput
                 defaultValue={email}
                 style={{
@@ -84,12 +89,6 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
                 inputMode={"text"}
                 autoCapitalize={'none'}
             />
-            <Text style={{
-                fontSize: 10,
-                fontStyle: 'italic',
-                color: 'gray',
-                paddingHorizontal: 10
-            }}>Attention, pour ajouter un nouveau membre, celui-ci doit déjà posséder un compte actif</Text>
         </View>
 
         {
