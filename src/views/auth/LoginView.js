@@ -105,7 +105,7 @@ export const LoginView = ({ navigation, route }) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => {
-                                    Linking.openURL("https://orthomaster-saas.odoo.com/web/reset_password")
+                                    Linking.openURL("https://espace.orthomaster.fr/web/reset_password")
                                 }}
                             >
                                 <Text style={{ color: '#EA6910', fontSize: 18 }}>Mot de passe oublié</Text>

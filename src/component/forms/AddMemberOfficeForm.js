@@ -29,7 +29,7 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
             message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
                 attachedOffice.structure + " " + attachedOffice.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
                 "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.",
-            url: "https://orthomaster-saas.odoo.com/inscription"
+            url: "https://espace.orthomaster.fr/inscription"
         })
     }
 

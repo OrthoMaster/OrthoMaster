@@ -56,7 +56,7 @@ export const AccountMenu = ({ navigation, user }) => {
                     icon={require('../../../../assets/settings/icon-espace-client.png')}
                     text={'Mon espace client'}
                     onPress={() => {
-                        Linking.openURL("https://orthomaster-dev.odoo.com/web/login")
+                        Linking.openURL("https://espace.orthomaster.fr/web/login")
                     }}
                 />
 
@@ -138,7 +138,7 @@ export const AccountMenu = ({ navigation, user }) => {
                                 message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
                                     user.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
                                     "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.",
-                                url: "https://orthomaster-saas.odoo.com/inscription"
+                                url: "https://espace.orthomaster.fr/inscription"
                             })
                         }}
                     >
