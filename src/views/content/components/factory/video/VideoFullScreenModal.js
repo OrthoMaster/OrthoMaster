@@ -34,7 +34,6 @@ export const VideoFullScreenModal = ({
 
   // useEffect(() => {
 
-  //   // console.log('time:',currentTime);
   //   init()
   //   // refPlayerFS.current.seekTo(videoRef)
   // }, [])

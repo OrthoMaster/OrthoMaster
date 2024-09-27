@@ -9,7 +9,12 @@ export const LessonHeader = ({ onSearch, title, navigation, searchEnabled = true
 
 
     return <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
-        <View style={styles.header}>
+        <View style={searchEnabled || returnEnabed ? {
+            flexDirection: 'row',
+            flex: 1,
+            width: '100%',
+            alignItems: 'center'
+        } : {}}>
             {
                 returnEnabed &&
                 < TouchableOpacity
@@ -48,21 +53,19 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
     },
     container: {
-        backgroundColor: '#ffaf31',
+        backgroundColor: '#8089D1',
         width: '100%',
         height: '12%',
-
-
-    },
-    header: {
-        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center'
+
     },
+
     title: {
-        marginLeft: 15,
-        fontWeight: '600',
-        fontSize: 18,
+        fontWeight: 'bold',
+        fontSize: 20,
         color: '#fffeee',
-        width:"70%",
+        width: "70%",
+        alignSelf: 'center'
     }
 })

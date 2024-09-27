@@ -19,79 +19,83 @@ export default ConfirmationStep = ({
 }) => {
 
 
-    return <ScrollView style={{
-        width: '95%',
-        alignSelf: 'center'
-    }}>
-        <Text style={{
-            fontStyle: 'italic',
-            fontSize: 15,
-            marginVertical: 10,
-            paddingHorizontal: 10
-        }}>Récapitulatif de votre commande</Text>
-        <View>
-            <Text style={styles.text1}>Formation :</Text>
-            <Text>{formation.name}</Text>
-            <Text>{formation.price}</Text>
-        </View>
-
-        <View>
-            <Text style={styles.text1}>Adresse de facturation :</Text>
-            <View style={{
-                width: "90%",
-                backgroundColor: '#F1F1F1',
-                alignSelf: 'center',
-                paddingHorizontal: 10, paddingVertical: 5,
-                borderRadius: 10
-            }}>
-                <Text style={{ fontWeight: 'bold' }}>{billingAddress.name}</Text>
-                <Text>{billingAddress.street}</Text>
-                <Text>{billingAddress.zip} {billingAddress.city}</Text>
-                <Text>{billingAddress.country}</Text>
+    return <View style={{height: '90%'}}>
+        <ScrollView style={{
+            width: '90%',
+            alignSelf: 'center',
+        }}>
+            <Text style={{
+                fontStyle: 'italic',
+                fontSize: 15,
+                marginVertical: 20,
+                paddingHorizontal: 10,
+                alignSelf: 'center'
+            }}>Récapitulatif de votre commande</Text>
+            <View style={{ marginBottom: 15, marginTop: 10 }}>
+                <Text style={styles.text1}>Formation</Text>
+                <Text>{formation.name}</Text>
             </View>
-        </View>
 
-        <View style={{alignItems: 'center'}}>
-            <Text style={[styles.text1, {alignSelf: 'flex-start'}]}>Vont bénéficier de la formation :</Text>
-            {
-                users.map((value, index) => {
-                    return <Text key={index}>{value.complete_name}</Text>
+            <View style={{ marginVertical: 15 }}>
+                <Text style={styles.text1}>Adresse de facturation</Text>
+                <View style={{
+                    width: "100%",
+                    alignSelf: 'center',
+                    borderRadius: 10
+                }}>
+                    <Text style={{ fontWeight: 'bold' }}>{billingAddress.name}</Text>
+                    <Text>{billingAddress.street}</Text>
+                    <Text>{billingAddress.zip} {billingAddress.city}</Text>
+                    <Text>{billingAddress.country}</Text>
+                </View>
+            </View>
 
-                })
-            }
-        </View>
-        <View>
-            <Text style={styles.text1}>Votre offre :</Text>
-            <PriceRecap
-                selectedCollaborators={users}
-                unitPrice={formation.price}
-            />
-        </View>
+            <View style={{ marginVertical: 15 }}>
+                <Text style={[styles.text1, { alignSelf: 'flex-start' }]}>Bénéficiaires</Text>
+                {
+                    users.map((value, index) => {
+                        return <Text key={index}>{value.complete_name}</Text>
 
-        <TouchableOpacity style={{
-            padding: 10,
-            borderRadius: 5,
-            backgroundColor: '#ffaf31',
-            alignSelf: 'center'
-        }}
-            onPress={() => {
-                if (isLoading == false)
-                    onConfirm({
-                        id_formation: formation.idFormation,
-                        users: users,
-                        billingAddress: billingAddress
                     })
-
+                }
+            </View>
+            <View style={{ marginVertical: 15 }}>
+                <Text style={styles.text1}>Votre offre</Text>
+                <PriceRecap
+                    selectedCollaborators={users}
+                    unitPrice={formation.price}
+                />
+            </View>
+        </ScrollView>
+        <View style={{height: "10%"}}>
+            <TouchableOpacity style={{
+                padding: 10,
+                borderRadius: 5,
+                backgroundColor: '#ffaf31',
+                alignSelf: 'center',
+                marginTop: 10
             }}
-        >
-            {
-                isLoading ?
-                    <ActivityIndicator color={"#fff"}/>
-                    : <Text style={{ color: '#fff' }}>Confirmer</Text>
-            }
+                onPress={() => {
+                    if (isLoading == false)
+                        onConfirm({
+                            id_formation: formation.idFormation,
+                            users: users,
+                            billingAddress: billingAddress
+                        })
 
-        </TouchableOpacity>
-    </ScrollView>
+                }}
+            >
+                {
+                    isLoading ?
+                        <ActivityIndicator color={"#fff"} />
+                        : <Text style={{ color: '#fff' }}>M'envoyer un lien de paiement</Text>
+                }
+
+            </TouchableOpacity>
+        </View>
+    </View>
+
+
 }
 
 const styles = StyleSheet.create({

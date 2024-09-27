@@ -26,7 +26,6 @@ export const SponsoredFormationModal = ({
 
     return (
         <View style={styles.container}>
-            <Text>Je souhaite faire  un ou plusieurs dossiers de formation(s) certifiante(s) financée(s) par un organisme agréé.</Text>
 
             {
                 !confirmationView &&
@@ -45,22 +44,21 @@ export const SponsoredFormationModal = ({
                 <View style={{
                     flex: 1,
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    width: '90%', alignSelf: 'center'
                 }}>
                     <Text style={{
-                        fontWeight: 'bold', fontSize: 22, color: "#ffaf31"
-                    }}>Nous traitons votre demande</Text>
-                    <Text style={{textAlign: 'center'}}>Un membre de notre équipe va entrer en contact avec vous dans les prochaines 48h.*</Text>
+                        fontWeight: 'bold', fontSize: 22, color: "#ffaf31", marginBottom: 20, textAlign: 'center'
+                    }}>Merci, nous traitons votre demande</Text>
+                    <Text style={{textAlign: 'center'}}>Nou vous contacterons prochainement pour établir votre plan de formation.</Text>
                     <TouchableOpacity style={{
                         paddingVertical: 10, paddingHorizontal: 40,
                         backgroundColor: '#ffaf31', borderRadius: 5,
                         position: 'absolute', bottom: 40
                         }}
-                        onPress={()=>onClose()}
-                        >
+                        onPress={()=>onClose()}>
                         <Text>Ok</Text>
                     </TouchableOpacity>
-                    <Text style={{fontSize: 10, position: 'absolute', bottom: 10}}>* Hors week-end et jours fériés</Text>
                 </View>
             }
         </View>
@@ -70,7 +68,7 @@ export const SponsoredFormationModal = ({
 const styles = StyleSheet.create({
     container: {
         height: "100%",
-        width: Dimensions.get('screen').width * 0.9,
+        width: "100%",
     },
     checkBoxText: {
         textDecorationLine: 'none'

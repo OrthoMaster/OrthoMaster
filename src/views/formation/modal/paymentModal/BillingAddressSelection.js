@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { TouchableOpacity, View, Text, ActivityIndicator, FlatList, ScrollView } from "react-native";
+import { TouchableOpacity, View, Text, ActivityIndicator, FlatList, ScrollView, Linking } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { getBillingAddress, setPersonnalBillingAddress } from "../../../../services/UserService";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { FormField } from "../../../../component/FormField";
 import { getCountries } from "../../../../services/OfficeService";
 import DropdownComponent from "../../../../component/DropdownComponent";
+import { LinearGradient } from "expo-linear-gradient";
 
 const AddBillingAddressForm = ({ onClose }) => {
     const countries = useQuery(["countries"], () => getCountries())
@@ -120,7 +121,7 @@ const BillingAddressCard = ({
         justifyContent: 'space-between',
         paddingHorizontal: 15, paddingVertical: 10,
         width: "90%",
-        marginVertical: 10,
+        marginVertical: 5,
         borderRadius: 5,
         borderColor: '#ffaf31',
     }}
@@ -167,7 +168,7 @@ const BillingAddressCard = ({
     </TouchableOpacity>
 }
 
-export default BillingAddressSelection = ({ onValidation }) => {
+export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
     const {
         data: billingAddress,
         isLoading, isFetching
@@ -182,8 +183,9 @@ export default BillingAddressSelection = ({ onValidation }) => {
         <Text style={{
             fontStyle: 'italic',
             fontSize: 15,
-            marginVertical: 10,
-            marginLeft: 10
+            marginVertical: 20,
+            paddingHorizontal: 10,
+            alignSelf: 'center'
         }}>
             Séléctionnez une adresse de facturation
         </Text>
@@ -192,53 +194,90 @@ export default BillingAddressSelection = ({ onValidation }) => {
             (isFetching || isLoading) &&
             <ActivityIndicator />
         }
-        <ScrollView style={{}}>
-            {
-                billingAddress?.personnal &&
-                <BillingAddressCard
-                    addressObject={billingAddress.personnal}
-                    isPerso={true}
-                    onSelect={(addr) => {
-                        setSelectedAddress(addr)
-                    }}
-                    isSelected={selectedAddress === billingAddress.personnal}
-                />
-            }
+        <View style={{ height: "60%" }}>
 
-            {
-                billingAddress?.offices?.length > 0 &&
-                billingAddress.offices.map((value, index) => {
-                    return <BillingAddressCard
-                        addressObject={value} isPro={true}
+            <ScrollView
+                persistentScrollbar={true}
+            >
+                {
+                    billingAddress?.personnal &&
+                    <BillingAddressCard
+                        addressObject={billingAddress.personnal}
+                        isPerso={true}
                         onSelect={(addr) => {
                             setSelectedAddress(addr)
                         }}
-                        isSelected={selectedAddress === value}
-                        key={index}
+                        isSelected={selectedAddress === billingAddress.personnal}
                     />
+                }
 
-                })
-            }
-        </ScrollView>
+                {
+                    billingAddress?.offices?.length > 0 &&
+                    billingAddress.offices.map((value, index) => {
+                        return <BillingAddressCard
+                            addressObject={value} isPro={true}
+                            onSelect={(addr) => {
+                                setSelectedAddress(addr)
+                            }}
+                            isSelected={selectedAddress === value}
+                            key={index}
+                        />
 
+                    })
+                }
+            </ScrollView>
+            <LinearGradient
+                // Background Linear Gradient
+                colors={['rgba(255,255,255,0.1)','rgba(255,255,255,0.7)', "#fff"]}
+                style={{
+                    height: 100,
+                    width: '90%',
+                    alignSelf: 'center',
+                    position: 'absolute',
+                    bottom: 0
+                }}
+            />
+        </View>
 
+        <Text style={{
+            width: '80%',
+            fontSize: 12,
+            textAlign: 'center',
+            alignSelf: 'center',
+            marginTop: 20
+        }}>
+            Besoin d'une autre adresse de facturation ?
+        </Text>
+        <Text style={{
+            width: '80%',
+            fontSize: 12,
+            textAlign: 'center',
+            alignSelf: 'center',
+            marginTop: 10,
+            color: '#ffaf31',
+            textDecorationLine: 'underline'
+        }}
+            onPress={() => { onCreateEspace() }}>
+            Créer un espace pro.
+        </Text>
         {
             (billingAddress?.personnal == null && !isLoading) &&
-            <View style={{
-                alignItems: 'center',
-                width: "60%",
-                alignSelf: 'center'
-            }}>
-                <Text style={{ textAlign: 'center', marginBottom: 10 }}>Ajouter une adresse de facturation personnelle</Text>
-                <TouchableOpacity
-                    onPress={() => {
-                        setShowAddBillingAddrForm(true)
-                    }}
-                >
-                    <AntDesign name="pluscircle" size={24} color="#ffaf31" />
-                </TouchableOpacity>
-            </View>
+            <Text style={{
+                width: '80%',
+                fontSize: 12,
+                textAlign: 'center',
+                alignSelf: 'center',
+                marginTop: 10,
+                color: '#ffaf31',
+                textDecorationLine: 'underline'
+            }}
+                onPress={() => setShowAddBillingAddrForm(true)}
+            >
+                Ajouter une adresse personnelle
+            </Text>
         }
+
+
 
         {
             !isLoading &&

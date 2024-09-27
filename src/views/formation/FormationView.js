@@ -5,107 +5,93 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
-    ActivityIndicator,
     ScrollView,
-    RefreshControl
+    RefreshControl,
+    FlatList
 } from 'react-native'
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { getUserRegisteredFormation, getFormations, registerFormation } from '../../services/FormationService'
 import AppModal from '../../component/AppModal';
-import { PaymentFormationModal } from './modal/paymentModal/PaymentFormationModal';
 import { useNavigation } from '@react-navigation/native';
 import { LessonHeader } from './LessonHeader';
-import { SponsoredFormationModal } from './modal/sponsoredModal/SponsoredFormationModal';
-import { getCurrentUser } from '../../services/UserService';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
-const RunningFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, isStudent }) => {
-    const startDate = new Date(params.start_date_theorical).toLocaleDateString()
-    const endDate = new Date(params.end_date_theorical).toLocaleDateString()
+import GetFormationModal from './modal/GetFormationModal';
+import MoreInfosModal from './modal/MoreInfosModal';
+import { useGetUser } from '../../hooks/useGetUser.hook';
+import { LoadingContent } from '../../component/LoadingContent';
+import { getS3Image } from '../../services/S3Service';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+
+const RunningFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_url }) => {
     const navigation = useNavigation()
-    const isCertifying = params.certifying
-    const isPaid = params.is_paid
-    const isDemo = !params.certifying && !params.is_paid && isStudent == false
+    const img = useQuery("formation-thumbnail-" + thumbnail_url, () => getS3Image(thumbnail_url))
 
+    return <View style={{
+        backgroundColor: '#DEE0F3',
+        width: 250, height: 230,
+        padding: 10
+    }}>
+        <View style={{
+            width: '100%', height: '100%',
+            alignItems: 'center',
+            backgroundColor: '#203864',
+            borderRadius: 5,
+            shadowOffset: {
+                width: 0,
+                height: 5
+            },
+            shadowOpacity: 0.3,
+            padding: 10,
+            justifyContent: 'space-between'
+        }}>
 
-    const getMode = () => {
-        if (isDemo) {
-            return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Mode démo</Text>
-        } else {
-            if (isCertifying) {
-                return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Dossier pris en charge</Text>
-            }
-            if (isPaid) {
-                return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Acheté</Text>
-            }
-            if (isStudent) {
-                return <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Etudiant</Text>
-            }
-        }
-    }
-
-
-    return <View style={{ alignItems: 'center' }}>
-        {getMode()}
-
-        <View>
-            <Text>progress : {params.progress_rate}</Text>
-            <Text>time : {params.time_spent}</Text>
-        </View>
-
-        <TouchableOpacity style={cardStyle.buttonStyle}
-            onPress={() => {
-                navigation.navigate("formation-modules", {
-                    userFormationId: params.id,
-                    demoMode: isDemo
-                })
-            }}>
-            <Text style={{
-                color: '#FFF',
-                fontWeight: 'bold',
-            }}>
-                Accéder
-            </Text>
-        </TouchableOpacity>
-        {
-            (isDemo && isStudent == false) &&
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{params.formation_name}</Text>
+            <TouchableOpacity
+                style={{
+                    width: "100%",
+                    height: 120,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
+                onPress={() => {
+                    navigation.navigate("formation-modules", {
+                        userFormationId: params.id,
+                        demoMode: false
+                    })
+                }}>
+                <Image
+                    src={img.data}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                    }}
+                    resizeMode='contain'
+                />
+                <AntDesign name="playcircleo" size={70} color="rgba(255,255,255,0.8)"
+                    style={{
+                        position: 'absolute',
+                    }} />
+            </TouchableOpacity>
             <View style={{
-                flexDirection: 'row'
+                flexDirection: 'row',
+                alignItems: 'center',
             }}>
-                <View style={{ flex: 1 }}>
-                    <Text style={cardStyle.textStyle}> {params.price} € HT / utilisateur</Text>
-                    <TouchableOpacity style={cardStyle.buttonStyle}
-                        onPress={() => { onPaymentRequest(params) }}>
-                        <Text style={{
-                            color: '#FFF',
-                            fontWeight: 'bold'
-                        }}>
-                            Payer
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                <Text style={[cardStyle.textStyle, { fontWeight: "bold" }]}>ou</Text>
-
-                <View style={{ flex: 1 }}>
-
-                    <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
-                    <TouchableOpacity style={cardStyle.buttonStyle}
-                        onPress={() => { onSponsoredRequest(params) }}>
-                        <Text style={{
-                            color: '#FFF',
-                            fontWeight: 'bold'
-                        }}>
-                            Faire une demande
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                {
+                    params.progress_rate >= 100 ?
+                        <FontAwesome name="star" size={20} color="#B3AA4B" />
+                        : <Feather name="check-circle" size={20} color={params.progress_rate < 60 ? "#ffaf31" : "#92D050"} />
+                }
+                <Text style={{ color: "#fff", marginHorizontal: 5 }}>
+                    {params.progress_rate >= 100 ? "terminé" : Math.round(params.progress_rate) + " %"}
+                </Text>
             </View>
-        }
+        </View>
     </View>
 }
 
-const CatalogFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, isStudent }) => {
+const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_url, onShowMore }) => {
 
     const navigation = useNavigation()
     const queryClient = useQueryClient()
@@ -113,123 +99,130 @@ const CatalogFormationCard = ({ params, onPaymentRequest, onSponsoredRequest, is
         onSuccess: data => {
             queryClient.invalidateQueries(["formations", "user"])
             navigation.navigate("formation-modules", {
-                userFormationId: params.id,
+                userFormationId: data.insertId,
                 demoMode: isStudent ? false : true
             })
         }
     })
-
-    return <View style={{ alignItems: 'center' }}>
-        {
-            isStudent == false &&
-            <View>
-                <Text style={cardStyle.textStyle}> {params.price} € HT / utilisateur</Text>
-                <TouchableOpacity style={cardStyle.buttonStyle}
-                    onPress={() => { onPaymentRequest(params) }}>
-                    <Text style={{
-                        color: '#FFF',
-                        fontWeight: 'bold'
-                    }}>
-                        Payer
-                    </Text>
-                </TouchableOpacity>
-
-                <Text style={[cardStyle.textStyle, { fontWeight: "bold" }]}>ou</Text>
-                <Text style={cardStyle.textStyle}>J'engage un dossier de formation continue</Text>
-                <TouchableOpacity style={cardStyle.buttonStyle}
-                    onPress={() => { onSponsoredRequest(params) }}>
-                    <Text style={{
-                        color: '#FFF',
-                        fontWeight: 'bold'
-                    }}>
-                        Faire une demande
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        }
-        <TouchableOpacity style={cardStyle.buttonStyle}
-            onPress={() => {
-                startFormation.mutate({
-                    id_formation: params.id_formation,
-                    formation_name: params.formation_name
-                })
-            }}>
-            <Text style={{
-                color: '#FFF',
-                fontWeight: 'bold'
-            }}>
-                {isStudent == true ? "Accès" : "Accès démo"}
-            </Text>
-        </TouchableOpacity>
-    </View>
-}
+    const img = useQuery("formation-thumbnail-" + thumbnail_url, () => getS3Image(thumbnail_url))
 
 
-const FormationCard = ({ formation, onPaymentRequest, onSponsoredRequest, registered, isStudent }) => {
 
     return <View style={{
-        backgroundColor: '#27927E',
-        width: "90%",
-        height: 200,
+        backgroundColor: "#203864",
+        width: "95%", height: 200,
         alignSelf: 'center',
-        marginVertical: 5,
-        borderRadius: 15,
-        padding: 10
+        borderRadius: 5,
+        margin: 15,
+        shadowOffset: {
+            height: 3
+        },
+        shadowOpacity: 0.3
     }}>
-        <Image
-            source={{ uri: "https://cdn-icons-png.flaticon.com/512/421/421368.png" }}
-            style={{
-                height: "100%", width: 150,
-                objectFit: 'contain',
-                alignSelf: 'flex-end',
-                right: 20,
-                position: 'absolute',
-                opacity: 0.2
-            }}
-        />
-        <Text style={[cardStyle.textStyle, { fontWeight: 'bold', fontSize: 18 }]}>{formation.formation_name}</Text>
-
-        {
-            registered ?
-                <RunningFormationCard params={formation}
-                    onPaymentRequest={(formation) => onPaymentRequest(formation)}
-                    onSponsoredRequest={(formation) => onSponsoredRequest(formation)}
-                    isStudent={isStudent}
-                />
-                : <CatalogFormationCard params={formation}
-                    onPaymentRequest={(formation) => onPaymentRequest(formation)}
-                    onSponsoredRequest={(formation) => onSponsoredRequest(formation)}
-                    isStudent={isStudent}
-                />
-        }
-        <TouchableOpacity style={{
-            padding: 5,
-            position: 'absolute',
-            top: 5, right: 5
+        <Text style={{ color: '#fff', fontWeight: 'bold', marginLeft: 10, marginVertical: 10 }}>{params.formation_name}</Text>
+        <View style={{ flexDirection: 'row', backgroundColor: '#6E7DA6', paddingVertical: 3, paddingHorizontal: 5, height: 35 }}>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}><Text style={{ fontSize: 20 }}>⏱️</Text> {params.time_needed}</Text>
+            </View>
+            <View style={{ flex: 2, alignItems: 'center', justifyContent: 'center' }}>
+                <Text numberOfLines={2} style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}><Text style={{ fontSize: 16 }}>👨‍⚕️</Text> {params.public}</Text>
+            </View>
+            <View style={{ flex: 2, alignItems: 'center', justifyContent: 'center' }}>
+                <Text numberOfLines={2} style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}><Text style={{ fontSize: 16 }}>🎓</Text> {params.organism}</Text>
+            </View>
+        </View>
+        <View style={{
+            flexDirection: 'row', flex: 1, backgroundColor: '#fff'
         }}>
-            <Feather name="info" size={24} color="#fff" />
-        </TouchableOpacity>
+            <View style={{ flex: 1, height: "100%" }}>
+                <Image
+                    src={img.data}
+                    resizeMode='contain'
+                    style={{
+                        width: "95%", height: "100%",
+                        alignSelf: 'flex-end'
+                    }}
+                />
+            </View>
+            <View style={{
+                flex: 1,
+                backgroundColor: '#fff',
+
+                borderBottomRightRadius: 5
+            }}>
+
+                <View style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1
+                }}>
+
+                    <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#92D050' }]}
+                        onPress={() => {
+                            if (params.id_user && params.id) {
+
+                                navigation.navigate("formation-modules", {
+                                    userFormationId: params.id,
+                                    demoMode: true
+                                })
+                            } else {
+                                startFormation.mutate({
+                                    id_formation: params.id_formation,
+                                    formation_name: params.formation_name
+                                })
+                            }
+                        }}>
+                        <Text style={{
+                            color: '#FFF',
+                            fontWeight: 'bold',
+                            fontSize: 12
+                        }}>Démo</Text>
+                        <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#8089D1' }]}
+                        onPress={() => {
+                            onShowMore()
+                        }}>
+                        <Text style={{
+                            color: '#FFF',
+                            fontWeight: 'bold',
+                            fontSize: 12
+                        }}>En savoir plus</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#FFAB00' }]}
+                        onPress={() => {
+                            onUnlockFormation()
+                        }}>
+                        <Text style={{
+                            color: '#FFF',
+                            fontWeight: 'bold',
+                            fontSize: 12
+                        }}>Obtenir</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+
     </View>
 }
 
+
 export const FormationView = ({ navigation, route }) => {
-    const [activatePayment, setActivatePayment] = useState({ isActivate: false, formation: null })
-    const [activateSponsoredDemand, setActivateSponsoredDemand] = useState({ isActivate: false, formation: null })
-    const [isStudent, setIsStudent] = useState(false)
-    const [formationCatalog, setFormationCatalog] = useState([])
-    useQuery("current-user", () => getCurrentUser(), {
-        onSuccess: user => { setIsStudent(user.is_student) }
-    })
+    const [refreshing, setRefreshing] = useState(false);
+    const queryClient = useQueryClient()
+    const { data: user } = useGetUser()
     const {
-        isLoading: loadingFormation,
         data: formations
     } = useQuery(["formations"], () => getFormations())
     const {
-        isLoading: loadingUserFormations,
         data: userFormations
     } = useQuery(["user-formations"], () => getUserRegisteredFormation({}))
-    const [refreshing, setRefreshing] = useState(false);
-    const queryClient = useQueryClient()
+
+    const [isLoading, setIsLoading] = useState(true)
+    const [unlockFormationModal, setUnlockFormationModal] = useState({ isActivate: false, formation: null })
+    const [showingMoreInfosModal, setShowingMoreInfosModal] = useState(false)
+    const [runningFormations, setRunningFormations] = useState(null)
+    const [catalogFormations, setCatalogFormations] = useState(null)
 
     const onRefresh = React.useCallback(() => {
         setRefreshing(true);
@@ -240,108 +233,133 @@ export const FormationView = ({ navigation, route }) => {
     }, []);
 
     useEffect(() => {
-        if (userFormations && formations) {
-            let catalogue = []
-            userFormations.forEach(f => {
-                if (f.progress_rate == 0)
-                    catalogue.push(f)
-            });
-            formations.forEach(f => {
-                if (userFormations.find(uf => (uf.id_formation == f.id_formation)))
-                    return
-                else
-                    catalogue.push(f)
-            });
-            setFormationCatalog(catalogue)
-        }
-    }, [userFormations, formations])
+        if (formations && userFormations) {
+            var newRunningFormation = []
+            var newCatalogFormation = []
+            for (const uf of userFormations) {
+                if (uf.is_paid || uf.certifying) {
+                    newRunningFormation.push(uf)
 
+                } else {
+                    var formatFormation = { ...uf }
+                    const catalogRef = formations.find(f => f.id_formation === formatFormation.id_formation)
+
+                    formatFormation.public = catalogRef.public;
+                    formatFormation.time_needed = catalogRef.time_needed;
+                    formatFormation.organism = catalogRef.organism;
+                    formatFormation.competencies_obj = catalogRef.competencies_obj;
+                    formatFormation.description = catalogRef.description;
+                    formatFormation.learning_obj = catalogRef.learning_obj;
+                    formatFormation.learning_summary = catalogRef.learning_summary;
+                    formatFormation.public_desc = catalogRef.public_desc
+                    formatFormation.requirements = catalogRef.requirements
+                    formatFormation.trainer = catalogRef.trainer
+
+                    newCatalogFormation.push(formatFormation)
+                }
+            }
+
+            for (const f of formations) {
+                if (!userFormations.find(elem => elem.id_formation == f.id_formation))
+                    newCatalogFormation.push(f)
+            }
+            setCatalogFormations(newCatalogFormation)
+            setRunningFormations(newRunningFormation)
+        }
+    }, [formations, userFormations])
+
+    useEffect(() => {
+        if (catalogFormations && runningFormations)
+            setIsLoading(false)
+    }, [catalogFormations, runningFormations])
+
+
+
+    if (isLoading)
+        return <View style={styles.container}>
+            <LessonHeader
+                searchEnabled={false}
+                title={"Formations"}
+                navigation={navigation}
+            />
+            <LoadingContent />
+        </View>
 
     return <View style={styles.container}>
         <LessonHeader
             searchEnabled={false}
-            title={"Se former"}
+            title={"Formations"}
             navigation={navigation}
         />
         <ScrollView refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
 
-            <View style={styles.sectionContainer}>
-                <Text style={styles.textSection}>En cours</Text>
-                {
-                    loadingUserFormations &&
-                    <ActivityIndicator color={"#ffaf31"} size={"small"} />
-                }
-                {
-                    userFormations?.map((value, index) => {
-                        console.log(value.progress_rate);
-                        
-                        if (parseInt(value.progress_rate) > 0)
-                            console.log('Found : ', value);
-                            
-                            return <FormationCard
-                                formation={value}
-                                key={index}
-                                onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
-                                onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
-                                registered={true}
-                                isStudent={isStudent}
-                            />
-                    })
-                }
+            <View style={[styles.sectionContainer, { backgroundColor: '#DEE0F3' }]}>
+                <Text style={styles.textSection}>Mes formations</Text>
+                <FlatList
+                    data={runningFormations}
+                    renderItem={(item) => <RunningFormationCard
+                        params={item.item}
+                        isStudent={user.is_student}
+                        thumbnail_url={formations.find(elem => elem.id_formation == item.item.id_formation).img_url}
+                    />
+                    }
+                    horizontal={true}
+                    keyExtractor={(item, index) => index}
+                />
             </View>
 
-            <View style={styles.container}>
+            <View style={[styles.sectionContainer, { backgroundColor: '#fff' }]}>
                 <Text style={styles.textSection}>Autres formations</Text>
-                {
-                    loadingFormation &&
-                    <ActivityIndicator color={"#ffaf31"} size={"small"} />
-                }
-                {
-                    formationCatalog?.map((value, index) => {
-                        return <FormationCard
-                            formation={value}
-                            key={index}
-                            onPaymentRequest={(formation) => { setActivatePayment({ isActivate: true, formation: formation }) }}
-                            onSponsoredRequest={(formation) => { setActivateSponsoredDemand({ isActivate: true, formation: formation }) }}
-                            registered={value.id_user ? true : false}
-                            isStudent={isStudent}
-                        />
-                    })
-                }
+                <FlatList
+                    data={catalogFormations}
+                    renderItem={(item) => <CatalogFormationCard
+                        params={item.item}
+                        onUnlockFormation={() => {
+                            setUnlockFormationModal({ isActivate: true, formation: item.item })
+                        }}
+                        onShowMore={() => {
+                            setShowingMoreInfosModal({ isActivate: true, formation: item.item })
+                        }}
+                        isStudent={user.is_student}
+                        thumbnail_url={formations.find(elem => elem.id_formation == item.item.id_formation).img_url}
+                    />
+                    }
+                    scrollEnabled={false}
+                    keyExtractor={(item, index) => index}
+                />
             </View>
         </ScrollView>
 
+
         <AppModal
-            isVisible={activatePayment.isActivate}
-            onClose={() => setActivatePayment({ isActivate: false, formation: null })}
-            customRender={<PaymentFormationModal
+            isVisible={unlockFormationModal.isActivate}
+            onClose={() => setUnlockFormationModal({ isActivate: false, formation: null })}
+            customRender={<GetFormationModal
                 formation={{
-                    name: activatePayment?.formation?.formation_name,
-                    idFormation: activatePayment?.formation?.id_formation,
-                    price: formations?.filter(elem => elem.id_formation == activatePayment?.formation?.id_formation)[0]?.price
+                    name: unlockFormationModal?.formation?.formation_name,
+                    idFormation: unlockFormationModal?.formation?.id_formation,
+                    price: formations?.filter(elem => elem.id_formation == unlockFormationModal?.formation?.id_formation)[0]?.price
                 }}
-                onClose={() => setActivatePayment({ isActivate: false, formation: null })}
+                onClose={() => setUnlockFormationModal({ isActivate: false, formation: null })}
+                navigation={navigation}
             />}
             style={{
-                height: '70%'
+                width: '90%', height: "70%",
             }}
         />
 
         <AppModal
-            isVisible={activateSponsoredDemand.isActivate}
-            onClose={() => setActivateSponsoredDemand({ isActivate: false, formation: null })}
-            customRender={<SponsoredFormationModal
-                formation={{
-                    name: activateSponsoredDemand?.formation?.formation_name,
-                    idFormation: activateSponsoredDemand?.formation?.id_formation,
-                    price: formations?.filter(elem => elem.id_formation == activateSponsoredDemand?.formation?.id_formation)[0]?.price
-                }}
-                onClose={() => setActivateSponsoredDemand({ isActivate: false, formation: null })}
+            isVisible={showingMoreInfosModal.isActivate}
+            onClose={() => setShowingMoreInfosModal({ isActivate: false, formation: null })}
+            customRender={<MoreInfosModal
+                formation={showingMoreInfosModal.formation}
+                onClose={() => setShowingMoreInfosModal({ isActivate: false, formation: null })}
             />}
             style={{
-                height: '70%',
+                height: '70%', width: '90%',
+                backgroundColor: "#fff"
             }}
         />
     </View>
@@ -350,9 +368,9 @@ export const FormationView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        backgroundColor: '#fffefd',
         display: 'flex',
-        flex: 1
+        flex: 1,
+        backgroundColor: '#fff'
 
     },
     formationTypeNavContainer: {
@@ -381,11 +399,12 @@ const styles = StyleSheet.create({
     },
     textSection: {
         fontSize: 20,
-        color: "#AEAEAE",
-        fontWeight: 'bold'
+        color: "#000",
+        marginLeft: 10,
+        marginVertical: 10
     },
     sectionContainer: {
-        paddingVertical: 5
+        paddingVertical: 15,
     }
 })
 
@@ -394,8 +413,12 @@ const cardStyle = StyleSheet.create({
         color: "#fff"
     },
     buttonStyle: {
-        backgroundColor: '#ffaf31',
-        padding: 5,
+        padding: 10,
         borderRadius: 5,
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '60%',
+        marginVertical: 3,
+        justifyContent: 'center'
     }
 })
