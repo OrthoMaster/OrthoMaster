@@ -28,36 +28,36 @@ export const LoginView = ({ navigation, route }) => {
 
 
     const handleClick = () => {
-        login.mutate({email: email,password: password})
+        login.mutate({ email: email, password: password })
     }
 
     return (
         <SafeAreaView style={[styles.container]}>
             <ScrollView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={[ { width: '100%', height: "100%" }]}
+                style={[{ width: '100%' }]}
                 automaticallyAdjustKeyboardInsets={true}
+                contentContainerStyle={{ height: '100%' }}
             >
                 <TouchableWithoutFeedback
-                    style={{ width: '100%', height: '100%' }}
+                    style={{ width: '100%', backgroundColor: 'orange' }}
                     onPress={() => { Keyboard.dismiss() }}>
                     <View style={{
-                        height: "100%", width: "100%",
+                        width: "100%", flex: 1,
                         alignItems: 'center'
                     }}>
 
 
-                        <View style={styles.logo}>
+                        <View style={styles.logoContainer}>
                             <Image
                                 style={{
-                                    width: Dimensions.get('screen').width * 0.7,
-                                    height: 300,
+                                    width: '80%',
+                                    height: "100%",
                                     resizeMode: 'contain',
                                 }}
                                 source={require('../../../assets/logo-text.png')}
                             />
                         </View>
                         <View style={styles.connectionBox}>
-                            <Text style={styles.redirectMessage}>{route.params?.message}</Text>
                             <Text style={styles.title}>Connexion</Text>
                             <TextInput
                                 style={[styles.intputField]}
@@ -108,8 +108,24 @@ export const LoginView = ({ navigation, route }) => {
                                     Linking.openURL("https://espace.orthomaster.fr/web/reset_password")
                                 }}
                             >
-                                <Text style={{ color: '#EA6910', fontSize: 18 }}>Mot de passe oublié</Text>
+                                <Text style={{ color: '#ffaf31', fontSize: 18 }}>Mot de passe oublié</Text>
                             </TouchableOpacity>
+
+                            <View style={{
+                                alignItems: 'center',
+                                marginVertical: 20
+                            }}>
+                                <Text>Pas encore de compte ?</Text>
+                                <Text
+                                    onPress={() => { Linking.openURL("https://espace.orthomaster.fr/inscription") }}
+                                    style={{
+                                        color: '#ffaf31',
+                                        fontWeight: 'bold',
+                                        textDecorationLine: 'underline'
+                                    }}>
+                                    Inscrivez-vous
+                                </Text>
+                            </View>
                         </View>
                     </View>
 
@@ -125,19 +141,18 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center'
     },
-    logo: {
-        flex: 1,
-        justifyContent: 'center',
-        flexGrow: 1
+    logoContainer: {
+        height: "30%",
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     connectionBox: {
         backgroundColor: '#FFFEFD',
         width: '95%',
         borderRadius: 24,
         alignItems: 'center',
-        paddingVertical: 15,
-        flex: 1,
-        flexGrow: 3
+        paddingVertical: 20,
     },
     title: {
         fontSize: 28,
