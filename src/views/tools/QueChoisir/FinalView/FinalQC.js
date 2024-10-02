@@ -187,8 +187,6 @@ export const FinalQC = ({ route, navigation }) => {
             })
     }, [])
 
-
-
     if (isLoading)
         return <SafeAreaView style={{ flex: 1, backgroundColor: '#EC4E6E', justifyContent: 'center' }}>
             <Text style={{ color: '#fff', fontSize: 25, textAlign: 'center', fontWeight: 'bold' }}>Traitement des réponses</Text>
@@ -202,6 +200,7 @@ export const FinalQC = ({ route, navigation }) => {
                     <FinalHeader nbProduct={nbProduct} userHistory={userHistory} navigation={navigation} />
                     <ScrollView>
                         {
+                            
                             roles.isTester == true && //TODO à supprimer quand test fini
                             <View style={{
                                 flexDirection: 'row',

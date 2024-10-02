@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
-import { useStore } from "react-redux";
+import { useGetUser } from "./useGetUser.hook";
+
 
 export const useOrthoMasterRoles = () => {
-    const store = useStore()
-    const user = store.getState().auth.userCurrentSession
-
+    const user = useGetUser()
     const [isAdmin, setIsAdmin] = useState(false)
     const [isSeller, setIsSeller] = useState(false)
     const [isTester, setIsTester] = useState(false)
     const [isPrimaryManager, setIsPrimaryManager] = useState(false)
     const [isSecondaryManager, setIsSecondaryManager] = useState(false)
-
+    
     useEffect(() => {
-        user.roles?.split(',').forEach(element => {
+        user.data.roles?.split(',').forEach(element => {
             switch (element) {
                 case 'admin':
                     setIsAdmin(true)
@@ -34,5 +33,6 @@ export const useOrthoMasterRoles = () => {
             }
         });
     }, []);
+    
     return {isAdmin, isSeller, isPrimaryManager, isSecondaryManager, isTester};
 }

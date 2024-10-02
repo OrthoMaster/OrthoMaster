@@ -80,7 +80,8 @@ export const saveQCEntries = async ({
       id_office: config.user.office_id,
       selected_product: selectedProduct,
       history: userHistory,
-      filters: filtersConfig.selected?.length > 0 ? filtersConfig.selected : null
+      filters: filtersConfig.selected?.length > 0 ? filtersConfig.selected : null,
+      id_user: config.user.id_user
     }, {
       headers: {
         Authorization: authHeader

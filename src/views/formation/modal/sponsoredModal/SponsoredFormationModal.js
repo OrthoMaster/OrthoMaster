@@ -4,7 +4,6 @@ import {
     View,
     Text,
     StyleSheet,
-    Dimensions,
     TouchableOpacity
 } from "react-native";
 import AskSponsoredFormationForm from "./AskSponsoredFormationForm";
@@ -50,7 +49,7 @@ export const SponsoredFormationModal = ({
                     <Text style={{
                         fontWeight: 'bold', fontSize: 22, color: "#ffaf31", marginBottom: 20, textAlign: 'center'
                     }}>Merci, nous traitons votre demande</Text>
-                    <Text style={{textAlign: 'center'}}>Nou vous contacterons prochainement pour établir votre plan de formation.</Text>
+                    <Text style={{textAlign: 'center'}}>Nous vous contacterons prochainement pour établir votre plan de formation.</Text>
                     <TouchableOpacity style={{
                         paddingVertical: 10, paddingHorizontal: 40,
                         backgroundColor: '#ffaf31', borderRadius: 5,
