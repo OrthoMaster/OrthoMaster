@@ -22,6 +22,7 @@ import { CompanyArea } from './components/CompanyArea';
 import { AccountMenu } from './menu/AccountMenu';
 import { useQuery } from 'react-query';
 import { getCurrentUser } from '../../services/UserService';
+import { useGetUser } from '../../hooks/useGetUser.hook';
 
 
 const AccountHeader = ({ user, menuActive, toggleMenu }) => {
@@ -56,8 +57,7 @@ const AccountHeader = ({ user, menuActive, toggleMenu }) => {
 export const AccountView = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false)
   const [menuIsActive, setMenuIsActive] = useState(false)
-  const store = useStore()
-  const user = useQuery("current-user", ()=> getCurrentUser())
+  const user = useGetUser()
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -98,7 +98,7 @@ export const AccountView = ({ navigation }) => {
         </ScrollView>
         {
           menuIsActive ?
-            <AccountMenu user={user} navigation={navigation} />
+            <AccountMenu user={user.data} navigation={navigation} />
             : null
         }
       </View>

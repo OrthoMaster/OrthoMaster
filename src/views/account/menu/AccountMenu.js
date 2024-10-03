@@ -137,7 +137,7 @@ export const AccountMenu = ({ navigation, user }) => {
                             Share.share({
                                 message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
                                     user.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
-                                    "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.",
+                                    "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.\n\nhttps://espace.orthomaster.fr/inscription",
                                 url: "https://espace.orthomaster.fr/inscription"
                             })
                         }}
