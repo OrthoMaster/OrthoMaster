@@ -70,13 +70,17 @@ export const ProductCard = ({ product, onPress }) => {
                         }}
                     />
                     <View style={{ width: '100%' }}>
-                        <Image source={{ uri: imgUrl.data }} style={{
-                            width: "80%",
-                            marginBottom: 10,
-                            resizeMode: "contain",
-                            height: 100,
-                            alignSelf: 'center',
-                        }} />
+                        {
+                            imgUrl.data ?
+                                <Image source={{ uri: imgUrl.data }} style={{
+                                    width: "80%",
+                                    marginBottom: 10,
+                                    resizeMode: "contain",
+                                    height: 100,
+                                    alignSelf: 'center',
+                                }} />
+                                : <View style={{ width: '80%', height: 100, backgroundColor: '#fff' }} />
+                        }
                         <View style={{ position: 'absolute', right: 0, bottom: 0 }}>
                             {
                                 product.more?.split(";").map((value, index) => {

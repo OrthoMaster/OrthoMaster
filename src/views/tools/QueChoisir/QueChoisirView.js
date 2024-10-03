@@ -131,14 +131,15 @@ export const QueChoisirView = ({ navigation, route }) => {
             <View style={styles.rightView}>
                 <View style={styles.imageContainer}>
                     {
-                        stepImage &&
+                        stepImage && getCurrentImage.data ?
                         <Image
-                            source={{ uri: getCurrentImage?.data }}
+                            source={{ uri: getCurrentImage.data }}
                             style={{
                                 resizeMode: 'cover',
                                 height: '100%'
                             }}
                         />
+                        : <View style={{height: "100%", color: "#fff"}}/>
 
                     }
                 </View>

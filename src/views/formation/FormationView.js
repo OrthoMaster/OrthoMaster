@@ -135,14 +135,19 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
             flexDirection: 'row', flex: 1, backgroundColor: '#fff'
         }}>
             <View style={{ flex: 1, height: "100%" }}>
-                <Image
-                    src={img.data}
-                    resizeMode='contain'
-                    style={{
-                        width: "95%", height: "100%",
-                        alignSelf: 'flex-end'
-                    }}
-                />
+                {
+                    img.data == null ?
+                        <View style={{ width: "95%", height: "100%", alignSelf: 'flex-end', backgroundColor: '#F1F1F1' }} />
+                        :
+                        <Image
+                            src={img.data}
+                            resizeMode='contain'
+                            style={{
+                                width: "95%", height: "100%",
+                                alignSelf: 'flex-end'
+                            }}
+                        />
+                }
             </View>
             <View style={{
                 flex: 1,

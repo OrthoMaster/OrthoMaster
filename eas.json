@@ -8,7 +8,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dev-mode-api.orthomaster.fr"
+        "EXPO_PUBLIC_API_URL": "http://192.168.1.13:3000"
+        
       },
       "ios": {
         "resourceClass": "m-medium"
