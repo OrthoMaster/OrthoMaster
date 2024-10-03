@@ -129,7 +129,7 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
             </View>
         </View>
         {
-            (isDemo && card.demo_access == false) &&
+            (isDemo && card.demo_access == false && card.type == "lesson") &&
             <View style={{
                 backgroundColor: 'rgba(0,0,0,0.7)',
                 position: 'absolute',
