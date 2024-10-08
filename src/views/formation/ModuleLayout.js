@@ -109,6 +109,7 @@ export const ModuleLayout = ({ navigation, route }) => {
         }, 2000);
     }, []);
 
+
     return (
         <View style={styles.container}>
             <LessonHeader
@@ -141,6 +142,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                         showsVerticalScrollIndicator={false}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                         ListHeaderComponent={
+                            (formation && formation.initial_quiz_path) &&
                             <MainQuizButton
                                 quizType={'initial'}
                                 onClick={() => {
@@ -148,7 +150,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                                         content: {
                                             type: 'lesson',
                                             title: 'initial',
-                                            s3_path: 'lesson'
+                                            s3_path: formation.initial_quiz_path
                                         },
                                         formation: formation,
                                         type: "quiz"
@@ -159,6 +161,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                             />
                         }
                         ListFooterComponent={
+                            (formation && formation.final_quiz_path) &&
                             <MainQuizButton
                                 quizType={'final'}
                                 onClick={() => {
@@ -166,7 +169,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                                         content: {
                                             type: 'lesson',
                                             title: 'final',
-                                            s3_path: 'lesson'
+                                            s3_path: formation.final_quiz_path
                                         },
                                         formation: formation,
                                         type: "quiz"
@@ -180,7 +183,7 @@ export const ModuleLayout = ({ navigation, route }) => {
             }
 
             {
-                !demoMode && formation && formation.initial_grade == null ?
+                !demoMode && formation && formation.initial_grade == null && formation.initial_quiz_path ?
                     <MainQuizUnlockModal
                         visible={modalVisible}
                         onExit={() => {
@@ -203,7 +206,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                     : null
             }
             {
-                !demoMode && formation?.progress_rate > 60 && formation && formation.final_grade == null ?
+                !demoMode && formation?.progress_rate > 60 && formation && formation.final_grade == null && formation.final_quiz_path ?
                     <MainQuizUnlockModal
                         visible={modalVisible}
                         onExit={() => {
@@ -239,6 +242,7 @@ const styles = StyleSheet.create({
     listContainer: {
         width: '80%',
         alignSelf: 'center',
+        paddingVertical: 50
     },
     mainQuizButtonContainer: {
         alignSelf: 'center',

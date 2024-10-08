@@ -25,8 +25,20 @@ import { getS3Image } from '../../services/S3Service';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const RunningFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_url }) => {
+    
     const navigation = useNavigation()
+    const queryClient = useQueryClient()
     const img = useQuery("formation-thumbnail-" + thumbnail_url, () => getS3Image(thumbnail_url))
+    const register2Formation = useMutation(registerFormation,{
+        onSuccess: (data)=>{
+            queryClient.invalidateQueries(["user-formations"])
+            queryClient.invalidateQueries(["formations"])
+            navigation.navigate("formation-modules", {
+                userFormationId: data.insertId,
+                demoMode: false
+            })
+        }
+    })
 
     return <View style={{
         backgroundColor: '#DEE0F3',
@@ -56,10 +68,16 @@ const RunningFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
                     justifyContent: 'center'
                 }}
                 onPress={() => {
-                    navigation.navigate("formation-modules", {
-                        userFormationId: params.id,
-                        demoMode: false
-                    })
+                    if (params.id)
+                        navigation.navigate("formation-modules", {
+                            userFormationId: params.id,
+                            demoMode: false
+                        })
+                    else
+                        register2Formation.mutateAsync({
+                            id_formation: params.id_formation,
+                            formation_name: params.formation_name
+                        })
                 }}>
                 <Image
                     src={img.data}
@@ -84,7 +102,7 @@ const RunningFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
                         : <Feather name="check-circle" size={20} color={params.progress_rate < 60 ? "#ffaf31" : "#92D050"} />
                 }
                 <Text style={{ color: "#fff", marginHorizontal: 5 }}>
-                    {params.progress_rate >= 100 ? "terminé" : Math.round(params.progress_rate) + " %"}
+                    {params.progress_rate && params.progress_rate >= 100 ? "terminé" : (params.progress_rate ? Math.round(params.progress_rate) : "0") + " %"}
                 </Text>
             </View>
         </View>
@@ -265,8 +283,13 @@ export const FormationView = ({ navigation, route }) => {
             }
 
             for (const f of formations) {
-                if (!userFormations.find(elem => elem.id_formation == f.id_formation))
-                    newCatalogFormation.push(f)
+                if (!userFormations.find(elem => (elem.id_formation == f.id_formation))) {
+                    if (f.id_product_odoo === null) {
+                        newRunningFormation.push(f)
+                    } else {
+                        newCatalogFormation.push(f)
+                    }
+                }
             }
             setCatalogFormations(newCatalogFormation)
             setRunningFormations(newRunningFormation)
@@ -345,7 +368,8 @@ export const FormationView = ({ navigation, route }) => {
                 formation={{
                     name: unlockFormationModal?.formation?.formation_name,
                     idFormation: unlockFormationModal?.formation?.id_formation,
-                    price: formations?.filter(elem => elem.id_formation == unlockFormationModal?.formation?.id_formation)[0]?.price
+                    price: formations?.filter(elem => elem.id_formation == unlockFormationModal?.formation?.id_formation)[0]?.price,
+                    certifiable: unlockFormationModal?.formation?.certifiable
                 }}
                 onClose={() => setUnlockFormationModal({ isActivate: false, formation: null })}
                 navigation={navigation}

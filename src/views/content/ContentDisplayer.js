@@ -37,8 +37,7 @@ export function ContentDisplayer({ route, navigation }) {
     });
     dispatch(runContent(content, nbQuiz))
   };
-
-  const xmlContent = useQuery(['Content', 'GET', 'lessonContent', content.id_content], () => fetchLessonContent(content.s3_path + '/' + content.title + '/content.xml'), {
+    const xmlContent = useQuery(['Content', 'GET', 'lessonContent', content.s3_path], () => fetchLessonContent(content.s3_path + "/" + content.title + "/content.xml"), {
     onSuccess: (xml) => {
       initContent(xml)
     }

@@ -35,9 +35,8 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                     marginTop: 30
                 }}>
                     <Text style={[styles.modalText, { marginBottom: 10 }]}>Deux possibilités pour obtenir cette formation pour vous et/ou votre équipe :</Text>
-                    <Text style={[styles.modalText, { marginBottom: 5 }]}><Text style={{fontSize: 20}}>•</Text> Faire un <Text style={{ fontWeight: 'bold' }}>dossier de formation</Text> continue, financé par un organisme agréé</Text>
-                    <Text style={styles.modalText}><Text style={{fontSize: 20}}>•</Text> <Text style={{ fontWeight: "bold" }}>Acheter</Text> directement la formation avec un tarif dégréssif selon le tableau ci-dessous :</Text>
-                
+                    <Text style={[styles.modalText, { marginBottom: 5 }]}><Text style={{ fontSize: 20 }}>•</Text> Faire un <Text style={{ fontWeight: 'bold' }}>dossier de formation</Text> continue, financé par un organisme agréé</Text>
+                    <Text style={styles.modalText}><Text style={{ fontSize: 20 }}>•</Text> <Text style={{ fontWeight: "bold" }}>Acheter</Text> directement la formation avec un tarif dégréssif selon le tableau ci-dessous :</Text>
                     <View style={{
                         marginTop: 10, marginBottom: 30
                     }}>
@@ -68,21 +67,24 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                         width: "100%",
                         flexDirection: 'row'
                     }}>
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.button}
-                                onPress={() => setAction("certifying")}>
-                                <Text style={styles.buttonText}>Dossier de formation</Text>
-                                <Image 
-                                    source={require("../../../../assets/formation/qualiopi.png")}
-                                    style={styles.buttonImg}
-                                />
-                            </TouchableOpacity>
-                        </View>
+                        {
+                            formation.certifiable == 1 &&
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={styles.button}
+                                    onPress={() => setAction("certifying")}>
+                                    <Text style={styles.buttonText}>Dossier de formation</Text>
+                                    <Image
+                                        source={require("../../../../assets/formation/qualiopi.png")}
+                                        style={styles.buttonImg}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        }
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity style={styles.button}
                                 onPress={() => setAction("paying")}>
                                 <Text style={styles.buttonText}>Acheter</Text>
-                                <Image 
+                                <Image
                                     source={require("../../../../assets/formation/payment-methods.png")}
                                     style={styles.buttonImg}
                                 />

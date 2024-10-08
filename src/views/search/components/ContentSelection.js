@@ -135,11 +135,15 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
-                alignItems: 'center',
                 justifyContent: 'center'
             }}>
-                <Text style={{ color: "#DEDEDE" }}>Débloquer le contenu</Text>
-                <AntDesign name="unlock" size={30} color="#DEDEDE" />
+                <View style={{
+                alignItems: 'center',
+                position: 'absolute', left: 20
+                }}>
+                    <Text style={{ color: "#DEDEDE" }}>Débloquer le contenu</Text>
+                    <AntDesign name="unlock" size={30} color="#DEDEDE" />
+                </View>
             </View>
         }
     </TouchableOpacity>

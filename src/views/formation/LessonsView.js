@@ -28,7 +28,8 @@ export function LessonsView({ route, navigation }) {
 
 
     const getModuleLogo = async () => {
-        let path = 'lesson/' + module.module.module_num + '/logo.png'
+        let path = module.module.logo_path + '/logo.png'
+        
         try {
             const imageUrl = await getS3Image(path)
             return (imageUrl)
@@ -98,7 +99,7 @@ export function LessonsView({ route, navigation }) {
                     }}
                 />
             }
-            <Text style={styles.headerModule}>Module {module.module.module_num}</Text>
+            <Text style={styles.headerModule}>Module</Text>
             <Text style={styles.headerTitle}>{module.module.title}</Text>
 
             <View style={styles.progressContanier}>
