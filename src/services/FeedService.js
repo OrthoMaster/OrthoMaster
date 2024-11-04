@@ -4,7 +4,8 @@ import { restoreLocalConfigAsync } from "../utils";
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL+ "/feed"
 
-export const fetchFeedsFromCategory = async (id_category) => {
+export const fetchFeedsFromCategory = async ({pageParam = 1, queryKey}) => {
+  
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
 
@@ -14,8 +15,9 @@ export const fetchFeedsFromCategory = async (id_category) => {
         Authorization: authHeader
       },
       params:{
-        id_feed_category: id_category,
-        id_user: config.user.id_user
+        id_feed_category: queryKey[1],
+        id_user: config.user.id_user,
+        page: pageParam
       }
     })
     .then((response) => {

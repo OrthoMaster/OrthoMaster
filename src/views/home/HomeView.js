@@ -15,19 +15,56 @@ import {
   useCopilot
 } from "react-native-copilot";
 
-import { useQuery } from "react-query"
+import { useQuery, useInfiniteQuery } from "react-query"
 import { fetchFlashContent } from '../../services/FlashService';
-
+import {
+  fetchFeedCategories,
+  fetchFeedsFromCategory,
+  fetchLikedArticles
+} from "../../services/FeedService";
+import { FeedDisplayer, FeedHeader, LIKE_CATEGORY_ID } from './components/Feed';
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
-import FeedDisplayer from './components/FeedDisplayer';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+
 
 const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
   const flashPreview = useQuery(["flash-preview"], () => fetchFlashContent(0, 5));
+
+  const [selectedFeedCategoryId, setSelectedFeedCategoryId] = useState(1)
+  const [scrollReachedEnd, setScrollReachedEnd] = useState(false)
+  const feedCategories = useQuery(["GET", "categories", "feed"], () => fetchFeedCategories())
+  const [allFeed, setAllFeed] = useState([])
+  const {
+    data: articles,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    status,
+    refetch
+  } = useInfiniteQuery({
+    queryKey: ['feed', selectedFeedCategoryId],
+    queryFn: fetchFeedsFromCategory,
+    getNextPageParam: (lastPage, pages) => lastPage.nextCursor,
+    onSettled: () => {
+      setScrollReachedEnd(false)
+    }
+  })
+
+  const savedArticles = useQuery(["GET", "liked", "feed"], () => fetchLikedArticles())
   // const copilote = useCopilot()
+
+  const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }) => {
+    const paddingToBottom = 20;
+    return layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
+  };
 
 
   const onRefresh = useCallback(() => {
@@ -38,18 +75,40 @@ export const HomeView = ({ navigation, route }) => {
     }, 2000);
   }, []);
 
+  useEffect(() => {
+    if (scrollReachedEnd) {
+      if (hasNextPage && isFetching == false) {
 
+      }
+    }
+  }, [scrollReachedEnd])
+
+
+  const displayFeed = () => {
+    if (articles) {
+
+
+    }
+  }
 
   return (
-
-    <View>
+    <View style={{ flex: 1 }}>
       <StatusBar
         animated={true}
         barStyle={Platform.OS === "android" ? 'light-content' : 'dark-content'}
         backgroundColor={"#000"}
       />
-      <ScrollView style={{ backgroundColor: 'white' }}
+      <ScrollView style={{ backgroundColor: 'white', flex: 1 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        stickyHeaderIndices={[2]}
+        onScroll={({ nativeEvent }) => {
+          if (isCloseToBottom(nativeEvent)) {
+            if (isFetching == false && hasNextPage && scrollReachedEnd == false)
+              setScrollReachedEnd(true)
+          }
+        }}
+
+        scrollEventThrottle={800}
       >
         <HomeHeader navigation={navigation} />
 
@@ -65,8 +124,36 @@ export const HomeView = ({ navigation, route }) => {
           <OrthoCarousel entries={flashPreview.data} navigation={navigation} />
         </View>
 
-        <FeedDisplayer />
+        <SafeAreaView style={{ backgroundColor: "#E3E3F1" }}>
+          <FeedHeader
+            categories={feedCategories.data}
+            isLoading={feedCategories.isLoading}
+            onCategorySelect={(id) => {
+              setSelectedFeedCategoryId(id)
+              setAllFeed([])
+            }}
+            selectedFeedCategoryId={selectedFeedCategoryId}
+            nbSavedArticle={savedArticles.data?.length}
+          />
+        </SafeAreaView>
+        {
+          selectedFeedCategoryId == LIKE_CATEGORY_ID &&
+          <FeedDisplayer
+            feed={savedArticles.data}
+            onLikeOrDislike={() => { savedArticles.refetch() }}
+          />
 
+        }
+        {
+          selectedFeedCategoryId != LIKE_CATEGORY_ID &&
+          articles?.pages?.map((value, index) => {
+            return <FeedDisplayer
+              key={index}
+              feed={value.data}
+              onLikeOrDislike={() => { savedArticles.refetch() }}
+            />
+          })
+        }
       </ScrollView>
 
 
@@ -108,6 +195,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     position: 'absolute',
     alignSelf: 'flex-end'
-  }
+  },
+
 })
 

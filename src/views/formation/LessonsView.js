@@ -79,10 +79,6 @@ export function LessonsView({ route, navigation }) {
             >
                 <FontAwesome5 name="arrow-left" size={24} color="#fff" />
             </TouchableOpacity>
-            {
-                demoMode &&
-                <Text style={{ alignSelf: 'flex-end', right: 20 }}>Démo</Text>
-            }
         </SafeAreaView>
 
 

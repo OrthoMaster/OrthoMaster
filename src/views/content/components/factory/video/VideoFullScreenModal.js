@@ -21,22 +21,26 @@ export const VideoFullScreenModal = ({
   videoUrl,
   isVisible,
   onClose,
-  videoRef
+  videoRef,
+  isRunning
 }) => {
-  const [isPlaying, setIsPlaying] = useState(true)
+  const [isPlaying, setIsPlaying] = useState(isRunning)
   const refPlayerFS = useRef()
+  const [currentTime, setCurrentTime] = useState(-1)
 
   let dim = Dimensions.get('screen')
 
-  // const init = async () => {
-  //   refPlayerFS.current.seekTo(await videoRef.current.getCurrentTime())
-  // }
+  const getCurTime = async () => {
+    return await videoRef.current.getCurrentTime()
+  }
 
-  // useEffect(() => {
-
-  //   init()
-  //   // refPlayerFS.current.seekTo(videoRef)
-  // }, [])
+  useEffect(() => {
+    getCurTime()
+      .then(time => {
+        setCurrentTime(Math.round(time))
+        setIsPlaying(true)
+      })
+  }, [refPlayerFS])
 
 
   const jumpTime = async (time) => {
@@ -77,17 +81,21 @@ export const VideoFullScreenModal = ({
             <View pointerEvents='none' style={{
               alignItems: 'center',
             }}>
-              <YoutubePlayer
-                ref={refPlayerFS}
-                width={dim.height * 0.7}
-                height={dim.height * 0.7 * 9 / 16}
-                videoId={videoUrl}
-                initialPlayerParams={{
-                  controls: 0,
-                  modestbranding: 1
-                }}
-                play={isPlaying}
-              />
+              {
+                currentTime > -1 &&
+                <YoutubePlayer
+                  ref={refPlayerFS}
+                  width={dim.height * 0.7}
+                  height={dim.height * 0.7 * 9 / 16}
+                  videoId={videoUrl}
+                  initialPlayerParams={{
+                    controls: 0,
+                    modestbranding: 1,
+                    start: currentTime
+                  }}
+                  play={isPlaying}
+                />
+              }
             </View>
           </Pressable>
           <VideoControls

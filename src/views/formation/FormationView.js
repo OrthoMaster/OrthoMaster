@@ -25,12 +25,12 @@ import { getS3Image } from '../../services/S3Service';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const RunningFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_url }) => {
-    
+
     const navigation = useNavigation()
     const queryClient = useQueryClient()
     const img = useQuery("formation-thumbnail-" + thumbnail_url, () => getS3Image(thumbnail_url))
-    const register2Formation = useMutation(registerFormation,{
-        onSuccess: (data)=>{
+    const register2Formation = useMutation(registerFormation, {
+        onSuccess: (data) => {
             queryClient.invalidateQueries(["user-formations"])
             queryClient.invalidateQueries(["formations"])
             navigation.navigate("formation-modules", {
@@ -115,10 +115,10 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
     const queryClient = useQueryClient()
     const startFormation = useMutation(registerFormation, {
         onSuccess: data => {
-            queryClient.invalidateQueries(["formations", "user"])
+            queryClient.invalidateQueries({ queryKey: ["formations"]})
             navigation.navigate("formation-modules", {
                 userFormationId: data.insertId,
-                demoMode: isStudent ? false : true
+                demoMode: isStudent || params.id_product_odoo === null ? false : true
             })
         }
     })
@@ -186,7 +186,7 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
 
                                 navigation.navigate("formation-modules", {
                                     userFormationId: params.id,
-                                    demoMode: true
+                                    demoMode: isStudent || params.id_product_odoo === null ? false : true
                                 })
                             } else {
                                 startFormation.mutate({
@@ -199,9 +199,10 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
                             color: '#FFF',
                             fontWeight: 'bold',
                             fontSize: 12
-                        }}>Démo</Text>
+                        }}>{(params.id_product_odoo && isStudent == false) ? "Démo" : "Commencer"}</Text>
                         <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
                     </TouchableOpacity>
+
                     <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#8089D1' }]}
                         onPress={() => {
                             onShowMore()
@@ -212,16 +213,21 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
                             fontSize: 12
                         }}>En savoir plus</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#FFAB00' }]}
-                        onPress={() => {
-                            onUnlockFormation()
-                        }}>
-                        <Text style={{
-                            color: '#FFF',
-                            fontWeight: 'bold',
-                            fontSize: 12
-                        }}>Obtenir</Text>
-                    </TouchableOpacity>
+                    {
+                        (params.id_product_odoo && isStudent == false) &&
+                        <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#FFAB00' }]}
+                            onPress={() => {
+                                onUnlockFormation()
+                            }}>
+                            <Text style={{
+                                color: '#FFF',
+                                fontWeight: 'bold',
+                                fontSize: 12
+                            }}>
+                                Obtenir
+                            </Text>
+                        </TouchableOpacity>
+                    }
                 </View>
             </View>
         </View>
@@ -239,7 +245,7 @@ export const FormationView = ({ navigation, route }) => {
     } = useQuery(["formations"], () => getFormations())
     const {
         data: userFormations
-    } = useQuery(["user-formations"], () => getUserRegisteredFormation({}))
+    } = useQuery(["formations", "user-formation"], () => getUserRegisteredFormation({}))
 
     const [isLoading, setIsLoading] = useState(true)
     const [unlockFormationModal, setUnlockFormationModal] = useState({ isActivate: false, formation: null })
@@ -251,7 +257,7 @@ export const FormationView = ({ navigation, route }) => {
         setRefreshing(true);
         setTimeout(() => {
             setRefreshing(false);
-            queryClient.invalidateQueries("user-formations")
+            queryClient.invalidateQueries("formations")
         }, 2000);
     }, []);
 
@@ -259,8 +265,9 @@ export const FormationView = ({ navigation, route }) => {
         if (formations && userFormations) {
             var newRunningFormation = []
             var newCatalogFormation = []
+
             for (const uf of userFormations) {
-                if (uf.is_paid || uf.certifying) {
+                if (uf.is_paid || uf.certifying || user.is_student) {
                     newRunningFormation.push(uf)
 
                 } else {
@@ -277,6 +284,8 @@ export const FormationView = ({ navigation, route }) => {
                     formatFormation.public_desc = catalogRef.public_desc
                     formatFormation.requirements = catalogRef.requirements
                     formatFormation.trainer = catalogRef.trainer
+                    formatFormation.id_product_odoo = catalogRef.id_product_odoo
+                    formatFormation.certifiable = catalogRef.certifiable
 
                     newCatalogFormation.push(formatFormation)
                 }
@@ -284,11 +293,7 @@ export const FormationView = ({ navigation, route }) => {
 
             for (const f of formations) {
                 if (!userFormations.find(elem => (elem.id_formation == f.id_formation))) {
-                    if (f.id_product_odoo === null) {
-                        newRunningFormation.push(f)
-                    } else {
-                        newCatalogFormation.push(f)
-                    }
+                    newCatalogFormation.push(f)
                 }
             }
             setCatalogFormations(newCatalogFormation)

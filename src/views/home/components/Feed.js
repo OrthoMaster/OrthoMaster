@@ -14,12 +14,51 @@ import { getLinkPreview, getPreviewFromContent } from "link-preview-js";
 import { Feather, AntDesign } from '@expo/vector-icons';
 import { useQuery, useMutation } from "react-query";
 import {
-    fetchFeedCategories,
-    fetchFeedsFromCategory,
     likeArticle,
-    dislikeArticle,
-    fetchLikedArticles
+    dislikeArticle
 } from "../../../services/FeedService";
+
+export const FeedHeader = ({categories, isLoading, onCategorySelect, selectedFeedCategoryId, nbSavedArticle}) => {
+    
+    return <View style={styles.container}>
+          <Text style={styles.headerText}>L'actualité de l'orthopédie</Text>
+          <Text style={styles.headerSubtext}>sélectionnée rien que pour vous...</Text>
+        <View style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            marginLeft: 10,
+        }}>
+            {
+                (isLoading == false && categories) &&
+                categories.map((value, index) => {
+                    return <TouchableOpacity key={index} style={{
+                        paddingVertical: 5, paddingHorizontal: 10,
+                        borderRadius: 5,
+                        backgroundColor: selectedFeedCategoryId == value.id ? "#ffaf31" : "#fff",
+                        marginHorizontal: 2, marginVertical: 2,
+                    }}
+                        onPress={() => onCategorySelect(value.id)}>
+                        <Text style={{ color: selectedFeedCategoryId == value.id ? "#fff" : "#000", fontSize: 10 }}>{value.name}</Text>
+                    </TouchableOpacity>
+                })
+            }
+            <TouchableOpacity style={{
+                paddingVertical: 5, paddingHorizontal: 10,
+                borderRadius: 5,
+                backgroundColor: selectedFeedCategoryId == LIKE_CATEGORY_ID ? "#ffaf31" : "#fff",
+                marginHorizontal: 2, marginVertical: 2
+            }}
+                onPress={() => onCategorySelect(LIKE_CATEGORY_ID)}>
+                <Text style={{ color: selectedFeedCategoryId == LIKE_CATEGORY_ID ? "#fff" : "#000", fontSize: 10 }}>❤️ Articles sauvegardés ({nbSavedArticle})</Text>
+            </TouchableOpacity>
+        </View>
+    </View>
+}
+
+
+export const LIKE_CATEGORY_ID = 1000
+
 
 const ArticleCard = ({ config, onLikeOrDislike }) => {
     const [associatedMedia, setAssociatedMedia] = useState(null)
@@ -66,8 +105,8 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
 
         let mediaIcon = null
         for (const [key, value] of Object.entries(socialNetworkIcons)) {
-
-            if (config.href.includes(key)) {
+            
+            if (config.href?.includes(key)) {
                 mediaIcon = value
             }
         }
@@ -88,11 +127,11 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
     return <View style={{
         width: '90%',
         alignSelf: 'center',
-        marginVertical: 5,
         borderRadius: 5,
         backgroundColor: '#fff',
         paddingTop: 10,
         paddingHorizontal: 10,
+        marginVertical: 7
     }}>
         <View style={{
             display: 'flex',
@@ -216,103 +255,29 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
     </View>
 }
 
-const LIKE_CATEGORY_ID = 1000
 
-export default FeedDisplayer = ({ }) => {
-    const [selectedCategoryId, setSelectedCategoryId] = useState(1)
-    const categories = useQuery(["GET", "categories", "feed"], () => fetchFeedCategories())
+export const FeedDisplayer = ({feed = [], onLikeOrDislike }) => {
+    
+    if (feed.length == 0)
+        return <Text style={{
+            alignSelf: 'center',
+            margin: 20
+        }}>{} Aucun article trouvé</Text>
 
-    const articles = useQuery(["GET", "Feeds", selectedCategoryId], () => fetchFeedsFromCategory(selectedCategoryId), {
-        enabled: selectedCategoryId != 0
-    })
-
-    const savedArticles = useQuery(["GET", "liked", "feed"], () => fetchLikedArticles())
-
-    const articleView = () => {
-
-
-        if (articles.isLoading || savedArticles.isLoading)
-            return <ActivityIndicator color={"#ffaf31"} size={50} />
-
-        if ((selectedCategoryId != LIKE_CATEGORY_ID && Array.isArray(articles.data) && Object.keys(articles.data).length == 0) ||
-            (selectedCategoryId == LIKE_CATEGORY_ID && Array.isArray(savedArticles.data) && Object.keys(savedArticles.data).length == 0)
-        )
-            return <Text style={{
-                alignSelf: 'center',
-                margin: 20
-            }}>Aucun article trouvé</Text>
-
-
-        return <View>
-            <FlatList
-                style={{ width: "100%", paddingTop: 10 }}
-                data={selectedCategoryId === LIKE_CATEGORY_ID ? savedArticles.data : articles.data}
-                scrollEnabled={false}
-                renderItem={({ item }) => <ArticleCard config={item} onLikeOrDislike={() => {
-                    savedArticles.refetch()
-                }} />}
-                keyExtractor={item => item.id}
-            />
-        </View>
-    }
-
-
-    return (<View style={styles.container}>
-        <Text style={styles.headerText}>L'actualité de l'orthopédie</Text>
-        <Text style={styles.headerSubtext}>sélectionnée rien que pour vous...</Text>
-        <View style={{
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            marginLeft: 10,
-            marginVertical: 20
-        }}>
-            {
-                (categories.isLoading == false && categories.data) &&
-                categories.data.map((value, index) => {
-                    return <TouchableOpacity key={index} style={{
-                        paddingVertical: 5, paddingHorizontal: 10,
-                        borderRadius: 5,
-                        backgroundColor: selectedCategoryId == value.id ? "#ffaf31" : "#fff",
-                        marginHorizontal: 2, marginVertical: 2,
-                    }}
-                        onPress={() => setSelectedCategoryId(value.id)}>
-                        <Text style={{ color: selectedCategoryId == value.id ? "#fff" : "#000", fontSize: 10 }}>{value.name}</Text>
-                    </TouchableOpacity>
-                })
-            }
-            <TouchableOpacity style={{
-                paddingVertical: 5, paddingHorizontal: 10,
-                borderRadius: 5,
-                backgroundColor: selectedCategoryId == LIKE_CATEGORY_ID ? "#ffaf31" : "#fff",
-                marginHorizontal: 2, marginVertical: 2
-            }}
-                onPress={() => setSelectedCategoryId(LIKE_CATEGORY_ID)}>
-                <Text style={{ color: selectedCategoryId == LIKE_CATEGORY_ID ? "#fff" : "#000", fontSize: 10 }}>❤️ Articles sauvegardés ({savedArticles.data?.length})</Text>
-            </TouchableOpacity>
-        </View>
-        {
-            articleView()
-        }
-    </View>)
+    return <View style={styles.container}>
+        <FlatList
+            style={{ width: "100%"}}
+            data={feed}
+            scrollEnabled={false}
+            renderItem={({ item }) => <ArticleCard config={item} onLikeOrDislike={() => {onLikeOrDislike()}} />}
+            keyExtractor={item => item.id + item.id_feed_category}
+        />
+    </View>
 }
 
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#E3E3F1',
-        paddingTop: 20,
-        minHeight: Dimensions.get('screen').height
-    },
-    headerText: {
-        fontWeight: 'bold',
-        fontSize: 22,
-        width: '80%',
-        marginLeft: 20
-    },
-    headerSubtext: {
-        fontSize: 15,
-        width: '80%',
-        marginLeft: 20
     },
     filterButton: {
         backgroundColor: "#F1F1F1",
@@ -325,5 +290,17 @@ const styles = StyleSheet.create({
         margin: 5,
         padding: 10,
         borderRadius: 5
-    }
+    },
+    headerText: {
+        fontWeight: 'bold',
+        fontSize: 22,
+        width: '80%',
+        marginLeft: 20
+      },
+      headerSubtext: {
+        fontSize: 15,
+        width: '80%',
+        marginLeft: 20
+      }
+
 })

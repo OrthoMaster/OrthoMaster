@@ -34,8 +34,20 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                 <View style={{
                     marginTop: 30
                 }}>
-                    <Text style={[styles.modalText, { marginBottom: 10 }]}>Deux possibilités pour obtenir cette formation pour vous et/ou votre équipe :</Text>
-                    <Text style={[styles.modalText, { marginBottom: 5 }]}><Text style={{ fontSize: 20 }}>•</Text> Faire un <Text style={{ fontWeight: 'bold' }}>dossier de formation</Text> continue, financé par un organisme agréé</Text>
+                    {
+                        formation.certifiable == true ?
+                            <Text style={[styles.modalText, { marginBottom: 10 }]}>
+                                Deux possibilités pour obtenir cette formation pour vous et/ou votre équipe :
+                            </Text>
+                            : <Text style={[styles.modalText, { marginBottom: 10 }]}>
+                                Pour obtenir cette formation pour vous et/ou votre équipe :
+                            </Text>
+
+                    }
+                    {
+                        formation.certifiable == true &&
+                        <Text style={[styles.modalText, { marginBottom: 5 }]}><Text style={{ fontSize: 20 }}>•</Text> Faire un <Text style={{ fontWeight: 'bold' }}>dossier de formation</Text> continue, financé par un organisme agréé</Text>
+                    }
                     <Text style={styles.modalText}><Text style={{ fontSize: 20 }}>•</Text> <Text style={{ fontWeight: "bold" }}>Acheter</Text> directement la formation avec un tarif dégréssif selon le tableau ci-dessous :</Text>
                     <View style={{
                         marginTop: 10, marginBottom: 30
@@ -68,7 +80,7 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                         flexDirection: 'row'
                     }}>
                         {
-                            formation.certifiable == 1 &&
+                            formation.certifiable == true &&
                             <View style={styles.buttonContainer}>
                                 <TouchableOpacity style={styles.button}
                                     onPress={() => setAction("certifying")}>

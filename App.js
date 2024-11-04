@@ -17,7 +17,6 @@ import { View } from 'react-native';
 
 export default function App({ navigation }) {
   const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
-  const [displayIntro, setDisplayIntro] = useState(false)
   const queryCli = useQueryClient()
   const [initPhase, setInitPhase] = useState(true)
   const { data: user, ...userQuery } = useGetUser()
@@ -42,16 +41,6 @@ export default function App({ navigation }) {
   }, [user, userOffices.data])
 
 
-
-
-  useEffect(() => {
-    AsyncStorage.getItem("intro-slider-displayed")
-      .then(displayIntro => {
-        if (!displayIntro) {
-          setDisplayIntro(true)
-        }
-      })
-  }, [])
 
 
   const displayView = () => {
@@ -80,19 +69,6 @@ export default function App({ navigation }) {
         user ?
           displayView()
           : <AuthStack />
-      }
-      {
-        (user && (displayIntro && !showInitialConfigForm)) &&
-        <View style={{
-          position: 'absolute',
-          height: '100%',
-          backgroundColor: '#fff'
-        }}>
-
-          <IntroView onClose={() => {
-            setDisplayIntro(false)
-          }} />
-        </View>
       }
     </NavigationContainer>
   );
