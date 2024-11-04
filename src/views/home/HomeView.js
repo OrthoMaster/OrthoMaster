@@ -78,7 +78,7 @@ export const HomeView = ({ navigation, route }) => {
   useEffect(() => {
     if (scrollReachedEnd) {
       if (hasNextPage && isFetching == false) {
-
+        fetchNextPage()
       }
     }
   }, [scrollReachedEnd])

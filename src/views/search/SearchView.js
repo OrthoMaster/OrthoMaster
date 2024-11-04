@@ -110,7 +110,8 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                 break;
         }
 
-        if (userFormationId == null) {
+        if (userFormationId == null && card.type == "lesson") {
+            
             const res = await register2Formation.mutateAsync({
                 id_formation: card.id_formation_catalog,
                 formation_name: card.formation_name
@@ -131,7 +132,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             return
         }
 
-        if (userFormationId != null) {
+        if (userFormationId != null || card.type == "flash") {
             navigation.navigate(nextView, {
                 content: {
                     id_content: card.id_content,
