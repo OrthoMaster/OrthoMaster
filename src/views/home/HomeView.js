@@ -29,7 +29,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 
-const CopilotText = walkthroughable(Text);
+// const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
@@ -114,9 +114,9 @@ export const HomeView = ({ navigation, route }) => {
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-            <CopilotStep text="step 2" order={2} name="flash">
+            {/* <CopilotStep text="step 2" order={2} name="flash">
               <CopilotText style={styles.carouselHeaderTitle}>Nos derniers contenus</CopilotText>
-            </CopilotStep>
+            </CopilotStep> */}
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>

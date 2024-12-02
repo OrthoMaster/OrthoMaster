@@ -7,6 +7,7 @@
     "scheme": "orthomaster",
     "icon": "./assets/appicon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -45,7 +46,8 @@
     },
     "plugins": [
       "expo-secure-store",
-      "@bugsnag/plugin-expo-eas-sourcemaps"
+      "@bugsnag/plugin-expo-eas-sourcemaps",
+      "expo-video"
     ],
     "runtimeVersion": {
       "policy": "appVersion"

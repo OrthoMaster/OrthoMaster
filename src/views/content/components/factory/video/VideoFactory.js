@@ -7,11 +7,19 @@ import {
     Pressable,
     Text
 } from 'react-native';
-import YoutubePlayer from "react-native-youtube-iframe";
 
+import YoutubePlayer from "react-native-youtube-iframe";
 import { VideoControls } from './VideoControls';
 import { VideoFullScreenModal } from './VideoFullScreenModal';
 import AntDesign from '@expo/vector-icons/AntDesign';
+
+import { useVideoPlayer, VideoView } from 'expo-video';
+
+import { useQuery } from 'react-query';
+import { getCdnContentAccessUrl } from '../../../../../services/ContentService';
+
+
+
 
 const SummaryVideoFactory = ({ summary, onSelectChapter }) => {
 
@@ -19,7 +27,7 @@ const SummaryVideoFactory = ({ summary, onSelectChapter }) => {
         <Text style={styles.sectionHeaderText}>
             Accès direct
         </Text>
-        <Text style={[styles.sectionSubHeaderText,{marginVertical: 20}]}>
+        <Text style={[styles.sectionSubHeaderText, { marginVertical: 20 }]}>
             Temps forts de la vidéo
         </Text>
         <View style={{ width: "60%" }}>
@@ -50,11 +58,39 @@ const SummaryVideoFactory = ({ summary, onSelectChapter }) => {
     </View>
 }
 
-export const VideoFactory = ({ video }) => {
+const DefaultPlayer = ({ videoUrl, seekTo }) => {
+
+    const player = useVideoPlayer(videoUrl, player => {
+        player.loop = true;
+        player.play();
+    });
+
+    useEffect(() => {
+        player.currentTime = seekTo
+    }, [seekTo])
+
+
+
+    return <VideoView
+        style={{
+            width: "100%",
+            height: Dimensions.get('screen').width * 9 / 16,
+            marginTop: 10
+        }}
+        contentFit="contain"
+        player={player}
+        nativeControls={true}
+        allowsFullscreen
+        allowsPictureInPicture
+    />
+}
+
+const MyYoutubePlayer = ({ videoId, seekTo }) => {
+
     const [isPlaying, setIsPlaying] = useState(false)
-    const playerRef = useRef()
+    const playerRef = useRef(null)
     const [isFullScreen, setIsFullScreen] = useState(false)
-    const videoSummary = video.children.length > 0 && video.children.find(item => item.name === "summary")
+    const [key, setKey] = useState(0); // Ajoutez une clé unique pour le rechargement
 
     const jumpTime = async (time) => {
         playerRef.current.seekTo(await playerRef.current.getCurrentTime() + time)
@@ -64,70 +100,96 @@ export const VideoFactory = ({ video }) => {
         setIsPlaying((prev) => !prev);
     }, []);
 
+    useEffect(() => {
+        setKey((prev) => prev + 1); // Incrémentez la clé pour recréer le composant
+    
+    }, [])
+    
+    useEffect(() => {
+        playerRef.current.seekTo(seekTo)
+    }, [seekTo])
 
-    return <View style={{}}>
-        <Pressable
-            style={styles.container}
-            onPress={() => {
-                setIsPlaying(!isPlaying);
-            }}>
-            <View pointerEvents={'none'}>
-                <YoutubePlayer
-                    webViewProps={{
-                        androidLayerType: 'none',
-                        androidHardwareAccelerationDisabled: false
-                    }}
-                    ref={playerRef}
-                    height={Dimensions.get('screen').width * 9 / 16}
-                    videoId={video.attributes['src']}
-                    initialPlayerParams={{
-                        modestbranding: 1,
-                        controls: 0,
-                    }}
-                    play={isPlaying}
-                    onChangeState={event => {
-                        if (event === 'paused') {
-                            setIsPlaying(false);
-                        }
-                    }}
-                />
-            </View>
-            <VideoControls
-                //videoRef={playerRef}
-                running={isPlaying}
-                theme={'dark'}
-                onPlay={togglePlaying}
-                onJumpBefore={() => {
-                    jumpTime(-10)
+    return <Pressable
+        style={styles.container}
+        onPress={() => {
+            setIsPlaying(!isPlaying);
+        }}>
+        <View pointerEvents={'none'}>
+            <YoutubePlayer
+            key={key}
+                webViewProps={{
+                    androidLayerType: 'none',
+                    androidHardwareAccelerationDisabled: false
                 }}
-                onJumpAfter={() => {
-                    jumpTime(10)
+                ref={playerRef}
+                height={Dimensions.get('screen').width * 9 / 16}
+                videoId={videoId}
+                initialPlayerParams={{
+                    modestbranding: 1,
+                    controls: 0,
                 }}
-                onFullScreen={async () => {
-                    setIsFullScreen(true)
-                    //setIsPlaying(false)
+                play={isPlaying}
+                onChangeState={event => {
+                    if (event === 'paused') {
+                        setIsPlaying(false);
+                    }
                 }}
             />
+        </View>
+        <VideoControls
+            running={isPlaying}
+            theme={'dark'}
+            onPlay={togglePlaying}
+            onJumpBefore={() => {
+                jumpTime(-10)
+            }}
+            onJumpAfter={() => {
+                jumpTime(10)
+            }}
+            onFullScreen={async () => {
+                setIsFullScreen(true)
+            }}
+        />
 
-            {
-                isFullScreen ?
-                    <VideoFullScreenModal
-                        videoUrl={video.attributes['src']}
-                        visible={isFullScreen}
-                        videoRef={playerRef}
-                        onClose={() => setIsFullScreen(false)}
-                        isRunning={isPlaying}
-                    />
-                    : null
-            }
+        {
+            isFullScreen ?
+                <VideoFullScreenModal
+                    videoUrl={videoId}
+                    visible={isFullScreen}
+                    videoRef={playerRef}
+                    onClose={() => setIsFullScreen(false)}
+                    isRunning={isPlaying}
+                />
+                : null
+        }
 
 
-        </Pressable>
+    </Pressable>
+}
+
+export const VideoFactory = ({ video, contentInfos }) => {
+    const videoSummary = video.children.length > 0 && video.children.find(item => item.name === "summary")
+    const [videoSeekTo, setVideoSeekTo] = useState(0)
+    const videoUrl = useQuery({
+        queryKey: ['video', video.attributes['src']],
+        queryFn: () => getCdnContentAccessUrl(contentInfos.aws_object_path + video.attributes['src']),
+        enabled: contentInfos.aws_object_path !== null
+    })
+
+
+    return <View style={{}}>
+        {
+            contentInfos.aws_object_path ?
+                <DefaultPlayer videoUrl={videoUrl.data} seekTo={videoSeekTo} />
+                :
+                <MyYoutubePlayer videoId={video.attributes['src']} seekTo={videoSeekTo} />
+        }
+
         {
             videoSummary &&
             <SummaryVideoFactory
                 summary={videoSummary}
-                onSelectChapter={(timeCode) => playerRef.current.seekTo(timeCode)}
+                onSelectChapter={(timeCode) => setVideoSeekTo(timeCode)}
             />
         }
     </View>
