@@ -27,7 +27,8 @@ export const ImageViewer = ({ url, visible, title, onClose }) => {
                     source={{
                         uri: url
                     }}
-                    resizeMode="contain" loaderSize="large"
+                    resizeMode="contain"
+                    // loaderSize="large"
                     style={{
                         width: imageSize.width,
                         height: imageSize.height

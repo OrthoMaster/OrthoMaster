@@ -107,7 +107,7 @@ export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, t
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={{ margin: 20 }} onPress={onReturn}>
+            <TouchableOpacity style={{ margin: 10}} onPress={onReturn}>
                 <Text style={{ color: theme_color, fontWeight: 'bold' }}> {'<'} Retour</Text>
             </TouchableOpacity>
             <FlatList
@@ -124,7 +124,8 @@ export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, t
 
 const styles = StyleSheet.create({
     container: {
-        width: '100%'
+        width: '100%',
+        flex: 1
     },
     subcategoryContainer: {
         width: '90%',

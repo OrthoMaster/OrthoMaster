@@ -83,7 +83,7 @@ export const FlashThemesView = ({ navigation, route }) => {
         />
       </View>
       <View style={{
-        height: '80%'
+        flex: 1
       }}>
         {
           themeSelected &&
@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fffefd',
     flexDirection: 'column',
+    flex: 1
   },
   orthoLogo: {
     position: 'absolute',
@@ -128,7 +129,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '90%',
     alignSelf: 'center',
-    paddingTop: 10,
     height: "20%"
   },
   buttonContainer: {

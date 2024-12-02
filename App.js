@@ -51,10 +51,11 @@ export default function App({ navigation }) {
         setShowInitialConfigForm(false)
       }} />
     }
-    if (showInitialConfigForm == false)
+    if (showInitialConfigForm == false){
       return <NotificationHandler>
         <AppTab />
       </NotificationHandler>
+    }
   }
 
 

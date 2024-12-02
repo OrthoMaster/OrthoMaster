@@ -52,7 +52,7 @@ const buildContent = (content, contentInfos) => {
                         displayContent.push(<ImageFactory config={element} key={staticLessonIndex} contentInfos={contentInfos} />)
                         break;
                     case 'video':
-                        displayContent.push(<VideoFactory video={element} key={staticLessonIndex} />)
+                        displayContent.push(<VideoFactory video={element} key={staticLessonIndex} contentInfos={contentInfos}/>)
                         break;
 
                     case 'layout':

@@ -115,7 +115,7 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
     const queryClient = useQueryClient()
     const startFormation = useMutation(registerFormation, {
         onSuccess: data => {
-            queryClient.invalidateQueries({ queryKey: ["formations"]})
+            queryClient.invalidateQueries({ queryKey: ["formations"] })
             navigation.navigate("formation-modules", {
                 userFormationId: data.insertId,
                 demoMode: isStudent || params.id_product_odoo === null ? false : true
@@ -179,11 +179,9 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
                     justifyContent: 'center',
                     flex: 1
                 }}>
-
                     <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#92D050' }]}
                         onPress={() => {
-                            if (params.id_user && params.id) {
-
+                            if (params.id) {
                                 navigation.navigate("formation-modules", {
                                     userFormationId: params.id,
                                     demoMode: isStudent || params.id_product_odoo === null ? false : true
@@ -261,43 +259,41 @@ export const FormationView = ({ navigation, route }) => {
         }, 2000);
     }, []);
 
+
     useEffect(() => {
         if (formations && userFormations) {
-            var newRunningFormation = []
-            var newCatalogFormation = []
+            const allUserFormations = userFormations.reduce((acc, f) => {
+                const key = f.is_paid || f.certifying || user.is_student ? 'active_formations' : 'demo_formations';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(f);
+                return acc;
+            }, {});
 
-            for (const uf of userFormations) {
-                if (uf.is_paid || uf.certifying || user.is_student) {
-                    newRunningFormation.push(uf)
 
+            let newCatalogSelection = []
+
+            formations.forEach(f => {
+                const is_active = allUserFormations.active_formations?.find(af => af.id_formation === f.id_formation)
+                const is_demo = allUserFormations.demo_formations?.find(df => df.id_formation === f.id_formation)
+
+                if (is_demo) {
+                    var formatedFormation = { ...f }
+
+                    formatedFormation.id = is_demo.id;
+                    formatedFormation.certifying = is_demo.certifying;
+                    formatedFormation.is_paid = is_demo.is_paid;
+                    formatedFormation.progress_rate = is_demo.progress_rate;
+                    formatedFormation.time_spent = is_demo.time_spent;
+
+                    newCatalogSelection.push(formatedFormation)
                 } else {
-                    var formatFormation = { ...uf }
-                    const catalogRef = formations.find(f => f.id_formation === formatFormation.id_formation)
-
-                    formatFormation.public = catalogRef.public;
-                    formatFormation.time_needed = catalogRef.time_needed;
-                    formatFormation.organism = catalogRef.organism;
-                    formatFormation.competencies_obj = catalogRef.competencies_obj;
-                    formatFormation.description = catalogRef.description;
-                    formatFormation.learning_obj = catalogRef.learning_obj;
-                    formatFormation.learning_summary = catalogRef.learning_summary;
-                    formatFormation.public_desc = catalogRef.public_desc
-                    formatFormation.requirements = catalogRef.requirements
-                    formatFormation.trainer = catalogRef.trainer
-                    formatFormation.id_product_odoo = catalogRef.id_product_odoo
-                    formatFormation.certifiable = catalogRef.certifiable
-
-                    newCatalogFormation.push(formatFormation)
+                    if (!is_active)
+                        newCatalogSelection.push(f)
                 }
-            }
+            });
 
-            for (const f of formations) {
-                if (!userFormations.find(elem => (elem.id_formation == f.id_formation))) {
-                    newCatalogFormation.push(f)
-                }
-            }
-            setCatalogFormations(newCatalogFormation)
-            setRunningFormations(newRunningFormation)
+            setRunningFormations(allUserFormations.active_formations ? allUserFormations.active_formations : [])
+            setCatalogFormations(newCatalogSelection)
         }
     }, [formations, userFormations])
 

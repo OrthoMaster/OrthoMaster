@@ -73,7 +73,8 @@ export const FlashCategoriesView = ({ navigation, theme_id, title, color, text_c
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
+        flex: 1
     },
     list: {
         width: '100%',

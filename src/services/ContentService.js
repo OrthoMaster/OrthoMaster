@@ -58,3 +58,19 @@ export const getUserNextLesson = async () => {
       return response.data;
     })
 }
+
+export const getCdnContentAccessUrl = async (path) => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
+
+  return axios
+  .get(baseurl + "/cdn/", {
+    headers: { Authorization: authHeader },
+    params: {
+      path: path
+    }
+  })
+  .then((response) => {
+    return response.data;
+  })
+}
