@@ -2,10 +2,13 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "orientation": "portrait",
     "scheme": "orthomaster",
     "icon": "./assets/appicon.png",
+    "splash": {
+      "image": "./assets/appicon.png"
+    },
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "assetBundlePatterns": [

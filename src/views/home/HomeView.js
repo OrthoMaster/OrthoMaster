@@ -7,7 +7,8 @@ import {
   Pressable,
   Platform,
   StatusBar,
-  RefreshControl
+  RefreshControl,
+  SafeAreaView
 } from 'react-native';
 import {
   CopilotStep,
@@ -25,7 +26,6 @@ import {
 import { FeedDisplayer, FeedHeader, LIKE_CATEGORY_ID } from './components/Feed';
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 

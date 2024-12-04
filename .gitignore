@@ -70,3 +70,4 @@ keys
 certs
 assets/.DS_Store
 assets/flash/.DS_Store
+package-lock.json
