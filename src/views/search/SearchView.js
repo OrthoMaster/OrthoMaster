@@ -111,7 +111,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
         }
 
         if (userFormationId == null && card.type == "lesson") {
-            
+
             const res = await register2Formation.mutateAsync({
                 id_formation: card.id_formation_catalog,
                 formation_name: card.formation_name
@@ -121,9 +121,8 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             if (res)
                 userFormationId = res.insertId
         }
-        // TODO bug : ouverture contenu pas en en formation -> enregistrement formation + ouverture contenu
-        // Après première ouverture, les contenus ne peuvent pas s'ouvrir car aucun refetch n'est fait et l'id user formation est
-        // tjr null. -> cherche a créer formation mais déja existante -> return duplicate entry -> accès contenu impossible
+
+        // Ouverture contenu pas en en formation -> enregistrement formation + ouverture contenu
 
         const isBlocked = card.demo_access == false && (card.certifying == false && card.is_paid == false)
 
