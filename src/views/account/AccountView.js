@@ -83,7 +83,7 @@ export const AccountView = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Ma progression</Text>
           <AccountProgress userId={user.id_user} refreshing={refreshing} />
 
-          <Text style={[styles.sectionTitle]}>Mes trophées</Text>
+          <Text style={[styles.sectionTitle]}>Mes trophés</Text>
 
           <Trophies refreshing={refreshing} />
 

@@ -78,7 +78,7 @@ export const AppTab = ({ }) => {
                 ? require('../../assets/navigation/formation-icon.png')
                 : require('../../assets/navigation/formation-icon-transparent.png')
               break;
-            case 'Flash ortho':
+            case 'Ressources':
               iconName = focused
                 ? require('../../assets/navigation/flash-icon.png')
                 : require('../../assets/navigation/flash-icon-transparent.png')
@@ -125,7 +125,7 @@ export const AppTab = ({ }) => {
         options={{ headerShown: false }}
       />
       <Tab.Screen
-        name="Flash ortho"
+        name="Ressources"
         component={FlashStack}
         options={{ headerShown: false }}
 

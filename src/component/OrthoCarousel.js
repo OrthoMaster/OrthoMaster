@@ -14,7 +14,7 @@ import { getS3Image } from '../services/S3Service'
 
 
 const CarousselCard = ({ item, navigation }) => {
-    const imageUrl = useQuery(['Home','GET','contentThumbnail', item.id_content, item.title], () => getS3Image(`${item.s3_path}/${item.title}/logo.png`))
+    const imageUrl = useQuery(['Home', 'GET', 'contentThumbnail', item.id_content, item.title], () => getS3Image(`${item.s3_path}/${item.title}/logo.png`))
 
     return (
         <TouchableOpacity style={styles.card}
@@ -24,15 +24,30 @@ const CarousselCard = ({ item, navigation }) => {
         >
             {
                 imageUrl.data ?
-                <Image
-                    style={styles.thumbnail}
-                    source={{ uri: imageUrl?.data }}
-                />
-                :<View style={[styles.thumbnail, {backgroundColor: '#F1F1F1'}]}/>
+                    <Image
+                        style={styles.thumbnail}
+                        source={{ uri: imageUrl?.data }}
+                    />
+                    : <View style={[styles.thumbnail, { backgroundColor: '#F1F1F1' }]} />
 
             }
             <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.description}>{item.description}</Text>
+            <View style={{display: 'flex', flexDirection: 'row'}}>
+                <Text style={{fontSize: 12, color: '#ffaf31', fontWeight: 'bold'}}>{item.author}</Text>
+                <Text style={{fontSize: 12, marginLeft: 10}}>⏱️ {item.duration}</Text>
+            </View>
+            <Text style={{
+                fontSize: 10, color: 'gray'
+            }}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+            >
+                {
+                    item.tags?.split(";").map((value, index) => {
+                        return <Text key={index}>{String(value).charAt(0).toUpperCase()+String(value).slice(1)}, </Text>
+                    })
+                }
+            </Text>
         </TouchableOpacity>
     );
 }
@@ -53,7 +68,6 @@ export const OrthoCarousel = ({ entries, navigation }) => {
 
 const styles = StyleSheet.create({
     card: {
-        height: 200
     },
     title: {
         fontWeight: '600',
@@ -66,7 +80,7 @@ const styles = StyleSheet.create({
     },
     thumbnail: {
         width: '100%',
-        height: '80%',
+        height: 150,
         resizeMode: 'cover',
         borderRadius: 8
     }

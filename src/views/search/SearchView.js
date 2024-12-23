@@ -3,10 +3,13 @@ import {
     StyleSheet,
     View,
     ActivityIndicator,
+    Text,
+    TouchableOpacity
 } from 'react-native'
+import AppModal from '../../component/AppModal';
 
-import { useDispatch, useSelector, connect } from 'react-redux';
-
+import { connect } from 'react-redux';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 //import { useQuery, useQueryClient } from "react-query"
 
@@ -21,13 +24,14 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { fetchSearchList } from '../../services/SearchService';
 import { getCurrentUser } from '../../services/UserService';
 import { registerFormation } from '../../services/FormationService';
-import Toast from 'react-native-toast-message';
+import { width } from 'deprecated-react-native-prop-types/DeprecatedImagePropType';
 
 const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState()
     const [searchText, setSearchText] = useState()
     const [isStudent, setIsStudent] = useState(false)
+    const [openModal, setOpenModal] = useState(null)
     useQuery("current-user", () => getCurrentUser(), {
         onSuccess: user => { setIsStudent(user.is_student) }
     })
@@ -52,19 +56,6 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
         },
         enabled: false
     })
-
-    const showToast = ({
-        type = 'success',
-        text1 = 'Hello',
-        text2 = 'This is some something 👋'
-    }) => {
-        Toast.show({
-            type: type,
-            text1: text1,
-            text2: text2
-        });
-    }
-
     const requestAPI = () => {
         dispatch(getSearchList({
             page: page
@@ -95,8 +86,17 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
         }
     }
 
-    const handleNavigation = async (card) => {
-        let userFormationId = card.id_user_formation
+    const registerUserFormation = async (content) => {
+        register2Formation.mutateAsync({
+            id_formation: content.id_formation_catalog,
+            formation_name: content.formation_name
+        })
+        .then(res=>{
+            navigate2Content({...content, id_user_formation: res.insertId})
+        })
+    }
+
+    const navigate2Content = (content)=>{
         let nextView = 'formation-home'
         switch (route.name) {
             case 'home-search':
@@ -109,52 +109,49 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             default:
                 break;
         }
+        
+        navigation.navigate(nextView, {
+            content: {
+                id_content: content.id_content,
+                title: content.title,
+                type: content.type,
+                module_num: content.module_num,
+                demo_access: content.demo_access,
+                max_score: content.max_score,
+                s3_path: content.s3_path
+            },
+            formation: {
+                id: content.id_user_formation
+            },
+            type: content.type
+        })
+    }
 
-        if (userFormationId == null && card.type == "lesson") {
-
-            const res = await register2Formation.mutateAsync({
-                id_formation: card.id_formation_catalog,
-                formation_name: card.formation_name
-            })
-                .catch(() => { return null })
-
-            if (res)
-                userFormationId = res.insertId
-        }
+    const handleNavigation = async (card) => {
+        let userFormationId = card.id_user_formation
+        
 
         // Ouverture contenu pas en en formation -> enregistrement formation + ouverture contenu
 
-        const isBlocked = card.demo_access == false && (card.certifying == false && card.is_paid == false)
-
-        if (isBlocked) {
-            navigation.navigate("Formation")
-            return
-        }
+        const isDemo = !card.certifying && !card.is_paid && isStudent == false && card.type === "lesson"
 
         if (userFormationId != null || card.type == "flash") {
-            navigation.navigate(nextView, {
-                content: {
-                    id_content: card.id_content,
-                    title: card.title,
-                    type: card.type,
-                    module_num: card.module_num,
-                    demo_access: card.demo_access,
-                    max_score: card.max_score,
-                    s3_path: card.s3_path
-                },
-                formation: {
-                    id: userFormationId
-                },
-                type: card.type
-            })
-        } else
-            showToast({
-                type: "error",
-                text1: "Echec ouverture",
-                text2: "Veuillez ré-essayer"
-            })
+            if (
+                isStudent || isDemo == false ||
+                (isDemo && card.demo_access == true)
+            ) {
+                navigate2Content(card)
+            } else {
+                setOpenModal(card)
+            }
+        } else {
+            if (isDemo && card.demo_access) {
+                registerUserFormation(card)
+            } else {
+                setOpenModal(card)
+            }
+        }
     }
-
 
     useEffect(() => {
         if (filters) {
@@ -162,13 +159,11 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
         }
     }, [filters])
 
-
     useEffect(() => {
         requestAPI();
     }, [page])
 
     useEffect(() => {
-
         if (searchText != undefined) {
             requestAPI()
         }
@@ -187,6 +182,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             placeholder={'trouver un contenu...'}
             onChangeText={(text) => searchWithText(text)}
         />
+
         <SearchFilters
             route={route}
             values={route.name == 'formation-search'
@@ -195,23 +191,122 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             }
             onSelect={(filters) => searchWithFiltersArray(filters)}
         />
-        {contentModel.loading ?
-            <LoadingContent /> :
-            <ContentSelection
-                content={contentModel.data}
-                onSelect={(card) => handleNavigation(card)}
-                onEndReached={fetchMoreData}
-                onMoreLoading={() => {
-                    return (
-                        <View>
-                            {contentModel.moreLoading && <ActivityIndicator />}
+
+        {
+            contentModel.loading ?
+                <LoadingContent /> :
+                <ContentSelection
+                    content={contentModel.data}
+                    onSelect={(card) => handleNavigation(card)}
+                    onEndReached={fetchMoreData}
+                    onMoreLoading={() => {
+                        return (
+                            <View>
+                                {contentModel.moreLoading && <ActivityIndicator />}
+                            </View>
+                        )
+                    }}
+                    onRetry={() => requestAPI()}
+                    studentMode={isStudent}
+                />
+        }
+        <AppModal
+            isVisible={openModal != null}
+            onClose={() => setOpenModal(null)}
+            style={{
+                width: "80%"
+            }}
+            customRender={<View style={{
+                alignItems: 'center',
+                width: '100%'
+            }}>
+                {
+                    openModal?.id_product_odoo ?
+                        <View style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            width: '100%',
+                        }}>
+                            <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
+                                Comment débloquer ce contenu ?
+                            </Text>
+                            <Text style={{
+                                marginVertical: 10,
+                                textAlign: 'center'
+                            }}>
+                                Pour accéder à ce contenu, vous devez débloquer la formation :
+                            </Text>
+                            <Text style={{
+                                color: "#ffaf31",
+                                fontWeight: "bold",
+                                fontStyle: 'italic',
+                                textDecorationLine: 'underline',
+                                fontSize: 16,
+                                width: '90%'
+                            }}>
+                                {openModal?.formation_name}
+                            </Text>
+                            <TouchableOpacity style={{
+                                backgroundColor: '#FFAF31',
+                                marginVertical: 20,
+                                padding: 5,
+                                borderRadius: 5
+                            }}
+                                onPress={() => {
+                                    navigation.navigate("Formation")
+                                }}
+                            >
+                                <Text>
+                                    Voir les formations
+                                </Text>
+                            </TouchableOpacity>
                         </View>
-                    )
-                }}
-                onRetry={() => requestAPI()}
-                studentMode={isStudent}
-            />}
-        <Toast position="bottom" />
+                        :
+                        <View style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            width: '100%',
+                        }}>
+                            <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
+                                Ce contenu fait partie de la formation gratuite :
+                            </Text>
+
+                            <Text style={{
+                                color: "#ffaf31",
+                                fontWeight: "bold",
+                                fontStyle: 'italic',
+                                textDecorationLine: 'underline',
+                                marginVertical: 30,
+                                fontSize: 16,
+                                width: "90%",
+                                textAlign: 'center'
+                            }}>
+                                {openModal?.formation_name}
+                            </Text>
+                            <TouchableOpacity style={{
+                                backgroundColor: '#05BADC',
+                                marginVertical: 20,
+                                fontSize: 12,
+                                display: 'flex',
+                                alignItems: "center",
+                                flexDirection: 'row',
+                                padding: 5,
+                                borderRadius: 5
+                            }}
+                                onPress={() => {
+                                    registerUserFormation(openModal)
+                                }}
+                            >
+                                <Text style={{ marginRight: 5, color: '#fff', textAlign: 'center' }}>Commencer la formation maintenant</Text>
+                                <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
+                            </TouchableOpacity>
+                        </View>
+                }
+
+            </View>}
+        />
     </View>
 }
 
