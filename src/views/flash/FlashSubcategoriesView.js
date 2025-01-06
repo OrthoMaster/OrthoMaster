@@ -13,7 +13,6 @@ import {
 import { useQuery } from 'react-query'
 import { fetchFlashSubcategoriesByCategory, fetchFlashContent } from '../../services/FlashService'
 import { getS3Image } from '../../services/S3Service'
-import { ColorLuminance } from '../../utils.js'
 
 
 
@@ -28,12 +27,40 @@ const FlashContentButton = ({ config, onPress }) => {
             {
                 imageUrl.data &&
                 <Image
-                    style={styles.contentThumbnail}
+                    style={{
+                        resizeMode: 'cover',
+                        width: "40%",
+                    }}
                     source={{ uri: imageUrl.data }}
                 />
             }
-            <Text style={styles.contentButtontext}>{config.title}</Text>
-        </TouchableOpacity>
+            <View style={{ width: "60%", padding: 10, justifyContent: 'center' }}>
+                <Text style={{
+                }}>{config.title}</Text>
+                <View style={{
+                    display: 'flex',
+                    flexDirection: 'row'
+                }}>
+                    <Text style={{fontSize: 12, color: '#ffaf31', fontWeight: 'bold'}}>{config.author}</Text>
+                    <Text style={{fontSize: 12}}>⏱️ {config.duration}</Text>
+                </View>
+                <Text style={{
+                    fontSize: 10,
+                    color: 'gray',
+                    width: '100%'
+                    
+                }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                >
+                    {
+                        config.tags?.split(";").map((value, index) => {
+                            return <Text key={index}>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}, </Text>
+                        })
+                    }
+                </Text>
+            </View>
+        </TouchableOpacity >
     )
 }
 
@@ -51,7 +78,7 @@ const FlashSubcategoryButton = ({ item, onPress, theme_color, text_color }) => {
     }, [isOpen])
 
     return (
-        <View style={[styles.subcategoryContainer, { backgroundColor: ColorLuminance(theme_color, 0.2) }]}>
+        <View style={[styles.subcategoryContainer, { backgroundColor: "#E6ECF1" }]}>
             <TouchableOpacity
                 onPress={() => setIsOpen(!isOpen)}
                 style={[styles.subcategoryButton, { backgroundColor: theme_color }]}
@@ -107,7 +134,7 @@ export const FlashSubcategoriesView = ({ navigation, category_id, theme_color, t
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={{ margin: 10}} onPress={onReturn}>
+            <TouchableOpacity style={{ margin: 10 }} onPress={onReturn}>
                 <Text style={{ color: theme_color, fontWeight: 'bold' }}> {'<'} Retour</Text>
             </TouchableOpacity>
             <FlatList
@@ -151,20 +178,10 @@ const styles = StyleSheet.create({
         resizeMode: 'contain',
     },
     contentButton: {
-        width: '100%',
+        width: '95%',
         height: Dimensions.get('screen').height * 0.1,
         alignSelf: 'center',
         flexDirection: 'row',
         marginVertical: 10,
-    },
-    contentButtontext: {
-        flex: 1,
-        alignSelf: 'center',
-        fontWeight: 'bold'
-    },
-    contentThumbnail: {
-        resizeMode: 'cover',
-        flex: 1,
-        marginHorizontal: 10
     }
 })

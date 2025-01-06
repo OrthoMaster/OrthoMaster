@@ -46,8 +46,6 @@ export default function App({ navigation }) {
   }, [user, userOffices.data])
 
 
-
-
   const displayView = () => {
     if (showInitialConfigForm) {
       return <InitialConfigForm onFinish={() => {
@@ -56,7 +54,7 @@ export default function App({ navigation }) {
         setShowInitialConfigForm(false)
       }} />
     }
-    if (showInitialConfigForm == false){
+    if (showInitialConfigForm == false) {
       return <NotificationHandler>
         <AppTab />
       </NotificationHandler>

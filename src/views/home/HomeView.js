@@ -84,12 +84,6 @@ export const HomeView = ({ navigation, route }) => {
   }, [scrollReachedEnd])
 
 
-  const displayFeed = () => {
-    if (articles) {
-
-
-    }
-  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -114,9 +108,12 @@ export const HomeView = ({ navigation, route }) => {
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-            {/* <CopilotStep text="step 2" order={2} name="flash">
+            {/*
+            <CopilotStep text="step 2" order={2} name="flash">
               <CopilotText style={styles.carouselHeaderTitle}>Nos derniers contenus</CopilotText>
-            </CopilotStep> */}
+            </CopilotStep>
+            */}
+            <Text style={styles.carouselHeaderTitle}>Nos derniers contenus</Text>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>
