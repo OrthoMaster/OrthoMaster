@@ -26,14 +26,13 @@ import { getS3Image } from '../../../../../services/S3Service';
 // ]
 const buttonColor = [
     { index: 6, color: '#7D7D7D'},
-    { index: 0, color: '#FF0D16'},
-    { index: 1, color: '#FFF900'},
-    { index: 2, color: '#26C932'},
-    { index: 3, color: '#1A2BC4'},
-    { index: 4, color: '#774D94'},
-    { index: 5, color: '#fb8500'},
+    { index: 0, color: '#E27979'},
+    { index: 1, color: '#FFAF31'},
+    { index: 2, color: '#A8D065'},
+    { index: 3, color: '#608DCA'},
+    { index: 4, color: '#DC8DE2'},
+    { index: 5, color: '#4BB6BE'},
 ]
-
 
 const QuizFixedBox = ({ item, index }) => {
     const content = useSelector(selectContent)
@@ -302,11 +301,10 @@ const styles = StyleSheet.create({
 
     questionListItem: {
         width: (Dimensions.get('window').width / 3 + 10),
-        height: (Dimensions.get('window').width / 3),
+        flex: 1,
         backgroundColor: '#fffefd',
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 2,
         marginVertical: 5,
         padding: 10
     },

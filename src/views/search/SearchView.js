@@ -145,7 +145,8 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                 formation: {
                     id: userFormationId
                 },
-                type: card.type
+                type: card.type,
+                demoMode: (card.certifying == false && card.is_paid == false && !isStudent)
             })
         } else
             showToast({

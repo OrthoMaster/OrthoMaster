@@ -18,7 +18,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 
 export function ContentDisplayer({ route, navigation }) {
-  var { content, formation, type } = route.params;
+  var { content, formation, type, demoMode } = route.params;
+
   const dispatch = useDispatch();
   const appState = useRef(AppState.currentState);
   const contentScrollRef = useRef();
@@ -37,7 +38,7 @@ export function ContentDisplayer({ route, navigation }) {
     });
     dispatch(runContent(content, nbQuiz))
   };
-    const xmlContent = useQuery(['Content', 'GET', 'lessonContent', content.s3_path], () => fetchLessonContent(content.s3_path + "/" + content.title + "/content.xml"), {
+  const xmlContent = useQuery(['Content', 'GET', 'lessonContent', content.s3_path], () => fetchLessonContent(content.s3_path + "/" + content.title + "/content.xml"), {
     onSuccess: (xml) => {
       initContent(xml)
     }
@@ -50,8 +51,8 @@ export function ContentDisplayer({ route, navigation }) {
     var out = new Date(log.logout)
     const timePassed = (out - inn) / 1000
 
-    
-    
+
+
     await mutation.mutateAsync(log)
     if (timePassed >= 10) {
     }
@@ -60,15 +61,10 @@ export function ContentDisplayer({ route, navigation }) {
 
   useEffect(() => {
     if (lessonIsFinish) {
-      if (route.name == 'home-content') {
-        navigation.push('home-content-result', {
-          formation: formation
-        })
-      } else {
-        navigation.push('formation-content-result', {
-          formation: formation
-        })
-      }
+      navigation.push(route.name == 'home-content' ? 'home-content-result' : 'formation-content-result', {
+        formation: formation,
+        demoMode: demoMode
+      })
     } else {
       if (contentScrollRef.current) {
         contentScrollRef.current.scrollTo({

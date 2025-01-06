@@ -72,7 +72,7 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer, currentResponse })
             {
                 backgroundColor: clicked ? '#ED7D32' : '#ffffff',
                 borderColor: clicked ? '#ffffff' : '#ED7D32',
-                height: config.children.length > 0 ? 100 : 40
+                marginVertical: 5,
             }]}
         onPress={() => {
             if (!quizDone) {
@@ -90,9 +90,10 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer, currentResponse })
     >
         <Animated.View
             style={[styles.buttonRadio, {
-                width: '100%', height: '100%',
+                width: '100%', 
                 backgroundColor: quizDone && clicked ? boxInterpolation : null,
-                borderColor: clicked ? '#ffffff' : '#ED7D32'
+                borderColor: clicked ? '#ffffff' : '#ED7D32',
+                padding: 5
             }]}
         >
             {
@@ -165,8 +166,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        marginVertical: 5
-
 
     },
     textButton: {

@@ -10,9 +10,7 @@ import { getUserAttachedOffices } from './src/services/OfficeService';
 import { LoadingContent } from './src/component/LoadingContent';
 import { NotificationHandler } from './src/component/NotificationHandler';
 import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
-import { IntroView } from './src/views/intro/IntroView';
 import { useGetUser } from './src/hooks/useGetUser.hook';
-import { View } from 'react-native';
 
 
 export default function App({ navigation }) {
@@ -25,7 +23,7 @@ export default function App({ navigation }) {
     enabled: userQuery.isSuccess && user != null
   })
 
-  useEffect(() => {
+  const init = async () => {
     if (userQuery.isSuccess) {
       if (user != null) {
         if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
@@ -33,11 +31,18 @@ export default function App({ navigation }) {
             .then(displayInitialConfigForm => {
               if (!displayInitialConfigForm)
                 setShowInitialConfigForm(true)
+              return
             })
-        }
-      }
+        } else return
+      } else return
+    } else return
+  }
+
+  useEffect(() => {
+    init()
+    .then(()=>{
       setInitPhase(false)
-    }
+    })
   }, [user, userOffices.data])
 
 

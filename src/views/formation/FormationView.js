@@ -116,6 +116,7 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
     const startFormation = useMutation(registerFormation, {
         onSuccess: data => {
             queryClient.invalidateQueries({ queryKey: ["formations"] })
+            
             navigation.navigate("formation-modules", {
                 userFormationId: data.insertId,
                 demoMode: isStudent || params.id_product_odoo === null ? false : true
