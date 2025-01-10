@@ -24,7 +24,6 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { fetchSearchList } from '../../services/SearchService';
 import { getCurrentUser } from '../../services/UserService';
 import { registerFormation } from '../../services/FormationService';
-import { width } from 'deprecated-react-native-prop-types/DeprecatedImagePropType';
 
 const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [page, setPage] = useState(1)
@@ -97,6 +96,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     }
 
     const navigate2Content = (content)=>{
+        
         let nextView = 'formation-home'
         switch (route.name) {
             case 'home-search':
@@ -123,7 +123,8 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             formation: {
                 id: content.id_user_formation
             },
-            type: content.type
+            type: content.type,
+            demoMode: (content.certifying == false && content.is_paid == false && !isStudent)
         })
     }
 
@@ -185,10 +186,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
 
         <SearchFilters
             route={route}
-            values={route.name == 'formation-search'
-                ? ['Anatomie', 'Pathologie', 'Produit', 'Bonne Pratique']
-                : ['Formation', 'Question / Réponse', 'Flash']
-            }
+            values={['Formation', 'Ressources']}
             onSelect={(filters) => searchWithFiltersArray(filters)}
         />
 
@@ -254,11 +252,16 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                                 borderRadius: 5
                             }}
                                 onPress={() => {
-                                    navigation.navigate("Formation")
+                                    navigation.navigate("Formation", {
+                                        screen: "formation-home",
+                                        params: {
+                                            formation2Unlock: openModal.id_formation_catalog
+                                        }
+                                    })
                                 }}
                             >
                                 <Text>
-                                    Voir les formations
+                                    Voir la formations
                                 </Text>
                             </TouchableOpacity>
                         </View>

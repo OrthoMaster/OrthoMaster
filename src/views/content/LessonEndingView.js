@@ -118,7 +118,7 @@ const failureElements = [
 
 export const LessonEndingView = ({ navigation, route }) => {
   var { formation, demoMode } = route.params
-  
+
 
 
   const isDemo = demoMode
@@ -313,21 +313,28 @@ export const LessonEndingView = ({ navigation, route }) => {
 
 
                   {
-                    isDemo ?
-                      <View style={[styles.navigationImg, {alignItems: 'center'}]}>
-                        <Image
-                          source={require('../../../assets/locker-icon.png')}
-                          style={[styles.navigationImg, {opacity: 0.7}]}
-                        />
-                        <Text style={{fontWeight: 'bold', color: '#fff', position: 'absolute', bottom: 0}}>Démo</Text>
-                      </View>
-                      : <Image
-                        source={require('../../../assets/formation/arrow.png')}
-                        style={styles.navigationImg}
+                    isDemo &&
+                    <View style={{
+                      alignItems: 'center',
+                      position: 'absolute',
+                      width: '100%', height: '100%',
+                      zIndex: 1
+                    }}>
+                      <Image
+                        source={require('../../../assets/locker-icon.png')}
+                        style={{ width: 25, height: 25 }}
                       />
-
+                      <Text style={{ fontWeight: 'bold', color: '#fff', fontSize: 12 }}>Démo</Text>
+                    </View>
                   }
-                  <Text style={styles.navigationTxt}>Leçon suivante</Text>
+
+                  <View style={{ alignItems: 'center', opacity: isDemo ? 0.2 : 1 }}>
+                    <Image
+                      source={require('../../../assets/formation/arrow.png')}
+                      style={styles.navigationImg}
+                    />
+                    <Text style={styles.navigationTxt}>Leçon suivante</Text>
+                  </View>
                 </TouchableOpacity>
                 : null
             }
@@ -362,7 +369,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   lessonStatusMessage: {
-    fontSize: 40,
+    fontSize: 20,
     fontWeight: 'bold',
     color: "#ffffff",
     width: '90%',

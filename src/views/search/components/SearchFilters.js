@@ -32,7 +32,7 @@ export const SearchFilters = ({ route, onSelect, values }) => {
                 return value != button.filter;
             }))
         }
-        
+
     }
 
     return (
@@ -44,12 +44,13 @@ export const SearchFilters = ({ route, onSelect, values }) => {
                     text={item.item}
                     onPress={(value) => onClickButton(value)}
                     value={
-                        item.item == 'Formation' ? 'lesson'
-                            : item.item == 'Question / Réponse' ? 'qa'
-                                : item.item.toLowerCase()}
+                        item.item == 'Formation' ?
+                            'lesson'
+                            : 'flash'
+                    }
                 />
                 }
-                keyExtractor={(item, index)=>index}
+                keyExtractor={(item, index) => index}
             />
         </View>
     )

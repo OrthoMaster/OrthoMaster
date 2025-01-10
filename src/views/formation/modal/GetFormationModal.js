@@ -34,6 +34,11 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                 <View style={{
                     marginTop: 30
                 }}>
+                    <Text style={{
+                        fontSize: 12,
+                    }}>
+                        Cette formation certifiante s’intègre dans votre parcours de formation continue.
+                    </Text>
                     {
                         formation.certifiable == true ?
                             <Text style={[styles.modalText, { marginBottom: 10 }]}>
@@ -46,11 +51,21 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                     }
                     {
                         formation.certifiable == true &&
-                        <Text style={[styles.modalText, { marginBottom: 5 }]}><Text style={{ fontSize: 20 }}>•</Text> Faire un <Text style={{ fontWeight: 'bold' }}>dossier de formation</Text> continue, financé par un organisme agréé</Text>
+                        <View>
+                            <Text style={[styles.modalText, { fontWeight: 'bold' }]}>Dossier de formation continue</Text>
+                            <Text style={styles.modalText}> - Certificat de formation</Text>
+                            <Text style={styles.modalText}> - Financement par organisme agréé (Opco EP, Fifpl, Fafpm...)</Text>
+                            <Text style={styles.modalText}> - Dates de réalisation fixes</Text>
+                        </View>
                     }
-                    <Text style={styles.modalText}><Text style={{ fontSize: 20 }}>•</Text> <Text style={{ fontWeight: "bold" }}>Acheter</Text> directement la formation avec un tarif dégréssif selon le tableau ci-dessous :</Text>
+                    <Text style={[styles.modalText, { fontWeight: 'bold', marginTop: 10 }]}>Achat direct</Text>
+                    <Text style={styles.modalText}> - Certificat de formation</Text>
+                    <Text style={styles.modalText}> - Dates de réalisation flexibles</Text>
+                    <Text style={styles.modalText}> - Passe en frais professionnels</Text>
+                    <Text style={styles.modalText}> - Tarifs ci-dessous</Text>
+
                     <View style={{
-                        marginTop: 10, marginBottom: 30
+                        marginTop: 10, marginBottom: 20
                     }}>
                         {
                             priceArray.map((row, indexRow) => {
@@ -71,7 +86,6 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                                         </View>
                                     })}
                                 </View>
-
                             })
                         }
                     </View>
@@ -85,10 +99,6 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                                 <TouchableOpacity style={styles.button}
                                     onPress={() => setAction("certifying")}>
                                     <Text style={styles.buttonText}>Dossier de formation</Text>
-                                    <Image
-                                        source={require("../../../../assets/formation/qualiopi.png")}
-                                        style={styles.buttonImg}
-                                    />
                                 </TouchableOpacity>
                             </View>
                         }
@@ -104,9 +114,6 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
                         </View>
                     </View>
                 </View>
-
-
-
             </ScrollView>
         }
         {

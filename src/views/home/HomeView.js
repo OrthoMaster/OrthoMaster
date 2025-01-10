@@ -10,11 +10,6 @@ import {
   RefreshControl,
   SafeAreaView
 } from 'react-native';
-import {
-  CopilotStep,
-  walkthroughable,
-  useCopilot
-} from "react-native-copilot";
 
 import { useQuery, useInfiniteQuery } from "react-query"
 import { fetchFlashContent } from '../../services/FlashService';
@@ -27,9 +22,6 @@ import { FeedDisplayer, FeedHeader, LIKE_CATEGORY_ID } from './components/Feed';
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 
-
-
-// const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
@@ -75,6 +67,10 @@ export const HomeView = ({ navigation, route }) => {
     }, 2000);
   }, []);
 
+
+
+
+
   useEffect(() => {
     if (scrollReachedEnd) {
       if (hasNextPage && isFetching == false) {
@@ -108,11 +104,7 @@ export const HomeView = ({ navigation, route }) => {
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-            {/*
-            <CopilotStep text="step 2" order={2} name="flash">
-              <CopilotText style={styles.carouselHeaderTitle}>Nos derniers contenus</CopilotText>
-            </CopilotStep>
-            */}
+
             <Text style={styles.carouselHeaderTitle}>Nos derniers contenus</Text>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>

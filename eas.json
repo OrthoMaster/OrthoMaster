@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.1.13:3000"
+        "EXPO_PUBLIC_API_URL": "http://192.168.1.21:3000"
         
       },
       "ios": {
@@ -26,7 +26,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dev-mode-api.orthomaster.fr"
+        "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr"
       }
     },
     "production": {

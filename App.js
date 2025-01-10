@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { useQuery, useQueryClient } from 'react-query';
@@ -12,38 +12,38 @@ import { NotificationHandler } from './src/component/NotificationHandler';
 import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
 import { useGetUser } from './src/hooks/useGetUser.hook';
 
-
 export default function App({ navigation }) {
+  const [isLoading, setIsLoading] = useState(true)
   const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
   const queryCli = useQueryClient()
-  const [initPhase, setInitPhase] = useState(true)
   const { data: user, ...userQuery } = useGetUser()
+  const nav = useRef()
 
   const userOffices = useQuery("user-offices", () => getUserAttachedOffices({ userId: user.id_user }), {
     enabled: userQuery.isSuccess && user != null
   })
 
-  const init = async () => {
-    if (userQuery.isSuccess) {
-      if (user != null) {
-        if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
-          AsyncStorage.getItem("initial-conf-slider-displayed")
-            .then(displayInitialConfigForm => {
-              if (!displayInitialConfigForm)
-                setShowInitialConfigForm(true)
-              return
-            })
-        } else return
-      } else return
-    } else return
+  const askEspaceProCreation = async () => {
+    AsyncStorage.getItem("initial-conf-slider-displayed")
+      .then(displayInitialConfigForm => {
+        if (!displayInitialConfigForm) {
+          setShowInitialConfigForm(true)
+        }
+        return
+      })
   }
 
   useEffect(() => {
-    init()
-    .then(()=>{
-      setInitPhase(false)
-    })
-  }, [user, userOffices.data])
+    if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
+      askEspaceProCreation()
+    }
+  }, [userOffices.data])
+
+
+  useEffect(() => {
+    if (!userQuery.isFetching && !userQuery.isLoading && userQuery.isFetched)
+      setIsLoading(false)
+  }, [user, userQuery])
 
 
   const displayView = () => {
@@ -62,13 +62,14 @@ export default function App({ navigation }) {
   }
 
 
-  if (initPhase) {
+
+  if (isLoading) {
     return <LoadingContent />
   }
 
 
   return (
-    <NavigationContainer >
+    <NavigationContainer ref={nav}>
       {
         user ?
           displayView()

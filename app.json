@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "orientation": "portrait",
     "scheme": "orthomaster",
     "icon": "./assets/appicon.png",
@@ -21,7 +21,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hugotaieb.OrthoMaster",
-      "buildNumber": "53",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -37,7 +36,18 @@
       },
       "package": "com.hugotaieb.OrthoMaster",
       "versionCode": 62,
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "orthomaster",
+            "host": "app.orthomaster.fr",
+            "pathPrefix": "/open/*"
+          },
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "extra": {
       "eas": {

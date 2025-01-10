@@ -15,23 +15,14 @@ import { selectContent } from '../../../../../reducers/contentReducer';
 
 import { getS3Image } from '../../../../../services/S3Service';
 
-// const buttonColor = [
-//     { index: 0, color: '#7D7D7D', txt: 'grey' },
-//     { index: 1, color: '#FCA200', txt: 'orange' },
-//     { index: 2, color: '#00B8EC', txt: 'cyan' },
-//     { index: 3, color: '#F5E537', txt: 'yellow' },
-//     { index: 4, color: '#0277B7', txt: 'blue' },
-//     { index: 5, color: '#F4620D', txt: 'red' },
-//     { index: 6, color: '#000000', txt: 'black' },
-// ]
 const buttonColor = [
-    { index: 6, color: '#7D7D7D'},
-    { index: 0, color: '#E27979'},
-    { index: 1, color: '#FFAF31'},
-    { index: 2, color: '#A8D065'},
-    { index: 3, color: '#608DCA'},
-    { index: 4, color: '#DC8DE2'},
-    { index: 5, color: '#4BB6BE'},
+    { index: 6, color: '#7D7D7D' },
+    { index: 0, color: '#E27979' },
+    { index: 1, color: '#FFAF31' },
+    { index: 2, color: '#A8D065' },
+    { index: 3, color: '#608DCA' },
+    { index: 4, color: '#DC8DE2' },
+    { index: 5, color: '#4BB6BE' },
 ]
 
 const QuizFixedBox = ({ item, index }) => {
@@ -76,7 +67,7 @@ const QuizFixedBox = ({ item, index }) => {
                     boxImage ?
                         <Image source={{ uri: boxImage }} style={{
                             resizeMode: 'contain',
-                            height: '100%',
+                            height: 100,
                             width: '100%',
                         }} />
                         : <ActivityIndicator />
@@ -113,6 +104,7 @@ const QuizAnswerBox = ({ config, onColorChange, quizDone }) => {
     const fetchBoxImage = async () => {
         try {
             let path = content.type + '/' + content.module_num + '/' + content.title + '/' + config.children[0].attributes.src
+
             if (content.type != 'lesson') {
                 path = content.type + '/' + content.title + '/' + config.children[0].attributes.src
             }
@@ -164,27 +156,30 @@ const QuizAnswerBox = ({ config, onColorChange, quizDone }) => {
     return (
         <TouchableOpacity
             style={[styles.questionListItem, {
-                backgroundColor: boxColorIndex == 0 ? '#ffffff': buttonColor[boxColorIndex].color
+                backgroundColor: boxColorIndex == 0 ? '#ffffff' : buttonColor[boxColorIndex].color,
+                width: (Dimensions.get('window').width / 3 + 10),
             }]}
             onPress={() => handleClick()}
         >
             <Animated.View
-                style={[styles.questionListItem,{
+                style={[styles.questionListItem, {
                     backgroundColor: quizDone ? boxInterpolation : null,
-                    borderColor: buttonColor[boxColorIndex].color
+                    borderColor: buttonColor[boxColorIndex].color,
+                    width: '100%'
+                    
                 }]}
             >
-            {
-                config.children.length > 0 ?
-                    boxImage ?
-                        <Image source={{ uri: boxImage }} style={{
-                            resizeMode: 'contain',
-                            height: '100%',
-                            width: '100%',
-                        }} />
-                        : <ActivityIndicator />
-                    : <Text>{config?.value || 'txt'}</Text>
-            }
+                {
+                    config.children.length > 0 ?
+                        boxImage ?
+                            <Image source={{ uri: boxImage }} style={{
+                                resizeMode: 'contain',
+                                height: 125,
+                                width: '100%',
+                            }} />
+                            : <ActivityIndicator />
+                        : <Text>{config?.value || 'txt'}</Text>
+                }
             </Animated.View>
         </TouchableOpacity>
     )
@@ -300,7 +295,6 @@ const styles = StyleSheet.create({
     },
 
     questionListItem: {
-        width: (Dimensions.get('window').width / 3 + 10),
         flex: 1,
         backgroundColor: '#fffefd',
         alignItems: 'center',
