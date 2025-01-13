@@ -19,7 +19,7 @@ import { ProfilStack } from './stacks/ProfilStack';
 import { getCurrentDate } from "../utils";
 
 
-import * as Linking from "expo-linking"
+// import * as Linking from "expo-linking"
 import { useNavigation } from '@react-navigation/native';
 import { useGetUser } from '../hooks/useGetUser.hook';
 import { getContentById } from '../services/ContentService';
@@ -38,7 +38,7 @@ export const AppTab = ({ }) => {
   var launchDate = getCurrentDate()
 
   const nav = useNavigation()
-  const accessUrl = Linking.useURL();
+  //const accessUrl = Linking.useURL();
 
 
   const handleOpenContent = async (id) => {
@@ -76,17 +76,17 @@ export const AppTab = ({ }) => {
   }
 
 
-  useEffect(() => {
-    if (accessUrl) {
-      const { hostname, path, queryParams } = Linking.parse(accessUrl);
+  // useEffect(() => {
+  //   if (accessUrl) {
+  //     const { hostname, path, queryParams } = Linking.parse(accessUrl);
 
-      if (path === "open/content") {
-        handleOpenContent(queryParams.id)
-      }
+  //     if (path === "open/content") {
+  //       //handleOpenContent(queryParams.id)
+  //     }
 
-    }
+  //   }
 
-  }, [accessUrl])
+  // }, [accessUrl])
 
   useEffect(() => {
     const userLogtimeHandling = AppState.addEventListener("change", nextAppState => {

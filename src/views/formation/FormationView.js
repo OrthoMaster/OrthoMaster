@@ -237,7 +237,6 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
 
 export const FormationView = ({ navigation, route }) => {
     const [refreshing, setRefreshing] = useState(false);
-    //console.log("Formaion view", route);
 
     const queryClient = useQueryClient()
     const { data: user } = useGetUser()

@@ -12,12 +12,31 @@ import { NotificationHandler } from './src/component/NotificationHandler';
 import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
 import { useGetUser } from './src/hooks/useGetUser.hook';
 
+import * as Linking from "expo-linking"
+import { Alert } from 'react-native';
+const prefix = Linking.createURL('/');
+
 export default function App({ navigation }) {
   const [isLoading, setIsLoading] = useState(true)
   const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
   const queryCli = useQueryClient()
   const { data: user, ...userQuery } = useGetUser()
   const nav = useRef()
+  const url = Linking.useURL()
+  const linking = {
+    prefixes: [prefix],
+    config: {
+      screens: {
+        'Accueil': {
+          screens: {
+            "home-home": {
+              path: "open/content/:id"
+            }
+          }
+        }
+      }
+    }
+  };
 
   const userOffices = useQuery("user-offices", () => getUserAttachedOffices({ userId: user.id_user }), {
     enabled: userQuery.isSuccess && user != null
@@ -45,6 +64,14 @@ export default function App({ navigation }) {
       setIsLoading(false)
   }, [user, userQuery])
 
+  useEffect(() => {
+    if (url) {
+      if (userQuery.isFetched && !user && url.substring(0,11) != "orthomaster") {
+        Alert.alert('Lien introuvable', "Le lien que vous essayez d'ouvrir n'est pas accessible.")
+      }
+    }
+  }, [url])
+  
 
   const displayView = () => {
     if (showInitialConfigForm) {
@@ -61,15 +88,12 @@ export default function App({ navigation }) {
     }
   }
 
-
-
   if (isLoading) {
     return <LoadingContent />
   }
 
-
   return (
-    <NavigationContainer ref={nav}>
+    <NavigationContainer linking={linking} ref={nav}>
       {
         user ?
           displayView()

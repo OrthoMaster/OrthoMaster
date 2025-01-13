@@ -22,8 +22,13 @@ import { FeedDisplayer, FeedHeader, LIKE_CATEGORY_ID } from './components/Feed';
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 
+import { getContentById } from '../../services/ContentService';
+import { getUserRegisteredFormation } from '../../services/FormationService';
+import { useGetUser } from '../../hooks/useGetUser.hook';
+
 
 export const HomeView = ({ navigation, route }) => {
+  const { data: user, ...userQuery } = useGetUser()
   const [refreshing, setRefreshing] = useState(false);
   const flashPreview = useQuery(["flash-preview"], () => fetchFlashContent(0, 5));
 
@@ -58,7 +63,6 @@ export const HomeView = ({ navigation, route }) => {
       contentSize.height - paddingToBottom;
   };
 
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     flashPreview.refetch(0, 5)
@@ -67,6 +71,42 @@ export const HomeView = ({ navigation, route }) => {
     }, 2000);
   }, []);
 
+
+  const handleOpenContent = async (id) => {
+    getContentById(id)
+      .then((content) => {
+        if (content.type == "lesson") {
+          getUserRegisteredFormation({
+            idUserFormation: 0
+          }).then((formations) => {
+            if (formations && Array.isArray(formations)) {
+              const currentFormation = formations.filter((f) => f.id_formation === content.id_formation)
+
+              navigation.navigate('home-content', {
+                "content": content,
+                "formation": currentFormation[0],
+                "type": "lesson",
+                "demoMode": !currentFormation[0].certifying && !currentFormation[0].is_paid && !user.is_student
+              })
+
+            }
+          })
+        } else {
+          navigation.navigate('home-content', {
+            "content": content,
+            "type": "flash",
+          })
+        }
+      })
+  }
+
+  useEffect(() => {
+    if (route.path && route.path.includes("open/content/")) {
+      if (route.params && route.params.id) {
+        handleOpenContent(route.params.id)
+      }
+    }
+  }, [route.params])
 
 
 
