@@ -2,10 +2,13 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "orientation": "portrait",
     "scheme": "orthomaster",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "icon": "./assets/appicon.png",
     "splash": {
       "image": "./assets/appicon.png"
@@ -27,7 +30,8 @@
           "fetch",
           "remote-notification"
         ]
-      }
+      },
+      "bundleIdentifier": "com.hugotaieb.OrthoMaster"
     },
     "android": {
       "adaptiveIcon": {
