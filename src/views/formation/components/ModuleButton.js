@@ -70,13 +70,12 @@ const styles = StyleSheet.create({
     button: {
         width: Dimensions.get('screen').width / 2.5 - 10,
         alignItems: 'center',
-        alignSelf: 'flex-end'
+        alignSelf: 'flex-end',
     },
     moduleTitle: {
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
-        width: '80%'
     }
 })
 const arePropsEqual = (prevProps, nextProps) => {

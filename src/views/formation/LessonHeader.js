@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 
 export const LessonHeader = ({ onSearch, title, navigation, searchEnabled = true, returnEnabed = false }) => {
     useEffect(() => {
-        navigation.setParams({ search: false })
+        //navigation.setParams({ search: false })
     }, [])
 
 

@@ -59,7 +59,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           flashImg={require("../../../assets/flash/Mon-patient.png")}
         />
         <FlashButton
-          label={'Ressources'}
+          label={'Médias'}
           onPress={() => {
             setThemeSelected({
               type: "flash",
@@ -72,15 +72,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           flashImg={require("../../../assets/flash/Ressources2.png")}
           active={themeSelected?.theme_id === 6}
         />
-        <FlashButton
-          label={'Questions / Réponses'}
-          onPress={() => {
-            setThemeSelected(null)
-            setQaSelected(true)
-          }}
-          flashImg={require("../../../assets/flash/Question-reponse.png")}
-          active={qaSelected}
-        />
+
       </View>
       <View style={{
         flex: 1
@@ -92,10 +84,6 @@ export const FlashThemesView = ({ navigation, route }) => {
             color={themeSelected.color}
             text_color={themeSelected.textColor}
           />
-        }
-        {
-          qaSelected &&
-          <QaLayout navigation={navigation} color={"#BBEF89"} />
         }
 
         {

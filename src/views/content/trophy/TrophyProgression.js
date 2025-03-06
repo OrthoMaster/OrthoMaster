@@ -105,7 +105,6 @@ export const TrophyProgression = ({ trophies }) => {
 
 const styles = StyleSheet.create({
     container: {
-        //backgroundColor: 'red',
         width: '100%',
     },
     title: {

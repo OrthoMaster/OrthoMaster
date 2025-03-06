@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { useQuery, useQueryClient } from 'react-query';
@@ -10,38 +10,58 @@ import { getUserAttachedOffices } from './src/services/OfficeService';
 import { LoadingContent } from './src/component/LoadingContent';
 import { NotificationHandler } from './src/component/NotificationHandler';
 import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
-import { IntroView } from './src/views/intro/IntroView';
 import { useGetUser } from './src/hooks/useGetUser.hook';
-import { View } from 'react-native';
 
+import * as Linking from "expo-linking"
+const prefix = Linking.createURL('/');
 
 export default function App({ navigation }) {
+  const [isLoading, setIsLoading] = useState(true)
   const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
   const queryCli = useQueryClient()
-  const [initPhase, setInitPhase] = useState(true)
   const { data: user, ...userQuery } = useGetUser()
+  const nav = useRef()
+  
+  const linking = {
+    prefixes: [prefix],
+    config: {
+      screens: {
+        'Accueil': {
+          screens: {
+            "home-home": {
+              path: "open/content/:id"
+            }
+          }
+        }
+      }
+    }
+  };
 
   const userOffices = useQuery("user-offices", () => getUserAttachedOffices({ userId: user.id_user }), {
     enabled: userQuery.isSuccess && user != null
   })
 
-  useEffect(() => {
-    if (userQuery.isSuccess) {
-      if (user != null) {
-        if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
-          AsyncStorage.getItem("initial-conf-slider-displayed")
-            .then(displayInitialConfigForm => {
-              if (!displayInitialConfigForm)
-                setShowInitialConfigForm(true)
-            })
+  const askEspaceProCreation = async () => {
+    AsyncStorage.getItem("initial-conf-slider-displayed")
+      .then(displayInitialConfigForm => {
+        if (!displayInitialConfigForm) {
+          setShowInitialConfigForm(true)
         }
-      }
-      setInitPhase(false)
+        return
+      })
+  }
+
+  useEffect(() => {
+    if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
+      askEspaceProCreation()
     }
-  }, [user, userOffices.data])
+  }, [userOffices.data])
 
 
-
+  useEffect(() => {
+    if (!userQuery.isFetching && !userQuery.isLoading && userQuery.isFetched)
+      setIsLoading(false)
+  }, [user, userQuery])
 
   const displayView = () => {
     if (showInitialConfigForm) {
@@ -51,21 +71,19 @@ export default function App({ navigation }) {
         setShowInitialConfigForm(false)
       }} />
     }
-    if (showInitialConfigForm == false){
+    if (showInitialConfigForm == false) {
       return <NotificationHandler>
         <AppTab />
       </NotificationHandler>
     }
   }
 
-
-  if (initPhase) {
+  if (isLoading) {
     return <LoadingContent />
   }
 
-
   return (
-    <NavigationContainer >
+    <NavigationContainer linking={linking} ref={nav}>
       {
         user ?
           displayView()

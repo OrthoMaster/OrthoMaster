@@ -74,3 +74,22 @@ export const getCdnContentAccessUrl = async (path) => {
     return response.data;
   })
 }
+
+export const getContentById = async (idContent) => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
+
+  return axios
+    .get(baseurl + "/get" , {
+      headers: { Authorization: authHeader },
+      params: {
+        ic: idContent
+      }
+    })
+    .then((response) => {
+      return response.data;
+    })
+    .catch((e)=> {
+      throw e
+    });
+}

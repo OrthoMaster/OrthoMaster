@@ -1,11 +1,11 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../utils";
-const baseurl = process.env.EXPO_PUBLIC_API_URL+"/contents/v2/search"
+const baseurl = process.env.EXPO_PUBLIC_API_URL + "/contents/v2/search"
 
 export const fetchSearchList = async ({ contentType = null, filters = null, searchText = "" }, page) => {
 
-  
+
   const config = await restoreLocalConfigAsync()
 
   const authHeader = 'Bearer ' + config.JWT;
@@ -17,7 +17,7 @@ export const fetchSearchList = async ({ contentType = null, filters = null, sear
         pageSize: page ? 10 : null,
         page: page,
         type: contentType,
-        filters: filters,
+        filters: ['Genou', 'anatomie'],
         searchText: searchText,
         user: config.user.id_user
       }
@@ -25,7 +25,7 @@ export const fetchSearchList = async ({ contentType = null, filters = null, sear
     .then((response) => {
       return response.data;
     })
-    .catch((e)=> {
+    .catch((e) => {
       throw e
     });
 }

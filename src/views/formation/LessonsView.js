@@ -119,7 +119,8 @@ export function LessonsView({ route, navigation }) {
                             navigation.navigate('formation-content', {
                                 content: lesson.content,
                                 formation: formation,
-                                type: "lesson"
+                                type: "lesson",
+                                demoMode: demoMode
                             })
                         }
                     }}

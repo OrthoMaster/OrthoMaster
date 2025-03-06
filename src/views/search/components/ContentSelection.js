@@ -42,7 +42,7 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
             case 'qa':
                 return 'Questions / réponses'
             case 'flash':
-                return 'Flash'
+                return 'Ressource'
             default:
                 return '👍'
 
@@ -91,33 +91,68 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
         <View style={{
             width: '100%',
             flexDirection: 'row',
-            paddingVertical: 10
+            paddingVertical: 10,
         }}>
+            <View style={{
+                flex: 2,
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}>
+                {
+                    thumbnail.data
+                        ? <Image
+                            style={{
+                                width: Dimensions.get('screen').width * 0.4,
+                                height: Dimensions.get('screen').width * 0.15
+                            }}
+                            source={{
+                                uri: thumbnail.data
+                            }}
+                            resizeMode={'contain'}
+                        />
+                        : <ActivityIndicator />
+                }
+                {
+                    (isDemo && card.demo_access == false && card.type == "lesson" && card.id_product_odoo) &&
+                    <View style={{
+                        backgroundColor: 'rgba(0,0,0,0.7)',
+                        position: 'absolute',
+                        width: '90%',
+                        height: '100%',
+                        justifyContent: 'center',
+                    }}>
+                        <View style={{
+                            alignItems: 'center',
+                        }}>
+                            <Text style={{
+                                color: "#DEDEDE",
+                                textAlign: 'center',
+                                fontSize: 12,
+                                width: "80%",
+                                fontWeight: 'bold'
+                                }}>Débloquer le contenu</Text>
+                            <AntDesign name="unlock" size={20} color="#DEDEDE" />
+                        </View>
+                    </View>
+                }
+            </View>
 
-            {
-                thumbnail.data
-                    ? <Image
-                        style={{
-                            width: Dimensions.get('screen').width * 0.4,
-                            height: Dimensions.get('screen').width * 0.15
-                        }}
-                        source={{
-                            uri: thumbnail.data
-                        }}
-                        resizeMode={'contain'}
-                    />
-                    : <ActivityIndicator />
-            }
 
-            <View style={stylesDefault.cardInfos}>
+            <View style={{
+                flex: 4,
+            }}>
                 <Text style={{ fontSize: 10 }}>{card.formation_name}</Text>
                 <Text style={stylesDefault.cardInfoTitle}>{card.title}</Text>
-                <Text
-                    style={[stylesDefault.cardInfoDescText, { height: card.description != '' ? 'auto' : 0 }]}
-                    numberOfLines={2}
-                >
-                    {card.description}
-                </Text>
+                {
+                    card.author &&
+                    <Text
+                        style={{
+                            fontSize: 12, fontWeight: 'bold', color: '#ffaf31'
+                        }}
+                    >
+                        {card.author}
+                    </Text>
+                }
                 <View style={stylesDefault.cardInfoDesc}>
                     <View style={stylesDefault.contentTypeTag}>
                         <Text style={stylesDefault.contentTypeTagText}>{formatType(card.type)}</Text>
@@ -128,24 +163,6 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
 
             </View>
         </View>
-        {
-            (isDemo && card.demo_access == false && card.type == "lesson") &&
-            <View style={{
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                position: 'absolute',
-                width: '100%',
-                height: '100%',
-                justifyContent: 'center'
-            }}>
-                <View style={{
-                alignItems: 'center',
-                position: 'absolute', left: 20
-                }}>
-                    <Text style={{ color: "#DEDEDE" }}>Débloquer le contenu</Text>
-                    <AntDesign name="unlock" size={30} color="#DEDEDE" />
-                </View>
-            </View>
-        }
     </TouchableOpacity>
 }
 
@@ -250,10 +267,6 @@ const stylesDefault = StyleSheet.create({
     card: {
         width: '100%',
         marginVertical: 2
-    },
-    cardInfos: {
-        width: '55%',
-        marginLeft: 5
     },
     cardInfoTitle: {
         fontWeight: '600',

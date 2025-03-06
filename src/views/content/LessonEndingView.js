@@ -117,8 +117,11 @@ const failureElements = [
 
 
 export const LessonEndingView = ({ navigation, route }) => {
-  var { formation } = route.params
-  const isDemo = !formation.certifying && !formation.is_paid
+  var { formation, demoMode } = route.params
+
+
+
+  const isDemo = demoMode
 
   const store = useStore()
   const [successMessageIndex, setsuccessMessageIndex] = useState(Math.floor(Math.random() * successElements.length))
@@ -155,13 +158,15 @@ export const LessonEndingView = ({ navigation, route }) => {
             navigation.navigate('home-content', {
               content: nextLesson,
               formation: formation,
-              type: "lesson"
+              type: "lesson",
+              demoMode: demoMode
             });
           } else {
             navigation.navigate('formation-content', {
               content: nextLesson,
               formation: formation,
-              type: "lesson"
+              type: "lesson",
+              demoMode: demoMode
             });
           }
         }
@@ -183,11 +188,10 @@ export const LessonEndingView = ({ navigation, route }) => {
         } else {
           navigation.navigate("formation-modules", {
             userFormationId: formation.id,
-            demoMode: !formation.certifying && !formation.is_paid
+            demoMode: demoMode
           })
         }
         break;
-
       default:
         break;
     }
@@ -309,21 +313,28 @@ export const LessonEndingView = ({ navigation, route }) => {
 
 
                   {
-                    isDemo ?
-                      <View style={[styles.navigationImg, {alignItems: 'center'}]}>
-                        <Image
-                          source={require('../../../assets/locker-icon.png')}
-                          style={[styles.navigationImg, {opacity: 0.7}]}
-                        />
-                        <Text style={{fontWeight: 'bold', color: '#fff', position: 'absolute', bottom: 0}}>Démo</Text>
-                      </View>
-                      : <Image
-                        source={require('../../../assets/formation/arrow.png')}
-                        style={styles.navigationImg}
+                    isDemo &&
+                    <View style={{
+                      alignItems: 'center',
+                      position: 'absolute',
+                      width: '100%', height: '100%',
+                      zIndex: 1
+                    }}>
+                      <Image
+                        source={require('../../../assets/locker-icon.png')}
+                        style={{ width: 25, height: 25 }}
                       />
-
+                      <Text style={{ fontWeight: 'bold', color: '#fff', fontSize: 12 }}>Démo</Text>
+                    </View>
                   }
-                  <Text style={styles.navigationTxt}>Leçon suivante</Text>
+
+                  <View style={{ alignItems: 'center', opacity: isDemo ? 0.2 : 1 }}>
+                    <Image
+                      source={require('../../../assets/formation/arrow.png')}
+                      style={styles.navigationImg}
+                    />
+                    <Text style={styles.navigationTxt}>Leçon suivante</Text>
+                  </View>
                 </TouchableOpacity>
                 : null
             }
@@ -358,7 +369,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   lessonStatusMessage: {
-    fontSize: 40,
+    fontSize: 20,
     fontWeight: 'bold',
     color: "#ffffff",
     width: '90%',
@@ -368,25 +379,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    marginBottom: 20,
 
   },
   navigationContainer: {
     flexDirection: 'row',
-    width: '80%',
-    height: 50,
+    width: '100%',
   },
   navigationBox: {
     flex: 1,
-    marginHorizontal: 5,
     alignItems: 'center',
-    width: '80%',
-    height: 30,
   },
   navigationImg: {
     resizeMode: 'contain',
-    height: '100%',
-    width: '100%',
+    height: 25,
+    width: 25,
   },
   navigationTxt: {
     fontSize: 12,

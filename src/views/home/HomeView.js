@@ -10,11 +10,6 @@ import {
   RefreshControl,
   SafeAreaView
 } from 'react-native';
-import {
-  CopilotStep,
-  walkthroughable,
-  useCopilot
-} from "react-native-copilot";
 
 import { useQuery, useInfiniteQuery } from "react-query"
 import { fetchFlashContent } from '../../services/FlashService';
@@ -27,11 +22,13 @@ import { FeedDisplayer, FeedHeader, LIKE_CATEGORY_ID } from './components/Feed';
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 
+import { getContentById } from '../../services/ContentService';
+import { getUserRegisteredFormation } from '../../services/FormationService';
+import { useGetUser } from '../../hooks/useGetUser.hook';
 
-
-// const CopilotText = walkthroughable(Text);
 
 export const HomeView = ({ navigation, route }) => {
+  const { data: user, ...userQuery } = useGetUser()
   const [refreshing, setRefreshing] = useState(false);
   const flashPreview = useQuery(["flash-preview"], () => fetchFlashContent(0, 5));
 
@@ -66,7 +63,6 @@ export const HomeView = ({ navigation, route }) => {
       contentSize.height - paddingToBottom;
   };
 
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     flashPreview.refetch(0, 5)
@@ -74,6 +70,46 @@ export const HomeView = ({ navigation, route }) => {
       setRefreshing(false);
     }, 2000);
   }, []);
+
+
+  const handleOpenContent = async (id) => {
+    getContentById(id)
+      .then((content) => {
+        if (content.type == "lesson") {
+          getUserRegisteredFormation({
+            idUserFormation: 0
+          }).then((formations) => {
+            if (formations && Array.isArray(formations)) {
+              const currentFormation = formations.filter((f) => f.id_formation === content.id_formation)
+
+              navigation.navigate('home-content', {
+                "content": content,
+                "formation": currentFormation[0],
+                "type": "lesson",
+                "demoMode": !currentFormation[0].certifying && !currentFormation[0].is_paid && !user.is_student
+              })
+
+            }
+          })
+        } else {
+          navigation.navigate('home-content', {
+            "content": content,
+            "type": "flash",
+          })
+        }
+      })
+  }
+
+  useEffect(() => {
+    if (route.path && route.path.includes("open/content/")) {
+      if (route.params && route.params.id) {
+        handleOpenContent(route.params.id)
+      }
+    }
+  }, [route.params])
+
+
+
 
   useEffect(() => {
     if (scrollReachedEnd) {
@@ -84,12 +120,6 @@ export const HomeView = ({ navigation, route }) => {
   }, [scrollReachedEnd])
 
 
-  const displayFeed = () => {
-    if (articles) {
-
-
-    }
-  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -114,9 +144,8 @@ export const HomeView = ({ navigation, route }) => {
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-            {/* <CopilotStep text="step 2" order={2} name="flash">
-              <CopilotText style={styles.carouselHeaderTitle}>Nos derniers contenus</CopilotText>
-            </CopilotStep> */}
+
+            <Text style={styles.carouselHeaderTitle}>Nos derniers contenus</Text>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>

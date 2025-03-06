@@ -24,7 +24,7 @@ import { LoadingContent } from '../../component/LoadingContent';
 import { getS3Image } from '../../services/S3Service';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-const RunningFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_url }) => {
+const RunningFormationCard = ({ params, thumbnail_url }) => {
 
     const navigation = useNavigation()
     const queryClient = useQueryClient()
@@ -116,6 +116,7 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
     const startFormation = useMutation(registerFormation, {
         onSuccess: data => {
             queryClient.invalidateQueries({ queryKey: ["formations"] })
+
             navigation.navigate("formation-modules", {
                 userFormationId: data.insertId,
                 demoMode: isStudent || params.id_product_odoo === null ? false : true
@@ -236,6 +237,7 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
 
 export const FormationView = ({ navigation, route }) => {
     const [refreshing, setRefreshing] = useState(false);
+
     const queryClient = useQueryClient()
     const { data: user } = useGetUser()
     const {
@@ -303,6 +305,14 @@ export const FormationView = ({ navigation, route }) => {
     }, [catalogFormations, runningFormations])
 
 
+    useEffect(() => {
+        if (route.params && route.params.formation2Unlock && formations) {
+            setUnlockFormationModal({
+                isActivate: true,
+                formation: formations.filter((f) => f.id_formation == route.params?.formation2Unlock)[0]
+            })
+        }
+    }, [route.params, formations])
 
     if (isLoading)
         return <View style={styles.container}>

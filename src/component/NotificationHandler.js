@@ -77,7 +77,7 @@ export const NotificationHandler = ({ children }) => {
         finalStatus = status;
       }
       if (finalStatus !== 'granted') {
-        alert('Activation des notifications indisponible');
+        //alert('Activation des notifications indisponible');
         return;
       }
       token = await Notifications.getExpoPushTokenAsync({
