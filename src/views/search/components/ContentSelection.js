@@ -42,7 +42,7 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
             case 'qa':
                 return 'Questions / réponses'
             case 'flash':
-                return 'Flash'
+                return 'Ressource'
             default:
                 return '👍'
 

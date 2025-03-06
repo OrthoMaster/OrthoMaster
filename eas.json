@@ -36,9 +36,6 @@
       },
       "ios": {
         "resourceClass": "m-medium"
-      },
-      "android": {
-        "node": "20.5.1"
       }
     },
     "development-simulator": {

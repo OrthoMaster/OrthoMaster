@@ -59,7 +59,7 @@ export const FlashThemesView = ({ navigation, route }) => {
           flashImg={require("../../../assets/flash/Mon-patient.png")}
         />
         <FlashButton
-          label={'Contenus'}
+          label={'Médias'}
           onPress={() => {
             setThemeSelected({
               type: "flash",

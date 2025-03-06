@@ -23,7 +23,7 @@ import { API_SEARCH_CLEAN } from '../../actions/types';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { fetchSearchList } from '../../services/SearchService';
 import { getCurrentUser } from '../../services/UserService';
-import { registerFormation } from '../../services/FormationService';
+import { registerFormation, getUserRegisteredFormation } from '../../services/FormationService';
 
 const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [page, setPage] = useState(1)
@@ -31,7 +31,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [searchText, setSearchText] = useState()
     const [isStudent, setIsStudent] = useState(false)
     const [openModal, setOpenModal] = useState(null)
-    useQuery("current-user", () => getCurrentUser(), {
+    const user = useQuery("current-user", () => getCurrentUser(), {
         onSuccess: user => { setIsStudent(user.is_student) }
     })
     const register2Formation = useMutation(registerFormation)
@@ -95,7 +95,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
         })
     }
 
-    const navigate2Content = (content)=>{
+    const navigate2Content = (content, formation)=>{
         
         let nextView = 'formation-home'
         switch (route.name) {
@@ -111,18 +111,8 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
         }
         
         navigation.navigate(nextView, {
-            content: {
-                id_content: content.id_content,
-                title: content.title,
-                type: content.type,
-                module_num: content.module_num,
-                demo_access: content.demo_access,
-                max_score: content.max_score,
-                s3_path: content.s3_path
-            },
-            formation: {
-                id: content.id_user_formation
-            },
+            content: content,
+            formation: formation,
             type: content.type,
             demoMode: (content.certifying == false && content.is_paid == false && !isStudent)
         })

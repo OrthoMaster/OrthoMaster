@@ -13,7 +13,6 @@ import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigFo
 import { useGetUser } from './src/hooks/useGetUser.hook';
 
 import * as Linking from "expo-linking"
-import { Alert } from 'react-native';
 const prefix = Linking.createURL('/');
 
 export default function App({ navigation }) {
@@ -22,7 +21,7 @@ export default function App({ navigation }) {
   const queryCli = useQueryClient()
   const { data: user, ...userQuery } = useGetUser()
   const nav = useRef()
-  const url = Linking.useURL()
+  
   const linking = {
     prefixes: [prefix],
     config: {
@@ -63,15 +62,6 @@ export default function App({ navigation }) {
     if (!userQuery.isFetching && !userQuery.isLoading && userQuery.isFetched)
       setIsLoading(false)
   }, [user, userQuery])
-
-  useEffect(() => {
-    if (url) {
-      if (userQuery.isFetched && !user && url.substring(0,11) != "orthomaster") {
-        Alert.alert('Lien introuvable', "Le lien que vous essayez d'ouvrir n'est pas accessible.")
-      }
-    }
-  }, [url])
-  
 
   const displayView = () => {
     if (showInitialConfigForm) {

@@ -29,7 +29,6 @@ import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 export function ContentDisplayer({ route, navigation }) {
   var { content, formation, type, demoMode } = route.params;
 
-
   const dispatch = useDispatch();
   const appState = useRef(AppState.currentState);
   const contentScrollRef = useRef();
