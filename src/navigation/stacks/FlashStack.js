@@ -3,20 +3,19 @@ import React from 'react'
 
 import { createStackNavigator } from '@react-navigation/stack';
 
-import { FlashThemesView } from '../../views/flash/FlashThemesView';
+import { FlashMediaView } from '../../views/flash/FlashMediaView';
 
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
-import { FlashCategoriesView } from '../../views/flash/FlashCategoriesView';
-import { FlashSubcategoriesView } from '../../views/flash/FlashSubcategoriesView';
+import { PreviewMediaView } from '../../views/flash/PreviewMediaView';
 
 
 const FlashStackNav = createStackNavigator();
 export const FlashStack = () => {
   return (
-    <FlashStackNav.Navigator initialRouteName='flash-themes'>
+    <FlashStackNav.Navigator initialRouteName='flash-media-home'>
       <FlashStackNav.Screen
-        name="flash-themes"
-        component={FlashThemesView}
+        name="flash-media-home"
+        component={FlashMediaView}
         options={{
           headerShown: false,
           //title: 'Flash orthopédie'
@@ -24,7 +23,16 @@ export const FlashStack = () => {
       />
 
       <FlashStackNav.Screen
-        name="flash-content-viewer"
+        name="flash-media-preview"
+        component={PreviewMediaView}
+        options={{
+          headerShown: false,
+          title: 'Media',
+        }}
+      />
+
+      <FlashStackNav.Screen
+        name="flash-media-viewer"
         component={ContentDisplayer}
         options={{
           headerShown: false
