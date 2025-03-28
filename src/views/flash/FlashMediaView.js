@@ -6,96 +6,127 @@ import {
   Platform,
   Text,
   View,
-  ScrollView
+  ScrollView,
+  ActivityIndicator,
+  Dimensions
 } from 'react-native';
 
 import SimpleCarousel from '../../component/carousel/SimpleCarousel';
-import StackCarousel from '../../component/carousel/StackCarousel';
+import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
+import { useQuery } from 'react-query';
+import { fetchLastReleaseMedias, fetchMediaByCategories } from '../../services/FlashMediasService';
 
-const movies = [
-  {
-    id: "1",
-    title: "Stranger Things",
-    image: "https://image.tmdb.org/t/p/w500/x2LSRK2Cm7MZhjluni1msVJ3wDF.jpg",
-  },
-  {
-    id: "2",
-    title: "The Witcher",
-    image: "https://image.tmdb.org/t/p/w500/zrPpUlehQaBf8YX2NrVrKK8IEpf.jpg",
-  },
-  {
-    id: "3",
-    title: "Dark",
-    image: "https://image.tmdb.org/t/p/w500/uAQrHntCccFpvxp75XdQgqexlJd.jpg",
-  },
-  {
-    id: "4",
-    title: "Money Heist",
-    image: "https://image.tmdb.org/t/p/w500/mo6vQgGHywQmbm5tyN6hL9iR7df.jpg",
-  },
-  {
-    id: "5",
-    title: "Breaking Bad",
-    image: "https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
-  },
-  {
-    id: "6",
-    title: "Peaky Blinders",
-    image: "https://image.tmdb.org/t/p/w500/9X7FovF5n8NQU4y8H5YYJx9Xy2g.jpg",
-  },
-  {
-    id: "7",
-    title: "Peaky Blinders",
-    image: "https://image.tmdb.org/t/p/w500/9X7FovF5n8NQU4y8H5YYJx9Xy2g.jpg",
-  },
-  {
-    id: "8",
-    title: "Peaky Blinders",
-    image: "https://image.tmdb.org/t/p/w500/9X7FovF5n8NQU4y8H5YYJx9Xy2g.jpg",
-  },
-  {
-    id: "9",
-    title: "Peaky Blinders",
-    image: "https://image.tmdb.org/t/p/w500/9X7FovF5n8NQU4y8H5YYJx9Xy2g.jpg",
-  },
-];
+
+const LIMIT_LAST_RELEASE = 5
 
 export const FlashMediaView = ({ navigation, route }) => {
 
+  const lastRelease = useQuery(["media-last-release"], () => fetchLastReleaseMedias({ limit: LIMIT_LAST_RELEASE }))
+  const categories = useQuery(["medias-categories-content"], () => fetchMediaByCategories(), {
+    onSuccess: (data) => { initCaroussels(data) }
+  })
+  const [congresCaroussel, setCongresCaroussel] = useState([])
+  const [tpCaroussel, setTpCaroussel] = useState([])
+  const [entretiensCaroussel, setEntretiensCaroussel] = useState([])
+  const [reportagesCaroussel, setReportagesCaroussel] = useState([])
+
+
+
+  const initCaroussels = async (caroussels) => {
+    generateCongresCarousselData
+    setCongresCaroussel(caroussels["Congrès"])
+    setTpCaroussel(caroussels["Travaux pratiques"])
+    setEntretiensCaroussel(caroussels["Entretiens"])
+    setReportagesCaroussel(caroussels["Reportages"])
+  }
+
+  const generateCongresCaroussel = () => {
+
+  }
+
   const handleNavigation = (card) => {
-    console.log(card);
     navigation.push('flash-media-preview', {
-              media: card
-            })
+      media: card
+    })
   }
 
   return (
     <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
-      <ScrollView>
+      <View style={{
+        backgroundColor: '#ffaf31',
+        padding: 15
+      }}>
+        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 22 }}>Médias</Text>
+      </View>
+      <ScrollView style={{ marginBottom: 50 }}>
 
         {/* <Text style={styles.pageTitle}>Medias</Text> */}
-        <View style={styles.sectionContainer}>
+        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2 }]}>
           <Text style={styles.categoryTitle}>Nouveaux sur OrthoMaster</Text>
-          <StackCarousel onSelect={handleNavigation}/>
+          {
+            lastRelease.isLoading ?
+              <ActivityIndicator />
+              : lastRelease.isError ?
+                <View>
+                  <Text>Une erreur s'est produite lors du chargement</Text>
+                </View>
+                : <PanoramaCarousel onSelect={handleNavigation} data={lastRelease.data} />
+          }
+
         </View>
-        <View style={styles.sectionContainer}>
+        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2.2 }]}>
           <Text style={styles.categoryTitle}>Congrès</Text>
-          <SimpleCarousel data={movies} nbElement2Display={4.5} onSelect={handleNavigation} />
+          {
+            categories.isLoading ?
+              <ActivityIndicator />
+              : categories.isError ?
+                <View>
+                  <Text>Une erreur s'est produite lors du chargement</Text>
+                </View>
+                : <SimpleCarousel data={congresCaroussel} nbElement2Display={2.2} onSelect={handleNavigation} />
+          }
         </View>
 
-        <View style={styles.sectionContainer}>
+        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2.2 }]}>
           <Text style={styles.categoryTitle}>Travaux pratiques</Text>
-          <SimpleCarousel data={movies} nbElement2Display={4.5} onSelect={handleNavigation}/>
+          {
+            categories.isLoading ?
+              <ActivityIndicator />
+              : categories.isError ?
+                <View>
+                  <Text>Une erreur s'est produite lors du chargement</Text>
+                </View>
+                : <SimpleCarousel data={tpCaroussel} nbElement2Display={2.2} onSelect={handleNavigation} />
+          }
+
         </View>
 
-        <View style={styles.sectionContainer}>
+        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2.2 }]}>
           <Text style={styles.categoryTitle}>Entretiens</Text>
-          <SimpleCarousel data={movies} nbElement2Display={4.5} onSelect={handleNavigation} />
+          {
+            categories.isLoading ?
+              <ActivityIndicator />
+              : categories.isError ?
+                <View>
+                  <Text>Une erreur s'est produite lors du chargement</Text>
+                </View>
+                : <SimpleCarousel data={entretiensCaroussel} nbElement2Display={2.2} onSelect={handleNavigation} />
+          }
+
         </View>
 
-        <View style={styles.sectionContainer}>
+        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2.2 }]}>
           <Text style={styles.categoryTitle}>Reportages</Text>
-          <SimpleCarousel data={movies} nbElement2Display={4.5} onSelect={handleNavigation}/>
+          {
+            categories.isLoading ?
+              <ActivityIndicator />
+              : categories.isError ?
+                <View>
+                  <Text>Une erreur s'est produite lors du chargement</Text>
+                </View>
+                : <SimpleCarousel data={reportagesCaroussel} nbElement2Display={2.2} onSelect={handleNavigation} />
+          }
+
         </View>
       </ScrollView>
     </SafeAreaView>
