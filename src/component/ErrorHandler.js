@@ -33,6 +33,7 @@ export const ErrorHandler = ({ children }) => {
 
     const errorHandler = (e, isFatal) => {
         if (isFatal) {
+            console.log(e);
             alertAboutFatalError()
         }
         //Bugsnag.notify(e)

@@ -10,17 +10,14 @@ const Card = ({ data, onSelect, nbElement2Display }) => {
 
 
   // return <TouchableOpacity style={[styles.card, {width: screenWidth / nbElement2Display}]} //TODO design netflix
-  return <TouchableOpacity style={[styles.card, { width: screenWidth / nbElement2Display }]}
+  return <TouchableOpacity style={[styles.card, { width: screenWidth / nbElement2Display}]}
     onPress={onSelect}
   >
     <Image source={{ uri: imageUrl.data }} style={styles.image} />
-    <Text style={styles.title} >
+    <Text style={styles.title} numberOfLines={3} >
       {data.title}
     </Text>
     <View style={{
-      // display: 'flex',
-      // flexDirection: 'row',
-      // flexWrap: 'wrap',
       width: '100%',
       paddingLeft: 5
     }}>
@@ -66,31 +63,25 @@ const SimpleCarousel = ({
 const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
-    backgroundColor: "#FFF",
     paddingVertical: 5,
   },
   listContainer: {
     paddingHorizontal: 2, // Ajoute du padding pour éviter que les films collent aux bords
   },
   card: {
-    // height: 100, //TODO netflix
     maxHeight: 200,
-    marginHorizontal: 2, // Espacement entre les films
+    marginHorizontal: 5, // Espacement entre les films
     borderRadius: 5,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: 'flex-start'
   },
-  // image: {
-  //   width: "100%",       //TODO netflix
-  //   height: 140,
-  //   borderRadius: 10,
-  // },
+
   image: {
     width: "100%",
     height: "60%",
-    borderRadius: 10,
-    resizeMode: 'contain',
+    resizeMode: 'cover',
+    borderRadius: 5
   },
   title: {
     color: "#000",

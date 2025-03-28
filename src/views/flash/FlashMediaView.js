@@ -11,10 +11,11 @@ import {
   Dimensions
 } from 'react-native';
 
-import SimpleCarousel from '../../component/carousel/SimpleCarousel';
+import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { useQuery } from 'react-query';
 import { fetchLastReleaseMedias, fetchMediaByCategories } from '../../services/FlashMediasService';
+import CongresCaroussel from './caroussels/CongresCaroussel';
 
 
 const LIMIT_LAST_RELEASE = 5
@@ -22,27 +23,9 @@ const LIMIT_LAST_RELEASE = 5
 export const FlashMediaView = ({ navigation, route }) => {
 
   const lastRelease = useQuery(["media-last-release"], () => fetchLastReleaseMedias({ limit: LIMIT_LAST_RELEASE }))
-  const categories = useQuery(["medias-categories-content"], () => fetchMediaByCategories(), {
-    onSuccess: (data) => { initCaroussels(data) }
-  })
-  const [congresCaroussel, setCongresCaroussel] = useState([])
-  const [tpCaroussel, setTpCaroussel] = useState([])
-  const [entretiensCaroussel, setEntretiensCaroussel] = useState([])
-  const [reportagesCaroussel, setReportagesCaroussel] = useState([])
+  const categories = useQuery(["medias-categories-content"], () => fetchMediaByCategories())
 
 
-
-  const initCaroussels = async (caroussels) => {
-    generateCongresCarousselData
-    setCongresCaroussel(caroussels["Congrès"])
-    setTpCaroussel(caroussels["Travaux pratiques"])
-    setEntretiensCaroussel(caroussels["Entretiens"])
-    setReportagesCaroussel(caroussels["Reportages"])
-  }
-
-  const generateCongresCaroussel = () => {
-
-  }
 
   const handleNavigation = (card) => {
     navigation.push('flash-media-preview', {
@@ -74,7 +57,9 @@ export const FlashMediaView = ({ navigation, route }) => {
           }
 
         </View>
-        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2.2 }]}>
+
+
+        <View style={[styles.sectionContainer, { }]}>
           <Text style={styles.categoryTitle}>Congrès</Text>
           {
             categories.isLoading ?
@@ -83,7 +68,7 @@ export const FlashMediaView = ({ navigation, route }) => {
                 <View>
                   <Text>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <SimpleCarousel data={congresCaroussel} nbElement2Display={2.2} onSelect={handleNavigation} />
+                : <CongresCaroussel items={categories.data["Congrès"]} onSelectContent={handleNavigation}/>
           }
         </View>
 
@@ -96,7 +81,7 @@ export const FlashMediaView = ({ navigation, route }) => {
                 <View>
                   <Text>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <SimpleCarousel data={tpCaroussel} nbElement2Display={2.2} onSelect={handleNavigation} />
+                : <SimpleContentCarousel data={categories.data["Travaux pratiques"]} nbElement2Display={2.2} onSelect={handleNavigation} />
           }
 
         </View>
@@ -110,7 +95,7 @@ export const FlashMediaView = ({ navigation, route }) => {
                 <View>
                   <Text>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <SimpleCarousel data={entretiensCaroussel} nbElement2Display={2.2} onSelect={handleNavigation} />
+                : <SimpleContentCarousel data={categories.data["Entretiens"]} nbElement2Display={2.2} onSelect={handleNavigation} />
           }
 
         </View>
@@ -124,7 +109,7 @@ export const FlashMediaView = ({ navigation, route }) => {
                 <View>
                   <Text>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <SimpleCarousel data={reportagesCaroussel} nbElement2Display={2.2} onSelect={handleNavigation} />
+                : <SimpleContentCarousel data={categories.data["Reportages"]} nbElement2Display={2.2} onSelect={handleNavigation} />
           }
 
         </View>
@@ -138,10 +123,11 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
   },
   container: {
-    backgroundColor: '#fffefd',
+    // backgroundColor: '#fffefd',
+    backgroundColor: '#F1F1F1'
   },
   sectionContainer: {
-    marginTop: 10
+    marginTop: 5, paddingVertical: 5,
   },
   pageTitle: {
     fontSize: 24,
@@ -151,7 +137,7 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 18,
     marginVertical: 5,
-    marginLeft: 2,
+    marginLeft: 5,
     fontWeight: "bold"
   }
 })
