@@ -1,7 +1,8 @@
 import React from "react";
 
 import { View, Text, SafeAreaView, TouchableOpacity, Dimensions, Image, StyleSheet, ScrollView, FlatList, ImageBackground } from "react-native";
-
+import { useQuery } from "react-query";
+import { getS3Image } from "../../services/S3Service";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
@@ -41,13 +42,20 @@ const mediaSimilaire = [
 
 export const PreviewMediaView = ({ navigation, route }) => {
     const { media } = route.params;
+    const imageUrl = useQuery(['contentThumbnail', media.id_content, media.title], () => getS3Image(`${media.s3_path}/${media.title}/logo.png`))
+
+    const nav2 = () => {
+        navigation.navigate('flash-media-viewer', {
+            content: media
+        })
+    }
 
     return (<SafeAreaView style={styles.safeArea}>
 
         <ScrollView>
 
             <View style={styles.mediaSection}>
-                <View style={{ backgroundColor: 'orange' }}>
+                <View style={{ backgroundColor: '#fff' }}>
                     <TouchableOpacity
                         style={{
                             position: 'absolute',
@@ -67,7 +75,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
 
                     }}>
                         <Image
-                            source={{ uri: media.image }}
+                            source={{ uri: imageUrl.data }}
                             style={{
                                 resizeMode: "cover",
                                 width: "100%", height: '100%',
@@ -93,14 +101,16 @@ export const PreviewMediaView = ({ navigation, route }) => {
                             alignSelf: 'center',
                             marginVertical: 20
                         }}>
-                            <Image source={{ uri: media.image }} style={{
+                            <Image source={{ uri: imageUrl.data }} style={{
                                 width: '100%',
                                 height: '100%',
                             }} />
                         </View>
-                        <Text style={[styles.mediaTextContainer, { fontWeight: 'bold' }]}>Text 1 : Titre</Text>
-                        <Text style={styles.mediaTextContainer}>Text 2 : temps</Text>
-                        <TouchableOpacity style={styles.accessButtonContainer}>
+                        <Text style={[styles.mediaTextContainer, { fontWeight: 'bold' }]}>{media.title}</Text>
+                        <Text style={styles.mediaTextContainer}>{media.duration}</Text>
+                        <TouchableOpacity style={styles.accessButtonContainer}
+                            onPress={nav2}
+                        >
                             <FontAwesome name="play" size={18} color="black" />
                             <Text style={{ marginLeft: 10 }}>Accèder</Text>
                         </TouchableOpacity>
@@ -110,7 +120,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
                 </View>
 
                 <Text style={styles.mediaTextContainer}>
-                    Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+                    {media.description}
                 </Text>
 
                 <View style={styles.mediaInteractionContainer}>

@@ -1,5 +1,7 @@
-import React, { useState } from "react";
-import { View, Text, Image, Dimensions, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, Dimensions, StyleSheet, TouchableOpacity } from "react-native";
+import { useQuery } from "react-query";
+import { getS3Image } from "../../services/S3Service";
 import Carousel, {
   ICarouselInstance,
   Pagination,
@@ -7,30 +9,20 @@ import Carousel, {
 import { useSharedValue } from "react-native-reanimated";
 const { width: screenWidth } = Dimensions.get("window");
 
-const movies = [
-  {
-    id: "1",
-    title: "Stranger Things",
-    image: "https://image.tmdb.org/t/p/w500/x2LSRK2Cm7MZhjluni1msVJ3wDF.jpg",
-  },
-  {
-    id: "2",
-    title: "The Witcher",
-    image: "https://image.tmdb.org/t/p/w500/zrPpUlehQaBf8YX2NrVrKK8IEpf.jpg",
-  },
-  {
-    id: "3",
-    title: "Dark",
-    image: "https://image.tmdb.org/t/p/w500/uAQrHntCccFpvxp75XdQgqexlJd.jpg",
-  },
-  {
-    id: "4",
-    title: "Money Heist",
-    image: "https://image.tmdb.org/t/p/w500/mo6vQgGHywQmbm5tyN6hL9iR7df.jpg",
-  }
-];
 
-const StackCarousel = () => {
+const Card = ({ data, onPress }) => {
+  const imageUrl = useQuery(['contentThumbnail', data.id_content, data.title], () => getS3Image(`${data.s3_path}/${data.title}/logo.png`))
+
+  return <TouchableOpacity style={styles.card}
+    onPress={onPress}
+  >
+    <Image source={{ uri: imageUrl.data }} style={styles.image} />
+  </TouchableOpacity>
+}
+
+
+
+const PanoramaCarousel = ({ data, onSelect }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const ref = React.useRef(null);
   const progress = useSharedValue<number>(0);
@@ -49,31 +41,34 @@ const StackCarousel = () => {
   return (
     <View style={styles.container}>
       <Carousel
-      ref={ref}
+        ref={ref}
         loop
         autoPlay
         autoPlayInterval={3000}
-        data={movies}
+        data={data}
         scrollAnimationDuration={1000}
         onProgressChange={progress}
         onSnapToItem={(index) => setActiveIndex(index)}
         width={screenWidth}
-        height={screenWidth/2}
+        height={screenWidth / 2}
         pagingEnabled
         mode="parallax"
         modeConfig={{
           parallaxScrollingScale: 0.9,
           parallaxScrollingOffset: 50,
         }}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image source={{ uri: item.image }} style={styles.image} />
-          </View>
-        )}
+        renderItem={({ item }) => {
+          return <Card onPress={()=>{onSelect(item)}} data={item} />
+        }
+
+          //   (
+          //   
+          // )
+        }
       />
       <Pagination.Basic
         progress={progress}
-        data={movies}
+        data={data}
         dotStyle={{ backgroundColor: "rgba(0,0,0,0.2)", borderRadius: 50 }}
         containerStyle={{ gap: 5, marginTop: 10 }}
         onPress={onPressPagination}
@@ -110,4 +105,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StackCarousel;
+export default PanoramaCarousel;
