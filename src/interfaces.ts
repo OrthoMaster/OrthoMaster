@@ -23,3 +23,10 @@ export interface IContent {
     id_media_category: number | null;
     category_name: string;
 }
+
+export interface IEvent {
+    id: number;
+    name: string;
+    description: string;
+    logo_url: string;
+}

@@ -8,22 +8,68 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
-  Dimensions
+  Dimensions,
+  TextInput,
+  TouchableOpacity,
+  Image
 } from 'react-native';
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { useQuery } from 'react-query';
-import { fetchLastReleaseMedias, fetchMediaByCategories } from '../../services/FlashMediasService';
+import { fetchMedias } from '../../services/FlashMediasService';
 import CongresCaroussel from './caroussels/CongresCaroussel';
+import { fetchEvents } from '../../services/EventsService';
+import SimpleAdaptiveCarousel, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
+import { IEvent } from '../../interfaces';
 
 
 const LIMIT_LAST_RELEASE = 5
+const {width: screenWidth} = Dimensions.get('screen')
+
+const EventCard: React.FC<{event: IEvent}> = ({event}) => {
+  return <TouchableOpacity style={{
+    backgroundColor: '#F1F1F1',
+    borderRadius: 10,
+    width: screenWidth / 4, height: '100%',
+    padding: 10,
+    alignItems: 'center'
+  }}>
+    <Image
+      source={{uri: event.logo_url}}
+      style={{
+        width: "100%", height: "70%",
+        objectFit: 'contain'
+      }}
+    />
+    <Text style={{
+      textAlign: 'center',
+      fontSize: 10,
+      fontWeight: 'bold',
+      position: 'absolute', bottom: 5
+    }}>{event.name}</Text>
+  </TouchableOpacity>
+}
+
 
 export const FlashMediaView = ({ navigation, route }) => {
 
-  const lastRelease = useQuery(["media-last-release"], () => fetchLastReleaseMedias({ limit: LIMIT_LAST_RELEASE }))
-  const categories = useQuery(["medias-categories-content"], () => fetchMediaByCategories())
+  const lastRelease = useQuery(["media-last-release"], () => fetchMedias({ limit: LIMIT_LAST_RELEASE }))
+  const categories = useQuery(["medias-categories-content"], () => fetchMedias({ group_by: "category" }))
+  const { isError: eventsError, isLoading: eventsLoading } = useQuery(["events"], () => fetchEvents(), {
+    onSuccess: data => {
+      let evtsCards: CarouselItem[] = [];
+      data.forEach(evt => {
+        evtsCards.push({
+          key: evt.name,
+          content: <EventCard event={evt} />
+        })
+      });
+      setEventsCarouselItems(evtsCards)
+    }
+  })
+
+  const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([])
 
 
 
@@ -35,17 +81,11 @@ export const FlashMediaView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
-      <View style={{
-        backgroundColor: '#ffaf31',
-        padding: 15
-      }}>
-        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 22 }}>Médias</Text>
-      </View>
-      <ScrollView style={{ marginBottom: 50 }}>
+      <ScrollView >
 
         {/* <Text style={styles.pageTitle}>Medias</Text> */}
-        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2 }]}>
-          <Text style={styles.categoryTitle}>Nouveaux sur OrthoMaster</Text>
+        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2, paddingBottom: 30, marginTop: 0 }]}>
+          <Text style={styles.categoryTitle}>Tendances sur OrthoMaster</Text>
           {
             lastRelease.isLoading ?
               <ActivityIndicator />
@@ -58,9 +98,52 @@ export const FlashMediaView = ({ navigation, route }) => {
 
         </View>
 
+        <View style={[styles.sectionContainer]}>
+          <Text style={styles.categoryTitle}>Trouver un média</Text>
+          <TextInput style={{
+            backgroundColor: '#F1F1F1',
+            borderRadius: 10,
+            padding: 10,
+            width: "90%",
+            alignSelf: 'center'
+          }} placeholder="Rechercher par mots clés"
+            clearButtonMode="always"
+          />
+        </View>
 
-        <View style={[styles.sectionContainer, { }]}>
-          <Text style={styles.categoryTitle}>Congrès</Text>
+        <View style={[styles.sectionContainer,
+        {
+          // backgroundColor: "#6E7DA6",
+          // backgroundColor: "#fff",
+          // width: "100%",
+          // alignSelf: 'center',
+          // borderRadius: 5,
+          // borderColor: '#203864',
+          // borderWidth: 1,
+          // shadowOffset: {
+          //   width: 0, height: 0
+          // },
+          // shadowOpacity: 0.3,
+          // shadowRadius: 3,
+        }]}>
+          <Text style={[styles.categoryTitle]}>Congrès</Text>
+          <Text style={styles.categorySubTitle}>Les sociétés savantes</Text>
+          {
+            eventsLoading ?
+              <ActivityIndicator />
+              : eventsError ?
+                <View>
+                  <Text>Une erreur s'est produite lors du chargement</Text>
+                </View>
+                : <SimpleAdaptiveCarousel
+                  items={eventsCarouselItems}
+                  widthPercent={1}
+                  height={100}
+                  cardSpacing={5}
+                />
+          }
+
+          <Text style={[styles.categorySubTitle, {marginTop: 10}]}>Les derniers contenus</Text>
           {
             categories.isLoading ?
               <ActivityIndicator />
@@ -68,7 +151,7 @@ export const FlashMediaView = ({ navigation, route }) => {
                 <View>
                   <Text>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <CongresCaroussel items={categories.data["Congrès"]} onSelectContent={handleNavigation}/>
+                : <SimpleContentCarousel data={categories.data["Congrès"].slice(0, 15)} nbElement2Display={2.2} onSelect={handleNavigation} />
           }
         </View>
 
@@ -128,6 +211,7 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     marginTop: 5, paddingVertical: 5,
+    backgroundColor: '#fff'
   },
   pageTitle: {
     fontSize: 24,
@@ -139,5 +223,9 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     marginLeft: 5,
     fontWeight: "bold"
+  },
+  categorySubTitle: {
+    fontSize: 15,
+    marginLeft: 10,
   }
 })

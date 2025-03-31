@@ -17,8 +17,16 @@ export const FlashStack = () => {
         name="flash-media-home"
         component={FlashMediaView}
         options={{
-          headerShown: false,
-          //title: 'Flash orthopédie'
+          headerShown: true,
+          title: 'Médias',
+          headerTintColor: '#fff',
+          headerStyle: {
+            backgroundColor: "#8089D1"
+          },
+          headerTitleStyle:{
+            fontSize: 20,
+            fontWeight: 'bold'
+          },
         }}
       />
 

@@ -23,7 +23,7 @@ const SimpleAdaptiveCarousel: React.FC<CustomCarouselProps> = ({
   cardSpacing = 5
 }) => {
   return (
-    <View style={{height}}>
+    <View style={{height, marginVertical: 5}}>
       <FlatList
         data={items}
         horizontal

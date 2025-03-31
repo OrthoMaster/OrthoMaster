@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Dimensions, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import AntDesign from '@expo/vector-icons/AntDesign';
 const { width: screenWidth } = Dimensions.get("screen")
 
@@ -75,39 +75,39 @@ const CongresCaroussel: React.FC<CongresCarousselProps> = ({
         return evts
     }
 
-    const getEventCarousels = (): React.ReactNode => {
-        let carousels: React.ReactNode[] = []
-        for (const [key, value] of Object.entries(events[eventSelected])) {
-            carousels.push(<View key={eventSelected + key} style={{
-                marginVertical: 10,
-                flexDirection: "row",
-                alignItems: 'center',
-                backgroundColor: '#6E7DA6',
-                height: 200
-            }}>
-                <View style={{
-                    backgroundColor: '#203864',
-                    height: '100%',
-                    alignItems: 'center', justifyContent: 'center',
-                }}>
-                    <Text style={{
-                        fontWeight: 'bold',
-                        fontSize: 26,
-                        color: '#fff',
-                        transform: "rotate(-90deg)",
-                    }}>{key}</Text>
-                </View>
-                <View style={{flex: 1}}>
-                    <SimpleCarousel data={value} nbElement2Display={2} onSelect={(content) => {
-                        onSelectContent(content)
-                    }} />
-                </View>
-            </View>)
-        }
-        return <View>
-            {carousels}
-        </View>
-    }
+    // const getEventCarousels = (): React.ReactNode => {
+    //     let carousels: React.ReactNode[] = []
+    //     for (const [key, value] of Object.entries(events[eventSelected])) {
+    //         carousels.push(<View key={eventSelected + key} style={{
+    //             marginVertical: 10,
+    //             flexDirection: "row",
+    //             alignItems: 'center',
+    //             backgroundColor: '#6E7DA6',
+    //             height: 200
+    //         }}>
+    //             <View style={{
+    //                 backgroundColor: '#203864',
+    //                 height: '100%',
+    //                 alignItems: 'center', justifyContent: 'center',
+    //             }}>
+    //                 <Text style={{
+    //                     fontWeight: 'bold',
+    //                     fontSize: 26,
+    //                     color: '#fff',
+    //                     transform: "rotate(-90deg)",
+    //                 }}>{key}</Text>
+    //             </View>
+    //             <View style={{ flex: 1 }}>
+    //                 <SimpleCarousel data={value} nbElement2Display={2} onSelect={(content) => {
+    //                     onSelectContent(content)
+    //                 }} />
+    //             </View>
+    //         </View>)
+    //     }
+    //     return <View>
+    //         {carousels}
+    //     </View>
+    // }
 
     useEffect(() => {
         formatEvents()
@@ -118,14 +118,16 @@ const CongresCaroussel: React.FC<CongresCarousselProps> = ({
                         key: key,
                         content: <TouchableOpacity style={{
                             backgroundColor: '#203864',
-                            width: 100, height: '100%',
+                            width: 120, height: '100%',
                             alignItems: 'center', justifyContent: 'center',
                             padding: 5,
-                            borderRadius: 10
+                            borderRadius: 10,
+
                         }}
                             onPress={() => { setEventSelected(key) }}
                         >
-                            <Text style={{ color: "#fff", textAlign: 'center' }}>{key}</Text>
+                            {/* <Text style={{ color: "#fff", textAlign: 'center', fontSize: 10 }}>Chirurgie du sport, Paris</Text> */}
+                            <Text style={{ color: "#fff", textAlign: 'center', fontSize: 10 }}>{key}</Text>
                         </TouchableOpacity>
                     })
                 }
@@ -135,41 +137,16 @@ const CongresCaroussel: React.FC<CongresCarousselProps> = ({
             })
     }, [])
 
-    return (<View>
-        <View style={{
-            backgroundColor: '#6E7DA6',
-            paddingHorizontal: 20, paddingVertical: 10,
-            marginVertical: 10,
-            flexDirection: 'row',
-        }}>
-            <TextInput style={{
-                backgroundColor: '#fff',
-                width: "50%",
-                borderRadius: 5,
-                padding: 3,
-                flex: 1
-            }} placeholder="Mot clé."
-            clearButtonMode="always"
-            />
-            <Text style={{color: "#203864", flex: 1, alignSelf: 'center', textAlign: 'center'}}>{searchResult.length} résultats</Text>
-        </View>
-        {
-            eventSelected == null ?
-                <SimpleAdaptiveCarousel
-                    items={mainEvents}
-                    height={70}
-                    widthPercent={1}
-                    cardSpacing={5}
-                />
-                : <EventSelectedTag
-                    label={eventSelected}
-                    onClose={() => setEventSelected(null)}
-                />
-        }
-        {
-            eventSelected &&
-            getEventCarousels()
-        }
+    return (<View style={{ paddingBottom: 15 }}>
+
+        <SimpleAdaptiveCarousel
+            items={mainEvents}
+            height={50}
+            widthPercent={1}
+            cardSpacing={5}
+        />
+
+
     </View>);
 }
 
