@@ -25,6 +25,8 @@ import { fetchSearchList } from '../../services/SearchService';
 import { getCurrentUser } from '../../services/UserService';
 import { registerFormation, getUserRegisteredFormation } from '../../services/FormationService';
 
+const PAGE_SIZE = 10
+
 const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState()
@@ -39,7 +41,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
         contentType: filters,
         body: null,
         searchText: searchText
-    }, page), {
+    }, page, PAGE_SIZE), {
         onSuccess: val => {
             if (val.length == 0) {
                 dispatch(listEnded())

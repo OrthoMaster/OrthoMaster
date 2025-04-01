@@ -21,20 +21,26 @@ import { fetchMedias } from '../../services/FlashMediasService';
 import CongresCaroussel from './caroussels/CongresCaroussel';
 import { fetchEvents } from '../../services/EventsService';
 import SimpleAdaptiveCarousel, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
-import { IEvent } from '../../interfaces';
+import { IContent, IEvent } from '../../interfaces';
+import { ChannelMediaViewParams } from './ChannelMediaView';
+import { PreviewMediaParams } from './PreviewMediaView';
 
 
 const LIMIT_LAST_RELEASE = 5
 const {width: screenWidth} = Dimensions.get('screen')
 
-const EventCard: React.FC<{event: IEvent}> = ({event}) => {
+type EventCardProp = {
+  event: IEvent, onSelect: (event: IEvent) => any
+}
+const EventCard: React.FC<EventCardProp> = ({event, onSelect}) => {
   return <TouchableOpacity style={{
     backgroundColor: '#F1F1F1',
     borderRadius: 10,
     width: screenWidth / 4, height: '100%',
     padding: 10,
     alignItems: 'center'
-  }}>
+  }}
+  onPress={()=>onSelect(event)}>
     <Image
       source={{uri: event.logo_url}}
       style={{
@@ -62,7 +68,16 @@ export const FlashMediaView = ({ navigation, route }) => {
       data.forEach(evt => {
         evtsCards.push({
           key: evt.name,
-          content: <EventCard event={evt} />
+          content: <EventCard event={evt} onSelect={(event)=> {
+            const params : ChannelMediaViewParams = {
+              channelType: 'event',
+              name: event.name,
+              logoUrl: event.logo_url,
+              description: event.description,
+              targetId: event.id
+            }
+            navigation.navigate("flash-media-channel", params)
+          }}/>
         })
       });
       setEventsCarouselItems(evtsCards)
@@ -73,10 +88,10 @@ export const FlashMediaView = ({ navigation, route }) => {
 
 
 
-  const handleNavigation = (card) => {
+  const handleNavigation = (card: IContent) => {
     navigation.push('flash-media-preview', {
       media: card
-    })
+    } as PreviewMediaParams)
   }
 
   return (

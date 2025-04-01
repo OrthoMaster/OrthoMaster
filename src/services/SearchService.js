@@ -3,7 +3,7 @@ import axios from "axios";
 import { restoreLocalConfigAsync } from "../utils";
 const baseurl = process.env.EXPO_PUBLIC_API_URL + "/contents/v2/search"
 
-export const fetchSearchList = async ({ contentType = null, filters = null, searchText = "" }, page) => {
+export const fetchSearchList = async ({ contentType = null, filters = null, searchText = "" }, page, pageSize) => {
 
 
   const config = await restoreLocalConfigAsync()
@@ -14,10 +14,10 @@ export const fetchSearchList = async ({ contentType = null, filters = null, sear
     .get(baseurl, {
       headers: { Authorization: authHeader },
       params: {
-        pageSize: page ? 10 : null,
+        pageSize: pageSize ? pageSize : 10,
         page: page,
         type: contentType,
-        filters: ['Genou', 'anatomie'],
+        filters: filters,
         searchText: searchText,
         user: config.user.id_user
       }

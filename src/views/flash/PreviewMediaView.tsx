@@ -1,48 +1,95 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
-import { View, Text, SafeAreaView, TouchableOpacity, Dimensions, Image, StyleSheet, ScrollView, FlatList, ImageBackground } from "react-native";
+import { View, Text, SafeAreaView, TouchableOpacity, Dimensions, Image, StyleSheet, ScrollView, FlatList, ImageBackground, ActivityIndicator } from "react-native";
 import { useQuery } from "react-query";
 import { getS3Image } from "../../services/S3Service";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
+import { IContent } from "../../interfaces";
 
 import { LinearGradient } from 'expo-linear-gradient';
+import { fetchSearchList } from "../../services/SearchService";
 
 const screenWidth = Dimensions.get('screen').width;
 
-const mediaSimilaire = [
-    {
-        id: "1",
-        title: "Stranger Things",
-        image: "https://image.tmdb.org/t/p/w500/x2LSRK2Cm7MZhjluni1msVJ3wDF.jpg",
-    },
-    {
-        id: "2",
-        title: "The Witcher",
-        image: "https://image.tmdb.org/t/p/w500/zrPpUlehQaBf8YX2NrVrKK8IEpf.jpg",
-    },
-    {
-        id: "3",
-        title: "Dark",
-        image: "https://image.tmdb.org/t/p/w500/uAQrHntCccFpvxp75XdQgqexlJd.jpg",
-    },
-    {
-        id: "4",
-        title: "Money Heist",
-        image: "https://image.tmdb.org/t/p/w500/mo6vQgGHywQmbm5tyN6hL9iR7df.jpg",
-    },
-    {
-        id: "5",
-        title: "Breaking Bad",
-        image: "https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
-    }
-]
+type SimilarMediasContentCardProp = { media: IContent, onSelect: (media: IContent) => any }
+const SimilarMediasContentCard: React.FC<SimilarMediasContentCardProp> = ({ media, onSelect }): React.ReactNode => {
+    const imageUrl = useQuery(['contentThumbnail', media.id_content, media.title], () => getS3Image(`${media.s3_path}/${media.title}/logo.png`))
+    // console.log(media);
 
+    return <TouchableOpacity style={{
+        flexDirection: 'row',
+        marginVertical: 3,
+        height: 100, width: "100%",
+        borderRadius: 5,
+        borderStartStartRadius: 5,
+        shadowOffset: {
+            width: 0, height: 0
+        },
+        shadowRadius: 1,
+        shadowOpacity: 0.5,
+        backgroundColor: '#fff'
+    }}
+        onPress={()=>onSelect(media)}
+    >
+        <Image
+            source={{ uri: imageUrl.data }}
+            style={{
+                width: '40%',
+                height: "100%",
+                objectFit: 'cover',
+                borderTopLeftRadius: 5, borderBottomLeftRadius: 5
+            }}
+        />
+        <View style={{
+            flex: 3,
+            padding: 5
+        }}>
+            <Text style={{
+                fontWeight: 'bold',
+                fontSize: 12,
+                marginTop: 5
+            }}>{media.title}</Text>
+            <View style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap'
+            }}>
+                <Text style={{fontSize: 10, color: '#ffaf31', fontWeight: 'bold', marginRight: 5}}>{media.author}</Text>
+                <Text style={{fontSize: 10}}>⏱️ {media.duration}</Text>
+            </View>
+            <Text style={{
+                fontSize: 10, color: 'gray'
+            }}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+            >
+                {
+                    media.tags?.split(";").map((value, index) => {
+                        return <Text key={index}>{String(value).charAt(0).toUpperCase()+String(value).slice(1)}, </Text>
+                    })
+                }
+            </Text>
+        </View>
+    </TouchableOpacity>
+}
+
+export type PreviewMediaParams = {
+    media: IContent;
+}
 
 export const PreviewMediaView = ({ navigation, route }) => {
-    const { media } = route.params;
+    const { media }: PreviewMediaParams = route.params;
+    const [similarTags, setSimilarTags] = useState<string>(null)
     const imageUrl = useQuery(['contentThumbnail', media.id_content, media.title], () => getS3Image(`${media.s3_path}/${media.title}/logo.png`))
+    const similarContent = useQuery(["search-similar-media", media.id_content], () => fetchSearchList({
+        searchText: similarTags,
+        contentType: ['flash']
+    }, 1, 6), {
+        enabled: similarTags !== null
+    })
+
+
 
     const nav2 = () => {
         navigation.navigate('flash-media-viewer', {
@@ -50,29 +97,43 @@ export const PreviewMediaView = ({ navigation, route }) => {
         })
     }
 
+    useEffect(() => {
+        const shuffleArray = (arr: string[]): string[] => {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
+            }
+            return arr
+        }
+        console.log(media.tags);
+        let finalStr: string
+        if (media.tags) {
+            let tags: string[] = media.tags.split(";")
+            tags = shuffleArray(tags)
+            tags = tags.slice(0, 3)
+            finalStr = tags.join(' ')
+            console.log("FINAL", finalStr);
+        } else {
+            finalStr = ''
+        }
+        setSimilarTags(finalStr)
+    }, [])
+
     return (<SafeAreaView style={styles.safeArea}>
 
         <ScrollView>
 
             <View style={styles.mediaSection}>
                 <View style={{ backgroundColor: '#fff' }}>
-                    <TouchableOpacity
-                        style={{
-                            position: 'absolute',
-                            top: 10, left: 10,
-                            zIndex: 20
-                        }}
-                        onPress={() => { navigation.goBack() }}
-                    >
-                        <AntDesign name="close" size={24} color="black" />
-                    </TouchableOpacity>
+
                     <View style={{
                         width: "100%", height: '100%',
                         position: 'absolute',
                         top: 0,
                         left: 0,
-                        zIndex: 1,
-
+                        zIndex: 1
                     }}>
                         <Image
                             source={{ uri: imageUrl.data }}
@@ -145,35 +206,30 @@ export const PreviewMediaView = ({ navigation, route }) => {
                 </View>
             </View>
             <View style={{ paddingVertical: 10 }}>
-                <Text style={{ fontWeight: "bold", fontSize: 18, marginLeft: 5 }}>Similaires</Text>
-                <FlatList
-                    data={mediaSimilaire}
-                    keyExtractor={(item) => item.id}
-                    scrollEnabled={false}
-                    renderItem={(item) => (
-
-                        <View style={{
-                            width: screenWidth, height: screenWidth / 2,
-                            paddingHorizontal: 10,
-                            paddingVertical: 5,
-                        }}>
-
-                            <TouchableOpacity key={item.index}
-                                style={{
-                                    width: '100%', height: "100%",
+                <Text style={{ fontWeight: "bold", fontSize: 18, marginLeft: 5, marginBottom: 10 }}>À voir aussi</Text>
+                {
+                    similarContent.isLoading ?
+                        <ActivityIndicator />
+                        : <FlatList
+                            data={similarContent.data?.filter((m: { id_content: number; }) => m.id_content != media.id_content)}
+                            keyExtractor={(item: any, index: number) => index.toString()}
+                            scrollEnabled={false}
+                            contentContainerStyle={{
+                                width: "95%",
+                                alignSelf: 'center'
+                            }}
+                            renderItem={({ item }) => (
+                                <SimilarMediasContentCard media={item} 
+                                onSelect={(m) => {
+                                    navigation.push('flash-media-preview', {
+                                        media: m
+                                      } as PreviewMediaParams)
                                 }}
-                            >
-                                <Image
-                                    source={{ uri: item.item.image }}
-                                    style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        borderRadius: 5
-                                    }} />
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                />
+                                />
+                            )}
+                        />
+                }
+
             </View>
         </ScrollView>
 

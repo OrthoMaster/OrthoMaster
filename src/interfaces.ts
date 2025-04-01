@@ -15,10 +15,8 @@ export interface IContent {
     aws_object_path: string;
     published: boolean;
     creation: string;
-    id_event: number | null;
+    id_past_event: number | null;
     event: string | null;
-    event_start_date: string;
-    event_end_date: string;
     event_edition_year: string | null;
     id_media_category: number | null;
     category_name: string;
@@ -29,4 +27,13 @@ export interface IEvent {
     name: string;
     description: string;
     logo_url: string;
+}
+
+export interface IPastEvent {
+    id: number;
+    id_event: number;
+    edition_year: string;
+    start_date: string;
+    end_date: string;
+    description: string;
 }

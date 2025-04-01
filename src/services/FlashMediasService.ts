@@ -7,6 +7,7 @@ const baseurl = process.env.EXPO_PUBLIC_API_URL+ "/medias"
 type fetchMediasParams = {
   limit?: number;
   group_by?: string;
+  event?: number;
 }
 
 export const fetchMedias = async (params?: fetchMediasParams) => {
