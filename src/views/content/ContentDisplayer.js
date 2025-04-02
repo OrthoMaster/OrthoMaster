@@ -7,9 +7,9 @@ import {
   View,
   RefreshControl,
   Image,
-  TouchableOpacity
+  TouchableOpacity,
+  SafeAreaView
 } from 'react-native';
-import { ContentHeader } from "./ContentHeader";
 
 import { useQuery, useMutation } from "react-query";
 
@@ -28,7 +28,6 @@ import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 
 export function ContentDisplayer({ route, navigation }) {
   var { content, formation, type, demoMode } = route.params;
-
   const dispatch = useDispatch();
   const appState = useRef(AppState.currentState);
   const contentScrollRef = useRef();
@@ -87,7 +86,6 @@ export function ContentDisplayer({ route, navigation }) {
 
   useEffect(() => {
     // if (content.type == 'lesson' && content.title != 'initial' && content.title != 'final') { // tmp handling of main quiz in the formation
-
     if (formation && type == "lesson") { // tmp handling of main quiz in the formation
       launchDate = getCurrentDate()
 
@@ -140,19 +138,17 @@ export function ContentDisplayer({ route, navigation }) {
   if (lessonIsFinish || contentIsRunning == false) return
 
   return (
-    <View style={styles.container}>
-      <ContentHeader
-        title={content.title}
-        onReturn={() => {
-          dispatch(exitContent())
-          xmlContent.remove()   // by removing query, caching is disable on content display
-          if (routes.length > 3 && content.type == 'lesson') {
-            navigation.pop(routes.length - 2)
-          } else {
-            navigation.goBack()
-          }
-        }}
-      />
+    <SafeAreaView style={styles.container}>
+
+      <Text style={{
+        fontWeight: 'bold',
+        fontSize: 18,
+        textAlign: 'center',
+        paddingVertical: 15,
+        marginLeft: 50
+      }} numberOfLines={1}>
+        {content.title}
+      </Text>
       <View style={{
         flex: 1,
         width: '100%',
@@ -223,7 +219,7 @@ export function ContentDisplayer({ route, navigation }) {
 
       </View>
 
-    </View>
+    </SafeAreaView>
   )
 }
 

@@ -109,16 +109,13 @@ export const ModuleLayout = ({ navigation, route }) => {
         }, 2000);
     }, []);
 
+    useEffect(() => {
+        navigation.setOptions({ headerTitle: route.params.headerTitle })
+    }, [])
+
 
     return (
         <View style={styles.container}>
-            <LessonHeader
-                onSearch={() => (navigation.navigate('formation-search'))}
-                title={formation?.formation_name}
-                navigation={navigation}
-                returnEnabed={true}
-                searchEnabled={false}
-            />
             {
                 modulesLoading && !modules ?
                     <ActivityIndicator />

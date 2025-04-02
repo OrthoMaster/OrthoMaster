@@ -33,9 +33,11 @@ const RunningFormationCard = ({ params, thumbnail_url }) => {
         onSuccess: (data) => {
             queryClient.invalidateQueries(["user-formations"])
             queryClient.invalidateQueries(["formations"])
-            navigation.navigate("formation-modules", {
+            
+            navigation.push("formation-modules", {
                 userFormationId: data.insertId,
-                demoMode: false
+                demoMode: false,
+                headerTitle: params.formation_name
             })
         }
     })
@@ -69,9 +71,10 @@ const RunningFormationCard = ({ params, thumbnail_url }) => {
                 }}
                 onPress={() => {
                     if (params.id)
-                        navigation.navigate("formation-modules", {
+                        navigation.push("formation-modules", {
                             userFormationId: params.id,
-                            demoMode: false
+                            demoMode: false,
+                            headerTitle: params.formation_name
                         })
                     else
                         register2Formation.mutateAsync({
@@ -117,9 +120,10 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
         onSuccess: data => {
             queryClient.invalidateQueries({ queryKey: ["formations"] })
 
-            navigation.navigate("formation-modules", {
+            navigation.push("formation-modules", {
                 userFormationId: data.insertId,
-                demoMode: isStudent || params.id_product_odoo === null ? false : true
+                demoMode: isStudent || params.id_product_odoo === null ? false : true,
+                headerTitle: params.formation_name
             })
         }
     })
@@ -183,9 +187,10 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
                     <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#92D050' }]}
                         onPress={() => {
                             if (params.id) {
-                                navigation.navigate("formation-modules", {
+                                navigation.push("formation-modules", {
                                     userFormationId: params.id,
-                                    demoMode: isStudent || params.id_product_odoo === null ? false : true
+                                    demoMode: isStudent || params.id_product_odoo === null ? false : true,
+                                    headerTitle: params.formation_name
                                 })
                             } else {
                                 startFormation.mutate({
@@ -316,20 +321,11 @@ export const FormationView = ({ navigation, route }) => {
 
     if (isLoading)
         return <View style={styles.container}>
-            <LessonHeader
-                searchEnabled={false}
-                title={"Formations"}
-                navigation={navigation}
-            />
             <LoadingContent />
         </View>
 
     return <View style={styles.container}>
-        <LessonHeader
-            searchEnabled={false}
-            title={"Formations"}
-            navigation={navigation}
-        />
+
         <ScrollView refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>

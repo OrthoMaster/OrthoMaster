@@ -9,8 +9,7 @@ import { QaLayout } from '../../views/home/QaLayout';
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 import { LessonEndingView } from '../../views/content/LessonEndingView';
 
-import { StepNumber } from '../../component/tooltip/StepNumber';
-import { Tooltip } from '../../component/tooltip/Tooltip';
+import ReturnButtonIcon from '../components/ReturnButton';
 
 const HomeStackNav = createStackNavigator();
 
@@ -38,7 +37,12 @@ export const HomeStack = (user) => {
         name="home-content"
         component={ContentDisplayer}
         options={{
-          headerShown: false
+          headerShown: true,
+          headerTitle: "",
+          headerBackButtonDisplayMode: "minimal",
+          headerTintColor: '#000',
+          headerTransparent: true,
+          headerBackImage: ()=>(<ReturnButtonIcon />)
         }}
       />
       <HomeStackNav.Screen
