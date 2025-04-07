@@ -43,34 +43,34 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
             let contents = await allMediaFromChannel.data.filter((ct: IContent) => ct.id_past_event == pastEventsElem.id)
             carousels.push(
                 <View key={pastEventsElem.id} style={{
-                                marginVertical: 20,
-                                flexDirection: "row",
-                                alignItems: 'center',
-                                height: 200
-                            }}>
-                                <View style={{
-                                    backgroundColor: '#ffaf31',
-                                    height: '100%',
-                                    alignItems: 'center', justifyContent: 'center',
-                                }}>
-                                    <Text style={{
-                                        fontWeight: 'bold',
-                                        fontSize: 20,
-                                        color: '#fff',
-                                        transform: "rotate(-90deg)",
-                                        fontFamily: "impact"
-                                    }}>{pastEventsElem.edition_year}</Text>
-                                </View>
-                                <View style={{flex: 1, height: '100%'}}>
-                                    <SimpleCarousel data={contents} nbElement2Display={2} onSelect={(content: IContent) => {
-                                        // onSelectContent(content)
-                                        navigation.push("flash-media-preview", {
-                                            media: content
-                                        })
-                                        
-                                    }} />
-                                </View>
-                            </View>
+                    marginVertical: 20,
+                    flexDirection: "row",
+                    alignItems: 'center',
+                    height: 200
+                }}>
+                    <View style={{
+                        backgroundColor: '#ffaf31',
+                        height: '100%',
+                        alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <Text style={{
+                            fontWeight: 'bold',
+                            fontSize: 20,
+                            color: '#fff',
+                            transform: "rotate(-90deg)",
+                            fontFamily: "impact"
+                        }}>{pastEventsElem.edition_year}</Text>
+                    </View>
+                    <View style={{ flex: 1, height: '100%' }}>
+                        <SimpleCarousel data={contents} nbElement2Display={2} onSelect={(content: IContent) => {
+                            // onSelectContent(content)
+                            navigation.push("flash-media-preview", {
+                                media: content
+                            })
+
+                        }} />
+                    </View>
+                </View>
             )
         }
         setEventCarousels(carousels)
@@ -108,8 +108,10 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
                     padding: 10,
                 }}>
                     <Text style={styles.headerTitle}>{channelParams.name}</Text>
-                    <Text>Biceps;IRM;tendons;Rupture;Radiologie;Phillipe Peetrons;Serre Chevalier;Soléaire accessoire;Syndrome de l'artère poplitée piégée;Philippe Peetrons;muscle inconstant;quatrième fibulaire;chef long biceps;double biceps;bande aponevrotique;lacertus fibrosus;court chef du biceps;canal de Guyon;Peroneus quartus</Text>
-                    {/* <Text>{channelParams.description || "Description du congrès"}</Text> */}
+                    {
+                        channelParams.description &&
+                        <Text>{channelParams.description}</Text>
+                    }
                 </View>
             </View>
 

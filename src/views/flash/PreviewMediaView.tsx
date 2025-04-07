@@ -18,7 +18,6 @@ const screenWidth = Dimensions.get('screen').width;
 type SimilarMediasContentCardProp = { media: IContent, onSelect: (media: IContent) => any }
 const SimilarMediasContentCard: React.FC<SimilarMediasContentCardProp> = ({ media, onSelect }): React.ReactNode => {
     const imageUrl = useQuery(['contentThumbnail', media.id_content, media.title], () => getS3Image(`${media.s3_path}/${media.title}/logo.png`))
-    // console.log(media);
 
     return <TouchableOpacity style={{
         flexDirection: 'row',

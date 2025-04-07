@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, Image, FlatList, Dimensions, StyleSheet, TouchableOpacity } from "react-native";
+import React, {useState} from "react";
+import { View, Text, Image, FlatList, Dimensions, StyleSheet, TouchableOpacity, NativeSyntheticEvent, LayoutChangeEvent } from "react-native";
 import { useQuery } from "react-query";
 import { getS3Image } from "../../services/S3Service";
 const { width: screenWidth } = Dimensions.get("window");
@@ -7,13 +7,27 @@ const { width: screenWidth } = Dimensions.get("window");
 
 const Card = ({ data, onSelect, nbElement2Display }) => {
   const imageUrl = useQuery(['contentThumbnail', data.id_content, data.title], () => getS3Image(`${data.s3_path}/${data.title}/logo.png`))
+  const [imgDimensions, setImgDimensions] = useState({
+    width: 0,
+    height: 0
+  })
 
 
   // return <TouchableOpacity style={[styles.card, {width: screenWidth / nbElement2Display}]} //TODO design netflix
   return <TouchableOpacity style={[styles.card, { width: screenWidth / nbElement2Display}]}
     onPress={onSelect}
+    onLayout={(event : LayoutChangeEvent) => {
+      setImgDimensions({
+        width: event.nativeEvent.layout.width,
+        height: event.nativeEvent.layout.width * (9/16)
+      })
+      
+    }}
   >
-    <Image source={{ uri: imageUrl.data }} style={styles.image} />
+    <Image source={{ uri: imageUrl.data }} style={[styles.image, {
+      width: imgDimensions.width,
+      height: imgDimensions. height
+    }]} />
     <Text style={styles.title} numberOfLines={3} >
       {data.title}
     </Text>

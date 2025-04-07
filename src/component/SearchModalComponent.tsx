@@ -102,7 +102,7 @@ const SearchCard: React.FC<SearchCardProps> = ({ content, onSelect }) => {
         }}
     >
         <View style={{
-            flex: 2,
+            width: screenWidth / 2.5,
             alignItems: 'center',
             justifyContent: 'center',
         }}>
@@ -110,8 +110,8 @@ const SearchCard: React.FC<SearchCardProps> = ({ content, onSelect }) => {
                 thumbnail.data
                     ? <Image
                         style={{
-                            width: '100%',
-                            height: '100%',
+                            width: screenWidth / 2.5,
+                            height: (screenWidth / 2.5) * (9/16),
                             backgroundColor: '#000'
                         }}
                         source={{
@@ -126,7 +126,7 @@ const SearchCard: React.FC<SearchCardProps> = ({ content, onSelect }) => {
 
 
         <View style={{
-            flex: 3,
+            flex: 1,
             paddingHorizontal: 5,
             display: 'flex',
             justifyContent: 'flex-start'
@@ -380,7 +380,6 @@ const cardStyle = StyleSheet.create({
         flexDirection: 'row',
         height: screenWidth * 0.25,
         paddingHorizontal: 5,
-        backgroundColor: 'green'
     },
     cardInfoTitle: {
         fontWeight: 'bold',
