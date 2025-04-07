@@ -32,6 +32,13 @@ export default function App({ navigation }) {
               path: "open/content/:id"
             }
           }
+        },
+        'Médias': {
+          screens: {
+            'flash-media-home': {
+              path: "open/media-preview/:id"
+            }
+          }
         }
       }
     }

@@ -7,6 +7,7 @@ import Carousel, {
   Pagination,
 } from "react-native-reanimated-carousel";
 import { useSharedValue } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 const { width: screenWidth } = Dimensions.get("window");
 
 
@@ -17,6 +18,21 @@ const Card = ({ data, onPress }) => {
     onPress={onPress}
   >
     <Image source={{ uri: imageUrl.data }} style={styles.image} />
+    <LinearGradient colors={["transparent","transparent", "#000"]}
+    style={{
+      width: '100%', height: '100%',
+      position: 'absolute'
+    }}
+    />
+    <View style={{
+      position: 'absolute',
+      bottom: 10,
+      zIndex: 1,
+      width: '90%'
+    }}>
+      <Text style={{color: "#fff", fontWeight: "bold", fontSize: 14, textAlign: 'left'}}>{data.title}</Text>
+      <Text style={{color: '#fff'}}>par <Text style={{color: '#ffaf31', fontWeight: 'bold', textAlign: 'left'}}>{data.author}</Text></Text>
+    </View>
   </TouchableOpacity>
 }
 

@@ -3,19 +3,25 @@ import React from 'react'
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { FlashMediaView } from '../../views/flash/FlashMediaView';
-
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 import { PreviewMediaView } from '../../views/flash/PreviewMediaView';
 import ChannelMediaView from '../../views/flash/ChannelMediaView';
 import ReturnButtonIcon from '../components/ReturnButton';
 
+
+
 const FlashStackNav = createStackNavigator();
-export const FlashStack = ({navigation}) => {
+export const FlashStack = ({}) => {
 
 
 
   return (
-    <FlashStackNav.Navigator initialRouteName='flash-media-home'>
+    <FlashStackNav.Navigator
+    initialRouteName='flash-media-home'
+    screenOptions={{
+      animation: 'default'
+    }}
+    >
       <FlashStackNav.Screen
         name="flash-media-home"
         component={FlashMediaView}
@@ -24,7 +30,7 @@ export const FlashStack = ({navigation}) => {
           title: 'Médias',
           headerTintColor: '#fff',
           headerStyle: {
-            backgroundColor: "#8089D1"
+            backgroundColor: "#ffaf31"
           },
           headerTitleStyle: {
             fontSize: 20,
@@ -70,6 +76,7 @@ export const FlashStack = ({navigation}) => {
           headerBackImage: ()=>(<ReturnButtonIcon />)
         }}
       />
+
     </FlashStackNav.Navigator>
   );
 }

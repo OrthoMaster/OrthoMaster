@@ -8,6 +8,7 @@ export interface IContent {
     type: string;
     author: string;
     duration: string;
+    module_num: number;
     description: string;
     order: number | null;
     tags: string;
@@ -20,6 +21,20 @@ export interface IContent {
     event_edition_year: string | null;
     id_media_category: number | null;
     category_name: string;
+}
+
+export interface ISearchContent extends IContent {
+    demo_access: boolean;
+    id_formation_catalog: number;
+    formation_name: string;
+    enabled: boolean; // FORMATION
+    id_product_odoo: number;
+    id_user_formation: number;
+    certifying: boolean;
+    is_paid: boolean;
+    score_title: number;
+    score_author: number;
+    score_tags: number;
 }
 
 export interface IEvent {

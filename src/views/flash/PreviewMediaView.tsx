@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 
-import { View, Text, SafeAreaView, TouchableOpacity, Dimensions, Image, StyleSheet, ScrollView, FlatList, ImageBackground, ActivityIndicator } from "react-native";
+import { View, Text, SafeAreaView, TouchableOpacity, Dimensions, Image, StyleSheet, ScrollView, FlatList, ImageBackground, ActivityIndicator, Share } from "react-native";
 import { useQuery } from "react-query";
+
+import { useGetUser } from "../../hooks/useGetUser.hook";
 import { getS3Image } from "../../services/S3Service";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -29,16 +31,15 @@ const SimilarMediasContentCard: React.FC<SimilarMediasContentCardProp> = ({ medi
         },
         shadowRadius: 1,
         shadowOpacity: 0.5,
-        backgroundColor: '#fff'
     }}
-        onPress={()=>onSelect(media)}
+        onPress={() => onSelect(media)}
     >
         <Image
             source={{ uri: imageUrl.data }}
             style={{
                 width: '40%',
                 height: "100%",
-                objectFit: 'cover',
+                objectFit: 'contain',
                 borderTopLeftRadius: 5, borderBottomLeftRadius: 5
             }}
         />
@@ -49,24 +50,25 @@ const SimilarMediasContentCard: React.FC<SimilarMediasContentCardProp> = ({ medi
             <Text style={{
                 fontWeight: 'bold',
                 fontSize: 12,
-                marginTop: 5
+                marginTop: 5,
+                color: '#fff'
             }}>{media.title}</Text>
             <View style={{
                 flexDirection: 'row',
                 flexWrap: 'wrap'
             }}>
-                <Text style={{fontSize: 10, color: '#ffaf31', fontWeight: 'bold', marginRight: 5}}>{media.author}</Text>
-                <Text style={{fontSize: 10}}>⏱️ {media.duration}</Text>
+                <Text style={{ fontSize: 10, color: '#ffaf31', fontWeight: 'bold', marginRight: 5 }}>{media.author}</Text>
+                <Text style={{ fontSize: 10, color: "#F1F1F1" }}>⏱️ {media.duration}</Text>
             </View>
             <Text style={{
-                fontSize: 10, color: 'gray'
+                fontSize: 10, color: '#999999'
             }}
-            numberOfLines={2}
-            ellipsizeMode="tail"
+                numberOfLines={2}
+                ellipsizeMode="tail"
             >
                 {
                     media.tags?.split(";").map((value, index) => {
-                        return <Text key={index}>{String(value).charAt(0).toUpperCase()+String(value).slice(1)}, </Text>
+                        return <Text key={index}>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}, </Text>
                     })
                 }
             </Text>
@@ -88,8 +90,17 @@ export const PreviewMediaView = ({ navigation, route }) => {
     }, 1, 6), {
         enabled: similarTags !== null
     })
+  const { data: user, ...userQuery } = useGetUser()
 
 
+    const shareMedia = async (media2share: IContent) => {
+        Share.share({
+            title: media2share.title,
+            message: "Voici un contenu intéressant à voir sur OrthoMaster :\n\n"+
+            media2share.title + " par " + media2share.author+ "\n\n"+
+            "https://app.orthomaster.fr/open/media-preview?id="+media2share.id_content,
+        })
+    }
 
     const nav2 = () => {
         navigation.navigate('flash-media-viewer', {
@@ -107,14 +118,12 @@ export const PreviewMediaView = ({ navigation, route }) => {
             }
             return arr
         }
-        console.log(media.tags);
         let finalStr: string
         if (media.tags) {
             let tags: string[] = media.tags.split(";")
             tags = shuffleArray(tags)
-            tags = tags.slice(0, 3)
+            tags = tags.slice(0, 5)
             finalStr = tags.join(' ')
-            console.log("FINAL", finalStr);
         } else {
             finalStr = ''
         }
@@ -125,7 +134,16 @@ export const PreviewMediaView = ({ navigation, route }) => {
 
         <ScrollView>
 
-            <View style={styles.mediaSection}>
+            <View style={[styles.mediaSection, {
+                shadowColor: "#000",
+                shadowOffset: {
+                    width: 0, height: 10
+                },
+                shadowRadius: 10,
+                shadowOpacity: 0.8,
+                paddingBottom: 20,
+                zIndex: 1
+            }]}>
                 <View style={{ backgroundColor: '#fff' }}>
 
                     <View style={{
@@ -158,7 +176,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
                     </View>
                     <View style={{ zIndex: 10 }}>
                         <View style={{
-                            width: screenWidth / 2, height: (screenWidth / 2) / 2,
+                            width: screenWidth * 0.9, height: (screenWidth * 0.9) / 2,
                             alignSelf: 'center',
                             marginVertical: 20
                         }}>
@@ -167,37 +185,49 @@ export const PreviewMediaView = ({ navigation, route }) => {
                                 height: '100%',
                             }} />
                         </View>
-                        <Text style={[styles.mediaTextContainer, { fontWeight: 'bold' }]}>{media.title}</Text>
-                        <Text style={styles.mediaTextContainer}>{media.duration}</Text>
+                        <Text style={[styles.mediaTextContainer, { fontWeight: 'bold', fontSize: 16 }]}>{media.title}</Text>
+                        <Text style={styles.mediaTextContainer}>⏱️ {media.duration}</Text>
                         <TouchableOpacity style={styles.accessButtonContainer}
                             onPress={nav2}
                         >
                             <FontAwesome name="play" size={18} color="black" />
-                            <Text style={{ marginLeft: 10 }}>Accèder</Text>
+                            <Text style={{ marginLeft: 10 }}>Accéder</Text>
                         </TouchableOpacity>
+
+                        {
+                            media.description &&
+                            <Text style={styles.mediaTextContainer}>{media.description}</Text>
+                        }
+                        {
+                            media.author &&
+                            <Text style={[styles.mediaTextContainer, { marginVertical: 10 }]}>
+                                <Text style={{ fontWeight: 'bold' }}>Orateur : </Text>{media.author}
+                            </Text>
+                        }
                     </View>
 
 
                 </View>
 
-                <Text style={styles.mediaTextContainer}>
-                    {media.description}
-                </Text>
 
                 <View style={styles.mediaInteractionContainer}>
-                    <TouchableOpacity style={styles.interactionButton}>
+                    {/* <TouchableOpacity style={styles.interactionButton}>
                         <AntDesign name="plus" size={18} color="black" />
                         <Text>
                             Ma liste
                         </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.interactionButton}>
+                    </TouchableOpacity> */}
+                    {/* <TouchableOpacity style={styles.interactionButton}>
                         <AntDesign name="star" size={18} color="black" />
                         <Text>
                             Évaluer
                         </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.interactionButton}>
+                    </TouchableOpacity> */}
+                    <TouchableOpacity style={styles.interactionButton}
+                        onPress={() => {
+                            shareMedia(media)
+                        }}
+                    >
                         <Feather name="share" size={24} color="black" />
                         <Text>
                             Partager
@@ -205,8 +235,15 @@ export const PreviewMediaView = ({ navigation, route }) => {
                     </TouchableOpacity>
                 </View>
             </View>
-            <View style={{ paddingVertical: 10 }}>
-                <Text style={{ fontWeight: "bold", fontSize: 18, marginLeft: 5, marginBottom: 10 }}>À voir aussi</Text>
+            <View style={{ paddingVertical: 10, backgroundColor: "#444444" }}>
+                <Text style={{
+                    fontWeight: "bold",
+                    fontSize: 18,
+                    marginVertical: 10,
+                    color: '#fff',
+                    width: "90%",
+                    alignSelf: 'center'
+                }}>À voir aussi</Text>
                 {
                     similarContent.isLoading ?
                         <ActivityIndicator />
@@ -219,12 +256,12 @@ export const PreviewMediaView = ({ navigation, route }) => {
                                 alignSelf: 'center'
                             }}
                             renderItem={({ item }) => (
-                                <SimilarMediasContentCard media={item} 
-                                onSelect={(m) => {
-                                    navigation.push('flash-media-preview', {
-                                        media: m
-                                      } as PreviewMediaParams)
-                                }}
+                                <SimilarMediasContentCard media={item}
+                                    onSelect={(m) => {
+                                        navigation.push('flash-media-preview', {
+                                            media: m
+                                        } as PreviewMediaParams)
+                                    }}
                                 />
                             )}
                         />
@@ -239,7 +276,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#444444',
         position: "relative"
     },
     accessButtonContainer: {
@@ -257,7 +294,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         display: 'flex',
         flexDirection: 'row',
-        marginVertical: 10
+        marginTop: 20
     },
     interactionButton: {
         flex: 1,
@@ -266,13 +303,9 @@ const styles = StyleSheet.create({
     },
     mediaSection: {
         backgroundColor: '#fff',
-        // shadowOffset: {
-        //     width: 0, height: 5
-        // },
-        // shadowRadius: 5,
-        // shadowOpacity: 0.4,
         borderBottomColor: '#F1F1F1',
-        borderBottomWidth: 2
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10
     },
     mediaTextContainer: {
         width: '90%',

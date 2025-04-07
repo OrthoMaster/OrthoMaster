@@ -26,11 +26,7 @@ const Card = ({ data, onSelect, nbElement2Display }) => {
         fontWeight: 'bold',
         fontSize: 10
       }}>{data.author}</Text>
-      <Text  style={{
-        color: "#000",
-        fontStyle: 'italic',
-        fontSize: 10,
-      }}>⏱️{data.duration}</Text>
+
     </View>
   </TouchableOpacity>
 }
@@ -63,25 +59,26 @@ const SimpleCarousel = ({
 const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
-    paddingVertical: 5,
+    height: '100%'
   },
   listContainer: {
     paddingHorizontal: 2, // Ajoute du padding pour éviter que les films collent aux bords
   },
   card: {
-    maxHeight: 200,
+    maxHeight: "100%",
     marginHorizontal: 5, // Espacement entre les films
     borderRadius: 5,
     backgroundColor: "#fff",
     alignItems: "center",
-    justifyContent: 'flex-start'
+    justifyContent: 'flex-start',
   },
 
   image: {
     width: "100%",
     height: "60%",
-    resizeMode: 'cover',
-    borderRadius: 5
+    resizeMode: 'contain',
+    borderRadius: 5,
+    backgroundColor: '#000'
   },
   title: {
     color: "#000",

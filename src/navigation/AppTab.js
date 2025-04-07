@@ -33,47 +33,11 @@ const Tab = createBottomTabNavigator();
 export const AppTab = ({ }) => {
   const appState = useRef(AppState.currentState);
   const mutation = useMutation(saveLogtimeOnApp);
-  const user = useGetUser()
 
   var launchDate = getCurrentDate()
 
-  const nav = useNavigation()
   //const accessUrl = Linking.useURL();
 
-
-  const handleOpenContent = async (id) => {
-    getContentById(id)
-    .then((content) => {
-      if (content.type == "lesson") {
-        getUserRegisteredFormation({
-          idUserFormation: 0
-        }).then((formations) => {
-          if (formations && Array.isArray(formations)) {
-            const currentFormation = formations.filter((f)=>f.id_formation === content.id_formation)
-            nav.navigate('Accueil', {
-              screen: "home-content",
-              params:
-              {
-                "content": content,
-                "formation": currentFormation[0],
-                "type": "lesson",
-                "demoMode": !currentFormation[0].certifying && !currentFormation[0].is_paid && !user.data.is_student
-              }
-            })
-          }
-        })
-      } else {
-        nav.navigate('Accueil', {
-          screen: "home-content",
-          params:
-          {
-            "content": content,
-            "type": "flash",
-          }
-        })
-      }
-    })
-  }
 
 
   // useEffect(() => {

@@ -43,26 +43,25 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
             let contents = await allMediaFromChannel.data.filter((ct: IContent) => ct.id_past_event == pastEventsElem.id)
             carousels.push(
                 <View key={pastEventsElem.id} style={{
-                                marginVertical: 10,
+                                marginVertical: 20,
                                 flexDirection: "row",
                                 alignItems: 'center',
-                                backgroundColor: '#6E7DA6',
                                 height: 200
                             }}>
                                 <View style={{
-                                    backgroundColor: '#203864',
+                                    backgroundColor: '#ffaf31',
                                     height: '100%',
                                     alignItems: 'center', justifyContent: 'center',
                                 }}>
                                     <Text style={{
                                         fontWeight: 'bold',
-                                        fontSize: 22,
+                                        fontSize: 20,
                                         color: '#fff',
                                         transform: "rotate(-90deg)",
                                         fontFamily: "impact"
                                     }}>{pastEventsElem.edition_year}</Text>
                                 </View>
-                                <View style={{ flex: 1 }}>
+                                <View style={{flex: 1, height: '100%'}}>
                                     <SimpleCarousel data={contents} nbElement2Display={2} onSelect={(content: IContent) => {
                                         // onSelectContent(content)
                                         navigation.push("flash-media-preview", {
@@ -87,29 +86,34 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
         <ScrollView>
 
             <View style={{
-                backgroundColor: 'green',
                 padding: 10
             }}>
                 <Image
                     source={{ uri: channelParams.logoUrl }}
                     style={{
-                        height: screenWidth * 0.25,
-                        width: "80%",
+                        height: screenWidth * 0.35,
+                        width: screenWidth * 0.35,
                         alignSelf: 'center',
                         objectFit: 'contain',
-                        backgroundColor: 'red'
+                        backgroundColor: "#fff",
+                        borderRadius: 15,
+                        shadowOffset: {
+                            width: 0, height: 0
+                        },
+                        shadowOpacity: 1,
+                        shadowRadius: 2
                     }}
                 />
                 <View style={{
                     padding: 10,
-                    position: 'static'
                 }}>
                     <Text style={styles.headerTitle}>{channelParams.name}</Text>
-                    <Text>{channelParams.description || "Description du congrès"}</Text>
+                    <Text>Biceps;IRM;tendons;Rupture;Radiologie;Phillipe Peetrons;Serre Chevalier;Soléaire accessoire;Syndrome de l'artère poplitée piégée;Philippe Peetrons;muscle inconstant;quatrième fibulaire;chef long biceps;double biceps;bande aponevrotique;lacertus fibrosus;court chef du biceps;canal de Guyon;Peroneus quartus</Text>
+                    {/* <Text>{channelParams.description || "Description du congrès"}</Text> */}
                 </View>
             </View>
 
-            <View style={{backgroundColor: 'blue'}}>
+            <View style={{}}>
                 {eventCarousels}
             </View>
         </ScrollView>
@@ -119,6 +123,7 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: "#fff"
     },
     headerTitle: {
         fontWeight: 'bold',

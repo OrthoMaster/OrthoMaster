@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { LessonsView } from "../../views/formation/LessonsView";
 import { FormationView } from '../../views/formation/FormationView';
@@ -13,7 +13,7 @@ import SearchView from '../../views/search/SearchView';
 import { LessonEndingView } from '../../views/content/LessonEndingView';
 
 
-const LessonStackNav = createStackNavigator();
+const LessonStackNav = createNativeStackNavigator();
 export const LessonStack = () => {
   return (
     <LessonStackNav.Navigator
@@ -21,7 +21,7 @@ export const LessonStack = () => {
       screenOptions={{
         //animationTypeForReplace: 'pop',
         //headerShown: false,
-        animationEnabled: false,
+        animationEnabled: true,
       }}
     >
       <LessonStackNav.Screen
