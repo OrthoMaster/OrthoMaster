@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
     StyleSheet,
     View,
     ActivityIndicator,
     Text,
-    TouchableOpacity,
     TextInput,
     NativeSyntheticEvent,
     TextInputChangeEventData,
@@ -16,18 +15,14 @@ import {
     SafeAreaView,
     NativeScrollEvent
 } from 'react-native'
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import Modal from 'react-native-modal';
 
 import Animated, { useSharedValue, withSpring, LinearTransition } from 'react-native-reanimated';
 import { getS3Image } from '../services/S3Service.js';
-import { connect, useDispatch } from 'react-redux';
-import { getSearchList, searchSuccess, listEnded } from '../actions/searchAction.js';
 
-import { API_SEARCH_CLEAN } from '../actions/types.js';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import { useQuery } from 'react-query';
 import { fetchSearchList } from '../services/SearchService.js';
-import { getCurrentUser } from '../services/UserService.js';
-//import { registerFormation, getUserRegisteredFormation } from '../../services/FormationService';
 import { ISearchContent } from '../interfaces.js';
 
 const { width: screenWidth } = Dimensions.get('screen')
@@ -115,8 +110,6 @@ const SearchCard: React.FC<SearchCardProps> = ({ content, onSelect }) => {
                 thumbnail.data
                     ? <Image
                         style={{
-                            // width: Dimensions.get('screen').width * 0.4,
-                            // height: Dimensions.get('screen').width * 0.15,
                             width: '100%',
                             height: '100%',
                             backgroundColor: '#000'
@@ -176,9 +169,10 @@ type SearchComponentProps = {
 const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, keyId, onSelect, onClose, isVisible }) => {
     const [isSearching, setIsSearching] = useState(false)
     const searchBarWidth = useSharedValue(screenWidth * 0.95)
+    const [errorMessage, setErrorMessage] = useState<string>(null)
 
     const [listEnded, setListEnded] = useState<boolean>(false)
-    let fetchingMore = false
+    const [fetchingMore, setFetchingMore] = useState<boolean>(false)
     const [page, setPage] = useState<number>(1)
     const [searchText, setSearchText] = useState<string>(null)
     const [searchResult, setSearchResult] = useState<ISearchContent[]>(null)
@@ -186,44 +180,37 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
         contentType: contentType ? [contentType] : null,
         searchText: searchText
     }, page, PAGE_SIZE), {
-        onSuccess: val => {
-
-            if (val.length == 0) {
-                // TODO list ended
-                console.log("EVENT : List ended");
-
-                setListEnded(true)
-            }
-            // TODO get result
-            console.log("FETCH SUCCESS: ", Array.isArray(val), val.length);
-            if (fetchingMore) {
-                setSearchResult([...searchResult, val])
-                fetchingMore = false
-            } else {
-                setSearchResult(val)
-            }
-        },
         onError: err => {
             // TODO error message
-            console.log("FETCH ERROR: ", err);
-
+            setErrorMessage("Une erreur s'est produite. Veuillez réessayer.")
         },
         enabled: false
     })
+
     const requestAPI = () => {
         fetchContent.refetch()
+            .then(res => {
+                const val = res.data
+                if (val.length == 0) {
+                    setListEnded(true)
+                }
+                if (fetchingMore) {
+                    setSearchResult([...searchResult, ...val])
+                    setFetchingMore(false)
+                } else {
+                    setSearchResult(val)
+                }
+            })
     }
     const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: NativeScrollEvent) => {
-        return layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+        return layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
     }
 
 
 
     const fetchMoreData = () => {
         if (fetchingMore === false) {
-
-            console.log("EVENT: Fetching more");
-            fetchingMore = true
+            setFetchingMore(true)
             setPage(page + 1)
         }
     }
@@ -236,6 +223,14 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
     const startSearchAnim = () => searchBarWidth.value = withSpring((screenWidth * 0.95) * 0.8)
     const endSearchAnim = () => searchBarWidth.value = withSpring(screenWidth * 0.95)
 
+    const resetValues = () => {
+        setPage(1)
+        setListEnded(false)
+        setSearchText(null)
+        setFetchingMore(false)
+        setIsSearching(false)
+        setSearchResult(null)
+    }
 
     useEffect(() => {
         if (page > 1)
@@ -243,6 +238,8 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
     }, [page])
 
     useEffect(() => {
+        setPage(1)
+        setListEnded(false)
         if (searchText != null) {
             requestAPI()
         }
@@ -297,11 +294,9 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
                     isSearching &&
                     <Pressable
                         onPress={() => {
-                            setIsSearching(false)
-                            setSearchText(null)
-                            endSearchAnim()
+                            resetValues()
                             Keyboard.dismiss()
-                            setSearchResult(null)
+                            endSearchAnim()
                             onClose()
                         }}
                         style={{
@@ -320,8 +315,10 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
                 (isSearching) &&
                 <ScrollView
                     onScroll={({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
-                        if (isCloseToBottom(nativeEvent)) {
-                            fetchMoreData()
+                        if (listEnded == false && searchText != null) {
+                            if (isCloseToBottom(nativeEvent)) {
+                                fetchMoreData()
+                            }
                         }
                     }}
                 >
@@ -331,6 +328,7 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
                             return <SearchCard
                                 key={index}
                                 onSelect={(content) => {
+                                    resetValues()
                                     onSelect(content)
                                 }}
                                 content={value}
@@ -342,7 +340,9 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
                         <Text style={{
                             alignSelf: 'center',
                             marginVertical: 20
-                        }}>Aucun média trouvé</Text>
+                        }}>
+                            Aucun média trouvé
+                        </Text>
                     }
                     {
                         fetchContent.isLoading &&
@@ -357,6 +357,16 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
                             Recherchez par mot(s) clé(s), nom d'auteur ou thématique
                         </Text>
                     }
+
+                    {
+                        (errorMessage !== null) &&
+                        <Text style={{
+                            color: '#000',
+                            textAlign: 'center'
+                        }}>
+                            {errorMessage}
+                        </Text>
+                    }
                 </ScrollView>
             }
         </SafeAreaView>
@@ -369,7 +379,8 @@ const cardStyle = StyleSheet.create({
         marginVertical: 5,
         flexDirection: 'row',
         height: screenWidth * 0.25,
-        paddingHorizontal: 5
+        paddingHorizontal: 5,
+        backgroundColor: 'green'
     },
     cardInfoTitle: {
         fontWeight: 'bold',
