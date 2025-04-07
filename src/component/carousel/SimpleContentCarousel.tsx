@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { View, Text, Image, FlatList, Dimensions, StyleSheet, TouchableOpacity, NativeSyntheticEvent, LayoutChangeEvent } from "react-native";
 import { useQuery } from "react-query";
 import { getS3Image } from "../../services/S3Service";
@@ -14,21 +14,21 @@ const Card = ({ data, onSelect, nbElement2Display }) => {
 
 
   // return <TouchableOpacity style={[styles.card, {width: screenWidth / nbElement2Display}]} //TODO design netflix
-  return <TouchableOpacity style={[styles.card, { width: screenWidth / nbElement2Display}]}
+  return <TouchableOpacity style={[styles.card, { width: screenWidth / nbElement2Display }]}
     onPress={onSelect}
-    onLayout={(event : LayoutChangeEvent) => {
+    onLayout={(event: LayoutChangeEvent) => {
       setImgDimensions({
         width: event.nativeEvent.layout.width,
-        height: event.nativeEvent.layout.width * (9/16)
+        height: event.nativeEvent.layout.width * (9 / 16)
       })
-      
+
     }}
   >
     <Image source={{ uri: imageUrl.data }} style={[styles.image, {
       width: imgDimensions.width,
-      height: imgDimensions. height
+      height: imgDimensions.height
     }]} />
-    <Text style={styles.title} numberOfLines={3} >
+    <Text style={styles.title} numberOfLines={2} >
       {data.title}
     </Text>
     <View style={{
@@ -57,7 +57,9 @@ const SimpleCarousel = ({
         data={data}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item: any , index: number) => index.toString()}
+        decelerationRate={"fast"}
+        nestedScrollEnabled={true}
+        keyExtractor={(item: any, index: number) => index.toString()}
 
         renderItem={({ item }) => (
           <Card data={item} nbElement2Display={nbElement2Display} onSelect={() => {

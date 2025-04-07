@@ -13,7 +13,8 @@ import {
     ScrollView,
     Image,
     SafeAreaView,
-    NativeScrollEvent
+    NativeScrollEvent,
+    TouchableWithoutFeedback
 } from 'react-native'
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import Modal from 'react-native-modal';
@@ -111,7 +112,7 @@ const SearchCard: React.FC<SearchCardProps> = ({ content, onSelect }) => {
                     ? <Image
                         style={{
                             width: screenWidth / 2.5,
-                            height: (screenWidth / 2.5) * (9/16),
+                            height: (screenWidth / 2.5) * (9 / 16),
                             backgroundColor: '#000'
                         }}
                         source={{
@@ -255,121 +256,123 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
             alignItems: 'center',
         }}>
 
-        <SafeAreaView style={{
-            backgroundColor: '#fff',
-            height: "90%",
-            width: '95%',
-            borderRadius: 5
-        }}>
-            <View style={{ // SEARCH BAR
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginVertical: 20
+            <SafeAreaView style={{
+                backgroundColor: '#fff',
+                height: "90%",
+                width: '95%',
+                borderRadius: 5
             }}>
-                <Animated.View style={{
-                    width: searchBarWidth,
+
+                <View style={{ // SEARCH BAR
+                    flexDirection: 'row',
                     alignItems: 'center',
+                    marginVertical: 20
                 }}>
-                    <TextInput
-                        style={{
-                            backgroundColor: '#F1F1F1',
-                            borderRadius: 10,
-                            padding: 10,
-                            alignSelf: 'center',
-                            width: "90%",
-                            marginHorizontal: 20
-                        }}
-                        placeholder='Rechercher...'
-                        clearButtonMode='never'
-                        value={searchText}
-                        onChange={handleSearchChange}
-                        autoFocus
-                        onFocus={() => {
-                            setIsSearching(true)
-                            startSearchAnim()
-                        }}
-                    />
-                </Animated.View>
+                    <Animated.View style={{
+                        width: searchBarWidth,
+                        alignItems: 'center',
+                    }}>
+                        <TextInput
+                            style={{
+                                backgroundColor: '#F1F1F1',
+                                borderRadius: 10,
+                                padding: 10,
+                                alignSelf: 'center',
+                                width: "90%",
+                                marginHorizontal: 20
+                            }}
+                            placeholder='Rechercher...'
+                            clearButtonMode='never'
+                            value={searchText}
+                            onChange={handleSearchChange}
+                            autoFocus
+                            onFocus={() => {
+                                setIsSearching(true)
+                                startSearchAnim()
+                            }}
+                        />
+                    </Animated.View>
+                    {
+                        isSearching &&
+                        <Pressable
+                            onPress={() => {
+                                resetValues()
+                                Keyboard.dismiss()
+                                endSearchAnim()
+                                onClose()
+                            }}
+                            style={{
+                                width: screenWidth * 0.2,
+                                alignItems: 'center'
+                            }}
+                        >
+                            <Text style={{
+                                fontWeight: 'bold',
+                                color: '#ffaf31'
+                            }}>Annuler</Text>
+                        </Pressable>
+                    }
+                </View>
                 {
-                    isSearching &&
-                    <Pressable
-                        onPress={() => {
-                            resetValues()
+                    (isSearching) &&
+                    <ScrollView
+                        onScroll={({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
                             Keyboard.dismiss()
-                            endSearchAnim()
-                            onClose()
-                        }}
-                        style={{
-                            width: screenWidth * 0.2,
-                            alignItems: 'center'
+                            if (listEnded == false && searchText != null) {
+                                if (isCloseToBottom(nativeEvent)) {
+                                    fetchMoreData()
+                                }
+                            }
                         }}
                     >
-                        <Text style={{
-                            fontWeight: 'bold',
-                            color: '#ffaf31'
-                        }}>Annuler</Text>
-                    </Pressable>
-                }
-            </View>
-            {
-                (isSearching) &&
-                <ScrollView
-                    onScroll={({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
-                        if (listEnded == false && searchText != null) {
-                            if (isCloseToBottom(nativeEvent)) {
-                                fetchMoreData()
-                            }
+                        {
+                            (Array.isArray(searchResult) && searchResult.length > 0) &&
+                            searchResult.map((value: ISearchContent, index: number) => {
+                                return <SearchCard
+                                    key={index}
+                                    onSelect={(content) => {
+                                        resetValues()
+                                        onSelect(content)
+                                    }}
+                                    content={value}
+                                />
+                            })
                         }
-                    }}
-                >
-                    {
-                        (Array.isArray(searchResult) && searchResult.length > 0) &&
-                        searchResult.map((value: ISearchContent, index: number) => {
-                            return <SearchCard
-                                key={index}
-                                onSelect={(content) => {
-                                    resetValues()
-                                    onSelect(content)
-                                }}
-                                content={value}
-                            />
-                        })
-                    }
-                    {
-                        (Array.isArray(searchResult) && searchResult.length == 0) &&
-                        <Text style={{
-                            alignSelf: 'center',
-                            marginVertical: 20
-                        }}>
-                            Aucun média trouvé
-                        </Text>
-                    }
-                    {
-                        fetchContent.isLoading &&
-                        <ActivityIndicator />
-                    }
-                    {
-                        searchResult === null &&
-                        <Text style={{
-                            color: 'gray',
-                            textAlign: 'center'
-                        }}>
-                            Recherchez par mot(s) clé(s), nom d'auteur ou thématique
-                        </Text>
-                    }
+                        {
+                            (Array.isArray(searchResult) && searchResult.length == 0) &&
+                            <Text style={{
+                                alignSelf: 'center',
+                                marginVertical: 20
+                            }}>
+                                Aucun média trouvé
+                            </Text>
+                        }
+                        {
+                            fetchContent.isLoading &&
+                            <ActivityIndicator />
+                        }
+                        {
+                            searchResult === null &&
+                            <Text style={{
+                                color: 'gray',
+                                textAlign: 'center'
+                            }}>
+                                Recherchez par mot(s) clé(s), nom d'auteur ou thématique
+                            </Text>
+                        }
 
-                    {
-                        (errorMessage !== null) &&
-                        <Text style={{
-                            color: '#000',
-                            textAlign: 'center'
-                        }}>
-                            {errorMessage}
-                        </Text>
-                    }
-                </ScrollView>
-            }
-        </SafeAreaView>
+                        {
+                            (errorMessage !== null) &&
+                            <Text style={{
+                                color: '#000',
+                                textAlign: 'center'
+                            }}>
+                                {errorMessage}
+                            </Text>
+                        }
+                    </ScrollView>
+                }
+            </SafeAreaView>
     </Modal>
 }
 

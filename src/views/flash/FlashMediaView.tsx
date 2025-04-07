@@ -160,6 +160,7 @@ export const FlashMediaView = ({ navigation, route }) => {
 
       <ScrollView
         scrollEnabled={!isSearching}
+        nestedScrollEnabled={true}
       >
 
         {/* <Text style={styles.pageTitle}>Medias</Text> */}
