@@ -11,12 +11,12 @@ import {
 import { useMutation } from "react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { evaluateExpression } from "../tools";
-import { saveQCEntries } from "../../../../services/tools/QueChoisirService";
+import { saveQCEntries } from "../../../../../services/tools/QueChoisirService";
 import { FinalHeader } from "./FinalHeader";
 import { ProductCard } from "./FinalProductCard";
-import AppModal from "../../../../component/AppModal";
-import { PrimaryButton } from "../../../../component/PrimaryButton";
-import { useOrthoMasterRoles } from "../../../../hooks/useOrthoMasterRoles";
+import AppModal from "../../../../../component/AppModal";
+import { PrimaryButton } from "../../../../../component/PrimaryButton";
+import { useOrthoMasterRoles } from "../../../../../hooks/useOrthoMasterRoles";
 
 const DisplaySubHeader = ({ title }) => {
     return (<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 20 }}>

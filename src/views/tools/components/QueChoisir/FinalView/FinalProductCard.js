@@ -8,8 +8,8 @@ import {
 } from "react-native";
 import Animated, { useSharedValue, withTiming, runOnJS, Easing } from "react-native-reanimated";
 import { useQuery } from "react-query";
-import { getS3Image } from "../../../../services/S3Service";
-import { useOrthoMasterRoles } from "../../../../hooks/useOrthoMasterRoles";
+import { getS3Image } from "../../../../../services/S3Service";
+import { useOrthoMasterRoles } from "../../../../../hooks/useOrthoMasterRoles";
 
 export const ProductCard = ({ product, onPress }) => {
     const imgUrl = useQuery(['Product', 'GET', "productImage", product.id], () => getS3Image(product.image_path))

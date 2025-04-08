@@ -5,8 +5,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 
 import { ToolsView } from '../../views/tools/ToolsView';
-import { QueChoisirView } from '../../views/tools/QueChoisir/QueChoisirView';
-import {FinalQC} from "../../views/tools/QueChoisir/FinalView/FinalQC";
+import { QueChoisirView } from '../../views/tools/components/QueChoisir/View/QueChoisirView';
+import {FinalQC} from "../../views/tools/components/QueChoisir/FinalView/FinalQC";
 
 
 const ToolsStackNav = createStackNavigator();

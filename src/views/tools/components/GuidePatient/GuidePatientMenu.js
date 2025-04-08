@@ -14,8 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from 'react-query';
 import { AntDesign } from '@expo/vector-icons';
-import AppModal from '../../../component/AppModal';
-import { getS3Image } from '../../../services/S3Service';
+import { getS3Image } from '../../../../services/S3Service';
 import { Entypo } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
@@ -30,9 +29,9 @@ const GUIDES = [{
 }]
 
 const PURCHASE_LINKS = [
-  { name: "Amazon", img: require('../../../../assets/tools/guide-patient/amazon.png'), link: 'https://www.amazon.fr/gp/product/B07Z2PT35F/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&th=1' },
-  { name: "Office Dépot", img: require('../../../../assets/tools/guide-patient/Avery.png'), link: 'https://boutique-avery.fr/products/etiquettes-l7104rev-20?utm_medium=cpc&utm_term=Home&utm_source=commerceconnector+%28via+ShoppingFeed%29' },
-  { name: "Bureau Vallée", img: require('../../../../assets/tools/guide-patient/bureau-vallee.png'), link: 'https://www.bureau-vallee.fr/etiquette-enlevable-x240-o60mm-rondes-blanc-avery-218669.html' }
+  { name: "Amazon", img: require('../../../../../assets/tools/guide-patient/amazon.png'), link: 'https://www.amazon.fr/gp/product/B07Z2PT35F/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&th=1' },
+  { name: "Office Dépot", img: require('../../../../../assets/tools/guide-patient/Avery.png'), link: 'https://boutique-avery.fr/products/etiquettes-l7104rev-20?utm_medium=cpc&utm_term=Home&utm_source=commerceconnector+%28via+ShoppingFeed%29' },
+  { name: "Bureau Vallée", img: require('../../../../../assets/tools/guide-patient/bureau-vallee.png'), link: 'https://www.bureau-vallee.fr/etiquette-enlevable-x240-o60mm-rondes-blanc-avery-218669.html' }
 ]
 
 const PurchaseStickerView = () => {
@@ -238,7 +237,7 @@ export const GuidePatientMenu = () => {
       }}>
         <Image
           style={styles.toolQCImage}
-          source={require('../../../../assets/tools/guide-patient.png')}
+          source={require('../../../../../assets/tools/guide-patient.png')}
         />
         <Text style={styles.toolTitle}>
           Guide patient

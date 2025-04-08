@@ -10,11 +10,9 @@ import {
 } from 'react-native';
 
 
-import { QueChoisirMenu } from './QueChoisir/QueChoisirMenu';
-import { GuidePatientMenu } from './GuidePatient/GuidePatientMenu';
+import { QueChoisirMenu } from './components/QueChoisir/StartMenu/QueChoisirMenu';
+import { GuidePatientMenu } from './components/GuidePatient/GuidePatientMenu';
 export const ToolsView = ({ navigation }) => {
-
-
 
   return (
     <SafeAreaView style={{}}>

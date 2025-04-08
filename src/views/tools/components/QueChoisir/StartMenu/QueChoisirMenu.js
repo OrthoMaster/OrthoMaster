@@ -14,11 +14,10 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getQCcategories } from '../../../services/tools/QueChoisirService';
+import { getQCcategories } from '../../../../../services/tools/QueChoisirService';
 import { useQuery } from 'react-query';
-import { getProductsBrands } from '../../../services/ProductsService';
+import { getProductsBrands } from '../../../../../services/ProductsService';
 import FiltersQC from './FiltersQC';
-import AppModal from '../../../component/AppModal';
 
 export const QueChoisirMenu = ({ navigation }) => {
     const qcCategories = useQuery(['Tools', 'GET', 'QC categories'], () => getQCcategories())
@@ -80,7 +79,7 @@ export const QueChoisirMenu = ({ navigation }) => {
                 }}>
                     <Image
                         style={styles.toolQCImage}
-                        source={require('../../../../assets/tools/que-choisir.png')}
+                        source={require('../../../../../../assets/tools/que-choisir.png')}
                     />
                     <Text style={styles.toolTitle}>
                         Que choisir ?
