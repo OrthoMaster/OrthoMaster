@@ -7,7 +7,8 @@ import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { ToolsView } from '../../views/tools/ToolsView';
 import { QueChoisirView } from '../../views/tools/components/QueChoisir/View/QueChoisirView';
 import {FinalQC} from "../../views/tools/components/QueChoisir/FinalView/FinalQC";
-
+import { ContentDisplayer } from '../../views/content/ContentDisplayer';
+import ReturnButtonIcon from '../components/ReturnButton';
 
 const ToolsStackNav = createStackNavigator();
 
@@ -21,6 +22,18 @@ export const ToolsStack = ({navigation, route}) => {
         name="tools-home"
         component={ToolsView}
         options={{ headerShown: false }}
+      />
+      <ToolsStackNav.Screen
+        name="tools-content"
+        component={ContentDisplayer}
+        options={{
+          headerShown: true,
+          headerTitle: "",
+          headerBackButtonDisplayMode: "minimal",
+          headerTintColor: '#000',
+          headerTransparent: true,
+          headerBackImage: ()=>(<ReturnButtonIcon />)
+        }}
       />
       <ToolsStackNav.Screen
         name="tools-que-choisir"
