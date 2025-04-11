@@ -29,62 +29,12 @@ const initialIconConf = {
   height: 80,
   translateX: 0
 }
-const toolsCardHeight = screenHeight * 0.7
 
 export const ToolsView = ({ navigation }) => {
-  const qcRef = useRef(null);
   const [showQueChoisirMenu, setShowQueChoisirMenu] = useState(false)
   const [showGuidePatientMenu, setShowGuidePatientMenu] = useState(false)
   const [showLearningSupportMenu, setShowLearningSupportMenu] = useState(false)
-  const qcStyle = useSharedValue({ width: screenWidth * 0.6 });
-  const gpStyle = useSharedValue(initialIconConf);
-  const lsStyle = useSharedValue(initialIconConf);
 
-  const animatedQueChoisirStyle = useAnimatedStyle(() => ({
-    width: withTiming(qcStyle.value.width, { duration: 1000 }),
-    // height: withTiming(qcStyle.value.height, { duration: 1000 }),
-  }));
-
-  const animatedGuidePatientStyle = useAnimatedStyle(() => ({
-    width: withTiming(gpStyle.value.width, { duration: 1000 }),
-    height: withTiming(gpStyle.value.height, { duration: 1000 }),
-    transform: [{ translateX: withTiming(gpStyle.value.translateX, { duration: 1000 }) }]
-  }));
-
-  const animatedLearningSupportStyle = useAnimatedStyle(() => ({
-    width: withTiming(lsStyle.value.width, { duration: 1000 }),
-    height: withTiming(lsStyle.value.height, { duration: 1000 }),
-    transform: [{ translateX: withTiming(lsStyle.value.translateX, { duration: 1000 }) }]
-  }));
-
-  useEffect(() => {
-    if (showQueChoisirMenu)
-      qcStyle.value = { width: screenWidth * 0.9 }
-    // qcStyle.value = { width: screenWidth * 0.9, height: toolsCardHeight }
-    else
-      qcStyle.value = { width: screenWidth * 0.6 }
-    // qcStyle.value = { width: screenWidth * 0.6, height: 80 }
-  }, [showQueChoisirMenu])
-
-  useEffect(() => {
-    if (showGuidePatientMenu) {
-      gpStyle.value = { width: screenWidth, height: toolsCardHeight, translateX: 0 }
-      lsStyle.value = { ...initialIconConf, translateX: screenWidth }
-    } else {
-      gpStyle.value = initialIconConf
-      lsStyle.value = initialIconConf
-    }
-  }, [showGuidePatientMenu])
-
-  useEffect(() => {
-    if (showLearningSupportMenu) {
-      lsStyle.value = { width: screenWidth, height: toolsCardHeight, translateX: -150 }
-      gpStyle.value = { ...initialIconConf, translateX: -screenWidth }
-    } else {
-      lsStyle.value = initialIconConf
-      gpStyle.value = initialIconConf
-    }
-  }, [showLearningSupportMenu])
 
 
   return (

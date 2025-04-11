@@ -1,11 +1,12 @@
 import React from "react";
-import { FlatList, Image, Linking, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, Linking, Text, TouchableOpacity, View, StyleSheet, SafeAreaView } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { IContent } from "../../../../interfaces";
 import { useQuery } from "react-query";
 import { fetchSearchList } from "../../../../services/SearchService";
 import { getS3Image } from "../../../../services/S3Service";
+import { ScrollView } from "react-native-gesture-handler";
 
 
 export const LearningSupportButton: React.FC<{ onPress: () => any }> = ({ onPress }) => {
@@ -35,9 +36,7 @@ const LearningSupportIcons: React.FC<LearningSupportIconsProps> = ({ content, on
         style={{
             alignItems: 'center',
             justifyContent: 'flex-start',
-            padding: 5,
-            width: 80, height: 80,
-            margin: 5,
+            width: 120, height: 120,
         }}
         onPress={() => {
             onPress(content)
@@ -46,13 +45,13 @@ const LearningSupportIcons: React.FC<LearningSupportIconsProps> = ({ content, on
         <Image
             source={{ uri: imageUrl.data }}
             style={{
-                width: 50,
-                height: 50,
+                width: 90,
+                height: 90,
                 borderRadius: 10,
                 resizeMode: 'cover',
             }}
         />
-        <Text style={{ textAlign: 'center', fontSize: 12 }}>{content.title}</Text>
+        <Text style={{ textAlign: 'center', fontSize: 12, fontWeight: 'bold', marginVertical: 5 }}>{content.title}</Text>
     </TouchableOpacity>)
 }
 
@@ -64,55 +63,102 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
     const toolContents = useQuery(['Tools', 'GET', 'Contents'], () => fetchSearchList({
         contentType: ['tool'],
         filters: null
-    }))
+    }), {
+        onSuccess: (data) => {
+            console.log('LearningSupportMenu data', data)
+        }
+    })
 
 
-    return (<View style={{
-        backgroundColor: "#5AC4F6",
-        borderRadius: 15,
-        height: '100%',
-        width: '100%',
-    }}>
-        <Text style={{
-            color: '#ffffff',
-            fontSize: 25,
-            fontWeight: 'bold',
-            marginVertical: 40,
-            paddingLeft: 20,
-            textAlign: 'center',
-        }}>
-            Supports{"\n"}pédagogiques
-        </Text>
-
-        <View style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-            height: '100%',
-        }}>
-            {
-                (toolContents.isLoading == false && toolContents.data) &&
-                toolContents.data?.map((content: IContent) => (<LearningSupportIcons
-                    key={content.id_content}
-                    content={content}
-                    onPress={(content) => {
-                        onStart(content)
-                        onClose()
-                    }}
-                />))
-            }
-        </View>
-        <TouchableOpacity
-            style={{
-                alignSelf: 'center',
-                position: 'absolute',
-                bottom: 10,
+    return (
+        <SafeAreaView>
+            <ScrollView style={{
+                backgroundColor: "#5AC4F6",
+                borderRadius: 15,
+                height: '100%',
+                width: '100%',
             }}
-            onPress={onClose}
-        >
-            <Ionicons name="close-circle" size={34} color="#fff" />
-        </TouchableOpacity>
-    </View>)
+            contentContainerStyle={{
+                paddingBottom: 50,
+            }}
+            >
+                <Text style={{
+                    color: '#ffffff',
+                    fontSize: 25,
+                    fontWeight: 'bold',
+                    marginVertical: 40,
+                    textAlign: 'center',
+                }}>
+                    Supports{"\n"}pédagogiques
+                </Text>
+
+                <Text style={styles.contentsSectionTitle}>Anatomie</Text>
+                <View style={styles.contentsContainer}>
+                    {
+                        (toolContents.isLoading == false && toolContents.data) &&
+                        toolContents.data?.map((content: IContent) => {
+                            if (content.tags?.includes('anatomie') == true)
+                                return <LearningSupportIcons
+                                    key={content.id_content}
+                                    content={content}
+                                    onPress={(content) => {
+                                        onStart(content)
+                                        onClose()
+                                    }}
+                                />
+                        })
+                    }
+
+
+                </View>
+
+                <Text style={styles.contentsSectionTitle}>Pathologie</Text>
+                <View style={styles.contentsContainer} >
+                    {
+                        (toolContents.isLoading == false && toolContents.data) &&
+                        toolContents.data?.map((content: IContent) => {
+                            if (content.tags?.includes('pathologie') == true)
+                                return <LearningSupportIcons
+                                    key={content.id_content}
+                                    content={content}
+                                    onPress={(content) => {
+                                        onStart(content)
+                                        onClose()
+                                    }}
+                                />
+                        })
+                    }
+                </View>
+            </ScrollView>
+            <TouchableOpacity
+                style={{
+                    alignSelf: 'center',
+                    position: 'absolute',
+                    bottom: 10,
+                    padding: 10,
+                }}
+                onPress={onClose}
+            >
+                <Ionicons name="close-circle" size={34} color="#fff" />
+            </TouchableOpacity>
+        </SafeAreaView>
+    )
 }
+
+const styles = StyleSheet.create({
+    contentsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        paddingVertical: 20
+    },
+    contentsSectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginVertical: 10,
+        textAlign: 'center',
+        color: "#143A71"
+    }
+})

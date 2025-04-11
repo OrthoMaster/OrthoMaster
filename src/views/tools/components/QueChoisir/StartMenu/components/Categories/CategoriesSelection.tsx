@@ -12,12 +12,6 @@ type IconProps = {
 }
 const Icon: React.FC<IconProps> = ({ logo, name, onPress }) => {
     const logoUrl = useQuery(['logo', name], () => getCdnContentAccessUrl(logo), {
-        onSuccess: (data) => {
-            console.log(data);
-        },
-        onError: (error) => {
-            console.log(error);
-        },
         enabled: !!logo
     })
 
@@ -27,7 +21,7 @@ const Icon: React.FC<IconProps> = ({ logo, name, onPress }) => {
             style={{
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                width: 80, height: 80,
+                width: 120, height: 120,
             }}
         >
             {
@@ -48,17 +42,11 @@ const Icon: React.FC<IconProps> = ({ logo, name, onPress }) => {
     )
 }
 
-
 type CategoriesSelectionProps = {
     onSelect?: (category: string) => void;
 }
 const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect }) => {
-    const qcCategories = useQuery(['Tools', 'GET', 'QC categories'], () => getQCcategories(), {
-        onSuccess: (data) => {
-            console.log(data);
-
-        }
-    })
+    const qcCategories = useQuery(['Tools', 'GET', 'QC categories'], () => getQCcategories())
 
 
 

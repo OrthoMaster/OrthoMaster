@@ -10,7 +10,8 @@ import {
     Linking,
     StatusBar,
     Platform,
-    Dimensions
+    Dimensions,
+    SafeAreaView
 } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -98,75 +99,83 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
         })
     }, [])
 
-    return <LinearGradient
-        colors={['#33C0B7', '#33C0B7']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.containerGradient}
+    return <SafeAreaView>
 
-    >
 
-        <View style={{ width: '100%', height: '95%', alignItems: 'center' }}>
-            <TouchableOpacity
-                style={{
-                    position: 'absolute',
-                    top: 5, left: 5,
-                    padding: 10
-                }}
-                onPress={() => {
-                    Linking.openURL("https://www.orthomaster.fr/cgu-que-choisir")
-                }}>
-                <AntDesign name="infocirlceo" size={24} color="white" />
-            </TouchableOpacity>
-            
-            <FiltersButton
-                style={{
-                    backgroundColor: '#fff',
-                    padding: 10,
-                    borderRadius: 5,
-                    shadowOpacity: 0.25,
-                    shadowOffset: { width: 0, height: 0 },
-                    alignItems: 'center',
-                    marginTop: 10, marginRight: 10,
-                    alignSelf: 'flex-end',
-                    zIndex: 1000
-                }}
-                nbFiltersSelected={filters.queChoisir.selected.length}
-                onPress={() => {
-                    setShowFilters(!showFilters)
-                }}
-                showFilters={showFilters}
-            />
-            <Text style={styles.toolTitle}>
-                Que choisir ?
-            </Text>
+        <LinearGradient
+            colors={['#33C0B7', '#33C0B7']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.containerGradient}
 
-            <CategoriesSelection
-                onSelect={(category) => {
-                    onStart(category, filters.queChoisir)
-                }}
-            />
+        >
 
-            {
-                showFilters &&
-                <ScrollView style={{
-                    position: 'absolute',
-                    height: '100%',width: '100%',
-                    zIndex: 2,
-                }}
-                    contentContainerStyle={{
+            <View style={{ width: '100%', height: '95%', alignItems: 'center' }}>
+                <TouchableOpacity
+                    style={{
+                        position: 'absolute',
+                        top: 5, left: 5,
+                        padding: 10
+                    }}
+                    onPress={() => {
+                        Linking.openURL("https://www.orthomaster.fr/cgu-que-choisir")
+                    }}>
+                    <AntDesign name="infocirlceo" size={24} color="white" />
+                </TouchableOpacity>
+
+                <FiltersButton
+                    style={{
+                        backgroundColor: '#fff',
+                        padding: 10,
+                        borderRadius: 5,
+                        shadowOpacity: 0.25,
+                        shadowOffset: { width: 0, height: 0 },
                         alignItems: 'center',
+                        marginTop: 10, marginRight: 10,
+                        alignSelf: 'flex-end',
+                        zIndex: 1000
                     }}
-                >
-                    <FiltersQC onChange={(filters) => {
-                        AsyncStorage.setItem("qcFilters", filters.toString())
-                        handleFilters(filters)
+                    nbFiltersSelected={filters.queChoisir.selected.length}
+                    onPress={() => {
+                        setShowFilters(!showFilters)
                     }}
-                        filterConfig={filters.queChoisir}
+                    showFilters={showFilters}
+                />
+                <Text style={styles.toolTitle}>
+                    Que choisir ?
+                </Text>
+
+                <View style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                }}>
+                    <CategoriesSelection
+                        onSelect={(category) => {
+                            onStart(category, filters.queChoisir)
+                        }}
                     />
-                </ScrollView>
-            }
-        </View>
+                </View>
+
+                {
+                    showFilters &&
+                    <ScrollView style={{
+                        position: 'absolute',
+                        height: '100%', width: '100%',
+                        zIndex: 2,
+                    }}
+                        contentContainerStyle={{
+                            alignItems: 'center',
+                        }}
+                    >
+                        <FiltersQC onChange={(filters) => {
+                            AsyncStorage.setItem("qcFilters", filters.toString())
+                            handleFilters(filters)
+                        }}
+                            filterConfig={filters.queChoisir}
+                        />
+                    </ScrollView>
+                }
+            </View>
 
 
             <TouchableOpacity
@@ -179,7 +188,8 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                 onPress={onClose}>
                 <Ionicons name="close-circle" size={34} color="#fff" />
             </TouchableOpacity>
-    </LinearGradient>
+        </LinearGradient>
+    </SafeAreaView>
 }
 
 const styles = StyleSheet.create({
