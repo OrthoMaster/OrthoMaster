@@ -1,14 +1,66 @@
 import React from "react";
-import { FlatList, Text, TouchableOpacity, View, StyleSheet } from "react-native";
+import { FlatList, Text, TouchableOpacity, View, StyleSheet, Image } from "react-native";
 import { useQuery } from "react-query";
 import { getQCcategories } from "../../../../../../../services/tools/QueChoisirService";
+import { getCdnContentAccessUrl } from "../../../../../../../services/ContentService";
+
+
+type IconProps = {
+    logo?: string;
+    name: string;
+    onPress: (category: string) => void;
+}
+const Icon: React.FC<IconProps> = ({ logo, name, onPress }) => {
+    const logoUrl = useQuery(['logo', name], () => getCdnContentAccessUrl(logo), {
+        onSuccess: (data) => {
+            console.log(data);
+        },
+        onError: (error) => {
+            console.log(error);
+        },
+        enabled: !!logo
+    })
+
+    return (
+        <TouchableOpacity
+            onPress={() => onPress(name)}
+            style={{
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                width: 80, height: 80,
+            }}
+        >
+            {
+                (logoUrl.isLoading == false && logoUrl.isSuccess && logoUrl.data) ?
+                    <Image
+                        source={{ uri: logoUrl.data }}
+                        style={{
+                            width: "100%", height: "80%",
+                            borderRadius: 10,
+                            resizeMode: 'contain',
+                        }}
+                    />
+                    :
+                    <View style={styles.containerButtons}></View>
+            }
+            <Text style={styles.toolButtonText}>{name}</Text>
+        </TouchableOpacity>
+    )
+}
+
 
 type CategoriesSelectionProps = {
     onSelect?: (category: string) => void;
 }
-
 const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect }) => {
-    const qcCategories = useQuery(['Tools', 'GET', 'QC categories'], () => getQCcategories())
+    const qcCategories = useQuery(['Tools', 'GET', 'QC categories'], () => getQCcategories(), {
+        onSuccess: (data) => {
+            console.log(data);
+
+        }
+    })
+
+
 
     return (<View style={{
         width: "100%",
@@ -18,12 +70,13 @@ const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect }) =
         <FlatList
             data={qcCategories.data}
             keyExtractor={(item) => item.id}
-            renderItem={(item) => (<TouchableOpacity
-                onPress={() => onSelect(item.item.name)}
-            >
-                <View style={styles.containerButtons}></View>
-                <Text style={styles.toolButtonText}>{item.item.name}</Text>
-            </TouchableOpacity>)
+            renderItem={(item) => (<Icon
+                name={item.item.name}
+                onPress={(category) => {
+                    onSelect(category)
+                }}
+                logo={item.item.logo}
+            />)
             }
             scrollEnabled={false}
             numColumns={2}
@@ -47,17 +100,18 @@ const styles = StyleSheet.create({
         marginVertical: 20
     },
     containerButtons: {
-        backgroundColor: '#F97302',
-        width: 50, height: 50,
-        borderRadius: 11,
+        backgroundColor: '#999999',
+        width: 65, height: 65,
         alignItems: 'center',
         justifyContent: 'center',
     },
     toolButtonText: {
-        fontSize: 12,
+        fontSize: 14,
+        fontWeight: 'bold',
         color: '#fff',
         width: '90%',
-        textAlign: 'center'
+        textAlign: 'center',
+        marginTop: 5,
     },
     toolButtonIcon: {
         width: 15,

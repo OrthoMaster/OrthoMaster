@@ -38,7 +38,14 @@ export const ToolsStack = ({navigation, route}) => {
       <ToolsStackNav.Screen
         name="tools-que-choisir"
         component={QueChoisirView}
-        options={{ headerShown: false, title: 'Que choisir ?'}}
+        options={{ 
+          headerShown: true,
+          headerTitle: "",
+          headerBackButtonDisplayMode: "minimal",
+          headerTintColor: '#000',
+          headerTransparent: true,
+          headerBackImage: ()=>(<ReturnButtonIcon />)
+        }}
         
       />
 
