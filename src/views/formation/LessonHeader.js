@@ -27,7 +27,7 @@ export const LessonHeader = ({ onSearch, title, navigation, searchEnabled = true
                 </TouchableOpacity>
             }
 
-            <Text style={styles.title}>{title}</Text>
+            
             {
                 searchEnabled &&
                 < TouchableOpacity

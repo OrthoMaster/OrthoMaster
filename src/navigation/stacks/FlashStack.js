@@ -1,35 +1,82 @@
 import React from 'react'
 
-
 import { createStackNavigator } from '@react-navigation/stack';
 
-import { FlashThemesView } from '../../views/flash/FlashThemesView';
-
+import { FlashMediaView } from '../../views/flash/FlashMediaView';
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
-import { FlashCategoriesView } from '../../views/flash/FlashCategoriesView';
-import { FlashSubcategoriesView } from '../../views/flash/FlashSubcategoriesView';
+import { PreviewMediaView } from '../../views/flash/PreviewMediaView';
+import ChannelMediaView from '../../views/flash/ChannelMediaView';
+import ReturnButtonIcon from '../components/ReturnButton';
+
 
 
 const FlashStackNav = createStackNavigator();
-export const FlashStack = () => {
+export const FlashStack = ({}) => {
+
+
+
   return (
-    <FlashStackNav.Navigator initialRouteName='flash-themes'>
+    <FlashStackNav.Navigator
+    initialRouteName='flash-media-home'
+    screenOptions={{
+      animation: 'default'
+    }}
+    >
       <FlashStackNav.Screen
-        name="flash-themes"
-        component={FlashThemesView}
+        name="flash-media-home"
+        component={FlashMediaView}
         options={{
-          headerShown: false,
-          //title: 'Flash orthopédie'
+          headerShown: true,
+          title: 'Médias',
+          headerTintColor: '#fff',
+          headerStyle: {
+            backgroundColor: "#ffaf31"
+          },
+          headerTitleStyle: {
+            fontSize: 20,
+            fontWeight: 'bold'
+          }
         }}
       />
 
       <FlashStackNav.Screen
-        name="flash-content-viewer"
-        component={ContentDisplayer}
+        name="flash-media-channel"
+        component={ChannelMediaView}
         options={{
-          headerShown: false
+          headerShown: true,
+          headerTitle: "",
+          headerBackButtonDisplayMode: "minimal",
+          headerTransparent: true,
+          headerBackImage: ()=>(<ReturnButtonIcon />)
         }}
       />
+
+      <FlashStackNav.Screen
+        name="flash-media-preview"
+        component={PreviewMediaView}
+        options={{
+          headerShown: true,
+          headerTitle: "",
+          headerBackButtonDisplayMode: "minimal",
+          headerTintColor: '#000',
+          headerTransparent: true,
+          headerBackImage: ()=>(<ReturnButtonIcon />)
+        }}
+      />
+
+      <FlashStackNav.Screen
+        name="flash-media-viewer"
+        component={ContentDisplayer}
+        options={{
+          headerShown: true,
+          headerTitle: "",
+          headerBackButtonDisplayMode: "minimal",
+          headerTintColor: '#000',
+          headerTransparent: true,
+          headerBackImage: ()=>(<ReturnButtonIcon />)
+        }}
+      />
+
     </FlashStackNav.Navigator>
   );
 }

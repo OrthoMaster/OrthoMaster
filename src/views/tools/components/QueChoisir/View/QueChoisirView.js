@@ -9,17 +9,17 @@ import {
     Image, Dimensions,
 } from "react-native"
 import { useQuery } from "react-query"
-import { getAPIqueChoisirRedFlags, getAPIqueChoisirStep } from "../../../services/tools/QueChoisirService";
-import BottomArrow from '../../../../assets/queChoisir/bottom_arrow.svg'
-import UpperArrow from '../../../../assets/queChoisir/upper_arrow.svg'
+import { getAPIqueChoisirRedFlags, getAPIqueChoisirStep } from "../../../../../services/tools/QueChoisirService";
+import BottomArrow from '../../../../../../assets/queChoisir/bottom_arrow.svg'
+import UpperArrow from '../../../../../../assets/queChoisir/upper_arrow.svg'
 import { LinearGradient } from "expo-linear-gradient";
-import { getS3Image } from "../../../services/S3Service";
+import { getS3Image } from "../../../../../services/S3Service";
 import { ResponseButton } from "./ResponseButton";
 import { HelpSection } from "./HelpQC";
 import { NavbarQC } from "./NavbarQC";
-import { evaluateExpression } from "./tools";
-import GotIt from "../../../../assets/queChoisir/check.svg";
-import { getAPIgetProducts } from "../../../services/ProductsService";
+import { evaluateExpression } from "../tools";
+import GotIt from "../../../../../../assets/queChoisir/check.svg";
+import { getAPIgetProducts } from "../../../../../services/ProductsService";
 
 export const QueChoisirView = ({ navigation, route }) => {
     const { category, filtersConfig } = route.params
@@ -198,7 +198,7 @@ export const QueChoisirView = ({ navigation, route }) => {
 
                     {currentContraindicationArray.map((element, index) => {
                         return <View style={styles.tipsBox} key={index}>
-                            <Image source={require('../../../../assets/queChoisir/shield.png')} style={{ marginLeft: '5%' }} />
+                            <Image source={require('../../../../../../assets/queChoisir/shield.png')} style={{ marginLeft: '5%' }} />
                             <ScrollView contentContainerStyle={styles.textContainer} showsVerticalScrollIndicator={false}>
                                 <Text style={styles.text}>
                                     {element.text}

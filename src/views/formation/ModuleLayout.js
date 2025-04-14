@@ -25,14 +25,15 @@ const MainQuizButton = ({
     quizType,
     onClick,
     isDone,
-    enabled
+    enabled,
+    hint
 }) => {
-
     return (
         <TouchableOpacity
             style={[styles.mainQuizButtonContainer, {
                 //marginBottom: quizType == 'final' ? 100 : 40,
-                backgroundColor: enabled ? (isDone ? '#ffffff' : '#ffaf31') : "#D2D2D2"
+                // backgroundColor: enabled ? (isDone ? '#ffffff' : '#ffaf31') : "#D2D2D2"
+                backgroundColor: isDone ? '#ffffff' : enabled ? '#ffaf31' : "#D2D2D2"
 
             }]}
             onPress={() => {
@@ -41,40 +42,60 @@ const MainQuizButton = ({
                 }
             }}
         >
-            <Image
-                source={quizType == 'initial' ?
-                    isDone ? require('../../../assets/formation/initial_quiz_done.png') : require('../../../assets/formation/initial_quiz.png')
-                    : isDone ? require('../../../assets/formation/final_quiz_done.png') : require('../../../assets/formation/final_quiz.png')
+            <View style={{
+                width: '100%', height: '100%',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-around',
+            }}>
+
+                <Image
+                    source={quizType == 'initial' ?
+                        isDone ? require('../../../assets/formation/initial_quiz_done.png') : require('../../../assets/formation/initial_quiz.png')
+                        : isDone ? require('../../../assets/formation/final_quiz_done.png') : require('../../../assets/formation/final_quiz.png')
+                    }
+                    style={[styles.mainQuizButtonImg, {
+                        tintColor: isDone ? '#ffaf31' : "#fff"
+                    }]}
+                />
+                <Text style={[styles.mainQuizButtonText, {
+                    color: isDone ? '#ffaf31' : '#ffffff'
+                }]}>
+                    {quizType == 'initial' ?
+                        'Le Quiz de bienvenue'
+                        : 'Le Quiz final'
+                    }
+                </Text>
+                {
+                    isDone ?
+                        <Image
+                            source={require('../../../assets/formation/quiz_done.png')}
+                            style={styles.mainQuizButtonImg}
+                        />
+                        : enabled ?
+                            <Image
+                                source={require('../../../assets/formation/quiz_play.png')}
+                                style={styles.mainQuizButtonImg}
+                            />
+                            : <AntDesign name="lock" size={30} color="white" />
                 }
-                style={[styles.mainQuizButtonImg, {
-                    tintColor: isDone ? '#ffaf31' : "#fff"
-                }]}
-            />
-            <Text style={[styles.mainQuizButtonText, {
-                color: isDone ? '#ffaf31' : '#ffffff'
-            }]}>
-                {quizType == 'initial' ?
-                    'Le Quiz de bienvenue'
-                    : 'Le Quiz final'
+                {
+                    (quizType == "final" && isDone) &&
+                    <Ionicons style={{
+                        position: 'absolute',
+                        right: -10, bottom: -10,
+                        backgroundColor: '#fff'
+                    }} name="reload" size={24} color="#ffaf31" />
                 }
-            </Text>
+            </View>
             {
-                enabled ?
-                    <Image
-                        source={isDone ?
-                            require('../../../assets/formation/quiz_done.png')
-                            : require('../../../assets/formation/quiz_play.png')}
-                        style={styles.mainQuizButtonImg}
-                    />
-                    : <AntDesign name="lock" size={30} color="white" />
-            }
-            {
-                (quizType == "final" && isDone) &&
-                <Ionicons style={{
+                (hint && !enabled) &&
+                <Text style={{
+                    color: "#000",
+                    fontSize: 12,
                     position: 'absolute',
-                    right: -10, bottom: -10,
-                    backgroundColor: '#fff'
-                }} name="reload" size={24} color="#ffaf31" />
+                    bottom: -20
+                }}>{hint}</Text>
             }
         </TouchableOpacity>
     )
@@ -109,16 +130,13 @@ export const ModuleLayout = ({ navigation, route }) => {
         }, 2000);
     }, []);
 
+    useEffect(() => {
+        navigation.setOptions({ headerTitle: route.params.headerTitle })
+    }, [])
+
 
     return (
         <View style={styles.container}>
-            <LessonHeader
-                onSearch={() => (navigation.navigate('formation-search'))}
-                title={formation?.formation_name}
-                navigation={navigation}
-                returnEnabed={true}
-                searchEnabled={false}
-            />
             {
                 modulesLoading && !modules ?
                     <ActivityIndicator />
@@ -177,6 +195,7 @@ export const ModuleLayout = ({ navigation, route }) => {
                                 }}
                                 enabled={demoMode ? false : formation?.progress_rate > 60 ? true : false}
                                 isDone={formation?.final_grade ? true : false}
+                                hint={"Débloqué au delà de 60% de progression"}
                             />
                         }
                     />
@@ -250,9 +269,8 @@ const styles = StyleSheet.create({
         height: 60,
         margin: 100,
         borderRadius: 10,
-        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-around',
+        justifyContent: 'center',
         borderWidth: 0.5,
         borderColor: '#ffaf31'
     },

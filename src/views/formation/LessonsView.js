@@ -68,20 +68,8 @@ export function LessonsView({ route, navigation }) {
 
 
     return <View style={styles.container}>
-        <SafeAreaView style={[styles.headerContainer, { backgroundColor: module.module.theme_color }]}>
-            <TouchableOpacity
-                style={{
-                    alignSelf: 'flex-start',
-                    padding: 10,
-                    top: 20
-                }}
-                onPress={() => navigation.goBack()}
-            >
-                <FontAwesome5 name="arrow-left" size={24} color="#fff" />
-            </TouchableOpacity>
-        </SafeAreaView>
-
-
+        <SafeAreaView style={[styles.headerContainer, { backgroundColor: module.module.theme_color }]} />
+           
         <View style={styles.headerBox}>
             {
                 moduleLogo &&

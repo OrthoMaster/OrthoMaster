@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { evaluateExpression } from "./tools";
+import { evaluateExpression } from "../tools";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import HelpIcon from "../../../../assets/queChoisir/help_icon.svg";
+import HelpIcon from "../../../../../../assets/queChoisir/help_icon.svg";
 import { LinearGradient } from "expo-linear-gradient";
 
 export const ResponseButton = ({ element, onPress, history, onHelp, currentStepHistory }) => {

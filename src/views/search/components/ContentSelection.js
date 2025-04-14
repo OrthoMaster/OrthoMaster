@@ -17,6 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from 'react-query';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
+const { width: screenWidth } = Dimensions.get('screen')
+
 const SearchCardDefault = ({ card, onSelect, studentMode }) => {
     const isDemo = !card.certifying && !card.is_paid && studentMode == false
 
@@ -92,9 +94,10 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
             width: '100%',
             flexDirection: 'row',
             paddingVertical: 10,
+            paddingHorizontal: 5
         }}>
             <View style={{
-                flex: 2,
+                width: screenWidth / 2.5,
                 alignItems: 'center',
                 justifyContent: 'center',
             }}>
@@ -102,8 +105,10 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
                     thumbnail.data
                         ? <Image
                             style={{
-                                width: Dimensions.get('screen').width * 0.4,
-                                height: Dimensions.get('screen').width * 0.15
+                                width: screenWidth / 2.5,
+                                height: (screenWidth / 2.5) * (9 / 16),
+                                resizeMode: 'contain',
+                                borderRadius: 5
                             }}
                             source={{
                                 uri: thumbnail.data
@@ -130,7 +135,7 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
                                 fontSize: 12,
                                 width: "80%",
                                 fontWeight: 'bold'
-                                }}>Débloquer le contenu</Text>
+                            }}>Débloquer le contenu</Text>
                             <AntDesign name="unlock" size={20} color="#DEDEDE" />
                         </View>
                     </View>
@@ -139,10 +144,14 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
 
 
             <View style={{
-                flex: 4,
+                flex: 1,
+                paddingLeft: 5
             }}>
-                <Text style={{ fontSize: 10 }}>{card.formation_name}</Text>
-                <Text style={stylesDefault.cardInfoTitle}>{card.title}</Text>
+                {
+                    card.formation_name &&
+                    <Text style={{ fontSize: 10 }}>{card.formation_name}</Text>
+                }
+                <Text style={stylesDefault.cardInfoTitle} numberOfLines={2}>{card.title}</Text>
                 {
                     card.author &&
                     <Text
@@ -294,7 +303,6 @@ const stylesDefault = StyleSheet.create({
         paddingVertical: 2,
         paddingHorizontal: 5,
         borderRadius: 20,
-        marginVertical: 2
     },
     contentTypeTagText: {
         fontSize: 10,

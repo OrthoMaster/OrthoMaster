@@ -1,9 +1,8 @@
 import React, { useEffect } from "react";
 import { SafeAreaView, View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
-import HelpIcon from "../../../../assets/queChoisir/help_icon.svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "react-query";
-import { getS3Image } from "../../../services/S3Service";
+import { getS3Image } from "../../../../../services/S3Service";
 
 export const HelpSection = ({ helpWidth, helpIsActive, onPress, response }) => {
     const currentImg = useQuery(['Qu Choisir', 'response', 'image help', response.id], () => getS3Image(response.help_img))

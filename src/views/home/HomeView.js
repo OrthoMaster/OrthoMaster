@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 
 import { useQuery, useInfiniteQuery } from "react-query"
-import { fetchFlashContent } from '../../services/FlashService';
+import { fetchMedias } from '../../services/FlashMediasService';
 import {
   fetchFeedCategories,
   fetchFeedsFromCategory,
@@ -30,7 +30,9 @@ import { useGetUser } from '../../hooks/useGetUser.hook';
 export const HomeView = ({ navigation, route }) => {
   const { data: user, ...userQuery } = useGetUser()
   const [refreshing, setRefreshing] = useState(false);
-  const flashPreview = useQuery(["flash-preview"], () => fetchFlashContent(0, 5));
+  const flashPreview = useQuery(["flash-preview"], () => fetchMedias({
+    limit: 10
+  }));
 
   const [selectedFeedCategoryId, setSelectedFeedCategoryId] = useState(1)
   const [scrollReachedEnd, setScrollReachedEnd] = useState(false)
