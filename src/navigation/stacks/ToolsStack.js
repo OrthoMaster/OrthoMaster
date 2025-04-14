@@ -21,7 +21,18 @@ export const ToolsStack = ({navigation, route}) => {
       <ToolsStackNav.Screen
         name="tools-home"
         component={ToolsView}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: true,
+          headerTitle: "Outils",
+          headerTintColor: '#fff',
+          headerStyle: {
+            backgroundColor: "#ef5350"
+          },
+          headerTitleStyle: {
+            fontSize: 20,
+            fontWeight: 'bold'
+          }
+        }}
       />
       <ToolsStackNav.Screen
         name="tools-content"

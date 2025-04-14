@@ -89,16 +89,22 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
             width: '100%',
             height: '100%',
             alignItems: 'center',
-            paddingTop: 50
           }}>
 
-            <Text style={styles.toolTitle}>
-              Guide patient
-            </Text>
+            <Image
+              source={require('../../../../../assets/tools/guide-patient/guide-patient.png')}
+              style={{
+                width: "95%",
+                height: 250,
+                borderRadius: 10,
+                resizeMode: 'contain',
+                alignSelf: 'center'
+              }}
+            />
             <View style={{
               width: '100%', flex: 1,
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'center'
             }}>
               <Guides onSelect={(guideUrl) => {
                 setGuideToDisplay(guideUrl)

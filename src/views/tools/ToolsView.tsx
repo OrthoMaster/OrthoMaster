@@ -10,12 +10,6 @@ import {
   Dimensions,
   TouchableOpacity
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  withTiming,
-  useAnimatedStyle,
-  LinearTransition
-} from 'react-native-reanimated';
 import Modal from 'react-native-modal';
 
 import { QueChoisirMenu, QueChoisirButton } from './components/QueChoisir/StartMenu/QueChoisirMenu';
@@ -23,12 +17,6 @@ import { GuidePatientMenu, GuidePatientButton } from './components/GuidePatient/
 import { LearningSupportMenu, LearningSupportButton } from './components/LearningSupport/LearningSupport';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('screen');
-
-const initialIconConf = {
-  width: 150,
-  height: 80,
-  translateX: 0
-}
 
 export const ToolsView = ({ navigation }) => {
   const [showQueChoisirMenu, setShowQueChoisirMenu] = useState(false)
@@ -38,13 +26,13 @@ export const ToolsView = ({ navigation }) => {
 
 
   return (
-    <SafeAreaView style={{}}>
-      <ScrollView style={{ height: "100%" }} contentContainerStyle={{ alignItems: 'center' }}>
-        <Text style={styles.pageTitle}>
-          Mes outils
-        </Text>
+    <SafeAreaView style={{flex: 1}}>
+
         <View style={{
-          width: "80%",
+          width: "100%",
+          flex: 1,
+          justifyContent: 'center',
+          padding: 30,
         }}>
 
           <QueChoisirButton
@@ -58,7 +46,6 @@ export const ToolsView = ({ navigation }) => {
         </View>
 
 
-      </ScrollView>
       <Modal
         isVisible={showQueChoisirMenu}
       >

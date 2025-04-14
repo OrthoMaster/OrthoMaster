@@ -100,8 +100,6 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
     }, [])
 
     return <SafeAreaView>
-
-
         <LinearGradient
             colors={['#33C0B7', '#33C0B7']}
             start={{ x: 0, y: 0 }}
@@ -114,7 +112,7 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                 <TouchableOpacity
                     style={{
                         position: 'absolute',
-                        top: 5, left: 5,
+                        bottom: 0, left: 5,
                         padding: 10
                     }}
                     onPress={() => {
@@ -131,9 +129,10 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                         shadowOpacity: 0.25,
                         shadowOffset: { width: 0, height: 0 },
                         alignItems: 'center',
-                        marginTop: 10, marginRight: 10,
+                        top: 10, right: 10,
                         alignSelf: 'flex-end',
-                        zIndex: 1000
+                        zIndex: 1000,
+                        position: 'absolute'
                     }}
                     nbFiltersSelected={filters.queChoisir.selected.length}
                     onPress={() => {
@@ -141,20 +140,17 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                     }}
                     showFilters={showFilters}
                 />
-                <Text style={styles.toolTitle}>
-                    Que choisir ?
-                </Text>
-
-                <View style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                }}>
-                    <CategoriesSelection
-                        onSelect={(category) => {
-                            onStart(category, filters.queChoisir)
-                        }}
-                    />
-                </View>
+                <Image
+                    source={require('../../../../../../assets/tools/que-choisir.png')}
+                    style={{
+                        width: "95%", resizeMode: 'contain', height: 250,
+                    }}
+                />
+                <CategoriesSelection
+                    onSelect={(category) => {
+                        onStart(category, filters.queChoisir)
+                    }}
+                />
 
                 {
                     showFilters &&

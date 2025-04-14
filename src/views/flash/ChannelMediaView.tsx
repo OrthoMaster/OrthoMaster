@@ -6,9 +6,11 @@ import {
     Image,
     Dimensions,
     ActivityIndicator,
-    ScrollView
+    ScrollView,
+    Linking,
+    TouchableOpacity
 } from "react-native";
-
+import ReadMore from 'react-native-read-more-text';
 import { useQuery } from "react-query";
 import { fetchMedias } from "../../services/FlashMediasService";
 
@@ -18,16 +20,27 @@ import { IContent } from "../../interfaces";
 import { fetchPastEvents } from "../../services/EventsService";
 import SimpleCarousel from "../../component/carousel/SimpleContentCarousel";
 
+
+
+const ReadMoreButton = ({ value, onPress }) => {
+    return (
+        <TouchableOpacity style={{
+            alignSelf:'flex-end'
+        }} onPress={onPress}>
+            <Text style={{ color: '#ffaf31', fontWeight: 'bold', fontSize: 12 }}>{value}</Text>
+        </TouchableOpacity>
+    )
+}
+
+
 export type ChannelMediaViewParams = {
     channelType: 'event' | 'author';
     logoUrl: string;
     name: string;
     description: string;
     targetId: number;
+    website: string;
 }
-
-
-
 const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
     const channelParams: ChannelMediaViewParams = route.params
     const allMediaFromChannel = useQuery(["medias-channel", channelParams.name], () => fetchMedias({ event: channelParams.targetId }))
@@ -46,7 +59,7 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
                     marginVertical: 20,
                     flexDirection: "row",
                     alignItems: 'center',
-                    height: 200
+                    height: 170
                 }}>
                     <View style={{
                         backgroundColor: '#ffaf31',
@@ -91,8 +104,8 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
                 <Image
                     source={{ uri: channelParams.logoUrl }}
                     style={{
-                        height: screenWidth * 0.35,
-                        width: screenWidth * 0.35,
+                        height: screenWidth * 0.25,
+                        width: screenWidth * 0.25,
                         alignSelf: 'center',
                         objectFit: 'contain',
                         backgroundColor: "#fff",
@@ -110,7 +123,35 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
                     <Text style={styles.headerTitle}>{channelParams.name}</Text>
                     {
                         channelParams.description &&
-                        <Text>{channelParams.description}</Text>
+                        <ReadMore
+                            
+                            numberOfLines={4}
+                            renderTruncatedFooter={(truncated) => {
+                                return <ReadMoreButton value="Lire la suite" onPress={truncated} />
+                            }}
+                            renderRevealedFooter={(revealed) => {
+                                return <ReadMoreButton value="Voir moins" onPress={revealed} />
+                            }}
+                        >
+                            <Text style={{
+                                fontSize: 12,
+                                textAlign: 'justify',
+                            }}
+                                numberOfLines={4}
+                            >{channelParams.description}</Text>
+                        </ReadMore>
+                    }
+                    {
+                        channelParams.website &&
+                        <Text style={{
+                            fontSize: 12,
+                            marginTop: 10,
+                        }}
+                            onPress={() => {
+                                Linking.openURL(channelParams.website)
+                            }}>
+                            <Text style={{ color: '#000'}}>🌐 Site internet</Text>
+                        </Text>
                     }
                 </View>
             </View>
@@ -129,7 +170,9 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontWeight: 'bold',
-        fontSize: 22
+        fontSize: 18,
+        textAlign: 'center',
+        marginBottom: 20
     }
 })
 

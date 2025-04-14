@@ -42,6 +42,7 @@ export interface IEvent {
     name: string;
     description: string;
     logo_url: string;
+    website: string;
 }
 
 export interface IPastEvent {

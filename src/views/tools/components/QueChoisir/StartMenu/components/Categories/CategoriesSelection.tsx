@@ -29,7 +29,7 @@ const Icon: React.FC<IconProps> = ({ logo, name, onPress }) => {
                     <Image
                         source={{ uri: logoUrl.data }}
                         style={{
-                            width: "100%", height: "80%",
+                            width: 90, height: 90,
                             borderRadius: 10,
                             resizeMode: 'contain',
                         }}
@@ -66,7 +66,7 @@ const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect }) =
                 logo={item.item.logo}
             />)
             }
-            scrollEnabled={false}
+            scrollEnabled={true}
             numColumns={2}
             columnWrapperStyle={{
                 flex: 1,

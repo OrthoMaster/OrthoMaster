@@ -63,11 +63,7 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
     const toolContents = useQuery(['Tools', 'GET', 'Contents'], () => fetchSearchList({
         contentType: ['tool'],
         filters: null
-    }), {
-        onSuccess: (data) => {
-            console.log('LearningSupportMenu data', data)
-        }
-    })
+    }))
 
 
     return (
@@ -78,19 +74,20 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
                 height: '100%',
                 width: '100%',
             }}
-            contentContainerStyle={{
-                paddingBottom: 50,
-            }}
+                contentContainerStyle={{
+                    paddingBottom: 50,
+                }}
             >
-                <Text style={{
-                    color: '#ffffff',
-                    fontSize: 25,
-                    fontWeight: 'bold',
-                    marginVertical: 40,
-                    textAlign: 'center',
-                }}>
-                    Supports{"\n"}pédagogiques
-                </Text>
+                <Image
+                    source={require('../../../../../assets/tools/learning-support/learning-support.png')}
+                    style={{
+                        width: "95%",
+                        height: 250,
+                        borderRadius: 10,
+                        resizeMode: 'contain',
+                        alignSelf: 'center'
+                    }}
+                />
 
                 <Text style={styles.contentsSectionTitle}>Anatomie</Text>
                 <View style={styles.contentsContainer}>

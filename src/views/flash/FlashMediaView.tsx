@@ -27,8 +27,8 @@ import SimpleAdaptiveCarousel, { CarouselItem } from '../../component/carousel/S
 import { IContent, IEvent } from '../../interfaces';
 import { ChannelMediaViewParams } from './ChannelMediaView';
 import { PreviewMediaParams } from './PreviewMediaView';
-import { fetchSearchList } from '../../services/SearchService';
 import SearchModalComponent from '../../component/SearchModalComponent';
+import { getCdnContentAccessUrl } from '../../services/ContentService';
 
 
 const LIMIT_LAST_RELEASE = 5
@@ -39,26 +39,33 @@ type EventCardProp = {
   event: IEvent, onSelect: (event: IEvent) => any
 }
 const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
+  
+  const logo_url = useQuery(['event-logo', event.id], () => getCdnContentAccessUrl(event.logo_url), {
+    enabled: !!event.logo_url
+  })
   return <TouchableOpacity style={{
-    width: screenWidth / 5, height: '100%',
+    width: screenWidth / 4, height: '100%',
     alignItems: 'center',
     justifyContent: 'flex-start',
     backgroundColor: '#fff',
   }}
-    onPress={() => onSelect(event)}>
+    onPress={() => {
+      onSelect({
+        ...event,
+        logo_url: logo_url.data
+      } as IEvent)
+    }}>
     <View style={{
-      width: screenWidth / 5,
-      height: screenWidth / 5,
+      width: screenWidth / 4,
+      height: screenWidth / 4,
 
     }}>
       <Image
-        source={{ uri: event.logo_url }}
+        source={{ uri: logo_url.data }}
         style={{
           backgroundColor: '#fff',
           width: '100%', height: '100%',
           objectFit: 'contain',
-          borderColor: "#203864",
-          borderWidth: 1,
           borderRadius: 10
         }}
       />
@@ -93,7 +100,8 @@ export const FlashMediaView = ({ navigation, route }) => {
               name: event.name,
               logoUrl: event.logo_url,
               description: event.description,
-              targetId: event.id
+              targetId: event.id,
+              website: event.website
             }
             navigation.navigate("flash-media-channel", params)
           }} />
@@ -163,7 +171,6 @@ export const FlashMediaView = ({ navigation, route }) => {
         nestedScrollEnabled={true}
       >
 
-        {/* <Text style={styles.pageTitle}>Medias</Text> */}
         <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2, paddingBottom: 30, marginTop: 0 }]}>
           <Text style={[styles.categoryTitle, {
             color: "#000",
@@ -189,13 +196,13 @@ export const FlashMediaView = ({ navigation, route }) => {
             width: "90%",
             marginHorizontal: 20
           }}
-          onPress={()=>setIsSearching(true)}
+            onPress={() => setIsSearching(true)}
           >
-            <Text style={{color: 'gray'}}>Rechercher...</Text>
+            <Text style={{ color: 'gray' }}>Rechercher...</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.sectionContainer]}>
+        <View style={[styles.sectionContainer, {paddingTop: 20}]}>
           <Text style={[styles.categoryTitle]}>Congrès</Text>
           <Text style={[styles.categorySubTitle, { marginBottom: 5 }]}>Les sociétés savantes</Text>
           {
@@ -208,7 +215,7 @@ export const FlashMediaView = ({ navigation, route }) => {
                 : <SimpleAdaptiveCarousel
                   items={eventsCarouselItems}
                   widthPercent={1}
-                  height={120}
+                  height={170}
                   cardSpacing={5}
                 />
           }
@@ -329,7 +336,7 @@ const styles = StyleSheet.create({
     marginVertical: 5
   },
   categoryTitle: {
-    fontSize: 22,
+    fontSize: 20,
     marginVertical: 5,
     paddingLeft: 10, paddingRight: 20,
     paddingVertical: 3,
