@@ -59,7 +59,6 @@ const SearchCard: React.FC<SearchCardProps> = ({ content, onSelect }) => {
                 return 'Ressource'
             default:
                 return '👍'
-
         }
     }
 
