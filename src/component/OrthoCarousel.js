@@ -7,20 +7,22 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useQuery } from 'react-query';
-import Carousel from '../../snap-carousel/src/carousel/Carousel';
+import { useQuery } from "react-query";
+import SimpleAdaptiveCarousel from './carousel/SimpleAdaptiveCarousel';
 import { getS3Image } from '../services/S3Service'
 
+const { width: screenWidth } = Dimensions.get('screen')
+const nbCarouselCardOnScreen = 2.5
 
-
-const CarousselCard = ({ item, navigation }) => {
-    const imageUrl = useQuery(['Home', 'GET', 'contentThumbnail', item.id_content, item.title], () => getS3Image(`${item.s3_path}/${item.title}/logo.png`))
+const CarousselCard = ({ item, onPress }) => {
+    const imageUrl = useQuery({
+        queryKey: ['Home', 'GET', 'contentThumbnail', item.id_content, item.title],
+        queryFn: () => getS3Image(`${item.s3_path}/${item.title}/logo.png`)
+    })
 
     return (
         <TouchableOpacity style={styles.card}
-            onPress={() => navigation.navigate('home-content', {
-                content: item
-            })}
+            onPress={() => onPress()}
         >
             {
                 imageUrl.data ?
@@ -32,19 +34,19 @@ const CarousselCard = ({ item, navigation }) => {
 
             }
             <Text style={styles.title}>{item.title}</Text>
-            <View style={{display: 'flex', flexDirection: 'row'}}>
-                <Text style={{fontSize: 12, color: '#ffaf31', fontWeight: 'bold'}}>{item.author}</Text>
-                <Text style={{fontSize: 12, marginLeft: 10}}>⏱️ {item.duration}</Text>
+            <View style={{ display: 'flex', flexDirection: 'row' }}>
+                <Text style={{ fontSize: 10, color: '#ffaf31', fontWeight: 'bold' }}>{item.author}</Text>
+                <Text style={{ fontSize: 10, marginLeft: 10 }}>⏱️ {item.duration}</Text>
             </View>
             <Text style={{
                 fontSize: 10, color: 'gray'
             }}
-            numberOfLines={2}
-            ellipsizeMode="tail"
+                numberOfLines={2}
+                ellipsizeMode="tail"
             >
                 {
                     item.tags?.split(";").map((value, index) => {
-                        return <Text key={index}>{String(value).charAt(0).toUpperCase()+String(value).slice(1)}, </Text>
+                        return <Text key={index}>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}, </Text>
                     })
                 }
             </Text>
@@ -54,34 +56,61 @@ const CarousselCard = ({ item, navigation }) => {
 
 
 export const OrthoCarousel = ({ entries, navigation }) => {
-    if (!entries) {
-        return null
-    }
+    const [formattedEntries, setformattedEntries] = useState([])
 
-    return <Carousel
-        data={entries}
-        renderItem={item => <CarousselCard item={item.item} navigation={navigation} />}
-        sliderWidth={Dimensions.get('screen').width}
-        itemWidth={300}
+    useEffect(() => {
+        if (entries) {
+            let finalArray = []
+            for (const entry of entries) {
+
+                finalArray.push({
+                    key: entry.id_content,
+                    content: <CarousselCard
+                        item={entry}
+                        onPress={() => {
+                            navigation.navigate('home-content', {
+                                content: entry
+                            })
+                        }}
+                    />
+                })
+            }
+
+            setformattedEntries(finalArray)
+        }
+
+    }, [entries])
+
+
+
+
+    return <SimpleAdaptiveCarousel
+        items={formattedEntries}
+        widthPercent={1}
+        height={180}
+        cardSpacing={5}
+
     />
 }
 
 const styles = StyleSheet.create({
     card: {
+        height: '100%',
+        width: screenWidth / nbCarouselCardOnScreen,
     },
     title: {
         fontWeight: '600',
-        fontSize: 16,
+        fontSize: 12,
         marginTop: 5
     },
     description: {
         fontWeight: '400',
-        fontSize: 12
+        fontSize: 10
     },
     thumbnail: {
         width: '100%',
-        height: 150,
-        resizeMode: 'cover',
+        height: (screenWidth / nbCarouselCardOnScreen) * 9 / 16,
+        resizeMode: 'contain',
         borderRadius: 8
     }
 })

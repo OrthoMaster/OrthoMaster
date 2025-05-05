@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import { getUserNextLesson } from '../../services/ContentService';
 import { useTheme } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';

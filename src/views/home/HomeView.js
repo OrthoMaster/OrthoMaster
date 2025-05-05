@@ -201,13 +201,13 @@ const styles = StyleSheet.create({
     width: '100%',
     display: 'flex',
     flexDirection: 'row',
-    marginBottom: 15
+    marginBottom: 5
   },
   carouselHeaderTitle: {
     flex: 2,
     alignSelf: 'flex-start',
-    marginLeft: 20,
-    fontSize: 18,
+    marginLeft: 5,
+    fontSize: 15,
   },
   carouselHeaderButton: {
     flex: 1,

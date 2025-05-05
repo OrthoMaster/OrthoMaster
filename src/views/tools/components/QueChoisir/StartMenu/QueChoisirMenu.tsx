@@ -18,7 +18,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getQCcategories } from '../../../../../services/tools/QueChoisirService';
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import { getProductsBrands } from '../../../../../services/ProductsService';
 import FiltersQC from './components/Filters/FiltersQC';
 import FiltersButton from './components/Filters/FiltersButton';

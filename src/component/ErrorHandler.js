@@ -2,7 +2,7 @@ import { ErrorBoundary } from 'react-error-boundary'
 import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, Button, Text, Alert, Linking, SafeAreaView } from "react-native";
 import { setJSExceptionHandler } from 'react-native-exception-handler';
-import Bugsnag from '@bugsnag/expo';
+// import Bugsnag from '@bugsnag/expo';
 import { useStore } from 'react-redux';
 
 
@@ -61,15 +61,15 @@ export const ErrorHandler = ({ children }) => {
     }
 
     useEffect(() => {
-        Bugsnag.start({
-            onError: function (event) {
-                const user = store.getState().auth.userCurrentSession
-                if (user) {
-                    event.setUser(user.id_user, user.email, user.name + ' ' + user.lastname)
-                }
-            },
-            autoDetectErrors: false
-        });
+        // Bugsnag.start({
+        //     onError: function (event) {
+        //         const user = store.getState().auth.userCurrentSession
+        //         if (user) {
+        //             event.setUser(user.id_user, user.email, user.name + ' ' + user.lastname)
+        //         }
+        //     },
+        //     autoDetectErrors: false
+        // });
     }, [])
 
 

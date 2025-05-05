@@ -17,14 +17,14 @@ import {
   TextInputChangeEventData
 } from 'react-native';
 import Modal from 'react-native-modal';
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { fetchMedias } from '../../services/FlashMediasService';
 import { fetchEvents } from '../../services/EventsService';
 import SimpleAdaptiveCarousel, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
-import { IContent, IEvent } from '../../interfaces';
+import { IContent, IEvent } from '../../utils/interfaces';
 import { ChannelMediaViewParams } from './ChannelMediaView';
 import { PreviewMediaParams } from './PreviewMediaView';
 import SearchModalComponent from '../../component/SearchModalComponent';

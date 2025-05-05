@@ -22,9 +22,9 @@ import Modal from 'react-native-modal';
 import Animated, { useSharedValue, withSpring, LinearTransition } from 'react-native-reanimated';
 import { getS3Image } from '../services/S3Service.js';
 
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import { fetchSearchList } from '../services/SearchService.js';
-import { ISearchContent } from '../interfaces.js';
+import { ISearchContent } from '../utils/interfaces.js';
 
 const { width: screenWidth } = Dimensions.get('screen')
 const PAGE_SIZE = 10

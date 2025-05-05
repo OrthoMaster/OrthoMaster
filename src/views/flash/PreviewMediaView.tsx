@@ -8,7 +8,7 @@ import { getS3Image } from "../../services/S3Service";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
-import { IContent } from "../../interfaces";
+import { IContent } from "../../utils/interfaces";
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchSearchList } from "../../services/SearchService";

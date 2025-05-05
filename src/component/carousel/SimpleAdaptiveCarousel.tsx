@@ -30,11 +30,12 @@ const SimpleAdaptiveCarousel: React.FC<CustomCarouselProps> = ({
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item: any , index: number) => index.toString()}
         style={{width: screenWidth * widthPercent}}
-        renderItem={({ item }) => (
-          <View style={[styles.slide, {marginHorizontal: cardSpacing}]}>
+        renderItem={({ item }) => {
+          
+          return <View style={[styles.slide, {marginHorizontal: cardSpacing}]}>
             {item.content}
           </View>
-        )}
+        }}
       />
     </View>
   );

@@ -20,7 +20,7 @@ import { ContentSelection } from './components/ContentSelection'
 import { SearchHeader } from './SearchHeader'
 import { LoadingContent } from '../../component/LoadingContent'
 import { API_SEARCH_CLEAN } from '../../actions/types';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { fetchSearchList } from '../../services/SearchService';
 import { getCurrentUser } from '../../services/UserService';
 import { registerFormation, getUserRegisteredFormation } from '../../services/FormationService';

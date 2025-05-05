@@ -77,11 +77,12 @@ export default PriceRecap = ({ selectedCollaborators, unitPrice }) => {
 
         <Text style={{
             marginTop: 20,
-            alignSelf: 'flex-end'
+            alignSelf: 'flex-end',
+            fontSize: 12
         }}>
             <Text style={{
                 fontWeight: 'bold',
-                color: '#ffaf31'
+                color: '#ffaf31',
             }}>Prix total : </Text>{reducedPrice * selectedCollaborators.length} € HT</Text>
     </View>
 }

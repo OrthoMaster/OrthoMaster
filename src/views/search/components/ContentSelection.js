@@ -14,7 +14,7 @@ import {
 
 import { getS3Image } from '../../../services/S3Service'
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 const { width: screenWidth } = Dimensions.get('screen')

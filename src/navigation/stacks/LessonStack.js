@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 
 import { LessonsView } from "../../views/formation/LessonsView";
 import { FormationView } from '../../views/formation/FormationView';
@@ -11,9 +11,10 @@ import ReturnButtonIcon from '../components/ReturnButton';
 import SearchView from '../../views/search/SearchView';
 
 import { LessonEndingView } from '../../views/content/LessonEndingView';
+import { createStackNavigator } from '@react-navigation/stack';
 
 
-const LessonStackNav = createNativeStackNavigator();
+const LessonStackNav = createStackNavigator()
 export const LessonStack = () => {
   return (
     <LessonStackNav.Navigator

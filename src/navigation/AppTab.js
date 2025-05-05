@@ -4,8 +4,6 @@ import {
   AppState,
   Platform
 } from 'react-native'
-import { useMutation, useQuery } from 'react-query';
-import { saveLogtimeOnApp } from '../services/LogsService';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -16,14 +14,9 @@ import { ToolsStack } from './stacks/ToolsStack';
 import { ProfilStack } from './stacks/ProfilStack';
 
 
-import { getCurrentDate } from "../utils";
 
 
 // import * as Linking from "expo-linking"
-import { useNavigation } from '@react-navigation/native';
-import { useGetUser } from '../hooks/useGetUser.hook';
-import { getContentById } from '../services/ContentService';
-import { getUserRegisteredFormation } from '../services/FormationService';
 
 
 
@@ -31,53 +24,37 @@ const Tab = createBottomTabNavigator();
 
 
 export const AppTab = ({ }) => {
-  const appState = useRef(AppState.currentState);
-  const mutation = useMutation(saveLogtimeOnApp);
+  // const appState = useRef(AppState.currentState);
+  // const mutation = useMutation(saveLogtimeOnApp);
 
-  var launchDate = getCurrentDate()
-
-  //const accessUrl = Linking.useURL();
-
-
+  // var launchDate = getCurrentDate()
 
   // useEffect(() => {
-  //   if (accessUrl) {
-  //     const { hostname, path, queryParams } = Linking.parse(accessUrl);
-
-  //     if (path === "open/content") {
-  //       //handleOpenContent(queryParams.id)
+  //   const userLogtimeHandling = AppState.addEventListener("change", nextAppState => {
+  //     if (appState.current.match(/inactive|background/) &&
+  //       nextAppState === "active") {
+  //       launchDate = getCurrentDate()
+  //     } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
+  //       saveAppLogs({
+  //         login: launchDate,
+  //         logout: getCurrentDate()
+  //       })
   //     }
+  //     appState.current = nextAppState;
+  //   });
+  //   return () => {
+  //     userLogtimeHandling.remove();
+  //   };
+  // }, []);
 
+
+  // const saveAppLogs = async (log) => {
+  //   try {
+  //     await mutation.mutateAsync(log)
+  //   } catch (error) {
+  //     throw error
   //   }
-
-  // }, [accessUrl])
-
-  useEffect(() => {
-    const userLogtimeHandling = AppState.addEventListener("change", nextAppState => {
-      if (appState.current.match(/inactive|background/) &&
-        nextAppState === "active") {
-        launchDate = getCurrentDate()
-      } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
-        saveAppLogs({
-          login: launchDate,
-          logout: getCurrentDate()
-        })
-      }
-      appState.current = nextAppState;
-    });
-    return () => {
-      userLogtimeHandling.remove();
-    };
-  }, []);
-
-
-  const saveAppLogs = async (log) => {
-    try {
-      await mutation.mutateAsync(log)
-    } catch (error) {
-      throw error
-    }
-  }
+  // }
 
 
   return (

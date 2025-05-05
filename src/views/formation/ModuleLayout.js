@@ -14,7 +14,7 @@ import { LessonHeader } from './LessonHeader'
 import ModuleButton from './components/ModuleButton';
 import { MainQuizUnlockModal } from './modal/MainQuizUnlockModal';
 
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import { fetchModules } from '../../services/ModuleService';
 import { getUserRegisteredFormation } from '../../services/FormationService';
 

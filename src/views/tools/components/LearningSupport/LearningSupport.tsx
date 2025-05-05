@@ -2,7 +2,7 @@ import React from "react";
 import { FlatList, Image, Linking, Text, TouchableOpacity, View, StyleSheet, SafeAreaView } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-import { IContent } from "../../../../interfaces";
+import { IContent } from "../../../../utils/interfaces";
 import { useQuery } from "react-query";
 import { fetchSearchList } from "../../../../services/SearchService";
 import { getS3Image } from "../../../../services/S3Service";

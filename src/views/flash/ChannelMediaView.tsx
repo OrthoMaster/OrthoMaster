@@ -16,7 +16,7 @@ import { fetchMedias } from "../../services/FlashMediasService";
 
 const { width: screenWidth } = Dimensions.get('screen')
 
-import { IContent } from "../../interfaces";
+import { IContent } from "../../utils/interfaces";
 import { fetchPastEvents } from "../../services/EventsService";
 import SimpleCarousel from "../../component/carousel/SimpleContentCarousel";
 

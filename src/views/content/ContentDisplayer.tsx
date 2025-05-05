@@ -23,16 +23,21 @@ import { ContentFactory } from './components/ContentFactory'
 import { LoadingContent } from "../../component/LoadingContent";
 
 
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
+
+import { SessionEventContent } from "../../utils/myTypes"
+import { AppStore } from "../../store";
+import { useAppDispatch } from "../../hooks/storeHooks";
+
 
 export function ContentDisplayer({ route, navigation }) {
   var { content, formation, type, demoMode } = route.params;
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch()
+
   const appState = useRef(AppState.currentState);
-  const contentScrollRef = useRef();
+  const contentScrollRef = useRef<ScrollView>(null);
   var launchDate = null;
-  const routes = navigation.getState()?.routes;
   const [refreshing, setRefreshing] = useState(false)
 
   const lessonIsFinish = useSelector(selectIsFinish)
@@ -54,16 +59,16 @@ export function ContentDisplayer({ route, navigation }) {
 
   const mutation = useMutation(saveLogtimeOnLesson);
 
-  const saveLogs = async (log) => {
-    var inn = new Date(log.login)
-    var out = new Date(log.logout)
-    const timePassed = (out - inn) / 1000
+  const saveLogs = async (data: SessionEventContent) => {
+    // var inn = new Date(log.login)
+    // var out = new Date(log.logout)
+    // const timePassed = (out - inn) / 1000
 
 
 
-    await mutation.mutateAsync(log)
-    if (timePassed >= 10) {
-    }
+    // await mutation.mutateAsync(log)
+    // if (timePassed >= 10) {
+    // }
   };
 
 
@@ -94,29 +99,29 @@ export function ContentDisplayer({ route, navigation }) {
           appState.current.match(/inactive|background/) &&
           nextAppState === "active"
         ) {
-          launchDate = getCurrentDate()
+          // launchDate = getCurrentDate()
         } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
-          saveLogs({
-            login: launchDate,
-            logout: getCurrentDate(),
-            contentId: content.id_content,
-            idUserRegisteredFormation: formation.id
-          })
+          // saveLogs({
+          //   login: launchDate,
+          //   logout: getCurrentDate(),
+          //   contentId: content.id_content,
+          //   idUserRegisteredFormation: formation.id
+          // })
         }
 
         appState.current = nextAppState;
       })
 
       navigation.addListener('blur', (e) => {
-        saveLogs({
-          login: launchDate,
-          logout: getCurrentDate(),
-          contentId: content.id_content,
-          idUserRegisteredFormation: formation.id
-        })
+        // saveLogs({
+        //   login: launchDate,
+        //   logout: getCurrentDate(),
+        //   contentId: content.id_content,
+        //   idUserRegisteredFormation: formation.id
+        // })
       })
       navigation.addListener('focus', (e) => {
-        launchDate = getCurrentDate()
+        // launchDate = getCurrentDate()
       })
 
       return () => {
@@ -133,7 +138,6 @@ export function ContentDisplayer({ route, navigation }) {
       setRefreshing(false);
     }, 2000);
   }, []);
-
 
   if (lessonIsFinish || contentIsRunning == false) return
 
@@ -160,8 +164,7 @@ export function ContentDisplayer({ route, navigation }) {
           ref={contentScrollRef}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {xmlContent.isLoading ? <LoadingContent /> : <ContentFactory component={xmlContent.data} contentInfos={content} />}
-
+          {xmlContent.isLoading ? <LoadingContent state={true} onRetry={() => { }} /> : <ContentFactory component={xmlContent.data} contentInfos={content} />}
         </ScrollView>
 
         {

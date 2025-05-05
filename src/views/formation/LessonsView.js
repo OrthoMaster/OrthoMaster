@@ -12,7 +12,7 @@ import {
 import Svg, {
     Path
 } from 'react-native-svg';
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import { fetchLessonByModuleWithProgression } from '../../services/ContentService';
 
 import { getS3Image } from '../../services/S3Service';
@@ -103,6 +103,8 @@ export function LessonsView({ route, navigation }) {
                     lesson={item.item}
                     isBlocked={demoMode && item.item.demo_access == false}
                     onPress={(lesson) => {
+                        console.log(lesson);
+                        
                         if (lesson.content.published == true) {
                             navigation.navigate('formation-content', {
                                 content: lesson.content,

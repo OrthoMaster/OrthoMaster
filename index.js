@@ -3,11 +3,12 @@ import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 import { Provider } from 'react-redux'
-import store from './src/store'
+
 import { ErrorHandler } from './src/component/ErrorHandler';
 import { MyQueryProvider } from './src/component/MyQueryProvider';
 
 import App from './App';
+import { store } from './src/store';
 
 const WrapApp = () => (
   <Provider store={store}>

@@ -64,7 +64,7 @@ const TextField = ({ props }) => {
                 borderColor: alertError.length > 0 ? 'red' : '#828282',
                 backgroundColor: '#fff'
             }, styles.field, {
-                height: 40 * (props.numberOfLines ? props.numberOfLines : 1)
+                height: 30 * (props.numberOfLines ? props.numberOfLines : 1)
             }]}
             onChangeText={(text) => {
                 props.onChange({ text, value: props.value, target: props.target })
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 10
     },
     fieldLabel: {
-        fontSize: 15
+        fontSize: 12
     },
     field: {
         borderWidth: 0.5,
@@ -168,11 +168,11 @@ const stylesDropdown = StyleSheet.create({
     },
     dropdownButtonTxtStyle: {
         flex: 1,
-        fontSize: 15,
+        fontSize: 10,
         color: '#000',
     },
     dropdownButtonArrowStyle: {
-        fontSize: 15,
+        fontSize: 10,
     },
     dropdownButtonIconStyle: {
         fontSize: 28,
@@ -194,7 +194,7 @@ const stylesDropdown = StyleSheet.create({
     },
     dropdownItemTxtStyle: {
         flex: 1,
-        fontSize: 15,
+        fontSize: 10,
         color: '#000',
     },
 
