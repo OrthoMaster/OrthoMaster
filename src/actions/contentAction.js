@@ -12,10 +12,6 @@ import {
 
 
 export const runContent = (content, nbQuiz) => (dispatch) => {
-  console.log("Content", content);
-  console.log("nbQuiz", nbQuiz);
-
-
   dispatch({
     type: CONTENT_START,
     content: content,

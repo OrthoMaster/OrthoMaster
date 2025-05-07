@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { restoreLocalConfigAsync } from "../utils";
+import { restoreLocalConfigAsync } from "../futils";
 import { osName } from 'expo-device';
 import * as SecureStore from 'expo-secure-store';
 

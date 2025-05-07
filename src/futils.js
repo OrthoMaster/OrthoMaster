@@ -3,10 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
 export const getCurrentDate = () => {
-	var date = new Date()
-
-	return (date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' +
-		date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds());
+	return new Date().toISOString().slice(0, 19).replace('T', ' ')
 }
 
 export const restoreLocalConfigAsync = async () => {

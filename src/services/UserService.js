@@ -1,7 +1,7 @@
 import axios from "axios";
 
 import { Buffer } from "buffer"
-import { restoreLocalConfigAsync } from "../utils";
+import { restoreLocalConfigAsync } from "../futils";
 const baseurl = process.env.EXPO_PUBLIC_API_URL+"/user"
 
 

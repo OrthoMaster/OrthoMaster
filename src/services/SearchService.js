@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { restoreLocalConfigAsync } from "../utils";
+import { restoreLocalConfigAsync } from "../futils";
 const baseurl = process.env.EXPO_PUBLIC_API_URL + "/contents/v2/search"
 
 export const fetchSearchList = async ({ contentType = null, filters = null, searchText = "" }, page, pageSize) => {

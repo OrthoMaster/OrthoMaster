@@ -74,7 +74,7 @@ export const QueChoisirView = ({ navigation, route }) => {
             let newSelection = []
             products.data.forEach(product => {
                 if (refToSearch.every(item => product.qc_ref.includes(item))) { //TODO filter sans OK SI donc parsing de string car includes return booléen
-                    
+
                     newSelection.push(product)
                 }
             });
@@ -132,14 +132,14 @@ export const QueChoisirView = ({ navigation, route }) => {
                 <View style={styles.imageContainer}>
                     {
                         stepImage && getCurrentImage.data ?
-                        <Image
-                            source={{ uri: getCurrentImage.data }}
-                            style={{
-                                resizeMode: 'cover',
-                                height: '100%'
-                            }}
-                        />
-                        : <View style={{height: "100%", color: "#fff"}}/>
+                            <Image
+                                source={{ uri: getCurrentImage.data }}
+                                style={{
+                                    resizeMode: 'cover',
+                                    height: '100%'
+                                }}
+                            />
+                            : <View style={{ height: "100%", color: "#fff" }} />
 
                     }
                 </View>
@@ -150,7 +150,7 @@ export const QueChoisirView = ({ navigation, route }) => {
 
                 {
                     errorMessage &&
-                    <Text style={{alignSelf: 'center'}}>{errorMessage}</Text>
+                    <Text style={{ alignSelf: 'center' }}>{errorMessage}</Text>
                 }
 
                 <ScrollView centerContent={true} style={styles.quizScroll} contentContainerStyle={{ alignItems: 'center', paddingBottom: 100 }}>
@@ -315,7 +315,7 @@ export const QueChoisirView = ({ navigation, route }) => {
                 }
                 } helpWidth={helpWidth} response={responseHelp} /> : null}
             <NavbarQC global={globalSteps} questionIndex={questionIndex} />
-            
+
         </View>
 
     </SafeAreaView >)

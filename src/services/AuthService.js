@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { restoreLocalConfigAsync } from "../utils";
+import { restoreLocalConfigAsync } from "../futils";
 import { osName } from 'expo-device';
 import { Buffer } from "buffer";
 import { deleteUserExpoPushToken } from "./NotificationService";

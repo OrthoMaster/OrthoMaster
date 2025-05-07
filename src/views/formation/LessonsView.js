@@ -103,8 +103,6 @@ export function LessonsView({ route, navigation }) {
                     lesson={item.item}
                     isBlocked={demoMode && item.item.demo_access == false}
                     onPress={(lesson) => {
-                        console.log(lesson);
-                        
                         if (lesson.content.published == true) {
                             navigation.navigate('formation-content', {
                                 content: lesson.content,

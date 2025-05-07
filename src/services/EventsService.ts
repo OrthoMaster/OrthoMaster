@@ -1,6 +1,6 @@
 import axios, { Axios, AxiosResponse } from "axios";
 
-import { restoreLocalConfigAsync } from "../utils";
+import { restoreLocalConfigAsync } from "../futils";
 import { IEvent, IPastEvent } from "../utils/interfaces";
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL+ "/events"

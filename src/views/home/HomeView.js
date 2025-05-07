@@ -121,8 +121,6 @@ export const HomeView = ({ navigation, route }) => {
     }
   }, [scrollReachedEnd])
 
-
-
   return (
     <View style={{ flex: 1 }}>
       <StatusBar
@@ -148,7 +146,7 @@ export const HomeView = ({ navigation, route }) => {
           <View style={styles.carouselHeader}>
 
             <Text style={styles.carouselHeaderTitle}>Nos derniers contenus</Text>
-            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
+            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Médias')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>
           </View>

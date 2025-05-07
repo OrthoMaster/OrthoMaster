@@ -18,7 +18,7 @@ import { saveLogtimeOnLesson } from "../../services/LogsService";
 
 import { exitContent, runContent } from "../../actions/contentAction";
 
-import { getCurrentDate } from "../../utils";
+import { getCurrentDate } from "../../futils";
 import { ContentFactory } from './components/ContentFactory'
 import { LoadingContent } from "../../component/LoadingContent";
 
@@ -29,6 +29,7 @@ import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 import { SessionEventContent } from "../../utils/myTypes"
 import { AppStore } from "../../store";
 import { useAppDispatch } from "../../hooks/storeHooks";
+import { saveEvent } from "../../services/SessionEventService";
 
 
 export function ContentDisplayer({ route, navigation }) {
@@ -57,9 +58,12 @@ export function ContentDisplayer({ route, navigation }) {
     }
   });
 
-  const mutation = useMutation(saveLogtimeOnLesson);
 
   const saveLogs = async (data: SessionEventContent) => {
+    console.log("SAVING LOGS:", data)
+    console.log("Formation :",formation);
+    
+    saveEvent("content_view", data)
     // var inn = new Date(log.login)
     // var out = new Date(log.logout)
     // const timePassed = (out - inn) / 1000
@@ -90,43 +94,40 @@ export function ContentDisplayer({ route, navigation }) {
 
 
   useEffect(() => {
-    // if (content.type == 'lesson' && content.title != 'initial' && content.title != 'final') { // tmp handling of main quiz in the formation
-    if (formation && type == "lesson") { // tmp handling of main quiz in the formation
-      launchDate = getCurrentDate()
+    launchDate = getCurrentDate()
 
-      const appStateListener = AppState.addEventListener("change", nextAppState => {
-        if (
-          appState.current.match(/inactive|background/) &&
-          nextAppState === "active"
-        ) {
-          // launchDate = getCurrentDate()
-        } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
-          // saveLogs({
-          //   login: launchDate,
-          //   logout: getCurrentDate(),
-          //   contentId: content.id_content,
-          //   idUserRegisteredFormation: formation.id
-          // })
-        }
-
-        appState.current = nextAppState;
-      })
-
-      navigation.addListener('blur', (e) => {
-        // saveLogs({
-        //   login: launchDate,
-        //   logout: getCurrentDate(),
-        //   contentId: content.id_content,
-        //   idUserRegisteredFormation: formation.id
-        // })
-      })
-      navigation.addListener('focus', (e) => {
-        // launchDate = getCurrentDate()
-      })
-
-      return () => {
-        appStateListener.remove()
+    const appStateListener = AppState.addEventListener("change", nextAppState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        launchDate = getCurrentDate()
+      } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
+        saveLogs({
+          started_at: launchDate,
+          ended_at: getCurrentDate(),
+          content_id: content.id_content,
+          id_user_registered_formation: formation ? formation.id : null
+        })
       }
+
+      appState.current = nextAppState;
+    })
+
+    navigation.addListener('blur', (e) => {
+      saveLogs({
+        started_at: launchDate,
+        ended_at: getCurrentDate(),
+        content_id: content.id_content,
+        id_user_registered_formation: formation ? formation.id : null
+      })
+    })
+    navigation.addListener('focus', (e) => {
+      launchDate = getCurrentDate()
+    })
+
+    return () => {
+      appStateListener.remove()
     }
   }, [])
 

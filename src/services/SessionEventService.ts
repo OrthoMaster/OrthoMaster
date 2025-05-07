@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import axios from 'axios';
 import * as Device from 'expo-device';
-import { restoreLocalConfigAsync } from '../utils';
+import { restoreLocalConfigAsync } from '../futils';
 import { SessionEventData, SessionEventType } from '../utils/myTypes';
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL + "/session"
