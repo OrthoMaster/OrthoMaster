@@ -1,6 +1,9 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { Share } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import { saveEvent } from './services/SessionEventService';
 
 export const getCurrentDate = () => {
 	return new Date().toISOString().slice(0, 19).replace('T', ' ')
@@ -39,4 +42,36 @@ export const ColorLuminance = (hex, lum) => {
 	}
 
 	return rgb;
+}
+
+export const orthomasterShare = ({ title = undefined, message = undefined, url = undefined }) => {
+
+	Share.share({
+		title: title,
+		message: message,
+		url: url
+	}).then(() => {
+		saveEvent("share_use", {
+			share_type: '', // can be: app sharing or inviteShare or content share
+			content_id: null, // if content share 
+			occured_at: getCurrentDate()
+		})
+	})
+}
+
+export const orthomasterShareFile = async (fileUri, options) => {
+	const isAvailable = await Sharing.isAvailableAsync()
+
+	if (isAvailable == false)
+		return
+
+	Sharing.shareAsync(fileUri, options)
+		.then(() => {
+			saveEvent("share_use", {
+				share_type: 'file', // which file ?
+				content_id: null,
+				occured_at: getCurrentDate()
+			})
+		})
+
 }

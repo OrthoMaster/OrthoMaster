@@ -9,8 +9,7 @@ import {
   StatusBar,
   Image,
   RefreshControl,
-  Platform,
-  Share
+  Platform
 } from 'react-native';
 
 import { AccountProgress } from './components/AccountProgress';

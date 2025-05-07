@@ -4,30 +4,20 @@ import {
     Text,
     View,
     TouchableOpacity,
-    FlatList,
-    Pressable,
     Image,
     Linking,
-    StatusBar,
-    Platform,
-    Dimensions,
     SafeAreaView
 } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getQCcategories } from '../../../../../services/tools/QueChoisirService';
 import { useQuery } from "react-query";
 import { getProductsBrands } from '../../../../../services/ProductsService';
 import FiltersQC from './components/Filters/FiltersQC';
 import FiltersButton from './components/Filters/FiltersButton';
 import CategoriesSelection from './components/Categories/CategoriesSelection';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { ScrollView } from 'react-native-gesture-handler';
-
-const { width: screenWidth } = Dimensions.get('screen');
-
 
 
 export const QueChoisirButton: React.FC<{ onPress: () => any }> = ({ onPress }) => {

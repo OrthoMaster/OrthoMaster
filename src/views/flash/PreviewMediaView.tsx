@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { View, Text, SafeAreaView, TouchableOpacity, Dimensions, Image, StyleSheet, ScrollView, FlatList, ImageBackground, ActivityIndicator, Share } from "react-native";
+import { View, Text, SafeAreaView, TouchableOpacity, Dimensions, Image, StyleSheet, ScrollView, FlatList, ImageBackground, ActivityIndicator } from "react-native";
 import { useQuery } from "react-query";
 
 import { useGetUser } from "../../hooks/useGetUser.hook";
@@ -12,6 +12,7 @@ import { IContent } from "../../utils/interfaces";
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchSearchList } from "../../services/SearchService";
+import { orthomasterShare } from "../../futils";
 
 const screenWidth = Dimensions.get('screen').width;
 
@@ -89,15 +90,15 @@ export const PreviewMediaView = ({ navigation, route }) => {
     }, 1, 6), {
         enabled: similarTags !== null
     })
-  const { data: user, ...userQuery } = useGetUser()
+    const { data: user, ...userQuery } = useGetUser()
 
 
     const shareMedia = async (media2share: IContent) => {
-        Share.share({
+        orthomasterShare({
             title: media2share.title,
-            message: "Voici un contenu intéressant à voir sur OrthoMaster :\n\n"+
-            media2share.title + " par " + media2share.author+ "\n\n"+
-            "https://app.orthomaster.fr/open/media-preview?id="+media2share.id_content,
+            message: "Voici un contenu intéressant à voir sur OrthoMaster :\n\n" +
+                media2share.title + " par " + media2share.author + "\n\n" +
+                "https://app.orthomaster.fr/open/media-preview?id=" + media2share.id_content
         })
     }
 
