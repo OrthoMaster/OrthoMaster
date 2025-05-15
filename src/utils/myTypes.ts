@@ -21,3 +21,10 @@ export type SessionEventShare = {
     content_id: number | null
     occured_at: string
 }
+
+export type SessionError = {
+    name: string
+    message: string
+    stack_trace: string
+    context: object
+}

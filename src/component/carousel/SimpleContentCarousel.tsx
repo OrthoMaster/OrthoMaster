@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     maxHeight: "100%",
     marginHorizontal: 5, // Espacement entre les films
     borderRadius: 5,
-    backgroundColor: "#fff",
+    backgroundColor: "none",
     alignItems: "center",
     justifyContent: 'flex-start',
   },
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000'
   },
   title: {
-    color: "#000",
+    color: "#fff",
     fontSize: 12,
     fontWeight: "bold",
     textAlign: "left",

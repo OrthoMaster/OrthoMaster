@@ -14,7 +14,6 @@ import {
 import { useQuery, useMutation } from "react-query";
 
 import { fetchLessonContent } from "../../services/ContentService";
-import { saveLogtimeOnLesson } from "../../services/LogsService";
 
 import { exitContent, runContent } from "../../actions/contentAction";
 
@@ -27,13 +26,12 @@ import { useSelector } from "react-redux";
 import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 
 import { SessionEventContent } from "../../utils/myTypes"
-import { AppStore } from "../../store";
 import { useAppDispatch } from "../../hooks/storeHooks";
 import { saveEvent } from "../../services/SessionEventService";
 
 
 export function ContentDisplayer({ route, navigation }) {
-  var { content, formation, type, demoMode } = route.params;
+  var { content, formation, demoMode } = route.params;
   const dispatch = useAppDispatch()
 
   const appState = useRef(AppState.currentState);
@@ -60,19 +58,7 @@ export function ContentDisplayer({ route, navigation }) {
 
 
   const saveLogs = async (data: SessionEventContent) => {
-    console.log("SAVING LOGS:", data)
-    console.log("Formation :",formation);
-    
     saveEvent("content_view", data)
-    // var inn = new Date(log.login)
-    // var out = new Date(log.logout)
-    // const timePassed = (out - inn) / 1000
-
-
-
-    // await mutation.mutateAsync(log)
-    // if (timePassed >= 10) {
-    // }
   };
 
 

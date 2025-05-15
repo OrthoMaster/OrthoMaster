@@ -136,6 +136,7 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
                             <Text style={{
                                 fontSize: 12,
                                 textAlign: 'justify',
+                                color: '#fff',
                             }}
                                 numberOfLines={4}
                             >{channelParams.description}</Text>
@@ -146,11 +147,12 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
                         <Text style={{
                             fontSize: 12,
                             marginTop: 10,
+                            color: '#fff',
                         }}
                             onPress={() => {
                                 Linking.openURL(channelParams.website)
                             }}>
-                            <Text style={{ color: '#000'}}>🌐 Site internet</Text>
+                            <Text style={{ color: '#fff'}}>🌐 Site internet</Text>
                         </Text>
                     }
                 </View>
@@ -166,13 +168,14 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff"
+        backgroundColor: "#303030"
     },
     headerTitle: {
         fontWeight: 'bold',
         fontSize: 18,
         textAlign: 'center',
-        marginBottom: 20
+        marginBottom: 20,
+        color: '#fff',
     }
 })
 

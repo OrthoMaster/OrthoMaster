@@ -27,7 +27,7 @@ const GuideCard = ({ config, showGuide }) => {
         UTI: 'image/png',
       };
       FileSystem.downloadAsync(guide.data, fileUri)
-      orthomasterShareFile(fileUri, options)
+      orthomasterShareFile(fileUri, options, 'qr-guide-'+config.name.replace(' ', '-').toLowerCase())
 
     } catch (error) {
       Alert.alert(error.message);

@@ -44,22 +44,27 @@ export const ColorLuminance = (hex, lum) => {
 	return rgb;
 }
 
-export const orthomasterShare = ({ title = undefined, message = undefined, url = undefined }) => {
+export const orthomasterShare = (
+	{ title = undefined, message = undefined, url = undefined },
+	share_type = 'default', // can be: app sharing or inviteShare or content share
+	content_id = null // if content share
+) => {
 
+	console.log(share_type, content_id)
 	Share.share({
 		title: title,
 		message: message,
 		url: url
 	}).then(() => {
 		saveEvent("share_use", {
-			share_type: '', // can be: app sharing or inviteShare or content share
-			content_id: null, // if content share 
+			share_type: share_type, // can be: app sharing or inviteShare or content share
+			content_id: content_id, // if content share 
 			occured_at: getCurrentDate()
 		})
 	})
 }
 
-export const orthomasterShareFile = async (fileUri, options) => {
+export const orthomasterShareFile = async (fileUri, options, fileName) => {
 	const isAvailable = await Sharing.isAvailableAsync()
 
 	if (isAvailable == false)
@@ -68,7 +73,7 @@ export const orthomasterShareFile = async (fileUri, options) => {
 	Sharing.shareAsync(fileUri, options)
 		.then(() => {
 			saveEvent("share_use", {
-				share_type: 'file', // which file ?
+				share_type: 'file-'+fileName,
 				content_id: null,
 				occured_at: getCurrentDate()
 			})

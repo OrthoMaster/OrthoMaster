@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import axios from 'axios';
 import * as Device from 'expo-device';
 import { restoreLocalConfigAsync } from '../futils';
-import { SessionEventData, SessionEventType } from '../utils/myTypes';
+import { SessionError, SessionEventData, SessionEventType } from '../utils/myTypes';
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL + "/session"
 
@@ -94,3 +94,19 @@ export const saveEvent = async (
 export const getSessionId = () => {
   return sessionId;
 }
+
+export const sessionError = async (error: SessionError) => {
+
+  const payload = {
+    session_id: getSessionId(),
+    ...error
+  };
+  try {
+    await axios.post(baseurl+'/error', payload);
+    // Pour le debug
+    console.log('[ERROR SENT]', error);
+  } catch (err) {
+    console.warn('[ERROR FAILED]', err);
+    // Optionnel : mise en file d'attente si offline
+  }
+};

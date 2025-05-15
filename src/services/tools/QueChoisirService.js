@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { restoreLocalConfigAsync } from "../../futils";
+import { getSessionId } from "../SessionEventService";
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL + "/tools/que-choisir"
 
@@ -61,7 +62,6 @@ export const getQCcategories = async () => {
 export const saveQCEntries = async ({
   category,
   allFinalProductsSections,
-  selectedProduct,
   userHistory,
   filtersConfig
 }) => {
@@ -77,11 +77,9 @@ export const saveQCEntries = async ({
     .post(baseurl + "/save", {
       category: category,
       final_products: finalProducts,
-      id_office: config.user.office_id,
-      selected_product: selectedProduct,
       history: userHistory,
       filters: filtersConfig.selected?.length > 0 ? filtersConfig.selected : null,
-      id_user: config.user.id_user
+      session_id: getSessionId()
     }, {
       headers: {
         Authorization: authHeader

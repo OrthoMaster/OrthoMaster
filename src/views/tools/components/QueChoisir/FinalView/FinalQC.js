@@ -125,26 +125,21 @@ export const FinalQC = ({ route, navigation }) => {
         return formattedHistory
     }
 
-    const handleProductSelection = (selectedProduct) => {
-        if (savedAlready == false && roles.isTester == true) { // TODO condition testeur à supprimer quand le test est fini
-            var allFinalProductsSections = productsOther
-            allFinalProductsSections.push(...productsPref)
-            setOrthoRefProductSelected(selectedProduct)
+
+    useEffect(() => {
+        if (isLoading === false) {
+            var createFinal = productsOther
+            createFinal.push(...productsPref)
 
             saveEntries.mutateAsync({
-                category,
-                allFinalProductsSections,
-                selectedProduct,
-                userHistory,
-                filtersConfig
-            }).then(res => {
-                if (selectedProduct != null) {
-                    setShowModal(true)
-                }
+                category: category,
+                allFinalProductsSections: createFinal,
+                userHistory: userHistory,
+                filtersConfig: filtersConfig
             })
-            setSavedAlready(true)
         }
-    }
+    }, [isLoading])
+
 
     useEffect(() => {
         setTimeout(() => setIsLoading(false), 1000)
@@ -199,44 +194,6 @@ export const FinalQC = ({ route, navigation }) => {
                 <View style={styles.container}>
                     <FinalHeader nbProduct={nbProduct} userHistory={userHistory} navigation={navigation} />
                     <ScrollView>
-                        {
-                            
-                            roles.isTester == true && //TODO à supprimer quand test fini
-                            <View style={{
-                                flexDirection: 'row',
-                                width: '100%',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginTop: 20
-                            }}>
-                                <Text style={{
-                                    flex: 1,
-                                    textAlign: "left",
-                                    paddingLeft: 20,
-                                    fontSize: 12,
-                                }}>
-                                    Valider votre choix en restant appuyé sur le produit
-                                </Text>
-                                <View style={{ flex: 1, paddingHorizontal: 20 }}>
-                                    <TouchableOpacity
-                                        style={{
-                                            backgroundColor: '#fff',
-                                            padding: 10,
-                                            borderRadius: 10,
-                                            borderColor: 'red',
-                                            borderWidth: 3
-                                        }}
-                                        onPress={() => {
-                                            handleProductSelection("Autre")
-                                        }}>
-                                        <Text style={{
-                                            textAlign: 'center',
-                                            color: 'red',
-                                            fontSize: 12
-                                        }}>Le produit que je délivre n'est pas dans la liste</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>}
                         {
                             productsPref.length > 0 &&
                             <Text style={styles.sectionTitle}>Vos marques</Text>
@@ -306,63 +263,12 @@ export const FinalQC = ({ route, navigation }) => {
                         style={styles.finishButton}
                     >
                         <TouchableOpacity style={{}} onPress={() => {
-                            if (orthoRefProductSelected == null)
-                                handleProductSelection(null)
                             navigation.pop(2)
                         }}>
                             <Text style={{ fontSize: 16, color: 'white', fontWeight: 600 }}>Quitter</Text>
                         </TouchableOpacity>
                     </LinearGradient>
                 </View>
-                <AppModal
-                    isVisible={showModal}
-                    onClose={() => setShowModal(false)}
-                    customRender={<View style={{
-                        alignItems: 'center'
-                    }}>
-                        <Text style={{
-                            fontSize: 18,
-                            color: '#eb7b0f'
-                        }}>Merci pour votre participation</Text>
-
-                        <Text style={{ marginVertical: 10 }}>Le produit :</Text>
-                        {
-                            orthoRefProductSelected == "Autre" ?
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: 'bold'
-                                }}>Autre</Text>
-                                : <View style={{ alignItems: 'center' }}>
-                                    <Text style={{
-                                        fontSize: 16,
-                                        fontWeight: 'bold'
-                                    }}>{orthoRefProductSelected?.model}</Text>
-                                    <Text style={{
-                                        color: '#4BB6BE',
-                                        fontSize: 16
-                                    }}>{orthoRefProductSelected?.brand}</Text>
-                                </View>
-                        }
-                        <Text style={{
-                            marginVertical: 10
-                        }}>a bien été enregistré</Text>
-                        <Text style={{ fontSize: 30 }}>✅</Text>
-
-                        <PrimaryButton
-                            text={"Quitter"}
-                            onPress={() => {
-                                navigation.navigate("tools-home")
-                            }}
-                            containerStyle={{
-                                marginTop: 10
-                            }}
-                        />
-
-                    </View>}
-                    style={{
-                        width: "90%"
-                    }}
-                />
             </SafeAreaView>
         )
 }

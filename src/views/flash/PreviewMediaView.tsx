@@ -94,12 +94,13 @@ export const PreviewMediaView = ({ navigation, route }) => {
 
 
     const shareMedia = async (media2share: IContent) => {
+        
         orthomasterShare({
             title: media2share.title,
             message: "Voici un contenu intéressant à voir sur OrthoMaster :\n\n" +
                 media2share.title + " par " + media2share.author + "\n\n" +
                 "https://app.orthomaster.fr/open/media-preview?id=" + media2share.id_content
-        })
+        },'média', media2share.id_content)
     }
 
     const nav2 = () => {
@@ -276,7 +277,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#444444',
+        backgroundColor: '#303030',
         position: "relative"
     },
     accessButtonContainer: {

@@ -30,7 +30,7 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
                 attachedOffice.structure + " " + attachedOffice.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
                 "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.\n\nhttps://espace.orthomaster.fr/inscription",
             url: "https://espace.orthomaster.fr/inscription",
-        })
+        }, 'app invite', null)
     }
 
     useEffect(() => {

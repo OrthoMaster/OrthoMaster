@@ -28,6 +28,7 @@ import { useGetUser } from '../../hooks/useGetUser.hook';
 
 
 export const HomeView = ({ navigation, route }) => {
+
   const { data: user, ...userQuery } = useGetUser()
   const [refreshing, setRefreshing] = useState(false);
   const flashPreview = useQuery(["flash-preview"], () => fetchMedias({
@@ -102,15 +103,17 @@ export const HomeView = ({ navigation, route }) => {
       })
   }
 
+  const tmpAsyn = async () => {
+  }
+
   useEffect(() => {
+    tmpAsyn()
     if (route.path && route.path.includes("open/content/")) {
       if (route.params && route.params.id) {
         handleOpenContent(route.params.id)
       }
     }
   }, [route.params])
-
-
 
 
   useEffect(() => {
@@ -128,7 +131,7 @@ export const HomeView = ({ navigation, route }) => {
         barStyle={Platform.OS === "android" ? 'light-content' : 'dark-content'}
         backgroundColor={"#000"}
       />
-      <ScrollView style={{ backgroundColor: 'white', flex: 1 }}
+      <ScrollView style={{ backgroundColor: '#fff', flex: 1 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         stickyHeaderIndices={[2]}
         onScroll={({ nativeEvent }) => {
