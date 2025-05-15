@@ -10,12 +10,11 @@ import {
     Linking,
     ScrollView,
     ActivityIndicator,
-    Share
 } from "react-native"
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-import AuthService from "../../../services/AuthService";
 import { useLogout } from "../../../hooks/useLogout.hook";
+import { orthomasterShare } from "../../../futils";
 
 const CustomMenuButton = ({ icon, text, onPress, style, loading }) => {
     return (
@@ -134,12 +133,12 @@ export const AccountMenu = ({ navigation, user }) => {
                             borderRadius: 10
                         }}
                         onPress={() => {
-                            Share.share({
+                            orthomasterShare({
                                 message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
                                     user.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
                                     "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.\n\nhttps://espace.orthomaster.fr/inscription",
                                 url: "https://espace.orthomaster.fr/inscription"
-                            })
+                            }, 'app invite', null)
                         }}
                     >
                         <Ionicons name="person-add-outline" size={20} color="#000" />

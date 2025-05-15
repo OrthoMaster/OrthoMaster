@@ -3,21 +3,24 @@ import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 import { Provider } from 'react-redux'
-import store from './src/store'
-import { ErrorHandler } from './src/component/ErrorHandler';
+
+import { setupGlobalErrorHandling } from './src/utils/ErrorHandler';
 import { MyQueryProvider } from './src/component/MyQueryProvider';
 
+import { store } from './src/store';
+import { ErrorBoundary } from './src/component/errorHandler/ErrorBoundary';
 import App from './App';
+
+setupGlobalErrorHandling()
 
 const WrapApp = () => (
   <Provider store={store}>
-    <ErrorHandler>
+    <ErrorBoundary>
       <MyQueryProvider>
         <App />
       </MyQueryProvider>
-    </ErrorHandler>
+    </ErrorBoundary>
   </Provider>
-  //document.getElementById('root')
 );
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);

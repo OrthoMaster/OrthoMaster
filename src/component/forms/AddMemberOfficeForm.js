@@ -6,12 +6,12 @@ import {
     FlatList,
     ActivityIndicator,
     TextInput,
-    Share
 } from "react-native";
 import { useMutation } from "react-query";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { addMemberOffice } from "../../services/OfficeService";
+import { orthomasterShare } from "../../futils";
 
 export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEnd }) => {
     const [userAdded, setUserAdded] = useState([])
@@ -25,12 +25,12 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
     const [errorMessage, setErrorMessage] = useState(null)
 
     const shareInvite = async () => {
-        Share.share({
+        orthomasterShare({
             message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
                 attachedOffice.structure + " " + attachedOffice.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
                 "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.\n\nhttps://espace.orthomaster.fr/inscription",
-            url: "https://espace.orthomaster.fr/inscription"
-        })
+            url: "https://espace.orthomaster.fr/inscription",
+        }, 'app invite', null)
     }
 
     useEffect(() => {

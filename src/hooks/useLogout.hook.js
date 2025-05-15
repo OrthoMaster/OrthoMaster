@@ -1,4 +1,4 @@
-import { useQueryClient, useMutation } from 'react-query';
+import { useQueryClient, useMutation } from "react-query";
 import AuthService from '../services/AuthService';
 
 // login mutation

@@ -124,6 +124,7 @@ export const LessonEndingView = ({ navigation, route }) => {
   const isDemo = demoMode
 
   const store = useStore()
+  
   const [successMessageIndex, setsuccessMessageIndex] = useState(Math.floor(Math.random() * successElements.length))
   const stateContent = store.getState().content
 

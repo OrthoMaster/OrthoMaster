@@ -8,21 +8,10 @@ import {
     StyleSheet,
     Dimensions,
     ScrollView,
-    TextInput,
-    Alert,
-    KeyboardAvoidingView,
-    TouchableWithoutFeedback,
-    Keyboard,
-    Platform,
     Linking
 } from "react-native";
 
-import { useStore } from "react-redux";
-import { useMutation } from "react-query";
-import { changeUserPassword } from "../../../services/UserService";
 
-import { Modal } from "react-native";
-import { Ionicons } from '@expo/vector-icons';
 import { useGetUser } from "../../../hooks/useGetUser.hook";
 
 const DisplayUserInfo = ({ dataType, data }) => {

@@ -10,7 +10,7 @@ import {
     FlatList
 } from 'react-native'
 import Feather from '@expo/vector-icons/Feather';
-import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useQuery, useMutation, useQueryClient } from "react-query"
 import { getUserRegisteredFormation, getFormations, registerFormation } from '../../services/FormationService'
 import AppModal from '../../component/AppModal';
 import { useNavigation } from '@react-navigation/native';
@@ -382,7 +382,7 @@ export const FormationView = ({ navigation, route }) => {
                 navigation={navigation}
             />}
             style={{
-                width: '90%', height: "70%",
+                width: '90%', height: "80%",
             }}
         />
 

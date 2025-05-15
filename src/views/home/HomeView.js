@@ -28,6 +28,7 @@ import { useGetUser } from '../../hooks/useGetUser.hook';
 
 
 export const HomeView = ({ navigation, route }) => {
+
   const { data: user, ...userQuery } = useGetUser()
   const [refreshing, setRefreshing] = useState(false);
   const flashPreview = useQuery(["flash-preview"], () => fetchMedias({
@@ -102,15 +103,17 @@ export const HomeView = ({ navigation, route }) => {
       })
   }
 
+  const tmpAsyn = async () => {
+  }
+
   useEffect(() => {
+    tmpAsyn()
     if (route.path && route.path.includes("open/content/")) {
       if (route.params && route.params.id) {
         handleOpenContent(route.params.id)
       }
     }
   }, [route.params])
-
-
 
 
   useEffect(() => {
@@ -121,8 +124,6 @@ export const HomeView = ({ navigation, route }) => {
     }
   }, [scrollReachedEnd])
 
-
-
   return (
     <View style={{ flex: 1 }}>
       <StatusBar
@@ -130,7 +131,7 @@ export const HomeView = ({ navigation, route }) => {
         barStyle={Platform.OS === "android" ? 'light-content' : 'dark-content'}
         backgroundColor={"#000"}
       />
-      <ScrollView style={{ backgroundColor: 'white', flex: 1 }}
+      <ScrollView style={{ backgroundColor: '#fff', flex: 1 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         stickyHeaderIndices={[2]}
         onScroll={({ nativeEvent }) => {
@@ -148,7 +149,7 @@ export const HomeView = ({ navigation, route }) => {
           <View style={styles.carouselHeader}>
 
             <Text style={styles.carouselHeaderTitle}>Nos derniers contenus</Text>
-            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Flash ortho')}>
+            <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Médias')}>
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>
           </View>
@@ -201,13 +202,13 @@ const styles = StyleSheet.create({
     width: '100%',
     display: 'flex',
     flexDirection: 'row',
-    marginBottom: 15
+    marginBottom: 5
   },
   carouselHeaderTitle: {
     flex: 2,
     alignSelf: 'flex-start',
-    marginLeft: 20,
-    fontSize: 18,
+    marginLeft: 5,
+    fontSize: 15,
   },
   carouselHeaderButton: {
     flex: 1,

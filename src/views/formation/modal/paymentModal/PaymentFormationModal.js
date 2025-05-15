@@ -44,7 +44,7 @@ export const PaymentFormationModal = ({
         <View style={styles.container}>
             <Text style={{
                 fontWeight: 'bold',
-                fontSize: 20,
+                fontSize: 15,
                 alignSelf: 'center'
             }}>Étape {stepIndex + 1}</Text>
 

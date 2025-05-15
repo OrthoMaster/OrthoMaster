@@ -29,10 +29,11 @@ const AddBillingAddressForm = ({ onClose }) => {
     return <View>
         <Text style={{
             fontStyle: 'italic',
-            fontSize: 15,
+            fontSize: 12,
             marginVertical: 10,
             marginLeft: 10
         }}>Nouvelle adresse de facturation personnelle</Text>
+
         <FormField type={"text"} name={"Rue"} value={"street"}
             required={true}
             onChange={(val) => setFormDatas({ ...formDatas, street: val.text })}
@@ -120,7 +121,7 @@ const BillingAddressCard = ({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 15, paddingVertical: 10,
-        width: "90%",
+        width: "95%",
         marginVertical: 5,
         borderRadius: 5,
         borderColor: '#ffaf31',
@@ -132,10 +133,10 @@ const BillingAddressCard = ({
         <View style={{
             width: "60%"
         }}>
-            <Text style={{ fontWeight: 'bold' }}>{addressObject.name}</Text>
-            <Text>{addressObject.street}</Text>
-            <Text>{addressObject.zip} {addressObject.city}</Text>
-            <Text>{addressObject.country}</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 12 }}>{addressObject.name}</Text>
+            <Text style={{ fontSize: 10 }}>{addressObject.street}</Text>
+            <Text style={{ fontSize: 10 }}>{addressObject.zip} {addressObject.city}</Text>
+            <Text style={{ fontSize: 10 }}>{addressObject.country}</Text>
         </View>
         <View style={{ width: "20%" }}>
             {
@@ -182,8 +183,8 @@ export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
     }}>
         <Text style={{
             fontStyle: 'italic',
-            fontSize: 15,
-            marginVertical: 20,
+            fontSize: 12,
+            marginVertical: 10,
             paddingHorizontal: 10,
             alignSelf: 'center'
         }}>
@@ -194,7 +195,7 @@ export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
             (isFetching || isLoading) &&
             <ActivityIndicator />
         }
-        <View style={{ height: "60%" }}>
+        <View style={{ flex: 1, backgroundColor: "#DDDDDD" }}>
 
             <ScrollView
                 persistentScrollbar={true}
@@ -226,17 +227,7 @@ export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
                     })
                 }
             </ScrollView>
-            <LinearGradient
-                // Background Linear Gradient
-                colors={['rgba(255,255,255,0.1)','rgba(255,255,255,0.7)', "#fff"]}
-                style={{
-                    height: 100,
-                    width: '90%',
-                    alignSelf: 'center',
-                    position: 'absolute',
-                    bottom: 0
-                }}
-            />
+
         </View>
 
         <Text style={{
@@ -244,7 +235,7 @@ export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
             fontSize: 12,
             textAlign: 'center',
             alignSelf: 'center',
-            marginTop: 20
+            marginTop: 10
         }}>
             Besoin d'une autre adresse de facturation ?
         </Text>
@@ -286,7 +277,7 @@ export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
                 backgroundColor: '#ffaf31',
                 alignSelf: 'center',
                 borderRadius: 5,
-                marginVertical: 20
+                marginVertical: 10,
             }}
                 onPress={() => {
                     onValidation(selectedAddress)

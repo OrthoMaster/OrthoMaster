@@ -9,10 +9,8 @@ import {
   StatusBar,
   Image,
   RefreshControl,
-  Platform,
-  Share
+  Platform
 } from 'react-native';
-import { useStore } from 'react-redux';
 
 import { AccountProgress } from './components/AccountProgress';
 import { Trophies } from './components/trophies/Trophies';
@@ -20,7 +18,7 @@ import { Trophies } from './components/trophies/Trophies';
 import { CompanyArea } from './components/CompanyArea';
 
 import { AccountMenu } from './menu/AccountMenu';
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import { getCurrentUser } from '../../services/UserService';
 import { useGetUser } from '../../hooks/useGetUser.hook';
 

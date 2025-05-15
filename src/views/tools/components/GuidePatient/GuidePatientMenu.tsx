@@ -15,20 +15,12 @@ import {
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from 'react-query';
 import { AntDesign } from '@expo/vector-icons';
-import { getS3Image } from '../../../../services/S3Service';
-import { Entypo } from '@expo/vector-icons';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import PurchaseStickerView from './PurchaseStickerView';
 import PrintView from './PrintView';
 import Guides from './Guides';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
-import { ScrollView } from 'react-native-gesture-handler';
 
-const { width: screenWidth } = Dimensions.get('window');
 
 
 
@@ -42,10 +34,6 @@ export const GuidePatientButton: React.FC<{ onPress: () => any }> = ({ onPress }
       borderRadius: 15,
     }}
   >
-    {/* <Image
-      source={require('../../../../../assets/tools/guide-patient.png')}
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
-    /> */}
     <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Guide patient</Text>
   </TouchableOpacity>)
 }

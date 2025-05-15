@@ -1,4 +1,3 @@
-import { resizeMode } from 'deprecated-react-native-prop-types/DeprecatedImagePropType';
 import React from 'react'
 import {
     View,

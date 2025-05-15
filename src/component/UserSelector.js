@@ -39,14 +39,16 @@ export default UserSelector = ({usersArray = [], onSelect}) => {
     
 
     return <View style={{
-        borderWidth: 1,
+        borderWidth: 0.5,
         borderRadius: 10,
-        padding: 5,
+        paddingHorizontal: 5,
         width: '90%',
-        alignSelf: 'center'
+        height: "100%",
+        alignSelf: 'center',
+        backgroundColor: '#fff'
     }}>
         <BouncyCheckbox
-            size={20}
+            size={15}
             fillColor="#ffaf31"
             unFillColor="#FFFFFF"
             text={"Tous"}
@@ -60,13 +62,13 @@ export default UserSelector = ({usersArray = [], onSelect}) => {
                     removeAllCollaborator()
             }}
         />
-        <View style={{ height: 0.2, width: '100%', backgroundColor: '#000', alignSelf: "center" }} />
+        <View style={{ height: 0.5, width: '100%', backgroundColor: '#000', alignSelf: "center" }} />
         <FlatList
             data={usersArray}
             keyExtractor={(item, index) => index}
-            scrollEnabled={false}
+            scrollEnabled={true}
             renderItem={(item) => <BouncyCheckbox
-                size={20}
+                size={15}
                 fillColor="#ffaf31"
                 unFillColor="#FFFFFF"
                 textStyle={styles.checkBoxText}
@@ -90,6 +92,7 @@ const styles = StyleSheet.create({
         width: Dimensions.get('screen').width * 0.9
     },
     checkBoxText: {
-        textDecorationLine: 'none'
+        textDecorationLine: 'none',
+        fontSize: 12
     }
 })

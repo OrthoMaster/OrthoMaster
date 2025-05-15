@@ -15,7 +15,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 
 import { useVideoPlayer, VideoView } from 'expo-video';
 
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import { getCdnContentAccessUrl } from '../../../../../services/ContentService';
 
 

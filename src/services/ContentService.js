@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { restoreLocalConfigAsync, S3ContentPathGenerator } from "../utils";
+import { restoreLocalConfigAsync, S3ContentPathGenerator } from "../futils";
 import { getS3XML } from '../services/S3Service'
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL+"/contents"

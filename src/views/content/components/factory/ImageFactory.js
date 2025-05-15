@@ -8,7 +8,7 @@ import { getS3Image } from '../../../../services/S3Service'
 import { useSelector } from "react-redux";
 import { selectContent } from '../../../../reducers/contentReducer';
 import { ImageViewer } from '../../../../component/ImageViewer';
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 
 
 export const ImageFactory = ({ config }) => {

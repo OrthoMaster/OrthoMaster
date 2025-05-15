@@ -14,25 +14,29 @@ import {
 import { useQuery, useMutation } from "react-query";
 
 import { fetchLessonContent } from "../../services/ContentService";
-import { saveLogtimeOnLesson } from "../../services/LogsService";
 
 import { exitContent, runContent } from "../../actions/contentAction";
 
-import { getCurrentDate } from "../../utils";
+import { getCurrentDate } from "../../futils";
 import { ContentFactory } from './components/ContentFactory'
 import { LoadingContent } from "../../component/LoadingContent";
 
 
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 
+import { SessionEventContent } from "../../utils/myTypes"
+import { useAppDispatch } from "../../hooks/storeHooks";
+import { saveEvent } from "../../services/SessionEventService";
+
+
 export function ContentDisplayer({ route, navigation }) {
-  var { content, formation, type, demoMode } = route.params;
-  const dispatch = useDispatch();
+  var { content, formation, demoMode } = route.params;
+  const dispatch = useAppDispatch()
+
   const appState = useRef(AppState.currentState);
-  const contentScrollRef = useRef();
+  const contentScrollRef = useRef<ScrollView>(null);
   var launchDate = null;
-  const routes = navigation.getState()?.routes;
   const [refreshing, setRefreshing] = useState(false)
 
   const lessonIsFinish = useSelector(selectIsFinish)
@@ -52,18 +56,9 @@ export function ContentDisplayer({ route, navigation }) {
     }
   });
 
-  const mutation = useMutation(saveLogtimeOnLesson);
 
-  const saveLogs = async (log) => {
-    var inn = new Date(log.login)
-    var out = new Date(log.logout)
-    const timePassed = (out - inn) / 1000
-
-
-
-    await mutation.mutateAsync(log)
-    if (timePassed >= 10) {
-    }
+  const saveLogs = async (data: SessionEventContent) => {
+    saveEvent("content_view", data)
   };
 
 
@@ -85,43 +80,40 @@ export function ContentDisplayer({ route, navigation }) {
 
 
   useEffect(() => {
-    // if (content.type == 'lesson' && content.title != 'initial' && content.title != 'final') { // tmp handling of main quiz in the formation
-    if (formation && type == "lesson") { // tmp handling of main quiz in the formation
-      launchDate = getCurrentDate()
+    launchDate = getCurrentDate()
 
-      const appStateListener = AppState.addEventListener("change", nextAppState => {
-        if (
-          appState.current.match(/inactive|background/) &&
-          nextAppState === "active"
-        ) {
-          launchDate = getCurrentDate()
-        } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
-          saveLogs({
-            login: launchDate,
-            logout: getCurrentDate(),
-            contentId: content.id_content,
-            idUserRegisteredFormation: formation.id
-          })
-        }
-
-        appState.current = nextAppState;
-      })
-
-      navigation.addListener('blur', (e) => {
-        saveLogs({
-          login: launchDate,
-          logout: getCurrentDate(),
-          contentId: content.id_content,
-          idUserRegisteredFormation: formation.id
-        })
-      })
-      navigation.addListener('focus', (e) => {
+    const appStateListener = AppState.addEventListener("change", nextAppState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
         launchDate = getCurrentDate()
-      })
-
-      return () => {
-        appStateListener.remove()
+      } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
+        saveLogs({
+          started_at: launchDate,
+          ended_at: getCurrentDate(),
+          content_id: content.id_content,
+          id_user_registered_formation: formation ? formation.id : null
+        })
       }
+
+      appState.current = nextAppState;
+    })
+
+    navigation.addListener('blur', (e) => {
+      saveLogs({
+        started_at: launchDate,
+        ended_at: getCurrentDate(),
+        content_id: content.id_content,
+        id_user_registered_formation: formation ? formation.id : null
+      })
+    })
+    navigation.addListener('focus', (e) => {
+      launchDate = getCurrentDate()
+    })
+
+    return () => {
+      appStateListener.remove()
     }
   }, [])
 
@@ -133,7 +125,6 @@ export function ContentDisplayer({ route, navigation }) {
       setRefreshing(false);
     }, 2000);
   }, []);
-
 
   if (lessonIsFinish || contentIsRunning == false) return
 
@@ -160,8 +151,7 @@ export function ContentDisplayer({ route, navigation }) {
           ref={contentScrollRef}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {xmlContent.isLoading ? <LoadingContent /> : <ContentFactory component={xmlContent.data} contentInfos={content} />}
-
+          {xmlContent.isLoading ? <LoadingContent state={true} onRetry={() => { }} /> : <ContentFactory component={xmlContent.data} contentInfos={content} />}
         </ScrollView>
 
         {

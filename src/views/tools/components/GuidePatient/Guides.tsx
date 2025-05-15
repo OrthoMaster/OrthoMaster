@@ -5,6 +5,7 @@ import { Entypo, Ionicons } from "@expo/vector-icons";
 import { getS3Image } from "../../../../services/S3Service";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { orthomasterShareFile } from "../../../../futils";
 
 export const GUIDES = [{
   name: 'Ceinture lombaire',
@@ -20,18 +21,13 @@ const GuideCard = ({ config, showGuide }) => {
 
   const onShare = async () => {
     try {
-      const isAvailable = await Sharing.isAvailableAsync()
-
-      if (isAvailable == false)
-        return
-
       const options = {
         mimeType: 'image/png',
         dialogTitle: "Partager l'image",
         UTI: 'image/png',
       };
       FileSystem.downloadAsync(guide.data, fileUri)
-      Sharing.shareAsync(fileUri, options)
+      orthomasterShareFile(fileUri, options, 'qr-guide-'+config.name.replace(' ', '-').toLowerCase())
 
     } catch (error) {
       Alert.alert(error.message);
@@ -115,7 +111,7 @@ const Guides: React.FC<{ onSelect?: (guideUrl: string) => any }> = ({ onSelect }
 
     <FlatList
       data={GUIDES}
-      keyExtractor={(item, index) => index}
+      keyExtractor={(item, index) => index.toString()}
       renderItem={(item) => (<GuideCard config={item.item} showGuide={(guide) => {
         onSelect(guide)
       }} />)

@@ -43,6 +43,7 @@ const DropdownComponent = ({
         placeholderStyle={styles.placeholderStyle}
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
+        itemTextStyle={styles.itemTextStyle}
         data={data}
         search={searchEnabled}
         maxHeight={300}
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
 
   },
   dropdown: {
-    height: 40,
+    height: 30,
     borderColor: 'gray',
     borderWidth: 0.5,
     borderRadius: 5,
@@ -86,15 +87,15 @@ const styles = StyleSheet.create({
   label: {
     backgroundColor: 'white',
     zIndex: 999,
-    fontSize: 15,
+    fontSize: 12,
     marginBottom: 5
   },
   placeholderStyle: {
-    fontSize: 16,
+    fontSize: 12,
     color: 'gray'
   },
   selectedTextStyle: {
-    fontSize: 16,
+    fontSize: 12,
   },
   iconStyle: {
     width: 20,
@@ -102,6 +103,9 @@ const styles = StyleSheet.create({
   },
   inputSearchStyle: {
     height: 40,
-    fontSize: 16,
+    fontSize: 12,
   },
+  itemTextStyle: {
+    fontSize: 12
+  }
 });

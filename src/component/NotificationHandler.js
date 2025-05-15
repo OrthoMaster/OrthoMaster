@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform, View, Text, Image, Dimensions } from 'react-native';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { useMutation } from 'react-query';
+import { useMutation } from "react-query";
 import { saveUserExpoPushToken } from '../services/NotificationService';
 import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from '@react-navigation/native';

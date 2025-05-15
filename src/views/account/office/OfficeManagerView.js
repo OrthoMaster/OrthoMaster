@@ -8,7 +8,7 @@ import {
     ScrollView,
     Platform
 } from 'react-native'
-import { useQuery, useQueryClient } from 'react-query';
+import { useQuery, useQueryClient } from "react-query";
 import { getUsersByOfficeId } from '../../../services/UserService';
 import { getUserRegisteredFormation } from '../../../services/FormationService';
 import AddMemberOfficeForm from '../../../component/forms/AddMemberOfficeForm';

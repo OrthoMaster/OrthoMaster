@@ -17,14 +17,14 @@ import {
   TextInputChangeEventData
 } from 'react-native';
 import Modal from 'react-native-modal';
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { fetchMedias } from '../../services/FlashMediasService';
 import { fetchEvents } from '../../services/EventsService';
 import SimpleAdaptiveCarousel, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
-import { IContent, IEvent } from '../../interfaces';
+import { IContent, IEvent } from '../../utils/interfaces';
 import { ChannelMediaViewParams } from './ChannelMediaView';
 import { PreviewMediaParams } from './PreviewMediaView';
 import SearchModalComponent from '../../component/SearchModalComponent';
@@ -47,7 +47,7 @@ const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
     width: screenWidth / 4, height: '100%',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
   }}
     onPress={() => {
       onSelect({
@@ -74,7 +74,8 @@ const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
       textAlign: 'center',
       fontSize: 10,
       fontWeight: 'bold',
-      marginTop: 5
+      marginTop: 5,
+      color: '#fff',
     }}>{event.name}</Text>
   </TouchableOpacity>
 }
@@ -173,8 +174,8 @@ export const FlashMediaView = ({ navigation, route }) => {
 
         <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2, paddingBottom: 30, marginTop: 0 }]}>
           <Text style={[styles.categoryTitle, {
-            color: "#000",
-            backgroundColor: '#fff'
+            color: "#fff",
+            backgroundColor: 'none'
           }]}>Tendances sur OrthoMaster</Text>
           {
             lastRelease.isLoading ?
@@ -322,13 +323,13 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
   },
   container: {
-    // backgroundColor: '#fffefd',
-    backgroundColor: '#F1F1F1'
+    backgroundColor: '#303030',
+    // backgroundColor: '#F1F1F1'
   },
   sectionContainer: {
     // marginTop: 5,
     paddingVertical: 5,
-    backgroundColor: '#fff'
+    // backgroundColor: '#fff'
   },
   pageTitle: {
     fontSize: 24,
@@ -350,5 +351,6 @@ const styles = StyleSheet.create({
   categorySubTitle: {
     fontSize: 15,
     marginLeft: 10,
+    color: '#fff'
   }
 })

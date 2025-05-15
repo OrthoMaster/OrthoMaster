@@ -13,9 +13,10 @@ import {
 import {
     QueryCache,
     QueryClientProvider,
-    MutationCache
+    MutationCache,
+    QueryClient
 } from 'react-query'
-import { QueryClient } from "react-query"
+
 import AuthService from '../services/AuthService';
 
 

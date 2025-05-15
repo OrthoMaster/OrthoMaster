@@ -19,61 +19,64 @@ export default ConfirmationStep = ({
 }) => {
 
 
-    return <View style={{height: '90%'}}>
+    return <View style={{height: '100%'}}>
         <ScrollView style={{
             width: '90%',
             alignSelf: 'center',
+            flex: 1,
+            backgroundColor: '#F1F1F1',
+            paddingHorizontal: 10
         }}>
             <Text style={{
                 fontStyle: 'italic',
-                fontSize: 15,
+                fontSize: 12,
                 marginVertical: 20,
                 paddingHorizontal: 10,
                 alignSelf: 'center'
             }}>Récapitulatif de votre commande</Text>
-            <View style={{ marginBottom: 15, marginTop: 10 }}>
-                <Text style={styles.text1}>Formation</Text>
-                <Text>{formation.name}</Text>
+            <View style={{ marginVertical: 5 }}>
+                <Text style={[styles.textPrimary, {fontSize: 12}]}>Formation</Text>
+                <Text style={{fontSize: 12}}>{formation.name}</Text>
             </View>
 
-            <View style={{ marginVertical: 15 }}>
-                <Text style={styles.text1}>Adresse de facturation</Text>
+            <View style={{ marginVertical: 5 }}>
+                <Text style={styles.textPrimary}>Adresse de facturation</Text>
                 <View style={{
                     width: "100%",
                     alignSelf: 'center',
                     borderRadius: 10
                 }}>
-                    <Text style={{ fontWeight: 'bold' }}>{billingAddress.name}</Text>
-                    <Text>{billingAddress.street}</Text>
-                    <Text>{billingAddress.zip} {billingAddress.city}</Text>
-                    <Text>{billingAddress.country}</Text>
+                    <Text style={{ fontWeight: 'bold', fontSize: 12 }}>{billingAddress.name}</Text>
+                    <Text style={styles.textSecondary}>{billingAddress.street}</Text>
+                    <Text style={styles.textSecondary}>{billingAddress.zip} {billingAddress.city}</Text>
+                    <Text style={styles.textSecondary}>{billingAddress.country}</Text>
                 </View>
             </View>
 
-            <View style={{ marginVertical: 15 }}>
-                <Text style={[styles.text1, { alignSelf: 'flex-start' }]}>Bénéficiaires</Text>
+            <View style={{ marginVertical: 5 }}>
+                <Text style={[styles.textPrimary, { alignSelf: 'flex-start' }]}>Bénéficiaires</Text>
                 {
                     users.map((value, index) => {
-                        return <Text key={index}>{value.complete_name}</Text>
+                        return <Text style={styles.textSecondary} key={index}>{value.complete_name}</Text>
 
                     })
                 }
             </View>
             <View style={{ marginVertical: 15 }}>
-                <Text style={styles.text1}>Votre offre</Text>
+                <Text style={styles.textPrimary}>Votre offre</Text>
                 <PriceRecap
                     selectedCollaborators={users}
                     unitPrice={formation.price}
                 />
             </View>
         </ScrollView>
-        <View style={{height: "10%"}}>
+        <View style={{}}>
             <TouchableOpacity style={{
                 padding: 10,
                 borderRadius: 5,
                 backgroundColor: '#ffaf31',
                 alignSelf: 'center',
-                marginTop: 10
+                marginVertical: 10
             }}
                 onPress={() => {
                     if (isLoading == false)
@@ -88,7 +91,7 @@ export default ConfirmationStep = ({
                 {
                     isLoading ?
                         <ActivityIndicator color={"#fff"} />
-                        : <Text style={{ color: '#fff' }}>M'envoyer un lien de paiement</Text>
+                        : <Text style={{ color: '#fff', fontSize: 12 }}>M'envoyer un lien de paiement</Text>
                 }
 
             </TouchableOpacity>
@@ -99,9 +102,13 @@ export default ConfirmationStep = ({
 }
 
 const styles = StyleSheet.create({
-    text1: {
+    textPrimary: {
         color: "#ffaf31",
         fontWeight: 'bold',
-        fontSize: 16
+        fontSize: 12
+    },
+    textSecondary: {
+        color: "#000",
+        fontSize: 12
     }
 })

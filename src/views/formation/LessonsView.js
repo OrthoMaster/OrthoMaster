@@ -12,7 +12,7 @@ import {
 import Svg, {
     Path
 } from 'react-native-svg';
-import { useQuery } from 'react-query';
+import { useQuery } from "react-query";
 import { fetchLessonByModuleWithProgression } from '../../services/ContentService';
 
 import { getS3Image } from '../../services/S3Service';
