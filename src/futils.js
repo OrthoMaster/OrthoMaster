@@ -50,7 +50,6 @@ export const orthomasterShare = (
 	content_id = null // if content share
 ) => {
 
-	console.log(share_type, content_id)
 	Share.share({
 		title: title,
 		message: message,

@@ -17,8 +17,11 @@ import { useGetUser } from './src/hooks/useGetUser.hook';
 import { getCurrentDate } from './src/futils';
 import { closeSession, getSessionId, saveEvent, startSession } from './src/services/SessionEventService';
 import { SessionEventScreen } from './src/utils/myTypes';
+import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
 
 export default function App({ navigation }) {
+  useSessionEventFlusher()
+
   const [isLoading, setIsLoading] = useState(true)
   const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
   const queryCli = useQueryClient()
@@ -68,6 +71,7 @@ export default function App({ navigation }) {
       })
   }
 
+
   useEffect(() => {
     if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
       askEspaceProCreation()
@@ -90,7 +94,6 @@ export default function App({ navigation }) {
         }
         appState.current = nextAppState;
       });
-      console.log("start session");
 
       startSession()
       return () => {

@@ -3,6 +3,8 @@ import axios from 'axios';
 import * as Device from 'expo-device';
 import { restoreLocalConfigAsync } from '../futils';
 import { SessionError, SessionEventData, SessionEventType } from '../utils/myTypes';
+import { enqueueEvent } from '../utils/eventQueue';
+import { isOnline } from '../utils/network';
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL + "/session"
 
@@ -27,6 +29,14 @@ export const startSession = async () => {
     started_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
   }
 
+  const online = await isOnline();
+
+  if (!online) {
+    // En cas de perte de connexion, on met l'événement en file d'attente
+    await enqueueEvent({payload, route: '/start'});
+    return;
+  }
+
   try {
     await axios.post(baseurl + "/start", payload, {
       headers: {
@@ -35,14 +45,9 @@ export const startSession = async () => {
       },
     }).then((response) => {
       sessionId = response.data.session_id;
-    }).catch((error) => {
-      console.log(error);
-      
-    });
-    console.log('[EVENT SENT]', payload);
+    })
   } catch (err) {
-    console.warn('[EVENT FAILED]', err);
-    // Optionnel : mise en file d'attente si offline
+    await enqueueEvent({payload, route: '/start'});
   }
 }
 
@@ -52,6 +57,14 @@ export const closeSession = async () => {
   const payload = {
     ended_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
   }
+
+  const online = await isOnline();
+
+  if (!online) {
+    // En cas de perte de connexion, on met l'événement en file d'attente
+    await enqueueEvent({payload, route: `/${sessionId}/end`});
+    return;
+  }
   try {
     await axios.patch(baseurl + `/${sessionId}/end`, payload, {
       headers: {
@@ -60,13 +73,9 @@ export const closeSession = async () => {
       },
     }).then((response) => {
       sessionId = null
-    }).catch((error) => {
-      console.log(error);
     });
-    console.log('[EVENT SENT]', payload);
   } catch (err) {
-    console.warn('[EVENT FAILED]', err);
-    // Optionnel : mise en file d'attente si offline
+    await enqueueEvent({payload, route: `/${sessionId}/end`});
   }
 }
 
@@ -81,13 +90,18 @@ export const saveEvent = async (
     event_data: data
   };
 
+  const online = await isOnline();
+
+  if (!online) {
+    // En cas de perte de connexion, on met l'événement en file d'attente
+    await enqueueEvent({payload, route: '/event'});
+    return;
+  }
   try {
-    await axios.post(baseurl+'/event', payload);
+    await axios.post(baseurl + '/event', payload);
     // Pour le debug
-    console.log('[EVENT SENT]', payload);
   } catch (err) {
-    console.warn('[EVENT FAILED]', err);
-    // Optionnel : mise en file d'attente si offline
+    await enqueueEvent({payload, route: '/event'});
   }
 };
 
@@ -101,12 +115,20 @@ export const sessionError = async (error: SessionError) => {
     session_id: getSessionId(),
     ...error
   };
+  const online = await isOnline();
+
+  if (!online) {
+
+    // En cas de perte de connexion, on met l'événement en file d'attente
+    await enqueueEvent({payload, route: '/error'});
+    return;
+  }
+
   try {
-    await axios.post(baseurl+'/error', payload);
+    await axios.post(baseurl + '/error', payload);
     // Pour le debug
-    console.log('[ERROR SENT]', error);
   } catch (err) {
-    console.warn('[ERROR FAILED]', err);
     // Optionnel : mise en file d'attente si offline
+    await enqueueEvent({payload, route: '/error'});
   }
 };
