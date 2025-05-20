@@ -53,3 +53,44 @@ export interface IPastEvent {
     end_date: string;
     description: string;
 }
+
+export interface IVASTObject {
+    adSystem: string;
+    adTitle: string;
+    adDescription: string;
+    impressions: string[];
+    linearMedia: {
+        duration: string;
+        trackingEvents: object;
+        clickThrough: string;
+        clickTracking: string;
+        mediaFiles: {
+            type: string;
+            width: number;
+            height: number;
+            bitrate: number;
+            delivery: string;
+            accessUrl: string;
+        }[];
+    }
+    companionAds: {
+        staticRessource: string;
+        companionClickThrough: string;
+        trackingEvents: object;
+    }[];
+    nonLinearAds: {
+        staticRessource: string;
+        nonLinearClickThrough: string;
+        trackingEvents: object;
+    }[];
+    onError: string;
+    extansion: any;
+}
+
+// export interface ILinarMediaAd 
+
+// export interface IMediaFile 
+
+// export interface ICompanionAd 
+
+// export interface INonLinearAd 

@@ -13,6 +13,7 @@ import { IContent } from "../../utils/interfaces";
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchSearchList } from "../../services/SearchService";
 import { orthomasterShare } from "../../futils";
+import { AdServingModalMediaAccess } from "./ads/AdServingModalMediaAccess";
 
 const screenWidth = Dimensions.get('screen').width;
 
@@ -91,22 +92,24 @@ export const PreviewMediaView = ({ navigation, route }) => {
         enabled: similarTags !== null
     })
     const { data: user, ...userQuery } = useGetUser()
+    const [showAds, setShowAds] = useState(false)
 
 
     const shareMedia = async (media2share: IContent) => {
-        
+
         orthomasterShare({
             title: media2share.title,
             message: "Voici un contenu intéressant à voir sur OrthoMaster :\n\n" +
                 media2share.title + " par " + media2share.author + "\n\n" +
                 "https://app.orthomaster.fr/open/media-preview?id=" + media2share.id_content
-        },'média', media2share.id_content)
+        }, 'média', media2share.id_content)
     }
 
     const nav2 = () => {
-        navigation.navigate('flash-media-viewer', {
-            content: media
-        })
+        // navigation.navigate('flash-media-viewer', {
+        //     content: media
+        // })
+        setShowAds(true)
     }
 
     useEffect(() => {
@@ -270,7 +273,12 @@ export const PreviewMediaView = ({ navigation, route }) => {
 
             </View>
         </ScrollView>
-
+        <AdServingModalMediaAccess
+            enabled={showAds}
+            onClose={() => {
+                setShowAds(false)
+            }}
+        />
     </SafeAreaView>)
 }
 
