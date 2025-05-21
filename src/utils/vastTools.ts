@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { IVASTObject } from '../utils/interfaces';
+import { IVASTObject } from './interfaces';
 import { URLSearchParams } from 'url';
 const XML = `<VAST version="2.0">
 <Ad id="87492">
@@ -232,3 +232,13 @@ export const constructVASTObjectWithUrlFromAdButler = async (url: string): Promi
 
     return vastObject // retourne un
 };
+
+export const saveVastEvent = (callbackURL: string) => {
+    fetch(callbackURL)
+    .then(response=>{
+        console.log(response);
+    })
+    .catch((e)=>{
+        console.log(e);
+    })
+}

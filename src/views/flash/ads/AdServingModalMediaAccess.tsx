@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Text, TouchableOpacity, View, StyleSheet, Dimensions, Image, ViewStyle, StyleProp } from "react-native";
-import { constructVASTObjectWithUrlFromAdButler } from "../../../utils/vastParser";
-import { IVASTObject } from "../../../utils/interfaces";
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { Modal, Text, TouchableOpacity, View, StyleSheet, Dimensions } from "react-native";
 import Animated, { useSharedValue, withSpring } from "react-native-reanimated";
-import { hmsToMilliseconds } from "../../../futils";
-import { useEventListener, useEvent } from "expo";
-const { width: screenWidth, height } = Dimensions.get("screen")
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEventListener } from "expo";
+import AntDesign from '@expo/vector-icons/AntDesign';
 
+import { hmsToMilliseconds } from "../../../futils";
+import { IVASTObject } from "../../../utils/interfaces";
+import { constructVASTObjectWithUrlFromAdButler, saveVastEvent } from "../../../utils/vastTools";
+
+
+const { width: screenWidth, height } = Dimensions.get("screen")
 
 type AdServingModalMediaAccessProps = {
     enabled: boolean
@@ -20,17 +23,63 @@ type AdCardProps = {
     onSelect: (vast: IVASTObject) => void
 }
 
+const InterestModal = ({ visible, onClose }) => {
 
-const DisplayAdModal = ({ vast, onClose, onEnd }) => {
+    return <Modal animationType="slide"
+        transparent={true}
+        visible={visible}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.9)" }}>
+            <View style={{ width: "90%", backgroundColor: "white", borderRadius: 10, padding: 20 }}>
+                <Text style={{ fontWeight: 'bold' }}>Vous êtes sur le point d'avertir l'annonceur de votre intéressement.</Text>
+                <Text>(Un email contenant vos coordonées l'avertira de votre intéret)</Text>
 
+                <View style={{
+                    display: 'flex', flexDirection: 'row',
+                    width: '100%',
+                    marginTop: 20
+                }}>
+                    <TouchableOpacity style={{
+                        flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5
+                    }}>
+                        <Text style={{
+                            color: '#fff',
+                            backgroundColor: '#ffaf31',
+                            width: '100%', paddingVertical: 20,
+                            textAlign: 'center',
+                            fontWeight: 'bold',
+                            borderRadius: 5
+                        }}>Marquer mon intéret</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{
+                        flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5
+                    }}
+                        onPress={onClose}
+                    >
+                        <Text style={{
+                            color: '#fff',
+                            backgroundColor: '#8E8E8E',
+                            width: '100%', paddingVertical: 20,
+                            textAlign: 'center',
+                            borderRadius: 5
+                        }}>En fait non</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+    </Modal>
+}
+
+const DisplayAdModal = ({ vast, onAccess }) => {
     const player = useVideoPlayer(vast?.linearMedia?.mediaFiles[0], player => {
         player.loop = false;
         player.currentTime = 0;
-        player.play();
         player.timeUpdateEventInterval = 1;
     });
+    const [savedEvents, setSavedEvents] = useState([])
     const [currentTime, setCurrentTime] = useState(0); // en ms
     const [duration, setDuration] = useState(0); // en ms
+    const [isComplete, setIsComplete] = useState(false)
+    const [showInterestModal, setShowInterestModal] = useState(false)
 
     const width = useSharedValue(screenWidth / 3);
     const height = useSharedValue((screenWidth / 3) * 9 / 16);
@@ -43,20 +92,45 @@ const DisplayAdModal = ({ vast, onClose, onEnd }) => {
 
     useEffect(() => {
         if (vast) {
+            setDuration(hmsToMilliseconds(vast.linearMedia.duration))
+            player.play()
+            console.log("[ EVENT ] : start");
+            console.log("[ EVENT ] : impression");
+            setSavedEvents(["start", "impression"])
+
             width.value = withSpring(screenWidth * 0.9, { duration: 2000, dampingRatio: 1 });
             height.value = withSpring((screenWidth * 0.9) * 9 / 16, { duration: 2000, dampingRatio: 1 });
         }
     }, [vast])
 
-    useEffect(() => {
-        setDuration(hmsToMilliseconds(vast.linearMedia.duration))
-    }, []);
-
     useEventListener(player, "timeUpdate", (payload) => {
-        setCurrentTime(Math.round(payload.currentTime) * 1000);
+        const curT = Math.round(payload.currentTime) * 1000
+        const videoProgress = curT / duration
+
+        switch (true) {
+            case (videoProgress >= 0.25 && videoProgress < 0.5 && !savedEvents.includes("FirstQuartile")):
+
+                setSavedEvents([...savedEvents, "FirstQuartile"])
+                console.log("[ EVENT ] : FirstQuartile");
+                break;
+            case (videoProgress >= 0.5 && videoProgress < 0.75 && !savedEvents.includes("MidPoint")):
+                setSavedEvents([...savedEvents, "MidPoint"])
+                console.log("[ EVENT ] : MidPoint");
+                break;
+            case (videoProgress >= 0.75 && !savedEvents.includes("ThirdQuartile")):
+                setSavedEvents([...savedEvents, "ThirdQuartile"])
+                console.log("[ EVENT ] : ThirdQuartile");
+                break;
+            default:
+                break;
+        }
+
+        setCurrentTime(curT);
     });
     useEventListener(player, "playToEnd", () => {
-        onEnd();
+        console.log("[ EVENT ] : complete");
+        setSavedEvents([...savedEvents, "complete"])
+        setIsComplete(true)
     });
 
 
@@ -74,7 +148,7 @@ const DisplayAdModal = ({ vast, onClose, onEnd }) => {
                 <VideoView
                     style={{
                         width: "100%",
-                        height: "100%"
+                        height: "100%",
                     }}
                     contentFit="contain"
                     player={player}
@@ -82,7 +156,6 @@ const DisplayAdModal = ({ vast, onClose, onEnd }) => {
                     allowsPictureInPicture={false}
                     allowsVideoFrameAnalysis={false}
                     nativeControls={false}
-                    showsTimecodes={true}
                 />
                 <View style={{
                     backgroundColor: "rgba(0,0,0,0.4)",
@@ -100,23 +173,54 @@ const DisplayAdModal = ({ vast, onClose, onEnd }) => {
                 </View>
             </Animated.View>
             <TouchableOpacity style={{
-                backgroundColor: '#ffaf31',
+                backgroundColor: '#2DE485',
                 alignSelf: 'center',
-                borderRadius: 50,
-                width: 100,
-                height: 100,
+                borderRadius: 10,
                 marginTop: 20,
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: 5,
+                paddingVertical: 15, paddingHorizontal: 30
             }} onPress={() => {
-                onClose()
-                player.currentTime = 0
-                player.pause()
+                // onClose() // remove
+                //TODO open interest modal
+                console.log("[ EVENT ] : ClickTracking");
+                setSavedEvents([...savedEvents, "ClickTracking"])
+
+                player.pause() // if interested modal open
+                setShowInterestModal(true)
             }}>
-                <Text style={{ fontSize: 12, color: "#fff", fontWeight: 'bold', textAlign: 'center' }}>ça m'intéresse</Text>
+                <Text style={{ fontSize: 12, color: "#000", fontWeight: 'bold', textAlign: 'center' }}>Je suis interessé</Text>
             </TouchableOpacity>
+            {
+                isComplete &&
+                <TouchableOpacity style={{
+                    backgroundColor: '#ffaf31',
+                    padding: 10,
+                    borderWidth: 2,
+                    borderColor: "#fff",
+                    borderRadius: 10,
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'absolute',
+                    bottom: 100
+                }}
+                    onPress={onAccess}
+                >
+                    <Text style={{
+                        color: "#fff",
+                        fontWeight: "bold"
+                    }}>Accéder au contenu</Text>
+                    <AntDesign style={{ marginLeft: 15 }} name="arrowright" size={24} color="#fff" />
+                </TouchableOpacity>
+            }
         </View>
+        <InterestModal visible={showInterestModal} onClose={() => {
+            if (!isComplete)
+                player.play()
+            setShowInterestModal(false)
+        }} />
     </Modal>
 }
 
@@ -218,10 +322,7 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
                     selectedVAST &&
                     <DisplayAdModal
                         vast={selectedVAST}
-                        onClose={() => {
-                            setSelectedVAST(null)
-                        }}
-                        onEnd={() => {
+                        onAccess={() => {
                             setSelectedVAST(null)
                             grantAccess()
                         }}
