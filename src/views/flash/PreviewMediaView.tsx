@@ -93,6 +93,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
     })
     const { data: user, ...userQuery } = useGetUser()
     const [showAds, setShowAds] = useState(false)
+    const [grantingAcces, setGrantingAcces] = useState(false)
 
 
     const shareMedia = async (media2share: IContent) => {
@@ -105,12 +106,16 @@ export const PreviewMediaView = ({ navigation, route }) => {
         }, 'média', media2share.id_content)
     }
 
-    const nav2 = () => {
-        // navigation.navigate('flash-media-viewer', {
-        //     content: media
-        // })
-        setShowAds(true)
-    }
+    useEffect(() => {
+        if (!showAds && grantingAcces) {
+            // Visionnage de pub terminée REDIRECTION vers contenu
+            setGrantingAcces(false)
+            navigation.navigate('flash-media-viewer', {
+                content: media
+            })
+        }
+    }, [showAds, grantingAcces])
+
 
     useEffect(() => {
         const shuffleArray = (arr: string[]): string[] => {
@@ -192,7 +197,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
                         <Text style={[styles.mediaTextContainer, { fontWeight: 'bold', fontSize: 16 }]}>{media.title}</Text>
                         <Text style={styles.mediaTextContainer}>⏱️ {media.duration}</Text>
                         <TouchableOpacity style={styles.accessButtonContainer}
-                            onPress={nav2}
+                            onPress={() => setShowAds(true)}
                         >
                             <FontAwesome name="play" size={18} color="black" />
                             <Text style={{ marginLeft: 10 }}>Accéder</Text>
@@ -273,12 +278,19 @@ export const PreviewMediaView = ({ navigation, route }) => {
 
             </View>
         </ScrollView>
-        <AdServingModalMediaAccess
-            enabled={showAds}
-            onClose={() => {
-                setShowAds(false)
-            }}
-        />
+        {
+            showAds &&
+            <AdServingModalMediaAccess
+                enabled={showAds}
+                onClose={() => {
+                    setShowAds(false)
+                }}
+                grantAccess={() => {
+                    setGrantingAcces(true)
+                    setShowAds(false)
+                }}
+            />
+        }
     </SafeAreaView>)
 }
 

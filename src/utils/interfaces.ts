@@ -64,25 +64,26 @@ export interface IVASTObject {
         trackingEvents: object;
         clickThrough: string;
         clickTracking: string;
-        mediaFiles: {
-            type: string;
-            width: number;
-            height: number;
-            bitrate: number;
-            delivery: string;
-            accessUrl: string;
-        }[];
+        //     mediaFiles: {
+        //         type: string;
+        //         width: number;
+        //         height: number;
+        //         bitrate: number;
+        //         delivery: string;
+        //         accessUrl: string;
+        //     }[];
+        mediaFiles: string[]
     }
-    companionAds: {
+    companionAd: {
         staticRessource: string;
         companionClickThrough: string;
         trackingEvents: object;
-    }[];
-    nonLinearAds: {
+    };
+    nonLinearAd: {
         staticRessource: string;
         nonLinearClickThrough: string;
         trackingEvents: object;
-    }[];
+    };
     onError: string;
     extansion: any;
 }
