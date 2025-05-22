@@ -24,7 +24,7 @@ export const startSession = async () => {
     device_OS: Device.osName
   }
   const payload = {
-    user_id: config.user.id_user,
+    job_function: config.user.job_function,
     device_infos: JSON.stringify(deviceInfos),
     started_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
   }
