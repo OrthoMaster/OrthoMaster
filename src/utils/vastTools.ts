@@ -1,6 +1,9 @@
 import { XMLParser } from 'fast-xml-parser';
+import axios from 'axios';
 import { IVASTObject } from './interfaces';
 import { URLSearchParams } from 'url';
+import { sessionError } from '../services/SessionEventService';
+import { restoreLocalConfigAsync } from '../futils';
 const XML = `<VAST version="2.0">
 <Ad id="87492">
 <InLine>
@@ -19,7 +22,7 @@ const XML = `<VAST version="2.0">
 </Error>
 <Creatives>
 <Creative id="87492">
-<Linear>
+<Linear skipoffset="00:00:05">
 <Duration>00:00:10</Duration>
 <TrackingEvents>
 <Tracking event="creativeView">
@@ -27,6 +30,9 @@ const XML = `<VAST version="2.0">
 </Tracking>
 <Tracking event="start">
 <![CDATA[ https://servedbyadbutler.com/callback.spark?ID=188636&bannerID=87492&publisherID=376392&campaignID=32764&setID=63510&advertiserID=328572&scheduleID=109390&placementID=110669&type=start&_abdk%5BJob+Function%5D=pharmacien ]]>
+</Tracking>
+<Tracking event="skip">
+<![CDATA[ https://servedbyadbutler.com/callback.spark?ID=188636&bannerID=87492&publisherID=376392&campaignID=32764&setID=63510&advertiserID=328572&scheduleID=109390&placementID=110669&type=skip&_abdk%5BJob+Function%5D=pharmacien ]]>
 </Tracking>
 <Tracking event="firstQuartile">
 <![CDATA[ https://servedbyadbutler.com/callback.spark?ID=188636&bannerID=87492&publisherID=376392&campaignID=32764&setID=63510&advertiserID=328572&scheduleID=109390&placementID=110669&type=firstQuartile&_abdk%5BJob+Function%5D=pharmacien ]]>
@@ -79,6 +85,9 @@ const XML = `<VAST version="2.0">
 <![CDATA[ https://servedbyadbutler.com/callback.spark?ID=188636&bannerID=87492&publisherID=376392&campaignID=32764&setID=63510&advertiserID=328572&scheduleID=109390&placementID=110669&type=clicks&_abdk%5BJob+Function%5D=pharmacien ]]>
 </ClickTracking>
 </VideoClicks>
+<AdParameters xmlEncoded="true">
+<![CDATA[ adviser:OrthoMaster;email:hugo@orthomaster.fr ]]>
+</AdParameters>
 <MediaFiles>
 <MediaFile type="video/mp4" width="2560" height="1440" bitrate="6589" delivery="progressive">
 <![CDATA[ https://servedbyadbutler.com/getad.img/?libBID=4557233 ]]>
@@ -130,29 +139,36 @@ const XML = `<VAST version="2.0">
 
 
 export const constructVASTObjectWithUrlFromAdButler = async (url: string): Promise<IVASTObject> => {
-    var vastObject: IVASTObject = {
-        adSystem: "",
-        adTitle: "",
-        adDescription: "",
-        impressions: [],
-        linearMedia: null,
-        companionAd: null,
-        nonLinearAd: null,
-        onError: "",
-        extansion: null
-    };
     // const response = await fetch(url);
     // const xmlText = await response.text();
-    const parser = new XMLParser();
+    const parser = new XMLParser({
+        ignoreAttributes: false
+    });
     const json = parser.parse(XML);
 
-    const getImpressions = (impressions: string | string[]): string[] => {
-        if (typeof impressions === 'string') {
-            return [impressions.trim()];
-        } else if (Array.isArray(impressions)) {
+    const retrieveLinearMediaParams = (linearConfig: any) => {
+        const adParams: string = linearConfig?.Linear?.AdParameters["#text"]
+        const splitParams = adParams.split(';')
+        let finalParams = {}
+        splitParams.forEach(element => {
+            const param = element.split(":")
+            finalParams[param[0].trim()] = param[1].trim()
+        });
+        return finalParams as {
+            adviser: string;
+            email: string;
+        }
+    }
+
+    const getImpressions = async (impressions: object | object[]): Promise<string[]> => {
+        if (Array.isArray(impressions)) {
+            let impressions: string[] = []
+            impressions.forEach(element => {
+                impressions.push(element["#text"])
+            });
             return impressions;
         } else {
-            return [];
+            return [impressions["#text"]];
         }
     }
 
@@ -161,84 +177,125 @@ export const constructVASTObjectWithUrlFromAdButler = async (url: string): Promi
 
         if (Array.isArray(trackingEvents)) {
             trackingEvents.map((event) => {
-                const parsedUrlParams = new URL(event).searchParams;
-                const type = parsedUrlParams.get('type');
-
                 trackingEventsObj = {
                     ...trackingEventsObj,
-                    [type]: event.trim()
+                    [event["@_event"]]: event["#text"].trim()
                 }
             })
         } else {
-            const parsedUrlParams = new URL(trackingEvents).searchParams;
-            const type = parsedUrlParams.get('type');
             trackingEventsObj = {
                 ...trackingEventsObj,
-                [type]: trackingEvents.trim()
+                [trackingEvents["@_event"]]: trackingEvents["#text"].trim()
             }
         }
         return trackingEventsObj;
     }
 
-    const getLinear = (linear: any): typeof vastObject.linearMedia => {
+    const getLinear = async (linear: any): Promise<IVASTObject['linearMedia']> => {
         const getMediaFiles = (mediaFiles: any): any[] => {
             if (Array.isArray(mediaFiles)) {
-                return mediaFiles
+                let medias: string[] = []
+                medias.forEach(element => {
+                    medias.push(element["#text"])
+                });
+                return medias;
             } else {
-                return [mediaFiles.MediaFile.trim()];
+                return [mediaFiles.MediaFile["#text"].trim()];
             }
         }
+        const medias = getMediaFiles(linear?.Linear?.MediaFiles)
 
         return {
             duration: linear?.Linear?.Duration,
+            skipOffset: linear?.Linear["@_skipoffset"],
             clickThrough: linear?.Linear?.VideoClicks?.ClickThrough?.trim(),
             clickTracking: linear?.Linear?.VideoClicks?.ClickTracking?.trim(),
             trackingEvents: getCreativeTrackingEvents(linear?.Linear?.TrackingEvents?.Tracking),
-            mediaFiles: getMediaFiles(linear?.Linear?.MediaFiles)
+            mediaFiles: medias
         } as IVASTObject['linearMedia']
     }
 
-    const getCompanionAds = (config: any): typeof vastObject.companionAd => {
+    const getCompanionAds = async (config: any): Promise<IVASTObject['companionAd']> => {
         return {
-            staticRessource: config.CompanionAds.Companion.StaticResource.trim(),
-            companionClickThrough: config.CompanionAds.Companion.CompanionClickThrough.trim(),
-            trackingEvents: getCreativeTrackingEvents(config.CompanionAds.Companion.TrackingEvents.Tracking),
+            staticRessource: config?.CompanionAds?.Companion?.StaticResource["#text"].trim(),
+            companionClickThrough: config?.CompanionAds?.Companion?.CompanionClickThrough?.trim(),
+            trackingEvents: getCreativeTrackingEvents(config?.CompanionAds?.Companion?.TrackingEvents?.Tracking),
         } as IVASTObject['companionAd']
     }
 
-    const getNonLinearAds = (config: any): typeof vastObject.nonLinearAd => {
-        
+    const getNonLinearAds = async (config: any): Promise<IVASTObject['nonLinearAd']> => {
         return {
-            staticRessource: config.NonLinearAds.NonLinear.StaticResource.trim(),
-            nonLinearClickThrough: config.NonLinearAds.NonLinear.NonLinearClickThrough.trim(),
-            trackingEvents: getCreativeTrackingEvents(config.NonLinearAds.TrackingEvents.Tracking)
+            staticRessource: config?.NonLinearAds?.NonLinear?.StaticResource["#text"].trim(),
+            nonLinearClickThrough: config?.NonLinearAds?.NonLinear?.NonLinearClickThrough?.trim(),
+            trackingEvents: getCreativeTrackingEvents(config?.NonLinearAds?.TrackingEvents?.Tracking)
         } as IVASTObject['nonLinearAd']
     }
 
     try {
-        vastObject.adSystem = json?.VAST?.Ad?.InLine?.AdSystem;
-        vastObject.adTitle = json?.VAST?.Ad?.InLine?.AdTitle;
-        vastObject.adDescription = json?.VAST?.Ad?.InLine?.Description;
-        vastObject.impressions = getImpressions(json?.VAST?.Ad?.InLine?.Impression);
-        vastObject.onError = json?.VAST?.Ad?.InLine?.Error;
-        vastObject.linearMedia = getLinear(json?.VAST?.Ad?.InLine?.Creatives?.Creative?.find((creative: {}) => Object.keys(creative).find((key) => key === "Linear")));
-        vastObject.companionAd = getCompanionAds(json?.VAST?.Ad?.InLine?.Creatives?.Creative?.find((creative: {}) => Object.keys(creative).find((key) => key === "CompanionAds")));
-        vastObject.nonLinearAd = getNonLinearAds(json?.VAST?.Ad?.InLine?.Creatives?.Creative?.find((creative: {}) => Object.keys(creative).find((key) => key === "NonLinearAds")));
+        const linearConfig = json?.VAST?.Ad?.InLine?.Creatives?.Creative?.find((creative: {}) => Object.keys(creative).find((key) => key === "Linear"))
+        const companionConfig = json?.VAST?.Ad?.InLine?.Creatives?.Creative?.find((creative: {}) => Object.keys(creative).find((key) => key === "CompanionAds"))
+        const nonLinearConfig = json?.VAST?.Ad?.InLine?.Creatives?.Creative?.find((creative: {}) => Object.keys(creative).find((key) => key === "NonLinearAds"))
+
+        const linearMediaParams = retrieveLinearMediaParams(linearConfig)
+
+        return {
+            adTitle: json?.VAST?.Ad?.InLine?.AdTitle,
+            adAdviser: linearMediaParams.adviser,
+            interestEmail: linearMediaParams.email,
+            adDescription: json?.VAST?.Ad?.InLine?.Description,
+            impressions: await getImpressions(json?.VAST?.Ad?.InLine?.Impression),
+            onError: json?.VAST?.Ad?.InLine?.Error,
+            linearMedia: await getLinear(linearConfig),
+            companionAd: await getCompanionAds(companionConfig),
+            nonLinearAd: await getNonLinearAds(nonLinearConfig),
+            extansion: null
+        } as IVASTObject
 
     } catch (error) {
-        console.log(error);
+        sessionError({
+            name: "AdFormat Error",
+            message: "Une erreur s'est produite lors du formatage de la pub",
+            stack_trace: error,
+            context: {
+                adZone: url,
 
+            }
+        })
     }
-
-    return vastObject // retourne un
 };
 
 export const saveVastEvent = (callbackURL: string) => {
     fetch(callbackURL)
-    .then(response=>{
-        console.log(response);
-    })
-    .catch((e)=>{
-        console.log(e);
-    })
+        .then(response => {
+            console.log(response);
+        })
+        .catch((e) => {
+            console.log(e);
+        })
+}
+
+export const sendInterestToAdvertiser = async ({ destEmail, adTitle }) => {
+    const config = await restoreLocalConfigAsync()
+    const authHeader = 'Bearer ' + config.JWT;
+
+    const payload = {
+        destination: destEmail,
+        user: {
+            name: config.user.name,
+            email: config.user.email,
+            job_function: config.user.job_function
+        },
+        ad_title: adTitle
+    }
+
+    return axios
+        .post(process.env.EXPO_PUBLIC_API_URL + "/ads/interest", payload, {
+            headers: {
+                Authorization: authHeader
+            },
+        })
+        .then((response) => {
+            return response.data;
+        })
+
 }

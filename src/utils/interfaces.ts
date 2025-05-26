@@ -55,23 +55,17 @@ export interface IPastEvent {
 }
 
 export interface IVASTObject {
-    adSystem: string;
     adTitle: string;
+    adAdviser: string;
+    interestEmail: string;
     adDescription: string;
     impressions: string[];
     linearMedia: {
+        skipOffset: string;
         duration: string;
         trackingEvents: object;
         clickThrough: string;
         clickTracking: string;
-        //     mediaFiles: {
-        //         type: string;
-        //         width: number;
-        //         height: number;
-        //         bitrate: number;
-        //         delivery: string;
-        //         accessUrl: string;
-        //     }[];
         mediaFiles: string[]
     }
     companionAd: {

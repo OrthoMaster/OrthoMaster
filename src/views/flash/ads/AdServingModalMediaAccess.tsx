@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Text, TouchableOpacity, View, StyleSheet, Dimensions } from "react-native";
+import { Modal, Text, TouchableOpacity, View, StyleSheet, Dimensions, ActivityIndicator } from "react-native";
 import Animated, { useSharedValue, withSpring } from "react-native-reanimated";
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEventListener } from "expo";
 import AntDesign from '@expo/vector-icons/AntDesign';
-
 import { hmsToMilliseconds } from "../../../futils";
 import { IVASTObject } from "../../../utils/interfaces";
-import { constructVASTObjectWithUrlFromAdButler, saveVastEvent } from "../../../utils/vastTools";
+import { constructVASTObjectWithUrlFromAdButler, saveVastEvent, sendInterestToAdvertiser } from "../../../utils/vastTools";
+import { useMutation } from "react-query";
 
 
 const { width: screenWidth, height } = Dimensions.get("screen")
@@ -23,32 +23,80 @@ type AdCardProps = {
     onSelect: (vast: IVASTObject) => void
 }
 
-const InterestModal = ({ visible, onClose }) => {
+const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVASTObject }> = ({ visible, onClose, vast }) => {
+    const sendInterest = useMutation(["Ad-interest", vast.adTitle], sendInterestToAdvertiser, {
+        onSuccess: data => {
+            setIsSent(true)
+        },
+        onError: () => {
+            setIsError(true)
+        }
+    })
+    const [isSent, setIsSent] = useState(false)
+    const [isError, setIsError] = useState(false)
+
+    const send = () => {
+        sendInterest.mutate({
+            destEmail: vast.interestEmail,
+            adTitle: vast.adTitle
+        })
+    }
+
+    useEffect(() => {
+        if (isSent)
+            setTimeout(() => {
+                setIsSent(false)
+                onClose()
+            }, 2000)
+    }, [isSent])
+
 
     return <Modal animationType="slide"
         transparent={true}
         visible={visible}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.9)" }}>
-            <View style={{ width: "90%", backgroundColor: "white", borderRadius: 10, padding: 20 }}>
+            <View style={{ width: "90%", backgroundColor: "white", borderRadius: 10, padding: 20, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontWeight: 'bold' }}>Vous êtes sur le point d'avertir l'annonceur de votre intéressement.</Text>
-                <Text>(Un email contenant vos coordonées l'avertira de votre intéret)</Text>
+                <Text>Nous transmettons par email les coordonnées suivantes :</Text>
+                <Text style={{
+                    fontWeight: 'bold',
+                    alignSelf: 'center',
+                    fontSize: 12
+                }}>
+                    • Nom Prénom{'\n'}
+                    • Email{'\n'}
+                    • Fonction professionnelle
+                </Text>
 
+                <Text style={{
+                    marginTop: 10,
+                    fontSize: 10,
+                    color: "red",
+                }}>
+                    * En marquant votre intérêt, vous autorisé OrthoMaster à transmettre vos données à l'annonceur</Text>
                 <View style={{
                     display: 'flex', flexDirection: 'row',
                     width: '100%',
-                    marginTop: 20
+                    marginTop: 5
                 }}>
                     <TouchableOpacity style={{
                         flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5
-                    }}>
-                        <Text style={{
-                            color: '#fff',
-                            backgroundColor: '#ffaf31',
-                            width: '100%', paddingVertical: 20,
-                            textAlign: 'center',
-                            fontWeight: 'bold',
-                            borderRadius: 5
-                        }}>Marquer mon intéret</Text>
+                    }} onPress={send}>
+                        {
+                            sendInterest.isLoading ?
+                                <ActivityIndicator />
+                                :
+                                <Text style={{
+                                    color: '#fff',
+                                    backgroundColor: '#ffaf31',
+                                    width: '100%', paddingVertical: 20,
+                                    textAlign: 'center',
+                                    fontWeight: 'bold',
+                                    borderRadius: 5
+                                }}>
+                                    Marquer mon intéret
+                                </Text>
+                        }
                     </TouchableOpacity>
                     <TouchableOpacity style={{
                         flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5
@@ -64,12 +112,57 @@ const InterestModal = ({ visible, onClose }) => {
                         }}>En fait non</Text>
                     </TouchableOpacity>
                 </View>
+                {
+                    (isSent || isError) &&
+                    <View style={{
+                        position: 'absolute',
+                        backgroundColor: '#fff',
+                        width: "100%", height: "100%",
+                        alignItems: 'center', justifyContent: "center"
+                    }}>
+                        {
+                            isError &&
+                            <AntDesign name="exclamationcircle" size={70} color="#F25151" />
+                        }
+                        {
+                            isSent &&
+                            <AntDesign name="checkcircle" size={70} color="#6AF28E" />
+                        }
+
+                        <Text style={{
+                            fontSize: 18,
+                            fontWeight: 'bold',
+                            marginTop: 10
+                        }}>
+                            {isSent && "Envoyé"}
+                            {isError && "Une erreur s'est produite"}
+                        </Text>
+                        {
+                            isError &&
+                            <TouchableOpacity style={{
+                                backgroundColor: '#ffaf31',
+                                padding: 10,
+                                borderRadius: 5,
+                                marginTop: 20
+                            }}
+                                onPress={send}
+                            >
+                                {
+                                    sendInterest.isLoading ?
+                                        <ActivityIndicator />
+                                        :
+                                        <Text>Réessayer</Text>
+                                }
+                            </TouchableOpacity>
+                        }
+                    </View>
+                }
             </View>
         </View>
     </Modal>
 }
 
-const DisplayAdModal = ({ vast, onAccess }) => {
+const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ vast, onAccess }) => {
     const player = useVideoPlayer(vast?.linearMedia?.mediaFiles[0], player => {
         player.loop = false;
         player.currentTime = 0;
@@ -80,6 +173,8 @@ const DisplayAdModal = ({ vast, onAccess }) => {
     const [duration, setDuration] = useState(0); // en ms
     const [isComplete, setIsComplete] = useState(false)
     const [showInterestModal, setShowInterestModal] = useState(false)
+    const [skipLimit, setSkipLimit] = useState(0)
+    const [showSkipBtn, setShowSkipBtn] = useState(false)
 
     const width = useSharedValue(screenWidth / 3);
     const height = useSharedValue((screenWidth / 3) * 9 / 16);
@@ -90,9 +185,29 @@ const DisplayAdModal = ({ vast, onAccess }) => {
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
 
+    const onSkip = () => {
+        setSavedEvents([...savedEvents, "skip"])
+        console.log("[ EVENT ] : skip");
+        player.pause()
+        player.currentTime = 0
+        onAccess()
+    }
+    const openInterestModal = (status: boolean) => {
+        if (status) {
+            console.log("[ EVENT ] : ClickTracking");
+            setSavedEvents([...savedEvents, "ClickTracking"])
+
+            player.pause()
+            setShowInterestModal(true)
+        } else {
+            setShowInterestModal(false)
+        }
+    }
+
     useEffect(() => {
         if (vast) {
             setDuration(hmsToMilliseconds(vast.linearMedia.duration))
+            setSkipLimit(hmsToMilliseconds(vast.linearMedia.skipOffset))
             player.play()
             console.log("[ EVENT ] : start");
             console.log("[ EVENT ] : impression");
@@ -125,12 +240,17 @@ const DisplayAdModal = ({ vast, onAccess }) => {
                 break;
         }
 
+        if (curT > skipLimit) {
+            setShowSkipBtn(true)
+        }
+
         setCurrentTime(curT);
     });
     useEventListener(player, "playToEnd", () => {
         console.log("[ EVENT ] : complete");
         setSavedEvents([...savedEvents, "complete"])
         setIsComplete(true)
+        setShowSkipBtn(false)
     });
 
 
@@ -171,6 +291,21 @@ const DisplayAdModal = ({ vast, onAccess }) => {
                         fontSize: 12,
                     }}>{formatTime(currentTime)} / {formatTime(duration)}</Text>
                 </View>
+                {
+                    showSkipBtn &&
+                    <TouchableOpacity style={{
+                        backgroundColor: "rgba(0,0,0,0.7)",
+                        position: 'absolute',
+                        right: 0,
+                        bottom: 50,
+                        paddingHorizontal: 15, paddingVertical: 5,
+                        flexDirection: 'row',
+                        alignItems: 'center', justifyContent: 'center'
+                    }} onPress={onSkip}>
+                        <Text style={{ color: "#fff" }}>Passer</Text>
+                        <AntDesign style={{ marginLeft: 10 }} name="stepforward" size={15} color="#fff" />
+                    </TouchableOpacity>
+                }
             </Animated.View>
             <TouchableOpacity style={{
                 backgroundColor: '#2DE485',
@@ -180,15 +315,7 @@ const DisplayAdModal = ({ vast, onAccess }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 paddingVertical: 15, paddingHorizontal: 30
-            }} onPress={() => {
-                // onClose() // remove
-                //TODO open interest modal
-                console.log("[ EVENT ] : ClickTracking");
-                setSavedEvents([...savedEvents, "ClickTracking"])
-
-                player.pause() // if interested modal open
-                setShowInterestModal(true)
-            }}>
+            }} onPress={() => openInterestModal(true)}>
                 <Text style={{ fontSize: 12, color: "#000", fontWeight: 'bold', textAlign: 'center' }}>Je suis interessé</Text>
             </TouchableOpacity>
             {
@@ -219,12 +346,13 @@ const DisplayAdModal = ({ vast, onAccess }) => {
         <InterestModal visible={showInterestModal} onClose={() => {
             if (!isComplete)
                 player.play()
-            setShowInterestModal(false)
-        }} />
+            openInterestModal(false)
+        }} vast={vast} />
     </Modal>
 }
 
 const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
+
     const dummyPlayer = useVideoPlayer(vastObj.linearMedia.mediaFiles[0], dummyPlayer => {
         dummyPlayer.loop = false;
         dummyPlayer.muted = true;
@@ -262,12 +390,12 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
 
 
 
+
     useEffect(() => {
         constructVASTObjectWithUrlFromAdButler("VAST_URL")
             .then((vastObject: IVASTObject) => {
                 setvastArray([vastObject])
             });
-
     }, [])
 
     if (vastArray.length > 0)
