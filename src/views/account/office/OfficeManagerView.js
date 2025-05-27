@@ -8,7 +8,7 @@ import {
     ScrollView,
     Platform
 } from 'react-native'
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUsersByOfficeId } from '../../../services/UserService';
 import { getUserRegisteredFormation } from '../../../services/FormationService';
 import AddMemberOfficeForm from '../../../component/forms/AddMemberOfficeForm';
@@ -19,9 +19,10 @@ import Toast from 'react-native-toast-message';
 
 const UserCard = ({ user, onRemove }) => {
     const [isOpen, setIsOpen] = useState(false)
-    const formations = useQuery(["user-formations", user.id_user], () => getUserRegisteredFormation({
-        idUser: user.id_user
-    }), {
+    const formations = useQuery({
+        queryKey: ["user-formations", user.id_user], queryFn: () => getUserRegisteredFormation({
+            idUser: user.id_user
+        }),
         enabled: isOpen
     })
 
@@ -120,7 +121,7 @@ const UserCard = ({ user, onRemove }) => {
 
 export const OfficeManagerView = ({ route, navigation }) => {
     const office = route.params.office
-    const users = useQuery(['office-users'], () => getUsersByOfficeId(office.id_office))
+    const users = useQuery({queryKey: ['office-users'], queryFn: () => getUsersByOfficeId(office.id_office)})
     const [addingMembers, setAddingMembers] = useState(false)
     const queryClient = useQueryClient()
 

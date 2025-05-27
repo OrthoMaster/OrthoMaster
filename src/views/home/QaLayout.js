@@ -13,7 +13,7 @@ import {
 import { SearchFilters } from '../search/components/SearchFilters';
 import { ContentSelection } from '../search/components/ContentSelection';
 
-import { useQuery } from "react-query"
+import { useQuery } from "@tanstack/react-query"
 import { fetchSearchList } from '../../services/SearchService';
 
 import { LoadingContent } from '../../component/LoadingContent'
@@ -25,14 +25,17 @@ export const QaLayout = ({ navigation, color }) => {
 
   const [filters, setFilters] = useState(null)
 
-  const qaList = useQuery(['Qa', 'GET', "qaList"], () => fetchSearchList({
-    contentType: 'qa',
-    filters: filters,
-    body: null,
-    searchText: null
-  }
-    , null
-  ))
+  const qaList = useQuery({
+    queryKey: ['Qa', 'GET', "qaList"],
+    queryFn: () => fetchSearchList({
+      contentType: 'qa',
+      filters: filters,
+      body: null,
+      searchText: null
+    }
+      , null
+    )
+  })
 
 
   useEffect(() => {

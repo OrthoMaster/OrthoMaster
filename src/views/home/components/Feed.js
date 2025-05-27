@@ -12,17 +12,17 @@ import {
 } from "react-native";
 import { getLinkPreview, getPreviewFromContent } from "link-preview-js";
 import { Feather, AntDesign } from '@expo/vector-icons';
-import { useQuery, useMutation } from "react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
     likeArticle,
     dislikeArticle
 } from "../../../services/FeedService";
 
-export const FeedHeader = ({categories, isLoading, onCategorySelect, selectedFeedCategoryId, nbSavedArticle}) => {
-    
+export const FeedHeader = ({ categories, isLoading, onCategorySelect, selectedFeedCategoryId, nbSavedArticle }) => {
+
     return <View style={styles.container}>
-          <Text style={styles.headerText}>L'actualité de l'orthopédie</Text>
-          <Text style={styles.headerSubtext}>sélectionnée rien que pour vous...</Text>
+        <Text style={styles.headerText}>L'actualité de l'orthopédie</Text>
+        <Text style={styles.headerSubtext}>sélectionnée rien que pour vous...</Text>
         <View style={{
             display: 'flex',
             flexDirection: 'row',
@@ -73,7 +73,8 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
         "internet": require('../../../../assets/social/internet.png')
     }
 
-    const like = useMutation(likeArticle, {
+    const like = useMutation({
+        mutationFn: likeArticle,
         onSuccess: val => {
             setIsLiked(true)
         },
@@ -81,7 +82,8 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
             onLikeOrDislike()
         }
     })
-    const dislike = useMutation(dislikeArticle, {
+    const dislike = useMutation({
+        mutationFn: dislikeArticle,
         onSuccess: val => {
             setIsLiked(false)
         },
@@ -105,7 +107,7 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
 
         let mediaIcon = null
         for (const [key, value] of Object.entries(socialNetworkIcons)) {
-            
+
             if (config.href?.includes(key)) {
                 mediaIcon = value
             }
@@ -256,20 +258,20 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
 }
 
 
-export const FeedDisplayer = ({feed = [], onLikeOrDislike }) => {
-    
+export const FeedDisplayer = ({ feed = [], onLikeOrDislike }) => {
+
     if (feed.length == 0)
         return <Text style={{
             alignSelf: 'center',
             margin: 20
-        }}>{} Aucun article trouvé</Text>
+        }}>{ } Aucun article trouvé</Text>
 
     return <View style={styles.container}>
         <FlatList
-            style={{ width: "100%"}}
+            style={{ width: "100%" }}
             data={feed}
             scrollEnabled={false}
-            renderItem={({ item }) => <ArticleCard config={item} onLikeOrDislike={() => {onLikeOrDislike()}} />}
+            renderItem={({ item }) => <ArticleCard config={item} onLikeOrDislike={() => { onLikeOrDislike() }} />}
             keyExtractor={item => item.id + item.id_feed_category}
         />
     </View>
@@ -296,11 +298,11 @@ const styles = StyleSheet.create({
         fontSize: 22,
         width: '80%',
         marginLeft: 20
-      },
-      headerSubtext: {
+    },
+    headerSubtext: {
         fontSize: 15,
         width: '80%',
         marginLeft: 20
-      }
+    }
 
 })

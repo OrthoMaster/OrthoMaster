@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { View, Text, Image, FlatList, Dimensions, StyleSheet, TouchableOpacity, NativeSyntheticEvent, LayoutChangeEvent } from "react-native";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../services/S3Service";
 const { width: screenWidth } = Dimensions.get("window");
 
 
 const Card = ({ data, onSelect, nbElement2Display }) => {
-  const imageUrl = useQuery(['contentThumbnail', data.id_content, data.title], () => getS3Image(`${data.s3_path}/${data.title}/logo.png`))
+  const imageUrl = useQuery({
+    queryKey: ['contentThumbnail', data.id_content, data.title],
+    queryFn: () => getS3Image(`${data.s3_path}/${data.title}/logo.png`)
+  })
   const [imgDimensions, setImgDimensions] = useState({
     width: 0,
     height: 0

@@ -1,4 +1,4 @@
-import { useQuery } from 'react-query';
+import { useQuery } from "@tanstack/react-query";
 import { getCurrentUser } from '../services/UserService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -11,9 +11,6 @@ export function useGetUser() {
         //    staleTime: Infinity,
         //    cacheTime: Infinity,
         staleTime: Infinity,
-        cacheTime: Infinity,
-        onSuccess: data=>{
-            AsyncStorage.setItem('user', JSON.stringify(data))
-        }
+        cacheTime: Infinity
     });
 };

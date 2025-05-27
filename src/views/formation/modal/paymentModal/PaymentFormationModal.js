@@ -10,9 +10,9 @@ import {
 import BillingAddressSelection from "./BillingAddressSelection";
 import UserSelectionStep from "./UserSelectionStep";
 import ConfirmationStep from "./ConfirmationStep";
-import { useQuery, useMutation } from "react-query";
-import { getCurrentUser } from "../../../../services/UserService";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { createFormationOrder } from "../../../../services/FormationService";
+import { useGetUser } from "../../../../hooks/useGetUser.hook";
 
 
 export const PaymentFormationModal = ({
@@ -20,11 +20,12 @@ export const PaymentFormationModal = ({
     onClose,
     navigation
 }) => {
-    const { data: currentUser } = useQuery("current-user", () => getCurrentUser())
+    const { data: currentUser } = useGetUser()
     const [currentBillingAddress, setCurrentBillingAddress] = useState(null)
     const [selectedUsers, setSelectedUsers] = useState(null)
     const [stepIndex, setStepIndex] = useState(0)
-    const sendOrder = useMutation(createFormationOrder, {
+    const sendOrder = useMutation({
+        mutationFn: createFormationOrder,
         onSettled: () => setConfirmed(true)
     })
     const [confirmed, setConfirmed] = useState(false)
@@ -86,7 +87,7 @@ export const PaymentFormationModal = ({
                     onConfirm={(data) => {
                         sendOrder.mutate(data)
                     }}
-                    isLoading={sendOrder.isLoading}
+                    isLoading={sendOrder.isPending}
                 />
             }
             {
@@ -101,7 +102,7 @@ export const PaymentFormationModal = ({
                     onConfirm={(data) => {
                         sendOrder.mutate(data)
                     }}
-                    isLoading={sendOrder.isLoading}
+                    isLoading={sendOrder.isPending}
                 />
             }
 
@@ -125,11 +126,11 @@ export const PaymentFormationModal = ({
                                     fontWeight: 'bold',
                                     fontSize: 22, color: '#ffaf31', alignSelf: 'center', marginBottom: 20
                                 }}>Merci pour votre commande</Text>
-                                <Text style={{marginBottom: 5}}>Nous venons de vous envoyer un email comportant :</Text>
+                                <Text style={{ marginBottom: 5 }}>Nous venons de vous envoyer un email comportant :</Text>
                                 <Text style={{}}>• Le lien pour signer & payer le devis</Text>
                                 <Text style={{}}>• Le devis au format PDF</Text>
-                                <Text style={{marginTop: 10}}>Vous n'avez plus qu'à suivre le lien de paiement pour débloquer la formation pour l'ensemble des bénéficiaires.</Text>
-                                <Text style={{marginTop: 40, textDecorationLine: 'underline'}}>Email envoyé à :</Text>
+                                <Text style={{ marginTop: 10 }}>Vous n'avez plus qu'à suivre le lien de paiement pour débloquer la formation pour l'ensemble des bénéficiaires.</Text>
+                                <Text style={{ marginTop: 40, textDecorationLine: 'underline' }}>Email envoyé à :</Text>
                                 <Text>{currentBillingAddress.name} ({currentBillingAddress.email})</Text>
                                 {
                                     currentBillingAddress.type == "company" &&

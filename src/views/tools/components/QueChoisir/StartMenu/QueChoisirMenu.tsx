@@ -12,7 +12,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getProductsBrands } from '../../../../../services/ProductsService';
 import FiltersQC from './components/Filters/FiltersQC';
 import FiltersButton from './components/Filters/FiltersButton';
@@ -48,16 +48,17 @@ type QueChoisirMenuProps = {
 }
 
 export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart }) => {
-    useQuery(['Tools', 'GET', 'Brands'], () => getProductsBrands(), {
-        onSuccess: (data) => {
+    useQuery({
+        queryKey: ['Tools', 'GET', 'Brands'],
+        queryFn: () => getProductsBrands().then((res) => {
             setFilters({
                 ...filters,
                 queChoisir: {
                     ...filters.queChoisir,
-                    default: data.brands
+                    default: res.brands
                 }
             })
-        }
+        })
     })
     const [showFilters, setShowFilters] = useState(false)
     const [filters, setFilters] = useState({

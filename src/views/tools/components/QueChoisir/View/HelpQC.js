@@ -1,11 +1,14 @@
 import React, { useEffect } from "react";
 import { SafeAreaView, View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../../../../services/S3Service";
 
 export const HelpSection = ({ helpWidth, helpIsActive, onPress, response }) => {
-    const currentImg = useQuery(['Qu Choisir', 'response', 'image help', response.id], () => getS3Image(response.help_img))
+    const currentImg = useQuery({
+        queryKey: ['Qu Choisir', 'response', 'image help', response.id],
+        queryFn: () => getS3Image(response.help_img)
+    })
 
     return (
         <View style={[styles.helpView, { width: helpWidth, right: helpIsActive ? 0 : helpWidth * -1 }]}>
@@ -17,12 +20,12 @@ export const HelpSection = ({ helpWidth, helpIsActive, onPress, response }) => {
                         :
                         <Image
                             source={{ uri: currentImg.data }}
-                            style={[styles.image, {flexGrow: response.help_text ? 0.5 : 1}]}
+                            style={[styles.image, { flexGrow: response.help_text ? 0.5 : 1 }]}
                         />
                 }
                 {
                     response.help_text &&
-                    <ScrollView contentContainerStyle={styles.scrollContent} style={{flex: 1}}>
+                    <ScrollView contentContainerStyle={styles.scrollContent} style={{ flex: 1 }}>
                         <Text> {response.help_text} </Text>
                     </ScrollView>
                 }
@@ -37,7 +40,7 @@ export const HelpSection = ({ helpWidth, helpIsActive, onPress, response }) => {
                             width: '100%', height: '100%',
                             alignItems: 'center',
                             justifyContent: 'center'
-                    }}
+                        }}
                         onPress={() => {
                             onPress();
                         }}

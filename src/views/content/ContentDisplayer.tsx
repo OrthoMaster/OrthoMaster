@@ -11,7 +11,7 @@ import {
   SafeAreaView
 } from 'react-native';
 
-import { useQuery, useMutation } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { fetchLessonContent } from "../../services/ContentService";
 
@@ -50,17 +50,20 @@ export function ContentDisplayer({ route, navigation }) {
     });
     dispatch(runContent(content, nbQuiz))
   };
-  const xmlContent = useQuery(['Content', 'GET', 'lessonContent', content.s3_path], () => fetchLessonContent(content.s3_path + "/" + content.title + "/content.xml"), {
-    onSuccess: (xml) => {
-      initContent(xml)
-    }
+  const xmlContent = useQuery({
+    queryKey: ['Content', 'GET', 'lessonContent', content.s3_path],
+    queryFn: () => fetchLessonContent(content.s3_path + "/" + content.title + "/content.xml")
   });
-
 
   const saveLogs = async (data: SessionEventContent) => {
     saveEvent("content_view", data)
   };
 
+  useEffect(() => {
+    if (xmlContent.isSuccess && xmlContent.data)
+      initContent(xmlContent.data)
+  }, [xmlContent.isSuccess, xmlContent.data])
+  
 
   useEffect(() => {
     if (lessonIsFinish) {
@@ -81,7 +84,8 @@ export function ContentDisplayer({ route, navigation }) {
 
   useEffect(() => {
     launchDate = getCurrentDate()
-
+    console.log("formation display", formation);
+    
     const appStateListener = AppState.addEventListener("change", nextAppState => {
       if (
         appState.current.match(/inactive|background/) &&

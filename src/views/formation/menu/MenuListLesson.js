@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 
 
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchSearchList } from '../../../services/SearchService';
 import { getS3Image } from '../../../services/S3Service';
 
@@ -47,16 +47,16 @@ const MenuButton = ({ item, navigation }) => {
     >
         <View style={styles.imgContainer}>
             {imgUri ?
-            <Image
-                style={{
-                    width: 60,
-                    height: 60,
-                    resizeMode: 'contain'
-                }}
-                source={{ uri: imgUri }}
-            />
-        : <ActivityIndicator />
-        }
+                <Image
+                    style={{
+                        width: 60,
+                        height: 60,
+                        resizeMode: 'contain'
+                    }}
+                    source={{ uri: imgUri }}
+                />
+                : <ActivityIndicator />
+            }
         </View>
         <View style={styles.buttonInfos}>
             <Text style={styles.buttonTitle}>{item.content.title}</Text>
@@ -72,7 +72,10 @@ const MenuButton = ({ item, navigation }) => {
 
 
 export const MenuListLesson = ({ navigation, category, filters }) => {
-    const lessons = useQuery(['Formation', 'GET', 'searchLessonInMenu'], () => fetchSearchList({ contentType: 'lesson', filters: filters, body: category.tags }))
+    const lessons = useQuery({
+        queryKey: ['Formation', 'GET', 'searchLessonInMenu'],
+        queryFn: () => fetchSearchList({ contentType: 'lesson', filters: filters, body: category.tags })
+    })
 
     useEffect(() => {
         lessons.refetch()
@@ -87,7 +90,7 @@ export const MenuListLesson = ({ navigation, category, filters }) => {
             data={lessons.data}
             renderItem={(item) => <MenuButton item={item.item} navigation={navigation} />}
             keyExtractor={(item, index) => index}
-            ListFooterComponent={<View style={{height: 200}}/>}
+            ListFooterComponent={<View style={{ height: 200 }} />}
             showsVerticalScrollIndicator={false}
         />
 

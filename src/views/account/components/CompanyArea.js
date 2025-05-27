@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
 } from 'react-native'
 
-import { useQuery } from "react-query"
+import { useQuery } from "@tanstack/react-query"
 
 
 import { getUserAttachedOffices } from '../../../services/OfficeService'
@@ -37,7 +37,7 @@ const OfficeButton = ({ office, navigation }) => {
 }
 
 export const CompanyArea = ({ refreshing, navigation }) => {
-    const { data: offices, isLoading, isFetched, refetch } = useQuery(['user-offices'], () => getUserAttachedOffices({}))
+    const { data: offices, isLoading, isFetched, refetch } = useQuery({queryKey: ['user-offices'], queryFn: () => getUserAttachedOffices({})})
     useEffect(() => {
         if (refreshing) {
             refetch()

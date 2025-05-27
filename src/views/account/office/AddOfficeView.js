@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import AddOfficeForm from "../../../component/forms/AddOfficeForm";
 import Toast from 'react-native-toast-message';
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import AddMemberOfficeForm from "../../../component/forms/AddMemberOfficeForm";
 
 export default AddOfficeView = ({ route, navigation }) => {

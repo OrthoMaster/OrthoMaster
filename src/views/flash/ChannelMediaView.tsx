@@ -11,7 +11,7 @@ import {
     TouchableOpacity
 } from "react-native";
 import ReadMore from 'react-native-read-more-text';
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchMedias } from "../../services/FlashMediasService";
 
 const { width: screenWidth } = Dimensions.get('screen')
@@ -25,7 +25,7 @@ import SimpleCarousel from "../../component/carousel/SimpleContentCarousel";
 const ReadMoreButton = ({ value, onPress }) => {
     return (
         <TouchableOpacity style={{
-            alignSelf:'flex-end'
+            alignSelf: 'flex-end'
         }} onPress={onPress}>
             <Text style={{ color: '#ffaf31', fontWeight: 'bold', fontSize: 12 }}>{value}</Text>
         </TouchableOpacity>
@@ -43,8 +43,13 @@ export type ChannelMediaViewParams = {
 }
 const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
     const channelParams: ChannelMediaViewParams = route.params
-    const allMediaFromChannel = useQuery(["medias-channel", channelParams.name], () => fetchMedias({ event: channelParams.targetId }))
-    const pastEvents = useQuery(["past-events", channelParams.targetId], () => fetchPastEvents({ eventID: channelParams.targetId }), {
+    const allMediaFromChannel = useQuery({
+        queryKey: ["medias-channel", channelParams.name],
+        queryFn: () => fetchMedias({ event: channelParams.targetId })
+    })
+    const pastEvents = useQuery({
+        queryKey: ["past-events", channelParams.targetId],
+        queryFn: () => fetchPastEvents({ eventID: channelParams.targetId }),
         enabled: channelParams.channelType === "event"
     })
     const [eventCarousels, setEventCarousels] = useState<React.ReactNode[]>([])
@@ -124,7 +129,7 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
                     {
                         channelParams.description &&
                         <ReadMore
-                            
+
                             numberOfLines={4}
                             renderTruncatedFooter={(truncated) => {
                                 return <ReadMoreButton value="Lire la suite" onPress={truncated} />
@@ -152,7 +157,7 @@ const ChannelMediaView: React.FC<any> = ({ navigation, route }) => {
                             onPress={() => {
                                 Linking.openURL(channelParams.website)
                             }}>
-                            <Text style={{ color: '#fff'}}>🌐 Site internet</Text>
+                            <Text style={{ color: '#fff' }}>🌐 Site internet</Text>
                         </Text>
                     }
                 </View>

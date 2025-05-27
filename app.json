@@ -60,14 +60,10 @@
     "extra": {
       "eas": {
         "projectId": "276593fa-b663-4367-8b00-3d86821c874a"
-      },
-      "bugsnag": {
-        "apiKey": "cca81158d4e6406408911e2fa54edadc"
       }
     },
     "plugins": [
       "expo-secure-store",
-      "@bugsnag/plugin-expo-eas-sourcemaps",
       "expo-video"
     ],
     "runtimeVersion": {

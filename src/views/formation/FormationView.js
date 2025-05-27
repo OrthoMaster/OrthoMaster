@@ -10,7 +10,7 @@ import {
     FlatList
 } from 'react-native'
 import Feather from '@expo/vector-icons/Feather';
-import { useQuery, useMutation, useQueryClient } from "react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRegisteredFormation, getFormations, registerFormation } from '../../services/FormationService'
 import AppModal from '../../component/AppModal';
 import { useNavigation } from '@react-navigation/native';
@@ -28,12 +28,16 @@ const RunningFormationCard = ({ params, thumbnail_url }) => {
 
     const navigation = useNavigation()
     const queryClient = useQueryClient()
-    const img = useQuery("formation-thumbnail-" + thumbnail_url, () => getS3Image(thumbnail_url))
-    const register2Formation = useMutation(registerFormation, {
+    const img = useQuery({
+        queryKey: ["formation-thumbnail-" + thumbnail_url],
+        queryFn: () => getS3Image(thumbnail_url)
+    })
+    const register2Formation = useMutation({
+        mutationFn: registerFormation,
         onSuccess: (data) => {
             queryClient.invalidateQueries(["user-formations"])
             queryClient.invalidateQueries(["formations"])
-            
+
             navigation.push("formation-modules", {
                 userFormationId: data.insertId,
                 demoMode: false,
@@ -116,7 +120,8 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
 
     const navigation = useNavigation()
     const queryClient = useQueryClient()
-    const startFormation = useMutation(registerFormation, {
+    const startFormation = useMutation({
+        mutationFn: registerFormation,
         onSuccess: data => {
             queryClient.invalidateQueries({ queryKey: ["formations"] })
 
@@ -127,7 +132,7 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
             })
         }
     })
-    const img = useQuery("formation-thumbnail-" + thumbnail_url, () => getS3Image(thumbnail_url))
+    const img = useQuery({queryKey: ["formation-thumbnail-" + thumbnail_url], queryFn: () => getS3Image(thumbnail_url)})
 
 
 
@@ -247,10 +252,10 @@ export const FormationView = ({ navigation, route }) => {
     const { data: user } = useGetUser()
     const {
         data: formations
-    } = useQuery(["formations"], () => getFormations())
+    } = useQuery({ queryKey: ["formations"], queryFn: () => getFormations() })
     const {
         data: userFormations
-    } = useQuery(["formations", "user-formation"], () => getUserRegisteredFormation({}))
+    } = useQuery({ queryKey: ["formations", "user-formation"], queryFn: () => getUserRegisteredFormation({}) })
 
     const [isLoading, setIsLoading] = useState(true)
     const [unlockFormationModal, setUnlockFormationModal] = useState({ isActivate: false, formation: null })

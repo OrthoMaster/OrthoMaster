@@ -8,7 +8,7 @@ import {
     SafeAreaView,
     Image, Dimensions,
 } from "react-native"
-import { useQuery } from "react-query"
+import { useQuery } from "@tanstack/react-query"
 import { getAPIqueChoisirRedFlags, getAPIqueChoisirStep } from "../../../../../services/tools/QueChoisirService";
 import BottomArrow from '../../../../../../assets/queChoisir/bottom_arrow.svg'
 import UpperArrow from '../../../../../../assets/queChoisir/upper_arrow.svg'
@@ -40,27 +40,30 @@ export const QueChoisirView = ({ navigation, route }) => {
 
     const { width } = Dimensions.get('window');
     const helpWidth = width * 0.8;
-    useQuery(['Tools', 'GET', 'queChoisirStep', category], () => getAPIqueChoisirStep(category), {
-        onSuccess: (data) => {
+    useQuery({
+        queryKey: ['Tools', 'GET', 'queChoisirStep', category],
+        queryFn: () => getAPIqueChoisirStep(category).then((data) => {
             setGlobalSteps(data);
             setToolIsLoaded(true);
-        }
+        })
     })
-    useQuery(['Tools', 'GET', 'currentImage', category], () => getAPIqueChoisirRedFlags(category), {
-        onSuccess: (data) => {
+    useQuery({
+        queryKey: ['Tools', 'GET', 'currentImage', category],
+        queryFn: () => getAPIqueChoisirRedFlags(category).then((data) => {
             setContraindicationArray(data);
-        }
+        })
     })
-    const products = useQuery(['Tools', 'GET', 'getProducts', category], () => getAPIgetProducts(category), {
-        onSuccess: (data) => {
+    const products = useQuery({
+        queryKey: ['Tools', 'GET', 'getProducts', category],
+        queryFn: () => getAPIgetProducts(category).then((data) => {
             setFiltredProducts(data)
-        },
-    })
-    const getCurrentImage = useQuery(['Tools', 'GET', 'currentImage', category, questionIndex], () => getS3Image(globalSteps[questionIndex].question.image_path), {
-        enabled: toolIsLoaded,
-        onSuccess: (data) => {
+        })})
+    const getCurrentImage = useQuery({
+        queryKey: ['Tools', 'GET', 'currentImage', category, questionIndex],
+        queryFn: () => getS3Image(globalSteps[questionIndex].question.image_path).then((data) => {
             setStepImage(data)
-        }
+        }),
+        enabled: toolIsLoaded,
     })
 
     const filterProduct = () => {

@@ -6,11 +6,14 @@ import {
     Dimensions
 } from 'react-native'
 
-import { useQuery } from "react-query"
+import { useQuery } from "@tanstack/react-query"
 import { getUserProgression } from '../../../services/ProgressionService'
 
 export const AccountProgress = ({ userId, refreshing }) => {
-    const progress = useQuery(['Account', 'GET', 'userProgress'], () => getUserProgression())
+    const progress = useQuery({
+        queryKey: ['Account', 'GET', 'userProgress'],
+        queryFn: () => getUserProgression()
+    })
     useEffect(() => {
         if (refreshing) {
             progress.refetch()

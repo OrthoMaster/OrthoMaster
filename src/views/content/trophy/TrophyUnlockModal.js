@@ -11,12 +11,12 @@ import {
 
 import { LinearGradient } from "expo-linear-gradient";
 
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { postNewUserTrophy } from "../../../services/TrophyService";
 
 export const TrophyUnlockModal = ({ trophy, imgUrl }) => {
     const [modalVisible, setModalVisible] = useState(true)
-    const postNewTrophy = useMutation(postNewUserTrophy)
+    const postNewTrophy = useMutation({mutationFn: postNewUserTrophy})
 
     useEffect(() => {
         postNewTrophy.mutate(trophy.trophy.id_trophy)

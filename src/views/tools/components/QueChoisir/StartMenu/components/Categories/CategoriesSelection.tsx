@@ -1,6 +1,6 @@
 import React from "react";
 import { FlatList, Text, TouchableOpacity, View, StyleSheet, Image } from "react-native";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getQCcategories } from "../../../../../../../services/tools/QueChoisirService";
 import { getCdnContentAccessUrl } from "../../../../../../../services/ContentService";
 
@@ -11,7 +11,9 @@ type IconProps = {
     onPress: (category: string) => void;
 }
 const Icon: React.FC<IconProps> = ({ logo, name, onPress }) => {
-    const logoUrl = useQuery(['logo', name], () => getCdnContentAccessUrl(logo), {
+    const logoUrl = useQuery({
+        queryKey: ['logo', name],
+        queryFn: () => getCdnContentAccessUrl(logo),
         enabled: !!logo
     })
 
@@ -46,7 +48,7 @@ type CategoriesSelectionProps = {
     onSelect?: (category: string) => void;
 }
 const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect }) => {
-    const qcCategories = useQuery(['Tools', 'GET', 'QC categories'], () => getQCcategories())
+    const qcCategories = useQuery({queryKey: ['Tools', 'GET', 'QC categories'], queryFn: () => getQCcategories()})
 
 
 

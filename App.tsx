@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, useNavigation, useNavigationContainerRef } from '@react-navigation/native';
-import { useQuery, useQueryClient } from 'react-query';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Linking from "expo-linking"
 const prefix = Linking.createURL('/');
 
@@ -29,7 +29,7 @@ export default function App({ navigation }) {
   const appState = useRef(AppState.currentState);
 
   const navigationRef = useNavigationContainerRef();
-  const routeNameRef = React.useRef<string | undefined>();
+  const routeNameRef = React.useRef<string | undefined>(null);
   const [datePageOpened, setDatePageOpened] = useState(getCurrentDate())
   // let datePageOpened = getCurrentDate()
 
@@ -81,6 +81,8 @@ export default function App({ navigation }) {
   useEffect(() => {
     if (!userQuery.isFetching && !userQuery.isLoading && userQuery.isFetched)
       setIsLoading(false)
+    if (user)
+      AsyncStorage.setItem('user', JSON.stringify(user))
   }, [user, userQuery])
 
   useEffect(() => {

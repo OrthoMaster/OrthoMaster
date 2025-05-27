@@ -17,7 +17,7 @@ import {
   TextInputChangeEventData
 } from 'react-native';
 import Modal from 'react-native-modal';
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
@@ -39,8 +39,10 @@ type EventCardProp = {
   event: IEvent, onSelect: (event: IEvent) => any
 }
 const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
-  
-  const logo_url = useQuery(['event-logo', event.id], () => getCdnContentAccessUrl(event.logo_url), {
+
+  const logo_url = useQuery({
+    queryKey: ['event-logo', event.id],
+    queryFn: () => getCdnContentAccessUrl(event.logo_url),
     enabled: !!event.logo_url
   })
   return <TouchableOpacity style={{
@@ -83,34 +85,15 @@ const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
 
 export const FlashMediaView = ({ navigation, route }) => {
 
-  const lastRelease = useQuery(["media-last-release"], () => fetchMedias({ limit: LIMIT_LAST_RELEASE }))
-  const categories = useQuery(["medias-categories-content"], () => fetchMedias({ group_by: "category" }), {
-    onSuccess: () => {
-      //verifyRoute()
-    }
+  const lastRelease = useQuery({
+    queryKey: ["media-last-release"],
+    queryFn: () => fetchMedias({ limit: LIMIT_LAST_RELEASE })
   })
-  const { isError: eventsError, isLoading: eventsLoading } = useQuery(["events"], () => fetchEvents(), {
-    onSuccess: data => {
-      let evtsCards: CarouselItem[] = [];
-      data.forEach(evt => {
-        evtsCards.push({
-          key: evt.name,
-          content: <EventCard event={evt} onSelect={(event) => {
-            const params: ChannelMediaViewParams = {
-              channelType: 'event',
-              name: event.name,
-              logoUrl: event.logo_url,
-              description: event.description,
-              targetId: event.id,
-              website: event.website
-            }
-            navigation.navigate("flash-media-channel", params)
-          }} />
-        })
-      });
-      setEventsCarouselItems(evtsCards)
-    }
+  const categories = useQuery({
+    queryKey: ["medias-categories-content"],
+    queryFn: () => fetchMedias({ group_by: "category" })
   })
+  const { isError: eventsError, isLoading: eventsLoading } = useQuery({queryKey: ["events"], queryFn: () => fetchEvents()})
 
 
   const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([])
@@ -123,6 +106,27 @@ export const FlashMediaView = ({ navigation, route }) => {
     navigation.push('flash-media-preview', {
       media: card
     } as PreviewMediaParams)
+  }
+
+  const createEventCard = (data) => {
+    let evtsCards: CarouselItem[] = [];
+    data.forEach(evt => {
+      evtsCards.push({
+        key: evt.name,
+        content: <EventCard event={evt} onSelect={(event) => {
+          const params: ChannelMediaViewParams = {
+            channelType: 'event',
+            name: event.name,
+            logoUrl: event.logo_url,
+            description: event.description,
+            targetId: event.id,
+            website: event.website
+          }
+          navigation.navigate("flash-media-channel", params)
+        }} />
+      })
+    });
+    setEventsCarouselItems(evtsCards)
   }
 
   const handleOpenMediaLink = async (id: number) => {
@@ -160,8 +164,10 @@ export const FlashMediaView = ({ navigation, route }) => {
   }
 
   useEffect(() => {
-    if (categories.data)
+    if (categories.data) {
+      createEventCard(categories.data)
       verifyRoute()
+    }
   }, [route.params, categories.data])
 
   return (
@@ -203,7 +209,7 @@ export const FlashMediaView = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.sectionContainer, {paddingTop: 20}]}>
+        <View style={[styles.sectionContainer, { paddingTop: 20 }]}>
           <Text style={[styles.categoryTitle]}>Congrès</Text>
           <Text style={[styles.categorySubTitle, { marginBottom: 5 }]}>Les sociétés savantes</Text>
           {

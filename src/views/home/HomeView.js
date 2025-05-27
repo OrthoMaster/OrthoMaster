@@ -11,7 +11,7 @@ import {
   SafeAreaView
 } from 'react-native';
 
-import { useQuery, useInfiniteQuery } from "react-query"
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { fetchMedias } from '../../services/FlashMediasService';
 import {
   fetchFeedCategories,
@@ -31,13 +31,15 @@ export const HomeView = ({ navigation, route }) => {
 
   const { data: user, ...userQuery } = useGetUser()
   const [refreshing, setRefreshing] = useState(false);
-  const flashPreview = useQuery(["flash-preview"], () => fetchMedias({
-    limit: 10
-  }));
+  const flashPreview = useQuery({
+    queryKey: ["flash-preview"], queryFn: () => fetchMedias({
+      limit: 10
+    })
+  });
 
   const [selectedFeedCategoryId, setSelectedFeedCategoryId] = useState(1)
   const [scrollReachedEnd, setScrollReachedEnd] = useState(false)
-  const feedCategories = useQuery(["GET", "categories", "feed"], () => fetchFeedCategories())
+  const feedCategories = useQuery({ queryKey: ["GET", "categories", "feed"], queryFn: () => fetchFeedCategories() })
   const [allFeed, setAllFeed] = useState([])
   const {
     data: articles,
@@ -57,7 +59,7 @@ export const HomeView = ({ navigation, route }) => {
     }
   })
 
-  const savedArticles = useQuery(["GET", "liked", "feed"], () => fetchLikedArticles())
+  const savedArticles = useQuery({queryKey: ["GET", "liked", "feed"], queryFn: () => fetchLikedArticles()})
   // const copilote = useCopilot()
 
   const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }) => {

@@ -12,20 +12,22 @@ import {
 } from 'react-native';
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getUserNextLesson } from '../../services/ContentService';
 import { useTheme } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
-import { getCurrentUser } from '../../services/UserService';
+import { useGetUser } from '../../hooks/useGetUser.hook';
 
 
 export const HomeHeader = ({ navigation, userName }) => {
-    const nextLesson = useQuery(['Home', 'GET', 'userNextLesson'], ()=>getUserNextLesson(), {
+    const nextLesson = useQuery({
+        queryKey: ['Home', 'GET', 'userNextLesson'],
+        queryFn: ()=>getUserNextLesson(),
         refetchOnWindowFocus: false,
         enabled: false
     })
     const { colors, isLabo, logos } = useTheme()
-    const user = useQuery("current-user", ()=>getCurrentUser())
+    const user = useGetUser()
 
     useEffect(() => {
         if (!nextLesson.isLoading && !nextLesson.error && nextLesson.data) {

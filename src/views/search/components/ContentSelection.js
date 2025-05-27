@@ -14,7 +14,7 @@ import {
 
 import { getS3Image } from '../../../services/S3Service'
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 const { width: screenWidth } = Dimensions.get('screen')
@@ -22,8 +22,10 @@ const { width: screenWidth } = Dimensions.get('screen')
 const SearchCardDefault = ({ card, onSelect, studentMode }) => {
     const isDemo = !card.certifying && !card.is_paid && studentMode == false
 
-    const thumbnail = useQuery(['ContentSelection', 'GET', 'contentThumbnail', card.id_content, card.title],
-        () => getS3Image(createS3Path(card)))
+    const thumbnail = useQuery({
+        queryKey: ['ContentSelection', 'GET', 'contentThumbnail', card.id_content, card.title],
+        queryFn: () => getS3Image(createS3Path(card))
+    })
 
 
     const createS3Path = (cardInfo) => {
@@ -180,8 +182,10 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
 
 
 const QaCard = ({ card, onSelect, color }) => {
-    const thumbnail = useQuery(['Qa', 'GET', 'qaThumbnail', card.id_content, card.title],
-        () => getS3Image(`${card.s3_path}/${card.title}/logo.png`))
+    const thumbnail = useQuery({
+        queryKey: ['Qa', 'GET', 'qaThumbnail', card.id_content, card.title],
+        queryFn: () => getS3Image(`${card.s3_path}/${card.title}/logo.png`)
+    })
 
     return (
         <TouchableOpacity style={stylesQa.card}

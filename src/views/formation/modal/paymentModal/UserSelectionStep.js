@@ -7,12 +7,15 @@ import {
     TouchableOpacity,
     ScrollView
 } from "react-native";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getUsersByOfficeId } from "../../../../services/UserService";
 import PriceRecap from "../../components/PriceRecap";
 
 export default UserSelectionStep = ({ formation, onSubmit, billingAddress, onAddMember2Espace }) => {
-    const users = useQuery("office-users", () => getUsersByOfficeId(billingAddress.id_buyer))
+    const users = useQuery({
+        queryKey: ["office-users"],
+        queryFn: () => getUsersByOfficeId(billingAddress.id_buyer)
+    })
     const [selectedCollaborators, setSelectedCollaborators] = useState([])
 
 
@@ -29,7 +32,7 @@ export default UserSelectionStep = ({ formation, onSubmit, billingAddress, onAdd
         }}>
             Sélectionnez les utilisateurs qui bénéficieront de la formation
         </Text>
-        <View style={{flex: 1}}>
+        <View style={{ flex: 1 }}>
             <UserSelector usersArray={users.data} onSelect={(users) => {
                 setSelectedCollaborators(users)
 

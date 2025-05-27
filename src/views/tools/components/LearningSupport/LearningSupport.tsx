@@ -3,7 +3,7 @@ import { FlatList, Image, Linking, Text, TouchableOpacity, View, StyleSheet, Saf
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { IContent } from "../../../../utils/interfaces";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchSearchList } from "../../../../services/SearchService";
 import { getS3Image } from "../../../../services/S3Service";
 import { ScrollView } from "react-native-gesture-handler";
@@ -30,7 +30,10 @@ type LearningSupportIconsProps = {
     onPress: (content: IContent) => any;
 }
 const LearningSupportIcons: React.FC<LearningSupportIconsProps> = ({ content, onPress }) => {
-    const imageUrl = useQuery(['contentThumbnail', content.id_content, content.title], () => getS3Image(`${content.s3_path}/${content.title}/logo.png`))
+    const imageUrl = useQuery({
+        queryKey: ['contentThumbnail', content.id_content, content.title],
+        queryFn: () => getS3Image(`${content.s3_path}/${content.title}/logo.png`)
+    })
     return (<TouchableOpacity
         key={content.id_content}
         style={{
@@ -60,10 +63,12 @@ type LearningSupportMenuProps = {
     onStart: (content: IContent) => any;
 }
 export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClose, onStart }) => {
-    const toolContents = useQuery(['Tools', 'GET', 'Contents'], () => fetchSearchList({
+    const toolContents = useQuery({
+        queryKey: ['Tools', 'GET', 'Contents'],
+        queryFn: () => fetchSearchList({
         contentType: ['tool'],
         filters: null
-    }))
+    })})
 
 
     return (

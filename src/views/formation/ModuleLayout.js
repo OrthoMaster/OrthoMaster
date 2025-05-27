@@ -14,7 +14,7 @@ import { LessonHeader } from './LessonHeader'
 import ModuleButton from './components/ModuleButton';
 import { MainQuizUnlockModal } from './modal/MainQuizUnlockModal';
 
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchModules } from '../../services/ModuleService';
 import { getUserRegisteredFormation } from '../../services/FormationService';
 
@@ -111,15 +111,22 @@ export const ModuleLayout = ({ navigation, route }) => {
     const {
         data: formationData,
         refetch: formationRefetch
-    } = useQuery(["user-formations", userFormationId], () => getUserRegisteredFormation({ idUserFormation: userFormationId }))
+    } = useQuery({
+        queryKey: ["user-formations", userFormationId],
+        queryFn: () => getUserRegisteredFormation({ idUserFormation: userFormationId })
+    })
     const formation = Array.isArray(formationData) ? formationData[0] : null
     const {
         data: modules,
         isLoading: modulesLoading,
         refetch: modulesRefetch
-    } = useQuery(['formation-modules', formation?.id_formation], () => fetchModules({
-        idFormation: formation?.id_formation
-    }), { enabled: !!formation })
+    } = useQuery({
+        queryKey: ['formation-modules', formation?.id_formation],
+        queryFn: () => fetchModules({
+            idFormation: formation?.id_formation
+        }),
+        enabled: !!formation
+    })
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);

@@ -8,12 +8,12 @@ import {
     Image
 } from 'react-native'
 import { Avatar } from './Avatar'
-import { useQuery } from "react-query"
+import { useQuery } from "@tanstack/react-query"
 import { getUserTrophy } from '../../../../services/TrophyService'
 import { TrophyCard } from './TrophieCard'
 
 export const Trophies = ({refreshing}) => {
-    const userTrophy = useQuery(['Account', 'GET', 'userTrophy'], ()=> getUserTrophy(null))
+    const userTrophy = useQuery({queryKey: ['Account', 'GET', 'userTrophy'], queryFn: ()=> getUserTrophy(null)})
     
 
     useEffect(() => {

@@ -7,7 +7,7 @@ import {
     ActivityIndicator,
     TextInput,
 } from "react-native";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { addMemberOffice } from "../../services/OfficeService";
@@ -16,7 +16,8 @@ import { orthomasterShare } from "../../futils";
 export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEnd }) => {
     const [userAdded, setUserAdded] = useState([])
     const [email, setEmail] = useState("")
-    const { status: formStatus, data: formData, isLoading, mutate: mutateForm } = useMutation(addMemberOffice, {
+    const { status: formStatus, data: formData, isLoading, mutate: mutateForm } = useMutation({
+        mutationFn: addMemberOffice,
         onError: error => {
             onError(error.response.data.message)
         }
