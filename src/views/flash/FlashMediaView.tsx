@@ -93,7 +93,31 @@ export const FlashMediaView = ({ navigation, route }) => {
     queryKey: ["medias-categories-content"],
     queryFn: () => fetchMedias({ group_by: "category" })
   })
-  const { isError: eventsError, isLoading: eventsLoading } = useQuery({queryKey: ["events"], queryFn: () => fetchEvents()})
+  const { isError: eventsError, isLoading: eventsLoading } = useQuery({
+    queryKey: ["events"],
+    queryFn: () => fetchEvents().then((data) => {
+      let evtsCards: CarouselItem[] = [];
+
+      data.forEach(evt => {
+        evtsCards.push({
+          key: evt.name,
+          content: <EventCard event={evt} onSelect={(event) => {
+            const params: ChannelMediaViewParams = {
+              channelType: 'event',
+              name: event.name,
+              logoUrl: event.logo_url,
+              description: event.description,
+              targetId: event.id,
+              website: event.website
+            }
+            navigation.navigate("flash-media-channel", params)
+          }} />
+        })
+      });
+      setEventsCarouselItems(evtsCards)
+      return data;
+    })
+  })
 
 
   const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([])
@@ -108,26 +132,6 @@ export const FlashMediaView = ({ navigation, route }) => {
     } as PreviewMediaParams)
   }
 
-  const createEventCard = (data) => {
-    let evtsCards: CarouselItem[] = [];
-    data.forEach(evt => {
-      evtsCards.push({
-        key: evt.name,
-        content: <EventCard event={evt} onSelect={(event) => {
-          const params: ChannelMediaViewParams = {
-            channelType: 'event',
-            name: event.name,
-            logoUrl: event.logo_url,
-            description: event.description,
-            targetId: event.id,
-            website: event.website
-          }
-          navigation.navigate("flash-media-channel", params)
-        }} />
-      })
-    });
-    setEventsCarouselItems(evtsCards)
-  }
 
   const handleOpenMediaLink = async (id: number) => {
     return new Promise(async (resolve, reject) => {
@@ -165,7 +169,6 @@ export const FlashMediaView = ({ navigation, route }) => {
 
   useEffect(() => {
     if (categories.data) {
-      createEventCard(categories.data)
       verifyRoute()
     }
   }, [route.params, categories.data])

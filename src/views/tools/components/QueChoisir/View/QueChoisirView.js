@@ -45,23 +45,27 @@ export const QueChoisirView = ({ navigation, route }) => {
         queryFn: () => getAPIqueChoisirStep(category).then((data) => {
             setGlobalSteps(data);
             setToolIsLoaded(true);
+            return data;
         })
     })
     useQuery({
         queryKey: ['Tools', 'GET', 'currentImage', category],
         queryFn: () => getAPIqueChoisirRedFlags(category).then((data) => {
             setContraindicationArray(data);
+            return data;
         })
     })
     const products = useQuery({
         queryKey: ['Tools', 'GET', 'getProducts', category],
         queryFn: () => getAPIgetProducts(category).then((data) => {
             setFiltredProducts(data)
+            return data;
         })})
     const getCurrentImage = useQuery({
         queryKey: ['Tools', 'GET', 'currentImage', category, questionIndex],
         queryFn: () => getS3Image(globalSteps[questionIndex].question.image_path).then((data) => {
             setStepImage(data)
+            return data;
         }),
         enabled: toolIsLoaded,
     })

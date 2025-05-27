@@ -14,9 +14,6 @@ import { evaluateExpression } from "../tools";
 import { saveQCEntries } from "../../../../../services/tools/QueChoisirService";
 import { FinalHeader } from "./FinalHeader";
 import { ProductCard } from "./FinalProductCard";
-import AppModal from "../../../../../component/AppModal";
-import { PrimaryButton } from "../../../../../component/PrimaryButton";
-import { useOrthoMasterRoles } from "../../../../../hooks/useOrthoMasterRoles";
 
 const DisplaySubHeader = ({ title }) => {
     return (<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 20 }}>
@@ -51,10 +48,6 @@ export const FinalQC = ({ route, navigation }) => {
     const [productsOther, setProductsOther] = useState([]);
     const [nbProduct, setNbProduct] = useState(0)
     const [isLoading, setIsLoading] = useState(true)
-    const [orthoRefProductSelected, setOrthoRefProductSelected] = useState(null)
-    const [savedAlready, setSavedAlready] = useState(false)
-    const [showModal, setShowModal] = useState(false)
-    const roles = useOrthoMasterRoles()
 
 
     const findAllConditionsInRef = async (ref, formattedHistory) => {
@@ -212,9 +205,6 @@ export const FinalQC = ({ route, navigation }) => {
                                                 return <ProductCard
                                                     product={value}
                                                     key={index}
-                                                    onPress={(product) => {
-                                                        handleProductSelection(product)
-                                                    }}
                                                 />
                                             })
                                         }
@@ -242,9 +232,6 @@ export const FinalQC = ({ route, navigation }) => {
                                                 return <ProductCard
                                                     product={value}
                                                     key={index}
-                                                    onPress={(product) => {
-                                                        handleProductSelection(product)
-                                                    }}
                                                 />
                                             })
                                         }

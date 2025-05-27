@@ -31,13 +31,6 @@ export const QueChoisirButton: React.FC<{ onPress: () => any }> = ({ onPress }) 
         }}
         onPress={onPress}
     >
-        {/* <Image
-            source={require('../../../../../../assets/tools/que-choisir.png')}
-            style={{
-                width: 40, height: 40, marginRight: 10,
-                resizeMode: 'contain',
-            }}
-        /> */}
         <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Que Choisir ?</Text>
     </TouchableOpacity>)
 }
@@ -58,6 +51,7 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                     default: res.brands
                 }
             })
+            return res
         })
     })
     const [showFilters, setShowFilters] = useState(false)
@@ -90,14 +84,7 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
         })
     }, [])
 
-    return <SafeAreaView>
-        <LinearGradient
-            colors={['#33C0B7', '#33C0B7']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.containerGradient}
-
-        >
+    return <SafeAreaView style={styles.container}>
 
             <View style={{ width: '100%', height: '95%', alignItems: 'center' }}>
                 <TouchableOpacity
@@ -145,14 +132,13 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
 
                 {
                     showFilters &&
-                    <ScrollView style={{
+                    <View style={{
                         position: 'absolute',
                         height: '100%', width: '100%',
                         zIndex: 2,
+                        alignItems: 'center',
                     }}
-                        contentContainerStyle={{
-                            alignItems: 'center',
-                        }}
+                       
                     >
                         <FiltersQC onChange={(filters) => {
                             AsyncStorage.setItem("qcFilters", filters.toString())
@@ -160,7 +146,7 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                         }}
                             filterConfig={filters.queChoisir}
                         />
-                    </ScrollView>
+                    </View>
                 }
             </View>
 
@@ -175,16 +161,16 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                 onPress={onClose}>
                 <Ionicons name="close-circle" size={34} color="#fff" />
             </TouchableOpacity>
-        </LinearGradient>
     </SafeAreaView>
 }
 
 const styles = StyleSheet.create({
 
-    containerGradient: {
-        width: '100%', height: '100%',
+    container: {
+        width: '100%', height: '95%',
         alignItems: 'center',
-        borderRadius: 15
+        borderRadius: 15,
+        backgroundColor: "#33C0B7",
     },
     toolTitle: {
         color: '#ffffff',

@@ -42,6 +42,8 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
     }
 
     const validForm = () => {
+        console.log("valid");
+        
         if (formDatas.name?.trim().length > 0 &&
             formDatas.address_way?.trim().length > 0 &&
             formDatas.address_postal_code?.trim().length > 0 &&
@@ -134,12 +136,12 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
             marginTop: 20,
             borderRadius: 5
         }} onPress={() => {
-            if (sendForm.isLoading == false) {
+            if (sendForm.isPending == false) {
                 validForm()
             }
         }}>
             {
-                sendForm.isLoading ?
+                sendForm.isPending ?
                     <ActivityIndicator />
                     : <Text>Valider</Text>
             }
