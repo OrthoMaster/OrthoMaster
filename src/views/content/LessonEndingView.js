@@ -204,16 +204,7 @@ export const LessonEndingView = ({ navigation, route }) => {
 
 
   useEffect(() => {
-
     var lessonStatus = false
-
-    console.log("stateContent", stateContent);
-    console.log("formation", formation);
-    console.log("demoMode", demoMode);
-
-
-
-
 
     if (stateContent.quizPassed.length === stateContent.nbQuiz) {
       lessonStatus = true
@@ -241,12 +232,6 @@ export const LessonEndingView = ({ navigation, route }) => {
       })
     }
   }, [])
-
-
-  useEffect(() => {
-    console.log(stateContent);
-  }, [stateContent])
-
 
 
   return <SafeAreaView
