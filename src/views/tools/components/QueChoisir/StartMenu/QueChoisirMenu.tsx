@@ -6,7 +6,8 @@ import {
     TouchableOpacity,
     Image,
     Linking,
-    SafeAreaView
+    SafeAreaView,
+    Dimensions
 } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -17,13 +18,12 @@ import { getProductsBrands } from '../../../../../services/ProductsService';
 import FiltersQC from './components/Filters/FiltersQC';
 import FiltersButton from './components/Filters/FiltersButton';
 import CategoriesSelection from './components/Categories/CategoriesSelection';
-import { ScrollView } from 'react-native-gesture-handler';
 
+const {width: screenWidth} = Dimensions.get('screen')
 
 export const QueChoisirButton: React.FC<{ onPress: () => any }> = ({ onPress }) => {
     return (<TouchableOpacity
         style={{
-            flexDirection: 'row',
             justifyContent: 'center', alignItems: 'center',
             backgroundColor: '#33C0B7',
             padding: 20,
@@ -31,6 +31,14 @@ export const QueChoisirButton: React.FC<{ onPress: () => any }> = ({ onPress }) 
         }}
         onPress={onPress}
     >
+        <Image
+            source={require('../../../../../../assets/tools/que-choisir/access-icon.png')}
+            style={{
+                width: screenWidth / 6,
+                height: screenWidth / 6,
+                marginBottom: 10
+            }}
+        />
         <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Que Choisir ?</Text>
     </TouchableOpacity>)
 }
@@ -119,7 +127,7 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                     showFilters={showFilters}
                 />
                 <Image
-                    source={require('../../../../../../assets/tools/que-choisir.png')}
+                    source={require('../../../../../../assets/tools/que-choisir/que-choisir.png')}
                     style={{
                         width: "95%", resizeMode: 'contain', height: 250,
                     }}

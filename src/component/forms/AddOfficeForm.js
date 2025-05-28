@@ -42,8 +42,6 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
     }
 
     const validForm = () => {
-        console.log("valid");
-        
         if (formDatas.name?.trim().length > 0 &&
             formDatas.address_way?.trim().length > 0 &&
             formDatas.address_postal_code?.trim().length > 0 &&

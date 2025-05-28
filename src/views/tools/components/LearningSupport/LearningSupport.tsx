@@ -1,5 +1,5 @@
 import React from "react";
-import { FlatList, Image, Linking, Text, TouchableOpacity, View, StyleSheet, SafeAreaView } from "react-native";
+import { Dimensions, Image, Linking, Text, TouchableOpacity, View, StyleSheet, SafeAreaView } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { IContent } from "../../../../utils/interfaces";
@@ -8,6 +8,7 @@ import { fetchSearchList } from "../../../../services/SearchService";
 import { getS3Image } from "../../../../services/S3Service";
 import { ScrollView } from "react-native-gesture-handler";
 
+const { width: screenWidth } = Dimensions.get('screen')
 
 export const LearningSupportButton: React.FC<{ onPress: () => any }> = ({ onPress }) => {
     return (<TouchableOpacity
@@ -19,7 +20,14 @@ export const LearningSupportButton: React.FC<{ onPress: () => any }> = ({ onPres
         }}
         onPress={onPress}
     >
-
+            <Image
+                source={require('../../../../../assets/tools/learning-support/access-icon.png')}
+                style={{
+                    width: screenWidth / 6,
+                    height: screenWidth / 6,
+                    marginBottom: 10
+                }}
+            />
         <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Supports pédagogiques</Text>
     </TouchableOpacity>)
 }
