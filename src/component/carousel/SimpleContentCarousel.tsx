@@ -16,7 +16,7 @@ const Card = ({ data, onSelect, nbElement2Display }) => {
   })
 
 
-  // return <TouchableOpacity style={[styles.card, {width: screenWidth / nbElement2Display}]} //TODO design netflix
+  // return <TouchableOpacity style={[styles.card, {width: screenWidth / nbElement2Display}]}
   return <TouchableOpacity style={[styles.card, { width: screenWidth / nbElement2Display }]}
     onPress={onSelect}
     onLayout={(event: LayoutChangeEvent) => {

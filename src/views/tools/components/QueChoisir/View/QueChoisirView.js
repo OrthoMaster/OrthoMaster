@@ -80,7 +80,7 @@ export const QueChoisirView = ({ navigation, route }) => {
             });
             let newSelection = []
             products.data.forEach(product => {
-                if (refToSearch.every(item => product.qc_ref.includes(item))) { //TODO filter sans OK SI donc parsing de string car includes return booléen
+                if (refToSearch.every(item => product.qc_ref.includes(item))) { 
 
                     newSelection.push(product)
                 }
