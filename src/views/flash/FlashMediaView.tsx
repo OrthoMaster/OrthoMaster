@@ -9,12 +9,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
-  TextInput,
   TouchableOpacity,
   Image,
-  Pressable,
-  NativeSyntheticEvent,
-  TextInputChangeEventData
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useQuery } from "@tanstack/react-query";

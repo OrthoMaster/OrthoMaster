@@ -84,6 +84,7 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
                     marginTop: 5,
                     paddingLeft: 10
                 }}
+                placeholderTextColor={"gray"}
                 onChangeText={(text) => {
                     setEmail(text)
                 }}

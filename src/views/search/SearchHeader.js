@@ -43,6 +43,7 @@ export const SearchHeader = ({ navigation, onReturn, placeholder, onChangeText }
                     value={text}
                     placeholder={placeholder}
                     autoCapitalize={'none'}
+                    placeholderTextColor={"gray"}
                 />
             </View>
 
