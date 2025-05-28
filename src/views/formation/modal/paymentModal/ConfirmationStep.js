@@ -79,8 +79,6 @@ export default ConfirmationStep = ({
                 marginVertical: 10
             }}
                 onPress={() => {
-                    console.log(isLoading);
-                    
                     if (isLoading == false)
                         onConfirm({
                             id_formation: formation.idFormation,

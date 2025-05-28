@@ -278,9 +278,11 @@ return <Modal
                         padding: 10,
                         alignSelf: 'center',
                         width: "90%",
-                        marginHorizontal: 20
+                        marginHorizontal: 20,
+                        color: "#000"
                     }}
                     placeholder='Rechercher...'
+                    placeholderTextColor={"gray"}
                     clearButtonMode='never'
                     value={searchText}
                     onChange={handleSearchChange}

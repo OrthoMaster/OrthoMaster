@@ -84,8 +84,6 @@ export function ContentDisplayer({ route, navigation }) {
 
   useEffect(() => {
     launchDate = getCurrentDate()
-    console.log("formation display", formation);
-    
     const appStateListener = AppState.addEventListener("change", nextAppState => {
       if (
         appState.current.match(/inactive|background/) &&

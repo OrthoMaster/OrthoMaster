@@ -58,7 +58,7 @@ export default function App({ navigation }) {
   const userOffices = useQuery({
     queryKey: ["user-offices"],
     queryFn: () => getUserAttachedOffices({ userId: user.id_user }),
-    enabled: user && userQuery.isSuccess
+    enabled: userQuery.isSuccess && userQuery.isFetched
   })
 
   const askEspaceProCreation = async () => {
