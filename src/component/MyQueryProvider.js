@@ -15,10 +15,9 @@ import {
     QueryClientProvider,
     MutationCache,
     QueryClient
-} from 'react-query'
+} from "@tanstack/react-query"
 
 import AuthService from '../services/AuthService';
-
 
 
 

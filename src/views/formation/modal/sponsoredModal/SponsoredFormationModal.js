@@ -7,14 +7,15 @@ import {
     TouchableOpacity
 } from "react-native";
 import AskSponsoredFormationForm from "./AskSponsoredFormationForm";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { demandeDeDossierFormation } from "../../../../services/FormationService";
 
 export const SponsoredFormationModal = ({
     formation,
     onClose
 }) => {
-    const sendDemand = useMutation(demandeDeDossierFormation, {
+    const sendDemand = useMutation({
+        mutationFn: demandeDeDossierFormation,
         onSettled: () => {
             setconfirmationView(true)
         }
@@ -49,13 +50,13 @@ export const SponsoredFormationModal = ({
                     <Text style={{
                         fontWeight: 'bold', fontSize: 22, color: "#ffaf31", marginBottom: 20, textAlign: 'center'
                     }}>Merci, nous traitons votre demande</Text>
-                    <Text style={{textAlign: 'center'}}>Nous vous contacterons prochainement pour établir votre plan de formation.</Text>
+                    <Text style={{ textAlign: 'center' }}>Nous vous contacterons prochainement pour établir votre plan de formation.</Text>
                     <TouchableOpacity style={{
                         paddingVertical: 10, paddingHorizontal: 40,
                         backgroundColor: '#ffaf31', borderRadius: 5,
                         position: 'absolute', bottom: 40
-                        }}
-                        onPress={()=>onClose()}>
+                    }}
+                        onPress={() => onClose()}>
                         <Text>Ok</Text>
                     </TouchableOpacity>
                 </View>

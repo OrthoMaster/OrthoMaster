@@ -6,24 +6,24 @@ import {
     TouchableOpacity,
     Image,
     Linking,
-    SafeAreaView
+    SafeAreaView,
+    Dimensions
 } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getProductsBrands } from '../../../../../services/ProductsService';
 import FiltersQC from './components/Filters/FiltersQC';
 import FiltersButton from './components/Filters/FiltersButton';
 import CategoriesSelection from './components/Categories/CategoriesSelection';
-import { ScrollView } from 'react-native-gesture-handler';
 
+const {width: screenWidth} = Dimensions.get('screen')
 
 export const QueChoisirButton: React.FC<{ onPress: () => any }> = ({ onPress }) => {
     return (<TouchableOpacity
         style={{
-            flexDirection: 'row',
             justifyContent: 'center', alignItems: 'center',
             backgroundColor: '#33C0B7',
             padding: 20,
@@ -31,13 +31,14 @@ export const QueChoisirButton: React.FC<{ onPress: () => any }> = ({ onPress }) 
         }}
         onPress={onPress}
     >
-        {/* <Image
-            source={require('../../../../../../assets/tools/que-choisir.png')}
+        <Image
+            source={require('../../../../../../assets/tools/que-choisir/access-icon.png')}
             style={{
-                width: 40, height: 40, marginRight: 10,
-                resizeMode: 'contain',
+                width: screenWidth / 6,
+                height: screenWidth / 6,
+                marginBottom: 10
             }}
-        /> */}
+        />
         <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Que Choisir ?</Text>
     </TouchableOpacity>)
 }
@@ -48,16 +49,18 @@ type QueChoisirMenuProps = {
 }
 
 export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart }) => {
-    useQuery(['Tools', 'GET', 'Brands'], () => getProductsBrands(), {
-        onSuccess: (data) => {
+    useQuery({
+        queryKey: ['Tools', 'GET', 'Brands'],
+        queryFn: () => getProductsBrands().then((res) => {
             setFilters({
                 ...filters,
                 queChoisir: {
                     ...filters.queChoisir,
-                    default: data.brands
+                    default: res.brands
                 }
             })
-        }
+            return res
+        })
     })
     const [showFilters, setShowFilters] = useState(false)
     const [filters, setFilters] = useState({
@@ -89,14 +92,7 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
         })
     }, [])
 
-    return <SafeAreaView>
-        <LinearGradient
-            colors={['#33C0B7', '#33C0B7']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.containerGradient}
-
-        >
+    return <SafeAreaView style={styles.container}>
 
             <View style={{ width: '100%', height: '95%', alignItems: 'center' }}>
                 <TouchableOpacity
@@ -131,7 +127,7 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                     showFilters={showFilters}
                 />
                 <Image
-                    source={require('../../../../../../assets/tools/que-choisir.png')}
+                    source={require('../../../../../../assets/tools/que-choisir/que-choisir.png')}
                     style={{
                         width: "95%", resizeMode: 'contain', height: 250,
                     }}
@@ -144,14 +140,13 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
 
                 {
                     showFilters &&
-                    <ScrollView style={{
+                    <View style={{
                         position: 'absolute',
                         height: '100%', width: '100%',
                         zIndex: 2,
+                        alignItems: 'center',
                     }}
-                        contentContainerStyle={{
-                            alignItems: 'center',
-                        }}
+                       
                     >
                         <FiltersQC onChange={(filters) => {
                             AsyncStorage.setItem("qcFilters", filters.toString())
@@ -159,7 +154,7 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                         }}
                             filterConfig={filters.queChoisir}
                         />
-                    </ScrollView>
+                    </View>
                 }
             </View>
 
@@ -174,16 +169,16 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
                 onPress={onClose}>
                 <Ionicons name="close-circle" size={34} color="#fff" />
             </TouchableOpacity>
-        </LinearGradient>
     </SafeAreaView>
 }
 
 const styles = StyleSheet.create({
 
-    containerGradient: {
-        width: '100%', height: '100%',
+    container: {
+        width: '100%', height: '95%',
         alignItems: 'center',
-        borderRadius: 15
+        borderRadius: 15,
+        backgroundColor: "#33C0B7",
     },
     toolTitle: {
         color: '#ffffff',

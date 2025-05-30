@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, Image, Dimensions, StyleSheet, TouchableOpacity } from "react-native";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../services/S3Service";
 import Carousel, {
   ICarouselInstance,
@@ -12,17 +12,20 @@ const { width: screenWidth } = Dimensions.get("window");
 
 
 const Card = ({ data, onPress }) => {
-  const imageUrl = useQuery(['contentThumbnail', data.id_content, data.title], () => getS3Image(`${data.s3_path}/${data.title}/logo.png`))
+  const imageUrl = useQuery({
+    queryKey: ['contentThumbnail', data.id_content, data.title],
+    queryFn: () => getS3Image(`${data.s3_path}/${data.title}/logo.png`)
+  })
 
   return <TouchableOpacity style={styles.card}
     onPress={onPress}
   >
     <Image source={{ uri: imageUrl.data }} style={styles.image} />
-    <LinearGradient colors={["transparent","transparent", "#000"]}
-    style={{
-      width: '100%', height: '100%',
-      position: 'absolute'
-    }}
+    <LinearGradient colors={["transparent", "transparent", "#000"]}
+      style={{
+        width: '100%', height: '100%',
+        position: 'absolute'
+      }}
     />
     <View style={{
       position: 'absolute',
@@ -30,8 +33,8 @@ const Card = ({ data, onPress }) => {
       zIndex: 1,
       width: '90%'
     }}>
-      <Text style={{color: "#fff", fontWeight: "bold", fontSize: 14, textAlign: 'left'}}>{data.title}</Text>
-      <Text style={{color: '#fff'}}>par <Text style={{color: '#ffaf31', fontWeight: 'bold', textAlign: 'left'}}>{data.author}</Text></Text>
+      <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 14, textAlign: 'left' }}>{data.title}</Text>
+      <Text style={{ color: '#fff' }}>par <Text style={{ color: '#ffaf31', fontWeight: 'bold', textAlign: 'left' }}>{data.author}</Text></Text>
     </View>
   </TouchableOpacity>
 }
@@ -74,7 +77,7 @@ const PanoramaCarousel = ({ data, onSelect }) => {
           parallaxScrollingOffset: 50,
         }}
         renderItem={({ item }) => {
-          return <Card onPress={()=>{onSelect(item)}} data={item} />
+          return <Card onPress={() => { onSelect(item) }} data={item} />
         }
 
           //   (

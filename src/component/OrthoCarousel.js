@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import SimpleAdaptiveCarousel from './carousel/SimpleAdaptiveCarousel';
 import { getS3Image } from '../services/S3Service'
 

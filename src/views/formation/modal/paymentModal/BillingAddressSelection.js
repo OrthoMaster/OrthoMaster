@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { TouchableOpacity, View, Text, ActivityIndicator, FlatList, ScrollView, Linking } from "react-native";
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getBillingAddress, setPersonnalBillingAddress } from "../../../../services/UserService";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { FormField } from "../../../../component/FormField";
@@ -9,9 +9,10 @@ import DropdownComponent from "../../../../component/DropdownComponent";
 import { LinearGradient } from "expo-linear-gradient";
 
 const AddBillingAddressForm = ({ onClose }) => {
-    const countries = useQuery(["countries"], () => getCountries())
+    const countries = useQuery({ queryKey: ["countries"], queryFn: () => getCountries() })
     const queryCli = useQueryClient()
-    const saveAddress = useMutation(setPersonnalBillingAddress, {
+    const saveAddress = useMutation({
+        mutationFn: setPersonnalBillingAddress,
         onSuccess: data => {
             onClose()
             queryCli.invalidateQueries("billing-address")
@@ -173,7 +174,7 @@ export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
     const {
         data: billingAddress,
         isLoading, isFetching
-    } = useQuery("billing-address", () => getBillingAddress())
+    } = useQuery({queryKey: ["billing-address"], queryFn: () => getBillingAddress()})
     const [selectedAddress, setSelectedAddress] = useState(null)
     const [showAddBillingAddrForm, setShowAddBillingAddrForm] = useState(false)
 

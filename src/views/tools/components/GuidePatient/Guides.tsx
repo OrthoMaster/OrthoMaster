@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FlatList, StyleSheet, ActivityIndicator, Alert, Image, Linking, Text, TouchableOpacity, View } from "react-native";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import { getS3Image } from "../../../../services/S3Service";
 import * as FileSystem from 'expo-file-system';
@@ -16,7 +16,7 @@ export const GUIDES = [{
 
 
 const GuideCard = ({ config, showGuide }) => {
-  const guide = useQuery(['Guide patient', 'GET', 'QR', config.name], () => getS3Image(config.s3_guide_path))
+  const guide = useQuery({queryKey: ['Guide patient', 'GET', 'QR', config.name], queryFn: () => getS3Image(config.s3_guide_path)})
   const fileUri = FileSystem.cacheDirectory + `guide-patient-${config.name.replace(' ', '-')}.png`
 
   const onShare = async () => {

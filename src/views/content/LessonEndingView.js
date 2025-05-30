@@ -13,7 +13,7 @@ import {
 import { TrophyProgression } from "./trophy/TrophyProgression";
 
 import { useStore, useDispatch } from "react-redux";
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { postUserLessonStatus } from "../../services/ProgressionService";
 import { updateUserFormationMainQuizStatus } from "../../services/FormationService";
@@ -124,33 +124,37 @@ export const LessonEndingView = ({ navigation, route }) => {
   const isDemo = demoMode
 
   const store = useStore()
-  
+
   const [successMessageIndex, setsuccessMessageIndex] = useState(Math.floor(Math.random() * successElements.length))
   const stateContent = store.getState().content
 
   const [nbQuizValidated, setnbQuizValidated] = useState(0)
   const dispatch = useDispatch()
-  const saveContentMutation = useMutation(postUserLessonStatus);
+  const saveContentMutation = useMutation({ mutationFn: postUserLessonStatus });
   const queryClient = useQueryClient()
-  const trophyProgression = useQuery(['Lesson', 'GET', 'trophyProgressBasedOnModule'], () => getTrophyProgressBasedOnModule(stateContent.content.module_num), {
-    enabled: stateContent.content.title != "final" && stateContent.content.title != "initial"
+  const trophyProgression = useQuery({
+    queryKey: ['Lesson', 'GET', 'trophyProgressBasedOnModule'],
+    queryFn: () => getTrophyProgressBasedOnModule(stateContent?.content?.module_num),
+    enabled: stateContent.content && stateContent?.content?.title != "final" && stateContent?.content?.title != "initial"
   })
 
 
-  const valideMainQuiz = useMutation(updateUserFormationMainQuizStatus);
+  const valideMainQuiz = useMutation({ mutationFn: updateUserFormationMainQuizStatus });
   const [status, setStatus] = useState(false)
 
   const saveUserAnswer = async (data) => {
     saveContentMutation.mutateAsync({ status: data.status, id: data.id, userFormation: formation.id })
   };
 
-  const { data: nextLesson, isFetching, isLoading } = useQuery(['Lesson', 'GET', 'nextLesson', stateContent.content.id_content],
-    () => getNextLesson(stateContent.content.module_num, stateContent.content.order, formation.id_formation), {
-    enabled: stateContent.content.title != "final" && stateContent.content.title != "initial"
+  const { data: nextLesson, isFetching, isLoading } = useQuery({
+    queryKey: ['Lesson', 'GET', 'nextLesson', stateContent?.content?.id_content],
+    queryFn: () => getNextLesson(stateContent?.content?.module_num, stateContent?.content?.order, formation.id_formation),
+    enabled: route.name != 'home-content-result' && stateContent.content && stateContent?.content?.title != "final" && stateContent?.content?.title != "initial"
   });
 
 
   const handleLessonEnding = async (handleType) => {
+
     switch (handleType) {
       case 'next':
         if (nextLesson) {
@@ -180,14 +184,14 @@ export const LessonEndingView = ({ navigation, route }) => {
 
       case 'return':
         dispatch(exitContent())
-
-        queryClient.invalidateQueries(["user-formations", formation.id])
-        queryClient.invalidateQueries(["user-formations"])
-        queryClient.invalidateQueries(['formation-modules', formation.id_formation])
+        queryClient.invalidateQueries({ queryKey: ["user-formations", formation.id] })
+        queryClient.invalidateQueries({ queryKey: ["user-formations"] })
+        queryClient.invalidateQueries({ queryKey: ['formation-modules', formation.id_formation] })
         if (route.name == 'home-content-result') {
           navigation.popToTop()
         } else {
-          navigation.navigate("formation-modules", {
+
+          navigation.popTo("formation-modules", {
             userFormationId: formation.id,
             demoMode: demoMode
           })
@@ -200,9 +204,7 @@ export const LessonEndingView = ({ navigation, route }) => {
 
 
   useEffect(() => {
-
     var lessonStatus = false
-
 
     if (stateContent.quizPassed.length === stateContent.nbQuiz) {
       lessonStatus = true
@@ -213,11 +215,11 @@ export const LessonEndingView = ({ navigation, route }) => {
       });
     }
     setStatus(lessonStatus)
-    if (stateContent.content.title != 'initial' && stateContent.content.title != 'final') {
+    if (stateContent?.content?.title != 'initial' && stateContent?.content?.title != 'final') {
 
       saveUserAnswer({
         status: lessonStatus ? 1 : 2,
-        id: stateContent.content.id_content
+        id: stateContent?.content?.id_content
       })
     } else {
       const nbQuizValidated = stateContent.quizPassed.filter(elem => elem.status === true).length
@@ -225,32 +227,30 @@ export const LessonEndingView = ({ navigation, route }) => {
 
       valideMainQuiz.mutate({
         idUserFormation: formation.id,
-        quizType: stateContent.content.title,
-        grade: nbQuizValidated / stateContent.nbQuiz
+        quizType: stateContent?.content?.title,
+        grade: nbQuizValidated / stateContent?.nbQuiz
       })
     }
   }, [])
-
-
 
 
   return <SafeAreaView
     style={[styles.container, styles.AndroidSafeArea]}
   >
     <View style={[styles.resultContainer, {
-      backgroundColor: stateContent.content.title == 'initial' || stateContent.content.title == 'final' ?
+      backgroundColor: stateContent?.content?.title == 'initial' || stateContent?.content?.title == 'final' ?
         'grey'
         : status ? '#0474BB' : '#BB090A'
     }]}>
       <Text style={styles.lessonStatusMessage}>{
-        stateContent.content.title == 'initial' || stateContent.content.title == 'final' ?
-          "Merci d'avoir complété le quiz " + stateContent.content.title
+        stateContent?.content?.title == 'initial' || stateContent?.content?.title == 'final' ?
+          "Merci d'avoir complété le quiz " + stateContent?.content?.title
           :
           status ? successElements[successMessageIndex].message : failureElements[0].message
       }</Text>
 
       {
-        stateContent.content.title != 'initial' && stateContent.content.title != 'final' ?
+        stateContent?.content?.title != 'initial' && stateContent?.content?.title != 'final' ?
           <Image
             source={{
               uri: status ? successElements[successMessageIndex].imgUrl : failureElements[0].imgUrl
@@ -274,7 +274,7 @@ export const LessonEndingView = ({ navigation, route }) => {
       }
 
       {
-        stateContent.content.title != 'initial' && stateContent.content.title != 'final' ?
+        stateContent?.content?.title != 'initial' && stateContent?.content?.title != 'final' ?
           <View style={[styles.navigationContainer]}>
             <TouchableOpacity
               style={[styles.navigationBox]}

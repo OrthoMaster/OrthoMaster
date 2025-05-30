@@ -36,29 +36,30 @@ export const LoginView = ({ navigation, route }) => {
             <ScrollView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={[{ width: '100%' }]}
                 automaticallyAdjustKeyboardInsets={true}
+                keyboardDismissMode='on-drag'
+                keyboardShouldPersistTaps='never'
                 contentContainerStyle={{ height: '100%' }}
             >
-                <TouchableWithoutFeedback
-                    style={{ width: '100%', backgroundColor: 'orange' }}
-                    onPress={() => { Keyboard.dismiss() }}>
-                    <View style={{
-                        width: "100%", flex: 1,
-                        alignItems: 'center'
-                    }}>
+                <View style={{
+                    width: "100%", flex: 1,
+                    alignItems: 'center'
+                }}>
 
 
-                        <View style={styles.logoContainer}>
-                            <Image
-                                style={{
-                                    width: '80%',
-                                    height: "100%",
-                                    resizeMode: 'contain',
-                                }}
-                                source={require('../../../assets/logo-text.png')}
-                            />
-                        </View>
+                    <View style={styles.logoContainer}>
+                        <Image
+                            style={{
+                                width: '80%',
+                                height: "100%",
+                                resizeMode: 'contain',
+                            }}
+                            source={require('../../../assets/logo-text.png')}
+                        />
+                    </View>
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.connectionBox}>
                             <Text style={styles.title}>Connexion</Text>
+
                             <TextInput
                                 style={[styles.intputField]}
                                 placeholder="Adresse e-mail"
@@ -67,12 +68,12 @@ export const LoginView = ({ navigation, route }) => {
                                 textContentType="email"
                                 autoCapitalize={'none'}
                                 autoComplete='email'
-
+                                placeholderTextColor={"gray"}
                             />
 
                             <View style={styles.intputField}>
                                 <TextInput
-                                    style={{ flex: 1 }}
+                                    style={{ flex: 1, color: '#000' }}
                                     placeholder="Mot de passe"
                                     value={password}
                                     onChangeText={setPassword}
@@ -80,6 +81,9 @@ export const LoginView = ({ navigation, route }) => {
                                     textContentType="password"
                                     autoComplete='password'
                                     autoCapitalize={'none'}
+                                    onBlur={()=> Keyboard.dismiss()
+                                    }
+                                    placeholderTextColor={"gray"}
                                 />
                                 <Ionicons
                                     name={showPassword ? "eye-off" : "eye"}
@@ -99,7 +103,7 @@ export const LoginView = ({ navigation, route }) => {
                             }
                             <TouchableOpacity
                                 style={styles.signInButton}
-                                onPress={() => handleClick()}
+                                onPress={handleClick}
                             >
                                 <Text style={styles.signInButtonText}>Continuer</Text>
                             </TouchableOpacity>
@@ -127,9 +131,9 @@ export const LoginView = ({ navigation, route }) => {
                                 </Text>
                             </View>
                         </View>
-                    </View>
+                    </TouchableWithoutFeedback>
+                </View>
 
-                </TouchableWithoutFeedback>
             </ScrollView>
         </SafeAreaView>
     );

@@ -7,7 +7,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CreateOfficePage from "./pages/CreateOfficePage";
 import AddMemberOfficePage from "./pages/AddMemberOfficePage";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import AskOfficeCreationPage from "./pages/AskOfficeCreationPage";
 
 export const InitialConfigForm = ({ onFinish }) => {

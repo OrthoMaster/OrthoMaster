@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform, View, Text, Image, Dimensions } from 'react-native';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { saveUserExpoPushToken } from '../services/NotificationService';
 import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from '@react-navigation/native';
@@ -27,7 +27,7 @@ export const NotificationHandler = ({ children }) => {
   const [modalObj, setModalObj] = useState(null)
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const nav = useNavigation()
-  const savePushToken = useMutation(saveUserExpoPushToken)
+  const savePushToken = useMutation({mutationFn: saveUserExpoPushToken})
 
   const handleNotif = (redirect) => {
     if (redirect == null) {

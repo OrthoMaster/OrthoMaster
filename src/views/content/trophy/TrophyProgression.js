@@ -9,19 +9,15 @@ import {
 import { TrophyUnlockModal } from "./TrophyUnlockModal";
 import { getS3Image } from "../../../services/S3Service";
 
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getUserTrophy } from "../../../services/TrophyService";
 
 const TrophyDisplay = ({ trophy }) => {
     const [trophyImgUrl, setTrophyImgUrl] = useState(null)
     const [trophyAlreadyUnlock, setTrophyAlreadyUnlock] = useState(false)
-    const userTrophy = useQuery(['Formation', 'GET', 'userTrophy', trophy.trophy.id_trophy], ()=> getUserTrophy(null), {
-        onSuccess: (data) => {
-            const found = data.find(element => element.trophy.id_trophy == trophy.trophy.id_trophy && element.unlock != null);
-            if (found) {
-                setTrophyAlreadyUnlock(true)
-            }
-        }
+    const userTrophy = useQuery({
+        queryKey: ['Formation', 'GET', 'userTrophy', trophy.trophy.id_trophy],
+        queryFn: ()=> getUserTrophy(null)
     })
     const fetchTrophyImg = async () => {
 
@@ -34,6 +30,16 @@ const TrophyDisplay = ({ trophy }) => {
             throw error
         }
     }
+    useEffect(() => {
+        if (userTrophy.data != null) {
+            const found = userTrophy.data.find(element => element.trophy.id_trophy == trophy.trophy.id_trophy && element.unlock != null);
+            if (found) {
+                setTrophyAlreadyUnlock(true)
+            }
+
+        }
+    }, [userTrophy.data])
+    
 
     useEffect(() => {
         var isMounted = true

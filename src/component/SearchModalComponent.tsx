@@ -22,7 +22,7 @@ import Modal from 'react-native-modal';
 import Animated, { useSharedValue, withSpring, LinearTransition } from 'react-native-reanimated';
 import { getS3Image } from '../services/S3Service.js';
 
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchSearchList } from '../services/SearchService.js';
 import { ISearchContent } from '../utils/interfaces.js';
 
@@ -34,8 +34,10 @@ type SearchCardProps = {
     onSelect: (content: ISearchContent) => any
 }
 const SearchCard: React.FC<SearchCardProps> = ({ content, onSelect }) => {
-    const thumbnail = useQuery(['ContentSelection', 'GET', 'contentThumbnail', content.id_content, content.title],
-        () => getS3Image(createS3Path(content)))
+    const thumbnail = useQuery({
+        queryKey: ['ContentSelection', 'GET', 'contentThumbnail', content.id_content, content.title],
+        queryFn: () => getS3Image(createS3Path(content))
+    })
 
 
     const createS3Path = (cardInfo: ISearchContent) => {
@@ -176,203 +178,203 @@ const SearchModalComponent: React.FC<SearchComponentProps> = ({ contentType, key
     const [page, setPage] = useState<number>(1)
     const [searchText, setSearchText] = useState<string>(null)
     const [searchResult, setSearchResult] = useState<ISearchContent[]>(null)
-    const fetchContent = useQuery(["search", keyId, searchText], () => fetchSearchList({
-        contentType: contentType ? [contentType] : null,
-        searchText: searchText
-    }, page, PAGE_SIZE), {
-        onError: err => {
-            // TODO error message
-            setErrorMessage("Une erreur s'est produite. Veuillez réessayer.")
-        },
+    const fetchContent = useQuery({
+        queryKey: ["search", keyId, searchText],
+        queryFn: () => fetchSearchList({
+            contentType: contentType ? [contentType] : null,
+            searchText: searchText
+        }, page, PAGE_SIZE),
         enabled: false
     })
 
-    const requestAPI = () => {
-        fetchContent.refetch()
-            .then(res => {
-                const val = res.data
-                if (val.length == 0) {
-                    setListEnded(true)
-                }
-                if (fetchingMore) {
-                    setSearchResult([...searchResult, ...val])
-                    setFetchingMore(false)
-                } else {
-                    setSearchResult(val)
-                }
-            })
+const requestAPI = () => {
+    fetchContent.refetch()
+        .then(res => {
+            const val = res.data
+            if (val.length == 0) {
+                setListEnded(true)
+            }
+            if (fetchingMore) {
+                setSearchResult([...searchResult, ...val])
+                setFetchingMore(false)
+            } else {
+                setSearchResult(val)
+            }
+        })
+}
+const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: NativeScrollEvent) => {
+    return layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
+}
+
+
+
+const fetchMoreData = () => {
+    if (fetchingMore === false) {
+        setFetchingMore(true)
+        setPage(page + 1)
     }
-    const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: NativeScrollEvent) => {
-        return layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
+}
+
+const handleSearchChange = (e: NativeSyntheticEvent<TextInputChangeEventData>) => {
+    setSearchText(e.nativeEvent.text)
+}
+
+
+const startSearchAnim = () => searchBarWidth.value = withSpring((screenWidth * 0.95) * 0.8)
+const endSearchAnim = () => searchBarWidth.value = withSpring(screenWidth * 0.95)
+
+const resetValues = () => {
+    setPage(1)
+    setListEnded(false)
+    setSearchText(null)
+    setFetchingMore(false)
+    setIsSearching(false)
+    setSearchResult(null)
+}
+
+useEffect(() => {
+    if (page > 1)
+        requestAPI();
+}, [page])
+
+useEffect(() => {
+    setPage(1)
+    setListEnded(false)
+    if (searchText != null) {
+        requestAPI()
     }
+}, [searchText])
 
 
+return <Modal
+    isVisible={isVisible}
+    style={{
+        width: '100%',
+        height: '100%',
+        alignSelf: 'center',
+        alignItems: 'center',
+    }}>
 
-    const fetchMoreData = () => {
-        if (fetchingMore === false) {
-            setFetchingMore(true)
-            setPage(page + 1)
-        }
-    }
+    <SafeAreaView style={{
+        backgroundColor: '#fff',
+        height: "90%",
+        width: '95%',
+        borderRadius: 5
+    }}>
 
-    const handleSearchChange = (e: NativeSyntheticEvent<TextInputChangeEventData>) => {
-        setSearchText(e.nativeEvent.text)
-    }
-
-
-    const startSearchAnim = () => searchBarWidth.value = withSpring((screenWidth * 0.95) * 0.8)
-    const endSearchAnim = () => searchBarWidth.value = withSpring(screenWidth * 0.95)
-
-    const resetValues = () => {
-        setPage(1)
-        setListEnded(false)
-        setSearchText(null)
-        setFetchingMore(false)
-        setIsSearching(false)
-        setSearchResult(null)
-    }
-
-    useEffect(() => {
-        if (page > 1)
-            requestAPI();
-    }, [page])
-
-    useEffect(() => {
-        setPage(1)
-        setListEnded(false)
-        if (searchText != null) {
-            requestAPI()
-        }
-    }, [searchText])
-
-
-    return <Modal
-        isVisible={isVisible}
-        style={{
-            width: '100%',
-            height: '100%',
-            alignSelf: 'center',
+        <View style={{ // SEARCH BAR
+            flexDirection: 'row',
             alignItems: 'center',
+            marginVertical: 20
         }}>
-
-            <SafeAreaView style={{
-                backgroundColor: '#fff',
-                height: "90%",
-                width: '95%',
-                borderRadius: 5
+            <Animated.View style={{
+                width: searchBarWidth,
+                alignItems: 'center',
             }}>
-
-                <View style={{ // SEARCH BAR
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginVertical: 20
-                }}>
-                    <Animated.View style={{
-                        width: searchBarWidth,
-                        alignItems: 'center',
-                    }}>
-                        <TextInput
-                            style={{
-                                backgroundColor: '#F1F1F1',
-                                borderRadius: 10,
-                                padding: 10,
-                                alignSelf: 'center',
-                                width: "90%",
-                                marginHorizontal: 20
-                            }}
-                            placeholder='Rechercher...'
-                            clearButtonMode='never'
-                            value={searchText}
-                            onChange={handleSearchChange}
-                            autoFocus
-                            onFocus={() => {
-                                setIsSearching(true)
-                                startSearchAnim()
-                            }}
-                        />
-                    </Animated.View>
-                    {
-                        isSearching &&
-                        <Pressable
-                            onPress={() => {
-                                resetValues()
-                                Keyboard.dismiss()
-                                endSearchAnim()
-                                onClose()
-                            }}
-                            style={{
-                                width: screenWidth * 0.2,
-                                alignItems: 'center'
-                            }}
-                        >
-                            <Text style={{
-                                fontWeight: 'bold',
-                                color: '#ffaf31'
-                            }}>Annuler</Text>
-                        </Pressable>
+                <TextInput
+                    style={{
+                        backgroundColor: '#F1F1F1',
+                        borderRadius: 10,
+                        padding: 10,
+                        alignSelf: 'center',
+                        width: "90%",
+                        marginHorizontal: 20,
+                        color: "#000"
+                    }}
+                    placeholder='Rechercher...'
+                    placeholderTextColor={"gray"}
+                    clearButtonMode='never'
+                    value={searchText}
+                    onChange={handleSearchChange}
+                    autoFocus
+                    onFocus={() => {
+                        setIsSearching(true)
+                        startSearchAnim()
+                    }}
+                />
+            </Animated.View>
+            {
+                isSearching &&
+                <Pressable
+                    onPress={() => {
+                        resetValues()
+                        Keyboard.dismiss()
+                        endSearchAnim()
+                        onClose()
+                    }}
+                    style={{
+                        width: screenWidth * 0.2,
+                        alignItems: 'center'
+                    }}
+                >
+                    <Text style={{
+                        fontWeight: 'bold',
+                        color: '#ffaf31'
+                    }}>Annuler</Text>
+                </Pressable>
+            }
+        </View>
+        {
+            (isSearching) &&
+            <ScrollView
+                onScroll={({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
+                    Keyboard.dismiss()
+                    if (listEnded == false && searchText != null) {
+                        if (isCloseToBottom(nativeEvent)) {
+                            fetchMoreData()
+                        }
                     }
-                </View>
+                }}
+            >
                 {
-                    (isSearching) &&
-                    <ScrollView
-                        onScroll={({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
-                            Keyboard.dismiss()
-                            if (listEnded == false && searchText != null) {
-                                if (isCloseToBottom(nativeEvent)) {
-                                    fetchMoreData()
-                                }
-                            }
-                        }}
-                    >
-                        {
-                            (Array.isArray(searchResult) && searchResult.length > 0) &&
-                            searchResult.map((value: ISearchContent, index: number) => {
-                                return <SearchCard
-                                    key={index}
-                                    onSelect={(content) => {
-                                        resetValues()
-                                        onSelect(content)
-                                    }}
-                                    content={value}
-                                />
-                            })
-                        }
-                        {
-                            (Array.isArray(searchResult) && searchResult.length == 0) &&
-                            <Text style={{
-                                alignSelf: 'center',
-                                marginVertical: 20
-                            }}>
-                                Aucun média trouvé
-                            </Text>
-                        }
-                        {
-                            fetchContent.isLoading &&
-                            <ActivityIndicator />
-                        }
-                        {
-                            searchResult === null &&
-                            <Text style={{
-                                color: 'gray',
-                                textAlign: 'center'
-                            }}>
-                                Recherchez par mot(s) clé(s), nom d'auteur ou thématique
-                            </Text>
-                        }
-
-                        {
-                            (errorMessage !== null) &&
-                            <Text style={{
-                                color: '#000',
-                                textAlign: 'center'
-                            }}>
-                                {errorMessage}
-                            </Text>
-                        }
-                    </ScrollView>
+                    (Array.isArray(searchResult) && searchResult.length > 0) &&
+                    searchResult.map((value: ISearchContent, index: number) => {
+                        return <SearchCard
+                            key={index}
+                            onSelect={(content) => {
+                                resetValues()
+                                onSelect(content)
+                            }}
+                            content={value}
+                        />
+                    })
                 }
-            </SafeAreaView>
-    </Modal>
+                {
+                    (Array.isArray(searchResult) && searchResult.length == 0) &&
+                    <Text style={{
+                        alignSelf: 'center',
+                        marginVertical: 20
+                    }}>
+                        Aucun média trouvé
+                    </Text>
+                }
+                {
+                    fetchContent.isLoading &&
+                    <ActivityIndicator />
+                }
+                {
+                    searchResult === null &&
+                    <Text style={{
+                        color: 'gray',
+                        textAlign: 'center'
+                    }}>
+                        Recherchez par mot(s) clé(s), nom d'auteur ou thématique
+                    </Text>
+                }
+
+                {
+                    (fetchContent.isError) &&
+                    <Text style={{
+                        color: '#000',
+                        textAlign: 'center'
+                    }}>
+                        {fetchContent.error.message}
+                    </Text>
+                }
+            </ScrollView>
+        }
+    </SafeAreaView>
+</Modal>
 }
 
 const cardStyle = StyleSheet.create({

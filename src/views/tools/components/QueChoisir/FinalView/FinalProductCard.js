@@ -3,34 +3,15 @@ import {
     Dimensions,
     View,
     Text,
-    TouchableWithoutFeedback,
     Image
 } from "react-native";
-import Animated, { useSharedValue, withTiming, runOnJS, Easing } from "react-native-reanimated";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../../../../services/S3Service";
-import { useOrthoMasterRoles } from "../../../../../hooks/useOrthoMasterRoles";
 
-export const ProductCard = ({ product, onPress }) => {
-    const imgUrl = useQuery(['Product', 'GET', "productImage", product.id], () => getS3Image(product.image_path))
+export const ProductCard = ({ product }) => {
+    const imgUrl = useQuery({queryKey: ['Product', 'GET', "productImage", product.id], queryFn: () => getS3Image(product.image_path)})
     const containerSideSize = Dimensions.get('window').width * 0.45
-    const height = useSharedValue(0);
-    const { isTester } = useOrthoMasterRoles()
 
-    const handleLongPress = (isPressed) => {
-        if (isTester == false) // TODO à supprimer quand test fini
-            return
-        height.value = withTiming(isPressed ?
-            height.value + (containerSideSize - height.value)
-            : 0, {
-            duration: 500,
-            easing: Easing.linear
-        }, (isEnded) => {
-            if (onPress && isEnded && isPressed == true) {
-                runOnJS(onPress)(product)
-            }
-        })
-    }
 
     return (
         <View style={{
@@ -47,28 +28,12 @@ export const ProductCard = ({ product, onPress }) => {
             }
         }}
         >
-            <TouchableWithoutFeedback
-                onPressIn={() => handleLongPress(true)}
-                onPressOut={() => handleLongPress(false)}
-            >
-
                 <View style={{
                     width: '100%',
                     alignItems: 'center',
                     height: '100%',
                     justifyContent: 'center'
                 }}>
-
-                    <Animated.View
-                        style={{
-                            width: "100%",
-                            height: height,
-                            backgroundColor: '#D1FFFC',
-                            position: 'absolute',
-                            bottom: 0,
-                            borderRadius: 20
-                        }}
-                    />
                     <View style={{ width: '100%' }}>
                         {
                             imgUrl.data ?
@@ -109,7 +74,6 @@ export const ProductCard = ({ product, onPress }) => {
 
 
                 </View>
-            </TouchableWithoutFeedback>
         </View>
     );
 }

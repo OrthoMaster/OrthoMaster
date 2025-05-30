@@ -9,15 +9,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
-  TextInput,
   TouchableOpacity,
   Image,
-  Pressable,
-  NativeSyntheticEvent,
-  TextInputChangeEventData
 } from 'react-native';
 import Modal from 'react-native-modal';
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
@@ -39,8 +35,10 @@ type EventCardProp = {
   event: IEvent, onSelect: (event: IEvent) => any
 }
 const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
-  
-  const logo_url = useQuery(['event-logo', event.id], () => getCdnContentAccessUrl(event.logo_url), {
+
+  const logo_url = useQuery({
+    queryKey: ['event-logo', event.id],
+    queryFn: () => getCdnContentAccessUrl(event.logo_url),
     enabled: !!event.logo_url
   })
   return <TouchableOpacity style={{
@@ -83,15 +81,19 @@ const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
 
 export const FlashMediaView = ({ navigation, route }) => {
 
-  const lastRelease = useQuery(["media-last-release"], () => fetchMedias({ limit: LIMIT_LAST_RELEASE }))
-  const categories = useQuery(["medias-categories-content"], () => fetchMedias({ group_by: "category" }), {
-    onSuccess: () => {
-      //verifyRoute()
-    }
+  const lastRelease = useQuery({
+    queryKey: ["media-last-release"],
+    queryFn: () => fetchMedias({ limit: LIMIT_LAST_RELEASE })
   })
-  const { isError: eventsError, isLoading: eventsLoading } = useQuery(["events"], () => fetchEvents(), {
-    onSuccess: data => {
+  const categories = useQuery({
+    queryKey: ["medias-categories-content"],
+    queryFn: () => fetchMedias({ group_by: "category" })
+  })
+  const { isError: eventsError, isLoading: eventsLoading } = useQuery({
+    queryKey: ["events"],
+    queryFn: () => fetchEvents().then((data) => {
       let evtsCards: CarouselItem[] = [];
+
       data.forEach(evt => {
         evtsCards.push({
           key: evt.name,
@@ -109,7 +111,8 @@ export const FlashMediaView = ({ navigation, route }) => {
         })
       });
       setEventsCarouselItems(evtsCards)
-    }
+      return data;
+    })
   })
 
 
@@ -124,6 +127,7 @@ export const FlashMediaView = ({ navigation, route }) => {
       media: card
     } as PreviewMediaParams)
   }
+
 
   const handleOpenMediaLink = async (id: number) => {
     return new Promise(async (resolve, reject) => {
@@ -160,8 +164,9 @@ export const FlashMediaView = ({ navigation, route }) => {
   }
 
   useEffect(() => {
-    if (categories.data)
+    if (categories.data) {
       verifyRoute()
+    }
   }, [route.params, categories.data])
 
   return (
@@ -203,7 +208,7 @@ export const FlashMediaView = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.sectionContainer, {paddingTop: 20}]}>
+        <View style={[styles.sectionContainer, { paddingTop: 20 }]}>
           <Text style={[styles.categoryTitle]}>Congrès</Text>
           <Text style={[styles.categorySubTitle, { marginBottom: 5 }]}>Les sociétés savantes</Text>
           {

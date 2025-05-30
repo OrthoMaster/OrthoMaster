@@ -24,7 +24,7 @@ export const startSession = async () => {
     device_OS: Device.osName
   }
   const payload = {
-    user_id: config.user.id_user,
+    job_function: config.user.job_function,
     device_infos: JSON.stringify(deviceInfos),
     started_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
   }
@@ -33,7 +33,7 @@ export const startSession = async () => {
 
   if (!online) {
     // En cas de perte de connexion, on met l'événement en file d'attente
-    await enqueueEvent({payload, route: '/start'});
+    await enqueueEvent({ payload, route: '/start' });
     return;
   }
 
@@ -47,7 +47,7 @@ export const startSession = async () => {
       sessionId = response.data.session_id;
     })
   } catch (err) {
-    await enqueueEvent({payload, route: '/start'});
+    await enqueueEvent({ payload, route: '/start' });
   }
 }
 
@@ -62,7 +62,7 @@ export const closeSession = async () => {
 
   if (!online) {
     // En cas de perte de connexion, on met l'événement en file d'attente
-    await enqueueEvent({payload, route: `/${sessionId}/end`});
+    await enqueueEvent({ payload, route: `/${sessionId}/end` });
     return;
   }
   try {
@@ -75,7 +75,7 @@ export const closeSession = async () => {
       sessionId = null
     });
   } catch (err) {
-    await enqueueEvent({payload, route: `/${sessionId}/end`});
+    await enqueueEvent({ payload, route: `/${sessionId}/end` });
   }
 }
 
@@ -84,6 +84,8 @@ export const saveEvent = async (
   eventType: SessionEventType,
   data: SessionEventData
 ) => {
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
   const payload = {
     session_id: sessionId,
     event_type: eventType,
@@ -94,14 +96,19 @@ export const saveEvent = async (
 
   if (!online) {
     // En cas de perte de connexion, on met l'événement en file d'attente
-    await enqueueEvent({payload, route: '/event'});
+    await enqueueEvent({ payload, route: '/event' });
     return;
   }
   try {
-    await axios.post(baseurl + '/event', payload);
+    await axios.post(baseurl + '/event', payload, {
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      }
+    });
     // Pour le debug
   } catch (err) {
-    await enqueueEvent({payload, route: '/event'});
+    await enqueueEvent({ payload, route: '/event' });
   }
 };
 
@@ -110,7 +117,8 @@ export const getSessionId = () => {
 }
 
 export const sessionError = async (error: SessionError) => {
-
+  const config = await restoreLocalConfigAsync()
+  const authHeader = 'Bearer ' + config.JWT;
   const payload = {
     session_id: getSessionId(),
     ...error
@@ -120,15 +128,20 @@ export const sessionError = async (error: SessionError) => {
   if (!online) {
 
     // En cas de perte de connexion, on met l'événement en file d'attente
-    await enqueueEvent({payload, route: '/error'});
+    await enqueueEvent({ payload, route: '/error' });
     return;
   }
 
   try {
-    await axios.post(baseurl + '/error', payload);
+    await axios.post(baseurl + '/error', payload, {
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      }
+    });
     // Pour le debug
   } catch (err) {
     // Optionnel : mise en file d'attente si offline
-    await enqueueEvent({payload, route: '/error'});
+    await enqueueEvent({ payload, route: '/error' });
   }
 };

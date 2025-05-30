@@ -7,16 +7,23 @@ import {
     ActivityIndicator
 } from "react-native";
 import { FormField } from "../FormField";
-import { useQuery, useMutation } from "react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import DropdownComponent from "../DropdownComponent";
 
 import { createOffice, getCountries, getStructures } from "../../services/OfficeService";
 
 export default AddOfficeForm = ({ onSuccess, onError }) => {
     const [formDatas, setFormDatas] = useState({})
-    const countries = useQuery(["countries"], () => getCountries())
-    const structures = useQuery(["structures"], () => getStructures())
-    const sendForm = useMutation(createOffice, {
+    const countries = useQuery({
+        queryKey: ["countries"],
+        queryFn: () => getCountries()
+    })
+    const structures = useQuery({
+        queryKey: ["structures"],
+        queryFn: () => getStructures()
+    })
+    const sendForm = useMutation({
+        mutationFn: createOffice,
         onSuccess: data => {
             onSuccess(data.data)
         },
@@ -127,12 +134,12 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
             marginTop: 20,
             borderRadius: 5
         }} onPress={() => {
-            if (sendForm.isLoading == false) {
+            if (sendForm.isPending == false) {
                 validForm()
             }
         }}>
             {
-                sendForm.isLoading ?
+                sendForm.isPending ?
                     <ActivityIndicator />
                     : <Text>Valider</Text>
             }

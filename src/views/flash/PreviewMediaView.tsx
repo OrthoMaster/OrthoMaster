@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 import { View, Text, SafeAreaView, TouchableOpacity, Dimensions, Image, StyleSheet, ScrollView, FlatList, ImageBackground, ActivityIndicator } from "react-native";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { useGetUser } from "../../hooks/useGetUser.hook";
 import { getS3Image } from "../../services/S3Service";
@@ -19,7 +19,10 @@ const screenWidth = Dimensions.get('screen').width;
 
 type SimilarMediasContentCardProp = { media: IContent, onSelect: (media: IContent) => any }
 const SimilarMediasContentCard: React.FC<SimilarMediasContentCardProp> = ({ media, onSelect }): React.ReactNode => {
-    const imageUrl = useQuery(['contentThumbnail', media.id_content, media.title], () => getS3Image(`${media.s3_path}/${media.title}/logo.png`))
+    const imageUrl = useQuery({
+        queryKey: ['contentThumbnail', media.id_content, media.title],
+        queryFn: () => getS3Image(`${media.s3_path}/${media.title}/logo.png`)
+    })
 
     return <TouchableOpacity style={{
         flexDirection: 'row',
@@ -84,11 +87,16 @@ export type PreviewMediaParams = {
 export const PreviewMediaView = ({ navigation, route }) => {
     const { media }: PreviewMediaParams = route.params;
     const [similarTags, setSimilarTags] = useState<string>(null)
-    const imageUrl = useQuery(['contentThumbnail', media.id_content, media.title], () => getS3Image(`${media.s3_path}/${media.title}/logo.png`))
-    const similarContent = useQuery(["search-similar-media", media.id_content], () => fetchSearchList({
-        searchText: similarTags,
-        contentType: ['flash']
-    }, 1, 6), {
+    const imageUrl = useQuery({
+        queryKey: ['contentThumbnail', media.id_content, media.title],
+        queryFn: () => getS3Image(`${media.s3_path}/${media.title}/logo.png`)
+    })
+    const similarContent = useQuery({
+        queryKey: ["search-similar-media", media.id_content],
+        queryFn: () => fetchSearchList({
+            searchText: similarTags,
+            contentType: ['flash']
+        }, 1, 6),
         enabled: similarTags !== null
     })
     const { data: user, ...userQuery } = useGetUser()

@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 import { FormField } from "../../../../component/FormField";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import DropdownComponent from "../../../../component/DropdownComponent";
 import { getJobsFunction } from "../../../../services/UserService";
 

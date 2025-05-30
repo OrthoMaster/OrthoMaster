@@ -12,7 +12,7 @@ import {
 import Svg, {
     Path
 } from 'react-native-svg';
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchLessonByModuleWithProgression } from '../../services/ContentService';
 
 import { getS3Image } from '../../services/S3Service';
@@ -22,14 +22,17 @@ import { FontAwesome5 } from '@expo/vector-icons';
 
 export function LessonsView({ route, navigation }) {
     let { module, demoMode, formation } = route.params
-    const lessons = useQuery(['Formation', 'GET', 'lessonProgress', module.module.module_num], () => fetchLessonByModuleWithProgression(module.module.module_num))
+    const lessons = useQuery({
+        queryKey: ['Formation', 'GET', 'lessonProgress', module.module.module_num],
+        queryFn: () => fetchLessonByModuleWithProgression(module.module.module_num)
+    })
     const [refreshing, setRefreshing] = useState(false)
     const [moduleLogo, setModuleLogo] = useState(null)
 
 
     const getModuleLogo = async () => {
         let path = module.module.logo_path + '/logo.png'
-        
+
         try {
             const imageUrl = await getS3Image(path)
             return (imageUrl)
@@ -69,7 +72,7 @@ export function LessonsView({ route, navigation }) {
 
     return <View style={styles.container}>
         <SafeAreaView style={[styles.headerContainer, { backgroundColor: module.module.theme_color }]} />
-           
+
         <View style={styles.headerBox}>
             {
                 moduleLogo &&
@@ -104,7 +107,7 @@ export function LessonsView({ route, navigation }) {
                     isBlocked={demoMode && item.item.demo_access == false}
                     onPress={(lesson) => {
                         if (lesson.content.published == true) {
-                            navigation.navigate('formation-content', {
+                            navigation.push('formation-content', {
                                 content: lesson.content,
                                 formation: formation,
                                 type: "lesson",

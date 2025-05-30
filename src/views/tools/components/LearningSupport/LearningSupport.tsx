@@ -1,13 +1,14 @@
 import React from "react";
-import { FlatList, Image, Linking, Text, TouchableOpacity, View, StyleSheet, SafeAreaView } from "react-native";
+import { Dimensions, Image, Linking, Text, TouchableOpacity, View, StyleSheet, SafeAreaView } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { IContent } from "../../../../utils/interfaces";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchSearchList } from "../../../../services/SearchService";
 import { getS3Image } from "../../../../services/S3Service";
 import { ScrollView } from "react-native-gesture-handler";
 
+const { width: screenWidth } = Dimensions.get('screen')
 
 export const LearningSupportButton: React.FC<{ onPress: () => any }> = ({ onPress }) => {
     return (<TouchableOpacity
@@ -19,7 +20,14 @@ export const LearningSupportButton: React.FC<{ onPress: () => any }> = ({ onPres
         }}
         onPress={onPress}
     >
-
+            <Image
+                source={require('../../../../../assets/tools/learning-support/access-icon.png')}
+                style={{
+                    width: screenWidth / 6,
+                    height: screenWidth / 6,
+                    marginBottom: 10
+                }}
+            />
         <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Supports pédagogiques</Text>
     </TouchableOpacity>)
 }
@@ -30,7 +38,10 @@ type LearningSupportIconsProps = {
     onPress: (content: IContent) => any;
 }
 const LearningSupportIcons: React.FC<LearningSupportIconsProps> = ({ content, onPress }) => {
-    const imageUrl = useQuery(['contentThumbnail', content.id_content, content.title], () => getS3Image(`${content.s3_path}/${content.title}/logo.png`))
+    const imageUrl = useQuery({
+        queryKey: ['contentThumbnail', content.id_content, content.title],
+        queryFn: () => getS3Image(`${content.s3_path}/${content.title}/logo.png`)
+    })
     return (<TouchableOpacity
         key={content.id_content}
         style={{
@@ -60,10 +71,12 @@ type LearningSupportMenuProps = {
     onStart: (content: IContent) => any;
 }
 export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClose, onStart }) => {
-    const toolContents = useQuery(['Tools', 'GET', 'Contents'], () => fetchSearchList({
+    const toolContents = useQuery({
+        queryKey: ['Tools', 'GET', 'Contents'],
+        queryFn: () => fetchSearchList({
         contentType: ['tool'],
         filters: null
-    }))
+    })})
 
 
     return (

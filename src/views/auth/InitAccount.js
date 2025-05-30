@@ -1,5 +1,5 @@
 import React, { useState, memo } from "react";
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import AuthService from "../../services/AuthService";
 import { FormField } from "../../component/FormField";
 import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet, Dimensions } from "react-native";
@@ -7,7 +7,8 @@ import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet, Dimensions } fr
 export const ActivateAccountView = ({ route, navigation }) => {
     const { user_id, token } = route.params
     const [errorMsg, setErrorMsg] = useState("")
-    const activateAccount = useMutation(AuthService.activateUser, {
+    const activateAccount = useMutation({
+        mutationFn: AuthService.activateUser,
         onError: (err) => {
             setErrorMsg(err.response.data.message)
         },

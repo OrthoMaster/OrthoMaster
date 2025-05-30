@@ -11,7 +11,7 @@ import AppModal from '../../component/AppModal';
 import { connect } from 'react-redux';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-//import { useQuery, useQueryClient } from "react-query"
+//import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { getSearchList, searchSuccess, listEnded } from '../../actions/searchAction';
 
@@ -20,7 +20,7 @@ import { ContentSelection } from './components/ContentSelection'
 import { SearchHeader } from './SearchHeader'
 import { LoadingContent } from '../../component/LoadingContent'
 import { API_SEARCH_CLEAN } from '../../actions/types';
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSearchList } from '../../services/SearchService';
 import { getCurrentUser } from '../../services/UserService';
 import { registerFormation, getUserRegisteredFormation } from '../../services/FormationService';
@@ -33,28 +33,20 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     const [searchText, setSearchText] = useState()
     const [isStudent, setIsStudent] = useState(false)
     const [openModal, setOpenModal] = useState(null)
-    const user = useQuery("current-user", () => getCurrentUser(), {
-        onSuccess: user => { setIsStudent(user.is_student) }
-    })
-    const register2Formation = useMutation(registerFormation)
-    const fetchContent = useQuery(["search", searchText, filters], () => fetchSearchList({
-        contentType: filters,
-        body: null,
-        searchText: searchText
-    }, page, PAGE_SIZE), {
-        onSuccess: val => {
-            if (val.length == 0) {
-                dispatch(listEnded())
-            }
-            dispatch(searchSuccess({
-                data: val
-            }))
-        },
-        onError: err => {
-            dispatch(searchSuccess({
-                error: err.response.data
-            }))
-        },
+    useQuery({
+        queryKey: ["current-user"],
+        queryFn: () => getCurrentUser().then(user => {
+            setIsStudent(user.is_student) 
+            return user
+        })})
+    const register2Formation = useMutation({mutationFn: registerFormation})
+    const fetchContent = useQuery({
+        queryKey: ["search", searchText, filters],
+        queryFn: () => fetchSearchList({
+            contentType: filters,
+            body: null,
+            searchText: searchText
+        }, page, PAGE_SIZE),
         enabled: false
     })
     const requestAPI = () => {
@@ -92,13 +84,13 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             id_formation: content.id_formation_catalog,
             formation_name: content.formation_name
         })
-        .then(res=>{
-            navigate2Content({...content, id_user_formation: res.insertId})
-        })
+            .then(res => {
+                navigate2Content({ ...content, id_user_formation: res.insertId })
+            })
     }
 
-    const navigate2Content = (content, formation)=>{
-        
+    const navigate2Content = (content, formation) => {
+
         let nextView = 'formation-home'
         switch (route.name) {
             case 'home-search':
@@ -111,7 +103,6 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             default:
                 break;
         }
-        
         navigation.navigate(nextView, {
             content: content,
             formation: formation,
@@ -122,7 +113,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
 
     const handleNavigation = async (card) => {
         let userFormationId = card.id_user_formation
-        
+
 
         // Ouverture contenu pas en en formation -> enregistrement formation + ouverture contenu
 
@@ -133,7 +124,11 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                 isStudent || isDemo == false ||
                 (isDemo && card.demo_access == true)
             ) {
-                navigate2Content(card)
+                navigate2Content(card,{
+                    id: card.id_user_formation,
+                    id_formation_catalog: card.id_formation_catalog,
+                    formation_name: card.formation_name
+                })
             } else {
                 setOpenModal(card)
             }
@@ -161,6 +156,25 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
             requestAPI()
         }
     }, [searchText])
+
+    useEffect(() => {
+        if (!fetchContent.isLoading) {
+            if (fetchContent.isFetched && fetchContent.isSuccess) {
+                if (fetchContent.data.length == 0) {
+                    dispatch(listEnded())
+                }
+                dispatch(searchSuccess({
+                    data: fetchContent.data
+                }))
+            }
+            if (fetchContent.isError) {
+                dispatch(searchSuccess({
+                    error: fetchContent.error.message
+                }))
+            }
+        }
+    }, [fetchContent.isLoading, fetchContent.isFetched, fetchContent.isSuccess, fetchContent.isError, fetchContent.data])
+
 
 
     return <View style={styles.container}>

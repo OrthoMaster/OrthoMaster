@@ -7,7 +7,7 @@ import {
     View,
     Image
 } from 'react-native'
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from '../../../services/S3Service'
 
 import ModuleProgress, {
@@ -17,15 +17,16 @@ import ModuleProgress, {
 } from './ModuleProgress';
 
 const ModuleButton = ({ module, index, onPress, isBlocked }) => {
-    
-    const imgUrl = useQuery(
-        ['Formation', 'GET', "contentImage", module.module.logo_path],
-        () => getS3Image(module.module.logo_path + '/logo.png'))
+
+    const imgUrl = useQuery({
+        queryKey: ['Formation', 'GET', "contentImage", module.module.logo_path],
+        queryFn: () => getS3Image(module.module.logo_path + '/logo.png')
+    })
 
     return (
         <TouchableOpacity
             style={[styles.button, { alignSelf: (index % 2) == 0 ? 'flex-start' : 'flex-end' }]}
-            onPress={() => {if (!isBlocked) onPress(module)}}
+            onPress={() => { if (!isBlocked) onPress(module) }}
             key={module.module.module_num}
         >
 

@@ -89,6 +89,7 @@ const TextField = ({ props }) => {
             }}
             inputMode={props.type}
             placeholder={props.placeholder}
+            placeholderTextColor={"gray"}
             autoCapitalize={'none'}
             autoComplete="off"
             autoCorrect={props.type == 'email' ? false : true}

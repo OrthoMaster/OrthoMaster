@@ -4,12 +4,7 @@ import {
   Text,
   View,
   TouchableOpacity,
-  FlatList,
   Image,
-  Linking,
-  ActivityIndicator,
-  StatusBar,
-  Platform,
   Dimensions,
   SafeAreaView
 } from 'react-native';
@@ -22,6 +17,7 @@ import PrintView from './PrintView';
 import Guides from './Guides';
 
 
+const { width: screenWidth } = Dimensions.get('screen')
 
 
 export const GuidePatientButton: React.FC<{ onPress: () => any }> = ({ onPress }) => {
@@ -34,6 +30,14 @@ export const GuidePatientButton: React.FC<{ onPress: () => any }> = ({ onPress }
       borderRadius: 15,
     }}
   >
+    <Image
+      source={require('../../../../../assets/tools/guide-patient/access-icon.png')}
+      style={{
+        width: screenWidth / 6,
+        height: screenWidth / 6,
+        marginBottom: 10
+      }}
+    />
     <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Guide patient</Text>
   </TouchableOpacity>)
 }
