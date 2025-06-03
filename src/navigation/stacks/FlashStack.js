@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -10,10 +10,11 @@ import ReturnButtonIcon from '../components/ReturnButton';
 import { useIsFocused } from '@react-navigation/native';
 import { getCurrentDate } from '../../futils';
 import { saveEvent } from '../../services/SessionEventService';
+import { ContentStack } from './ContentStack';
 
 
 const FlashStackNav = createStackNavigator();
-export const FlashStack = ({}) => {
+export const FlashStack = ({ }) => {
 
   // const focused = useIsFocused()
   // const startDate = null
@@ -28,15 +29,15 @@ export const FlashStack = ({}) => {
   //     })
   //   }
   // }, [focused])
-  
+
 
 
   return (
     <FlashStackNav.Navigator
-    initialRouteName='flash-media-home'
-    screenOptions={{
-      animation: 'default'
-    }}
+      initialRouteName='flash-media-home'
+      screenOptions={{
+        animation: 'default',
+      }}
     >
       <FlashStackNav.Screen
         name="flash-media-home"
@@ -63,7 +64,7 @@ export const FlashStack = ({}) => {
           headerTitle: "",
           headerBackButtonDisplayMode: "minimal",
           headerTransparent: true,
-          headerBackImage: ()=>(<ReturnButtonIcon />)
+          headerBackImage: () => (<ReturnButtonIcon />)
         }}
       />
 
@@ -76,11 +77,16 @@ export const FlashStack = ({}) => {
           headerBackButtonDisplayMode: "minimal",
           headerTintColor: '#000',
           headerTransparent: true,
-          headerBackImage: ()=>(<ReturnButtonIcon />)
+          headerBackImage: () => (<ReturnButtonIcon />)
         }}
       />
 
       <FlashStackNav.Screen
+        name="flash-media-content-displayer"
+        component={ContentStack}
+      />
+
+      {/* <FlashStackNav.Screen
         name="flash-media-viewer"
         component={ContentDisplayer}
         options={{
@@ -91,7 +97,7 @@ export const FlashStack = ({}) => {
           headerTransparent: true,
           headerBackImage: ()=>(<ReturnButtonIcon />)
         }}
-      />
+      /> */}
 
     </FlashStackNav.Navigator>
   );

@@ -43,13 +43,9 @@ export const HomeView = ({ navigation, route }) => {
   const [allFeed, setAllFeed] = useState([])
   const {
     data: articles,
-    error,
     fetchNextPage,
     hasNextPage,
-    isFetching,
-    isFetchingNextPage,
-    status,
-    refetch
+    isFetching
   } = useInfiniteQuery({
     queryKey: ['feed', selectedFeedCategoryId],
     queryFn: fetchFeedsFromCategory,
@@ -59,7 +55,7 @@ export const HomeView = ({ navigation, route }) => {
     }
   })
 
-  const savedArticles = useQuery({queryKey: ["GET", "liked", "feed"], queryFn: () => fetchLikedArticles()})
+  const savedArticles = useQuery({ queryKey: ["GET", "liked", "feed"], queryFn: () => fetchLikedArticles() })
   // const copilote = useCopilot()
 
   const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }) => {
@@ -77,6 +73,43 @@ export const HomeView = ({ navigation, route }) => {
   }, []);
 
 
+  const navigate2Content = (params) => {
+
+    switch (params.type) {
+      case "lesson":
+        navigation.push("content", {
+          screen: 'content-main',
+          params: params
+        })
+        break;
+      case "flash":
+        console.log("Current route :", route);
+
+        // navigation.navigate('Médias', {
+        //   screen: 'flash-media-home',
+        //   params: {
+        //     screen: "flash-media-preview",
+        //     params: params
+        //   }
+        // })
+
+        navigation.navigate('main', {
+          screen: "Médias",
+          params: {
+            screen: 'flash-media-home',
+            params: {
+              screen: "flash-media-preview",
+              params: params
+            }
+          }
+        })
+        break;
+
+      default:
+        break;
+    }
+  }
+
   const handleOpenContent = async (id) => {
     getContentById(id)
       .then((content) => {
@@ -86,30 +119,25 @@ export const HomeView = ({ navigation, route }) => {
           }).then((formations) => {
             if (formations && Array.isArray(formations)) {
               const currentFormation = formations.filter((f) => f.id_formation === content.id_formation)
-
-              navigation.navigate('home-content', {
-                "content": content,
-                "formation": currentFormation[0],
-                "type": "lesson",
-                "demoMode": !currentFormation[0].certifying && !currentFormation[0].is_paid && !user.is_student
+              navigate2Content({
+                content: content,
+                formation: currentFormation[0],
+                type: "lesson",
+                demoMode: !currentFormation[0].certifying && !currentFormation[0].is_paid && !user.is_student
               })
-
             }
           })
         } else {
-          navigation.navigate('home-content', {
-            "content": content,
-            "type": "flash",
+          navigate2Content({
+            media: content,
+            type: "flash",
           })
         }
       })
   }
 
-  const tmpAsyn = async () => {
-  }
 
   useEffect(() => {
-    tmpAsyn()
     if (route.path && route.path.includes("open/content/")) {
       if (route.params && route.params.id) {
         handleOpenContent(route.params.id)
@@ -155,7 +183,9 @@ export const HomeView = ({ navigation, route }) => {
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>
           </View>
-          <OrthoCarousel entries={flashPreview.data} navigation={navigation} />
+          <OrthoCarousel entries={flashPreview.data} openContent={(content) => {
+            navigate2Content({ media: content, type: "flash" })
+          }} />
         </View>
 
         <SafeAreaView style={{ backgroundColor: "#E3E3F1" }}>

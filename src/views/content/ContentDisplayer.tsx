@@ -31,16 +31,21 @@ import { saveEvent } from "../../services/SessionEventService";
 
 
 export function ContentDisplayer({ route, navigation }) {
+  console.log(route);
   var { content, formation, demoMode } = route.params;
+  
   const dispatch = useAppDispatch()
 
   const appState = useRef(AppState.currentState);
   const contentScrollRef = useRef<ScrollView>(null);
   var launchDate = null;
   const [refreshing, setRefreshing] = useState(false)
-
   const lessonIsFinish = useSelector(selectIsFinish)
   const contentIsRunning = useSelector(selectIsRunning)
+  const xmlContent = useQuery({
+    queryKey: ['Content', 'GET', 'lessonContent', content.s3_path],
+    queryFn: () => fetchLessonContent(content.s3_path + "/" + content.title + "/content.xml")
+  });
 
   const initContent = async (xmlObject) => {
     let nbQuiz = 0
@@ -50,10 +55,7 @@ export function ContentDisplayer({ route, navigation }) {
     });
     dispatch(runContent(content, nbQuiz))
   };
-  const xmlContent = useQuery({
-    queryKey: ['Content', 'GET', 'lessonContent', content.s3_path],
-    queryFn: () => fetchLessonContent(content.s3_path + "/" + content.title + "/content.xml")
-  });
+
 
   const saveLogs = async (data: SessionEventContent) => {
     saveEvent("content_view", data)

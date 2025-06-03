@@ -1,6 +1,22 @@
 import { ReactNode } from "react";
 
 
+
+export interface IUser {
+    id_user: number;
+    name: string;
+    email: string;
+    tel: string;
+    enabled: boolean;
+    is_student: boolean;
+    job_function: string | null;
+    labos: string | null;
+    roles: string | null;
+    office_id: number | null;
+    created_at: string
+    
+}
+
 export interface IContent {
     id_content: number;
     odoo_id: number | null;

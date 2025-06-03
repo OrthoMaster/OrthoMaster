@@ -20,26 +20,8 @@ import { useGetUser } from '../../hooks/useGetUser.hook';
 
 
 export const HomeHeader = ({ navigation, userName }) => {
-    const nextLesson = useQuery({
-        queryKey: ['Home', 'GET', 'userNextLesson'],
-        queryFn: ()=>getUserNextLesson(),
-        refetchOnWindowFocus: false,
-        enabled: false
-    })
     const { colors, isLabo, logos } = useTheme()
     const user = useGetUser()
-
-    useEffect(() => {
-        if (!nextLesson.isLoading && !nextLesson.error && nextLesson.data) {
-
-            navigation.navigate('Formation', {
-                screen: 'formation-content',
-                initial: false,
-                params: { content: nextLesson.data }
-            });
-        }
-    }, [nextLesson])
-
 
     let username = user.data?.name
     

@@ -2,6 +2,8 @@ import axios from "axios";
 
 import { Buffer } from "buffer"
 import { restoreLocalConfigAsync } from "../futils";
+import { IUser } from "../utils/interfaces";
+
 const baseurl = process.env.EXPO_PUBLIC_API_URL+"/user"
 
 
@@ -77,7 +79,7 @@ export const getUsersByOfficeId = async (officeId) => {
   }
 
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = async () : Promise<IUser> => {
     try {
         const config = await restoreLocalConfigAsync()
         const authHeader = 'Bearer ' + config.JWT;

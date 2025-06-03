@@ -85,6 +85,7 @@ export type PreviewMediaParams = {
 }
 
 export const PreviewMediaView = ({ navigation, route }) => {
+    
     const { media }: PreviewMediaParams = route.params;
     const [similarTags, setSimilarTags] = useState<string>(null)
     const imageUrl = useQuery({
@@ -118,7 +119,9 @@ export const PreviewMediaView = ({ navigation, route }) => {
         if (!showAds && grantingAcces) {
             // Visionnage de pub terminée REDIRECTION vers contenu
             setGrantingAcces(false)
-            navigation.navigate('flash-media-viewer', {
+            console.log(media);
+            
+            navigation.navigate('content', {
                 content: media
             })
         }
@@ -146,6 +149,15 @@ export const PreviewMediaView = ({ navigation, route }) => {
         }
         setSimilarTags(finalStr)
     }, [])
+
+    useEffect(() => {
+      console.log("Preview route :",route);
+      
+
+    }, [
+        
+    ])
+    
 
     return (<SafeAreaView style={styles.safeArea}>
 

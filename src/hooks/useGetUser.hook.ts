@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCurrentUser } from '../services/UserService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
 // user query
 export function useGetUser() {
     // run the query
@@ -11,6 +12,7 @@ export function useGetUser() {
         //    staleTime: Infinity,
         //    cacheTime: Infinity,
         staleTime: Infinity,
-        cacheTime: Infinity
+        gcTime: Infinity
+        // cacheTime: Infinity
     });
 };

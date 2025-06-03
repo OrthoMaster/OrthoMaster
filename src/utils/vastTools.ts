@@ -1,7 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 import axios from 'axios';
 import { IVASTObject } from './interfaces';
-import { URLSearchParams } from 'url';
 import { sessionError } from '../services/SessionEventService';
 import { restoreLocalConfigAsync } from '../futils';
 const XML = `<VAST version="2.0">

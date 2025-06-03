@@ -18,6 +18,7 @@ import { getCurrentDate } from './src/futils';
 import { closeSession, getSessionId, saveEvent, startSession } from './src/services/SessionEventService';
 import { SessionEventScreen } from './src/utils/myTypes';
 import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
+import { AppRootStack } from './src/navigation/AppRootStack';
 
 export default function App({ navigation }) {
   useSessionEventFlusher()
@@ -71,6 +72,22 @@ export default function App({ navigation }) {
       })
   }
 
+  const displayView = () => {
+    if (showInitialConfigForm) {
+      return <InitialConfigForm onFinish={() => {
+        AsyncStorage.setItem("initial-conf-slider-displayed", "true")
+        queryCli.invalidateQueries({ queryKey: ['current-user'] })
+        setShowInitialConfigForm(false)
+      }} />
+    }
+    if (showInitialConfigForm == false) {
+      return <NotificationHandler>
+        <AppRootStack />
+      </NotificationHandler>
+    }
+  }
+
+
 
   useEffect(() => {
     if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
@@ -78,12 +95,14 @@ export default function App({ navigation }) {
     }
   }, [userOffices.data])
 
+
   useEffect(() => {
     if (!userQuery.isFetching && !userQuery.isLoading && userQuery.isFetched)
       setIsLoading(false)
     if (user)
       AsyncStorage.setItem('user', JSON.stringify(user))
   }, [user, userQuery])
+
 
   useEffect(() => {
     if (user && getSessionId() == null) {
@@ -103,21 +122,6 @@ export default function App({ navigation }) {
       };
     }
   }, [user])
-
-  const displayView = () => {
-    if (showInitialConfigForm) {
-      return <InitialConfigForm onFinish={() => {
-        AsyncStorage.setItem("initial-conf-slider-displayed", "true")
-        queryCli.invalidateQueries({ queryKey: ['current-user'] })
-        setShowInitialConfigForm(false)
-      }} />
-    }
-    if (showInitialConfigForm == false) {
-      return <NotificationHandler>
-        <AppTab />
-      </NotificationHandler>
-    }
-  }
 
   if (isLoading) {
     return <LoadingContent state={true} onRetry={() => { }} />

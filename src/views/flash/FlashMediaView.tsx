@@ -164,6 +164,8 @@ export const FlashMediaView = ({ navigation, route }) => {
   }
 
   useEffect(() => {
+    console.log("Media view route :",route);
+    
     if (categories.data) {
       verifyRoute()
     }
