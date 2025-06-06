@@ -55,7 +55,7 @@ const CarousselCard = ({ item, onPress }) => {
 }
 
 
-export const OrthoCarousel = ({ entries, navigation }) => {
+export const OrthoCarousel = ({ entries, onSelect }) => {
     const [formattedEntries, setformattedEntries] = useState([])
 
     useEffect(() => {
@@ -67,11 +67,7 @@ export const OrthoCarousel = ({ entries, navigation }) => {
                     key: entry.id_content,
                     content: <CarousselCard
                         item={entry}
-                        onPress={() => {
-                            navigation.navigate('home-content', {
-                                content: entry
-                            })
-                        }}
+                        onPress={() => onSelect(entry)}
                     />
                 })
             }

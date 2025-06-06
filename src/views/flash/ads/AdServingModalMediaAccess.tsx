@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Text, TouchableOpacity, View, StyleSheet, Dimensions, ActivityIndicator } from "react-native";
+import { Modal, Text, TouchableOpacity, View, StyleSheet, Dimensions, ActivityIndicator, Image, TouchableWithoutFeedback } from "react-native";
 import Animated, { useSharedValue, withSpring } from "react-native-reanimated";
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEventListener } from "expo";
@@ -7,8 +7,8 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { hmsToMilliseconds } from "../../../futils";
 import { IVASTObject } from "../../../utils/interfaces";
 import { constructVASTObjectWithUrlFromAdButler, saveVastEvent, sendInterestToAdvertiser } from "../../../utils/vastTools";
-import { useMutation } from "react-query";
-
+import { useMutation } from "@tanstack/react-query";
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
 const { width: screenWidth, height } = Dimensions.get("screen")
 
@@ -24,7 +24,9 @@ type AdCardProps = {
 }
 
 const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVASTObject }> = ({ visible, onClose, vast }) => {
-    const sendInterest = useMutation(["Ad-interest", vast.adTitle], sendInterestToAdvertiser, {
+    const sendInterest = useMutation({
+        mutationKey: ["Ad-interest", vast.adTitle],
+        mutationFn: sendInterestToAdvertiser,
         onSuccess: data => {
             setIsSent(true)
         },
@@ -54,7 +56,14 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
     return <Modal animationType="slide"
         transparent={true}
         visible={visible}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.9)" }}>
+        <TouchableWithoutFeedback onPress={()=>{
+            setIsError(false)
+            setIsSent(false)
+            onClose()
+        }}>
+            <View style={{ backgroundColor: "rgba(0,0,0,0.9)", position: 'absolute', width: '100%', height: "100%" }} />
+        </TouchableWithoutFeedback>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
             <View style={{ width: "90%", backgroundColor: "white", borderRadius: 10, padding: 20, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontWeight: 'bold' }}>Vous êtes sur le point d'avertir l'annonceur de votre intéressement.</Text>
                 <Text>Nous transmettons par email les coordonnées suivantes :</Text>
@@ -83,7 +92,7 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
                         flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5
                     }} onPress={send}>
                         {
-                            sendInterest.isLoading ?
+                            sendInterest.isPending ?
                                 <ActivityIndicator />
                                 :
                                 <Text style={{
@@ -148,7 +157,7 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
                                 onPress={send}
                             >
                                 {
-                                    sendInterest.isLoading ?
+                                    sendInterest.isPending ?
                                         <ActivityIndicator />
                                         :
                                         <Text>Réessayer</Text>
@@ -353,30 +362,71 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
 
 const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
 
-    const dummyPlayer = useVideoPlayer(vastObj.linearMedia.mediaFiles[0], dummyPlayer => {
-        dummyPlayer.loop = false;
-        dummyPlayer.muted = true;
-        dummyPlayer.pause()
-    });
+    // const dummyPlayer = useVideoPlayer(vastObj.linearMedia.mediaFiles[0], dummyPlayer => {
+    //     dummyPlayer.loop = false;
+    //     dummyPlayer.muted = true;
+    //     dummyPlayer.pause()
+    // });
 
-    return <TouchableOpacity style={styles.buttonAdsContainer}
+    const [image, setImage] = useState(null);
+
+    const generateThumbnail = async () => {
+        try {
+            const { uri } = await VideoThumbnails.getThumbnailAsync(
+                vastObj.linearMedia.mediaFiles[0],
+                {
+                    time: 15000,
+                }
+            );
+            setImage(uri);
+        } catch (e) {
+            console.warn(e);
+        }
+    };
+    useEffect(() => {
+        generateThumbnail()
+    }, [])
+
+
+    return <TouchableOpacity style={{
+        backgroundColor: "#fff",
+        width: screenWidth / 2.5,
+        margin: 5,
+        padding: 5,
+        borderRadius: 5,
+        shadowOffset: {
+            width: 0, height: 3
+        },
+        shadowRadius: 2,
+        shadowOpacity: 0.1
+    }}
         onPress={() => {
             onSelect(vastObj)
         }}
     >
         <View style={{
             width: "100%",
-            height: "100%",
+            height: (screenWidth / 2.5) * 9 / 16,
         }}>
-            <VideoView
+            {/* <VideoView
                 style={{
                     width: "100%",
                     height: "100%"
                 }}
                 contentFit="contain"
                 player={dummyPlayer}
+            /> */}
+            <Image
+                source={{ uri: image }}
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: 'contain'
+                }}
             />
         </View>
+        <Text style={{ color: "#ffaf31", fontSize: 10 }}>{vastObj.adAdviser}</Text>
+        <Text style={{ fontWeight: "bold", fontSize: 10 }}>{vastObj.adTitle?.trim()}</Text>
     </TouchableOpacity>
 }
 
@@ -407,15 +457,17 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
                     onClose()
                 }}>
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
-                    <View style={{ width: "90%", backgroundColor: "white", borderRadius: 10, padding: 20 }}>
-                        <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>Accès au média</Text>
-                        <Text style={{ fontSize: 16, marginBottom: 20 }}>Afin de pouvoir accéder à ce contenu, veuillez séléctionnez une annonce à visionner.</Text>
+                    <View style={{ width: "90%", backgroundColor: "#F1F1F1", borderRadius: 10, paddingBottom: 20 }}>
+                        <View style={{ paddingLeft: 20, paddingTop: 20 }}>
+                            <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>Accès au média</Text>
+                            <Text style={{ fontSize: 16, marginBottom: 20 }}>Afin de pouvoir accéder à ce contenu, veuillez séléctionnez une annonce à visionner.</Text>
+                        </View>
                         <View style={{
                             display: "flex",
                             flexDirection: "row",
                             flexWrap: "wrap",
-                            backgroundColor: 'red',
                             justifyContent: 'center',
+                            width: '100%',
                         }}>
                             <AdCard vastObj={vastArray[0]}
                                 onSelect={(vastObj) => {
@@ -463,10 +515,4 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
 
 
 const styles = StyleSheet.create({
-    buttonAdsContainer: {
-        backgroundColor: "#f1F1F1",
-        width: screenWidth / 3,
-        height: (screenWidth / 3) * 9 / 16,
-        margin: 5,
-    }
 })

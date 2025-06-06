@@ -4,10 +4,11 @@ import {
     View,
     ActivityIndicator,
     Text,
-    TouchableOpacity
+    TouchableOpacity,
+    Modal,
+    TouchableWithoutFeedback,
+    InteractionManager
 } from 'react-native'
-import AppModal from '../../component/AppModal';
-
 import { connect } from 'react-redux';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
@@ -15,6 +16,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 
 import { getSearchList, searchSuccess, listEnded } from '../../actions/searchAction';
 
+import { navigate } from '../../navigation/RootNavigation';
 import { SearchFilters } from './components/SearchFilters'
 import { ContentSelection } from './components/ContentSelection'
 import { SearchHeader } from './SearchHeader'
@@ -36,10 +38,11 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     useQuery({
         queryKey: ["current-user"],
         queryFn: () => getCurrentUser().then(user => {
-            setIsStudent(user.is_student) 
+            setIsStudent(user.is_student)
             return user
-        })})
-    const register2Formation = useMutation({mutationFn: registerFormation})
+        })
+    })
+    const register2Formation = useMutation({ mutationFn: registerFormation })
     const fetchContent = useQuery({
         queryKey: ["search", searchText, filters],
         queryFn: () => fetchSearchList({
@@ -90,25 +93,26 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
     }
 
     const navigate2Content = (content, formation) => {
+        setOpenModal(null)
+        if (content.type == "lesson") {
+            navigation.navigate('home-content', {
+                content: content,
+                formation: formation,
+                type: content.type,
+                demoMode: (content.certifying == false && content.is_paid == false && !isStudent)
+            })
+        } else {
+            navigate('Médias', {
+                screen: 'flash-media-home',
+            });
 
-        let nextView = 'formation-home'
-        switch (route.name) {
-            case 'home-search':
-                nextView = 'home-content'
-                break;
-            case 'formation-search':
-                nextView = 'formation-content'
-                break;
-
-            default:
-                break;
+            InteractionManager.runAfterInteractions(() => {
+                navigate('flash-media-preview', {
+                    media: content,
+                    type: "flash"
+                });
+            });
         }
-        navigation.navigate(nextView, {
-            content: content,
-            formation: formation,
-            type: content.type,
-            demoMode: (content.certifying == false && content.is_paid == false && !isStudent)
-        })
     }
 
     const handleNavigation = async (card) => {
@@ -124,7 +128,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                 isStudent || isDemo == false ||
                 (isDemo && card.demo_access == true)
             ) {
-                navigate2Content(card,{
+                navigate2Content(card, {
                     id: card.id_user_formation,
                     id_formation_catalog: card.id_formation_catalog,
                     formation_name: card.formation_name
@@ -214,108 +218,115 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                     studentMode={isStudent}
                 />
         }
-        <AppModal
-            isVisible={openModal != null}
-            onClose={() => setOpenModal(null)}
-            style={{
-                width: "80%"
-            }}
-            customRender={<View style={{
-                alignItems: 'center',
-                width: '100%'
-            }}>
-                {
-                    openModal?.id_product_odoo ?
-                        <View style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            width: '100%',
-                        }}>
-                            <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                Comment débloquer ce contenu ?
-                            </Text>
-                            <Text style={{
-                                marginVertical: 10,
-                                textAlign: 'center'
-                            }}>
-                                Pour accéder à ce contenu, vous devez débloquer la formation :
-                            </Text>
-                            <Text style={{
-                                color: "#ffaf31",
-                                fontWeight: "bold",
-                                fontStyle: 'italic',
-                                textDecorationLine: 'underline',
-                                fontSize: 16,
-                                width: '90%'
-                            }}>
-                                {openModal?.formation_name}
-                            </Text>
-                            <TouchableOpacity style={{
-                                backgroundColor: '#FFAF31',
-                                marginVertical: 20,
-                                padding: 5,
-                                borderRadius: 5
-                            }}
-                                onPress={() => {
-                                    navigation.navigate("Formation", {
-                                        screen: "formation-home",
-                                        params: {
-                                            formation2Unlock: openModal.id_formation_catalog
-                                        }
-                                    })
-                                }}
-                            >
-                                <Text>
-                                    Voir la formations
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        :
-                        <View style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            width: '100%',
-                        }}>
-                            <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                Ce contenu fait partie de la formation gratuite :
-                            </Text>
+        <Modal
+            visible={openModal != null}
+            transparent={true}
+            onRequestClose={() => setOpenModal(null)}
+        >
+            <TouchableWithoutFeedback onPress={() => setOpenModal(null)}>
+                <View style={{ backgroundColor: "rgba(0,0,0,0.5)", position: "absolute", width: '100%', height: "100%" }} />
+            </TouchableWithoutFeedback>
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <View style={{ width: "90%", backgroundColor: "#F1F1F1", borderRadius: 10, paddingBottom: 20 }}>
+                    <View style={{
+                        alignItems: 'center',
+                        width: '100%'
+                    }}>
+                        {
+                            openModal?.id_product_odoo ?
+                                <View style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    width: '100%',
+                                }}>
+                                    <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
+                                        Comment débloquer ce contenu ?
+                                    </Text>
+                                    <Text style={{
+                                        marginVertical: 10,
+                                        textAlign: 'center'
+                                    }}>
+                                        Pour accéder à ce contenu, vous devez débloquer la formation :
+                                    </Text>
+                                    <Text style={{
+                                        color: "#ffaf31",
+                                        fontWeight: "bold",
+                                        fontStyle: 'italic',
+                                        textDecorationLine: 'underline',
+                                        fontSize: 16,
+                                        width: '90%'
+                                    }}>
+                                        {openModal?.formation_name}
+                                    </Text>
+                                    <TouchableOpacity style={{
+                                        backgroundColor: '#FFAF31',
+                                        marginVertical: 20,
+                                        padding: 5,
+                                        borderRadius: 5
+                                    }}
+                                        onPress={() => {
+                                            setOpenModal(null)
+                                            navigation.navigate("Formation", {
+                                                screen: "formation-home",
+                                                params: {
+                                                    formation2Unlock: openModal.id_formation_catalog
+                                                }
+                                            })
+                                        }}
+                                    >
+                                        <Text>
+                                            Voir la formations
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                                :
+                                <View style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    width: '100%',
+                                }}>
+                                    <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
+                                        Ce contenu fait partie de la formation gratuite :
+                                    </Text>
 
-                            <Text style={{
-                                color: "#ffaf31",
-                                fontWeight: "bold",
-                                fontStyle: 'italic',
-                                textDecorationLine: 'underline',
-                                marginVertical: 30,
-                                fontSize: 16,
-                                width: "90%",
-                                textAlign: 'center'
-                            }}>
-                                {openModal?.formation_name}
-                            </Text>
-                            <TouchableOpacity style={{
-                                backgroundColor: '#05BADC',
-                                marginVertical: 20,
-                                fontSize: 12,
-                                display: 'flex',
-                                alignItems: "center",
-                                flexDirection: 'row',
-                                padding: 5,
-                                borderRadius: 5
-                            }}
-                                onPress={() => {
-                                    registerUserFormation(openModal)
-                                }}
-                            >
-                                <Text style={{ marginRight: 5, color: '#fff', textAlign: 'center' }}>Commencer la formation maintenant</Text>
-                                <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
-                            </TouchableOpacity>
-                        </View>
-                }
+                                    <Text style={{
+                                        color: "#ffaf31",
+                                        fontWeight: "bold",
+                                        fontStyle: 'italic',
+                                        textDecorationLine: 'underline',
+                                        marginVertical: 30,
+                                        fontSize: 16,
+                                        width: "90%",
+                                        textAlign: 'center'
+                                    }}>
+                                        {openModal?.formation_name}
+                                    </Text>
+                                    <TouchableOpacity style={{
+                                        backgroundColor: '#05BADC',
+                                        marginVertical: 20,
+                                        fontSize: 12,
+                                        display: 'flex',
+                                        alignItems: "center",
+                                        flexDirection: 'row',
+                                        padding: 5,
+                                        borderRadius: 5
+                                    }}
+                                        onPress={() => {
+                                            registerUserFormation(openModal)
+                                        }}
+                                    >
+                                        <Text style={{ marginRight: 5, color: '#fff', textAlign: 'center' }}>Commencer la formation maintenant</Text>
+                                        <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
+                                    </TouchableOpacity>
+                                </View>
+                        }
 
-            </View>}
-        />
+                    </View>
+                </View>
+            </View>
+        </Modal>
     </View>
 }
 

@@ -18,6 +18,7 @@ import { getCurrentDate } from './src/futils';
 import { closeSession, getSessionId, saveEvent, startSession } from './src/services/SessionEventService';
 import { SessionEventScreen } from './src/utils/myTypes';
 import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
+import { navigationRef } from './src/navigation/RootNavigation';
 
 export default function App({ navigation }) {
   useSessionEventFlusher()
@@ -28,7 +29,6 @@ export default function App({ navigation }) {
   const { data: user, ...userQuery } = useGetUser()
   const appState = useRef(AppState.currentState);
 
-  const navigationRef = useNavigationContainerRef();
   const routeNameRef = React.useRef<string | undefined>(null);
   const [datePageOpened, setDatePageOpened] = useState(getCurrentDate())
   // let datePageOpened = getCurrentDate()
