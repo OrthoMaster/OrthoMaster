@@ -28,6 +28,7 @@ import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 import { SessionEventContent } from "../../utils/myTypes"
 import { useAppDispatch } from "../../hooks/storeHooks";
 import { saveEvent } from "../../services/SessionEventService";
+import WebView from "react-native-webview";
 
 
 export function ContentDisplayer({ route, navigation }) {
@@ -63,7 +64,7 @@ export function ContentDisplayer({ route, navigation }) {
     if (xmlContent.isSuccess && xmlContent.data)
       initContent(xmlContent.data)
   }, [xmlContent.isSuccess, xmlContent.data])
-  
+
 
   useEffect(() => {
     if (lessonIsFinish) {
@@ -147,14 +148,22 @@ export function ContentDisplayer({ route, navigation }) {
         width: '100%',
         position: 'relative'
       }}>
-        <ScrollView
+        {/* <ScrollView
           overScrollMode="never"
           contentContainerStyle={styles.scrollContainer}
           ref={contentScrollRef}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {xmlContent.isLoading ? <LoadingContent state={true} onRetry={() => { }} /> : <ContentFactory component={xmlContent.data} contentInfos={content} />}
-        </ScrollView>
+        </ScrollView> */}
+        {/* {xmlContent.isLoading ? <LoadingContent state={true} onRetry={() => { }} /> : <ContentFactory component={xmlContent.data} contentInfos={content} />} */}
+        {xmlContent.isLoading ?
+          <LoadingContent state={true} onRetry={() => { }} />
+          : <WebView
+            source={require('../../../contenu.html')}
+            style={{ flex: 1 }}
+            onMessage={(data)=>console.log(data)}
+          />
+        }
 
         {
           (demoMode == true && content.demo_access == false) &&
