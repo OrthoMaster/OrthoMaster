@@ -9,6 +9,7 @@ import { IVASTObject } from "../../../utils/interfaces";
 import { constructVASTObjectWithUrlFromAdButler, saveVastEvent, sendInterestToAdvertiser } from "../../../utils/vastTools";
 import { useMutation } from "@tanstack/react-query";
 import * as VideoThumbnails from 'expo-video-thumbnails';
+import { useGetUser } from "../../../hooks/useGetUser.hook";
 
 const { width: screenWidth, height } = Dimensions.get("screen")
 
@@ -38,6 +39,8 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
     const [isError, setIsError] = useState(false)
 
     const send = () => {
+        console.log(vast.interestEmail);
+
         sendInterest.mutate({
             destEmail: vast.interestEmail,
             adTitle: vast.adTitle
@@ -56,7 +59,7 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
     return <Modal animationType="slide"
         transparent={true}
         visible={visible}>
-        <TouchableWithoutFeedback onPress={()=>{
+        <TouchableWithoutFeedback onPress={() => {
             setIsError(false)
             setIsSent(false)
             onClose()
@@ -172,6 +175,7 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
 }
 
 const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ vast, onAccess }) => {
+
     const player = useVideoPlayer(vast?.linearMedia?.mediaFiles[0], player => {
         player.loop = false;
         player.currentTime = 0;
@@ -194,9 +198,11 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
 
+
     const onSkip = () => {
         setSavedEvents([...savedEvents, "skip"])
         console.log("[ EVENT ] : skip");
+        saveVastEvent(vast.linearMedia.trackingEvents["skip"])
         player.pause()
         player.currentTime = 0
         onAccess()
@@ -204,6 +210,7 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
     const openInterestModal = (status: boolean) => {
         if (status) {
             console.log("[ EVENT ] : ClickTracking");
+            saveVastEvent(vast.linearMedia.clickTracking)
             setSavedEvents([...savedEvents, "ClickTracking"])
 
             player.pause()
@@ -215,10 +222,14 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
 
     useEffect(() => {
         if (vast) {
-            setDuration(hmsToMilliseconds(vast.linearMedia.duration))
-            setSkipLimit(hmsToMilliseconds(vast.linearMedia.skipOffset))
+            if (vast.linearMedia.duration)
+                setDuration(hmsToMilliseconds(vast.linearMedia.duration))
+            if (vast.linearMedia.skipOffset)
+                setSkipLimit(hmsToMilliseconds(vast.linearMedia.skipOffset))
             player.play()
             console.log("[ EVENT ] : start");
+            saveVastEvent(vast.linearMedia.trackingEvents["start"])
+            saveVastEvent(vast.impressions[0])
             console.log("[ EVENT ] : impression");
             setSavedEvents(["start", "impression"])
 
@@ -236,20 +247,23 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
 
                 setSavedEvents([...savedEvents, "FirstQuartile"])
                 console.log("[ EVENT ] : FirstQuartile");
+                saveVastEvent(vast.linearMedia.trackingEvents["firstQuartile"])
                 break;
             case (videoProgress >= 0.5 && videoProgress < 0.75 && !savedEvents.includes("MidPoint")):
                 setSavedEvents([...savedEvents, "MidPoint"])
                 console.log("[ EVENT ] : MidPoint");
+                saveVastEvent(vast.linearMedia.trackingEvents["midpoint"])
                 break;
             case (videoProgress >= 0.75 && !savedEvents.includes("ThirdQuartile")):
                 setSavedEvents([...savedEvents, "ThirdQuartile"])
                 console.log("[ EVENT ] : ThirdQuartile");
+                saveVastEvent(vast.linearMedia.trackingEvents["thirdQuartile"])
                 break;
             default:
                 break;
         }
 
-        if (curT > skipLimit) {
+        if (skipLimit > 0 && curT > skipLimit) {
             setShowSkipBtn(true)
         }
 
@@ -257,6 +271,7 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
     });
     useEventListener(player, "playToEnd", () => {
         console.log("[ EVENT ] : complete");
+        saveVastEvent(vast.linearMedia.trackingEvents["complete"])
         setSavedEvents([...savedEvents, "complete"])
         setIsComplete(true)
         setShowSkipBtn(false)
@@ -361,13 +376,6 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
 }
 
 const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
-
-    // const dummyPlayer = useVideoPlayer(vastObj.linearMedia.mediaFiles[0], dummyPlayer => {
-    //     dummyPlayer.loop = false;
-    //     dummyPlayer.muted = true;
-    //     dummyPlayer.pause()
-    // });
-
     const [image, setImage] = useState(null);
 
     const generateThumbnail = async () => {
@@ -408,14 +416,6 @@ const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
             width: "100%",
             height: (screenWidth / 2.5) * 9 / 16,
         }}>
-            {/* <VideoView
-                style={{
-                    width: "100%",
-                    height: "100%"
-                }}
-                contentFit="contain"
-                player={dummyPlayer}
-            /> */}
             <Image
                 source={{ uri: image }}
                 style={{
@@ -432,20 +432,46 @@ const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
 
 export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps> = ({ enabled, onClose, grantAccess }) => {
 
-    //const VAST_URL = "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&place=0&_abdk[Job Function]=pharmacien"
-    // const VAST_URL = 'https://statics.dmcdn.net/h/html/vast/simple-inline.xml';
+    const { data: user, ...userQuery } = useGetUser()
 
     const [vastArray, setvastArray] = useState<IVASTObject[]>([])
     const [selectedVAST, setSelectedVAST] = useState<IVASTObject>(null)
 
+    const vastsArrayUrl = [
+        "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
+        "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
+        "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
+    ]
 
+    const initVastArray = async (urlArray: string[]): Promise<IVASTObject[]> => {
+        let vastObjArray: IVASTObject[] = []
+        for await (const vasturl of urlArray) {
+            let vastObj = await constructVASTObjectWithUrlFromAdButler(vasturl)
 
+            if (vastObjArray.findIndex(v => v.adTitle === vastObj.adTitle) !== -1) { //VAST OBJ ALREADY EXISTS
+                var i = 0;
+                while (i < 3) { // 3 try
+                    i++;
+                    vastObj = await constructVASTObjectWithUrlFromAdButler(vasturl)
+                    if (vastObjArray.findIndex(v => v.adTitle === vastObj.adTitle) === -1) { //VAST OBJ NOT EXISTS
+                        break;
+                    }
+                }
+            }
+            if (!vastObj) { // OBJ Not created
+                continue
+            }
+            setvastArray(prev => [...prev, vastObj])
+            vastObjArray.push(vastObj)
+        }
+        return vastObjArray
+    }
 
     useEffect(() => {
-        constructVASTObjectWithUrlFromAdButler("VAST_URL")
-            .then((vastObject: IVASTObject) => {
-                setvastArray([vastObject])
-            });
+        initVastArray(vastsArrayUrl).then((vasts) => {
+            if (vasts.length === 0)
+                grantAccess()
+        });
     }, [])
 
     if (vastArray.length > 0)
@@ -469,22 +495,20 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
                             justifyContent: 'center',
                             width: '100%',
                         }}>
-                            <AdCard vastObj={vastArray[0]}
-                                onSelect={(vastObj) => {
-                                    setSelectedVAST(vastObj)
-                                }}
-                            />
-                            <AdCard vastObj={vastArray[0]}
-                                onSelect={(vastObj) => {
-                                    setSelectedVAST(vastObj)
+                            {
+                                vastArray.map((value, index) => {
+                                    if (value.linearMedia)
+                                        return <AdCard
+                                            key={index + "ad-card"}
+                                            vastObj={value}
+                                            onSelect={(vastObj) => {
+                                                setSelectedVAST(vastObj)
+                                            }}
+                                        />
+                                })
 
-                                }}
-                            /><AdCard vastObj={vastArray[0]}
-                                onSelect={(vastObj) => {
-                                    setSelectedVAST(vastObj)
+                            }
 
-                                }}
-                            />
 
                         </View>
                         <TouchableOpacity style={{
