@@ -8,7 +8,8 @@ import {
   Platform,
   StatusBar,
   RefreshControl,
-  SafeAreaView
+  SafeAreaView,
+  InteractionManager
 } from 'react-native';
 
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query"
@@ -25,6 +26,7 @@ import { HomeHeader } from './HomeHeader';
 import { getContentById } from '../../services/ContentService';
 import { getUserRegisteredFormation } from '../../services/FormationService';
 import { useGetUser } from '../../hooks/useGetUser.hook';
+import { navigate } from '../../navigation/RootNavigation';
 
 
 export const HomeView = ({ navigation, route }) => {
@@ -59,7 +61,7 @@ export const HomeView = ({ navigation, route }) => {
     }
   })
 
-  const savedArticles = useQuery({queryKey: ["GET", "liked", "feed"], queryFn: () => fetchLikedArticles()})
+  const savedArticles = useQuery({ queryKey: ["GET", "liked", "feed"], queryFn: () => fetchLikedArticles() })
   // const copilote = useCopilot()
 
   const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }) => {
@@ -97,10 +99,16 @@ export const HomeView = ({ navigation, route }) => {
             }
           })
         } else {
-          navigation.navigate('home-content', {
-            "content": content,
-            "type": "flash",
-          })
+          navigate('Médias', {
+            screen: 'flash-media-home',
+          });
+
+          InteractionManager.runAfterInteractions(() => {
+            navigate('flash-media-preview', {
+              media: content,
+              type: "flash"
+            });
+          });
         }
       })
   }
@@ -155,7 +163,18 @@ export const HomeView = ({ navigation, route }) => {
               <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
             </Pressable>
           </View>
-          <OrthoCarousel entries={flashPreview.data} navigation={navigation} />
+          <OrthoCarousel entries={flashPreview.data} onSelect={(content) => {
+            navigate('Médias', {
+              screen: 'flash-media-home',
+            });
+
+            InteractionManager.runAfterInteractions(() => {
+              navigate('flash-media-preview', {
+                media: content,
+                type: "flash"
+              });
+            });
+          }} />
         </View>
 
         <SafeAreaView style={{ backgroundColor: "#E3E3F1" }}>

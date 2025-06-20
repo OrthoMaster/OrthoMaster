@@ -17,7 +17,9 @@ const HomeStackNav = createStackNavigator();
 export const HomeStack = (user) => {
 
   return (
-    <HomeStackNav.Navigator>
+    <HomeStackNav.Navigator
+      initialRouteName='home-home'
+    >
       <HomeStackNav.Screen
         name={"home-home"}
         component={HomeView}

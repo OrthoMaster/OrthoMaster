@@ -20,7 +20,6 @@ export const AppTab = ({ }) => {
   return (
     <Tab.Navigator
       initialRouteName='Accueil'
-      
       screenOptions={({ route }) => ({
         tabBarStyle: { backgroundColor: 'white', height: Platform.OS === 'ios' ? 80 : 60 },
         tabBarItemStyle: {
