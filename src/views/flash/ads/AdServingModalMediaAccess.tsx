@@ -31,7 +31,7 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
         onSuccess: data => {
             setIsSent(true)
         },
-        onError: () => {
+        onError: (e) => {
             setIsError(true)
         }
     })
@@ -39,8 +39,6 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
     const [isError, setIsError] = useState(false)
 
     const send = () => {
-        console.log(vast.interestEmail);
-
         sendInterest.mutate({
             destEmail: vast.interestEmail,
             adTitle: vast.adTitle
@@ -68,24 +66,19 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
         </TouchableWithoutFeedback>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
             <View style={{ width: "90%", backgroundColor: "white", borderRadius: 10, padding: 20, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontWeight: 'bold' }}>Vous êtes sur le point d'avertir l'annonceur de votre intéressement.</Text>
-                <Text>Nous transmettons par email les coordonnées suivantes :</Text>
+                <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>Merci pour votre intérêt.</Text>
+                <Text style={{fontSize: 12}}>Afin d'être contacté par l'annonceur, nous lui communiquerons les informations suivantes relatives à votre compte :</Text>
                 <Text style={{
                     fontWeight: 'bold',
                     alignSelf: 'center',
-                    fontSize: 12
+                    fontSize: 12,
+                    marginVertical: 20
                 }}>
                     • Nom Prénom{'\n'}
                     • Email{'\n'}
                     • Fonction professionnelle
                 </Text>
 
-                <Text style={{
-                    marginTop: 10,
-                    fontSize: 10,
-                    color: "red",
-                }}>
-                    * En marquant votre intérêt, vous autorisé OrthoMaster à transmettre vos données à l'annonceur</Text>
                 <View style={{
                     display: 'flex', flexDirection: 'row',
                     width: '100%',
@@ -101,12 +94,13 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
                                 <Text style={{
                                     color: '#fff',
                                     backgroundColor: '#ffaf31',
-                                    width: '100%', paddingVertical: 20,
+                                    width: '100%', paddingVertical: 15,
                                     textAlign: 'center',
                                     fontWeight: 'bold',
-                                    borderRadius: 5
+                                    borderRadius: 5,
+                                    fontSize: 12
                                 }}>
-                                    Marquer mon intéret
+                                    Je confirme{'\n'} mon intérêt
                                 </Text>
                         }
                     </TouchableOpacity>
@@ -118,10 +112,11 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
                         <Text style={{
                             color: '#fff',
                             backgroundColor: '#8E8E8E',
-                            width: '100%', paddingVertical: 20,
+                            width: '100%', paddingVertical: 15,
                             textAlign: 'center',
-                            borderRadius: 5
-                        }}>En fait non</Text>
+                            borderRadius: 5,
+                            fontSize: 12
+                        }}>Annuler</Text>
                     </TouchableOpacity>
                 </View>
                 {
@@ -201,7 +196,6 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
 
     const onSkip = () => {
         setSavedEvents([...savedEvents, "skip"])
-        console.log("[ EVENT ] : skip");
         saveVastEvent(vast.linearMedia.trackingEvents["skip"])
         player.pause()
         player.currentTime = 0
@@ -209,7 +203,6 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
     }
     const openInterestModal = (status: boolean) => {
         if (status) {
-            console.log("[ EVENT ] : ClickTracking");
             saveVastEvent(vast.linearMedia.clickTracking)
             setSavedEvents([...savedEvents, "ClickTracking"])
 
@@ -227,10 +220,8 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
             if (vast.linearMedia.skipOffset)
                 setSkipLimit(hmsToMilliseconds(vast.linearMedia.skipOffset))
             player.play()
-            console.log("[ EVENT ] : start");
             saveVastEvent(vast.linearMedia.trackingEvents["start"])
             saveVastEvent(vast.impressions[0])
-            console.log("[ EVENT ] : impression");
             setSavedEvents(["start", "impression"])
 
             width.value = withSpring(screenWidth * 0.9, { duration: 2000, dampingRatio: 1 });
@@ -246,17 +237,14 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
             case (videoProgress >= 0.25 && videoProgress < 0.5 && !savedEvents.includes("FirstQuartile")):
 
                 setSavedEvents([...savedEvents, "FirstQuartile"])
-                console.log("[ EVENT ] : FirstQuartile");
                 saveVastEvent(vast.linearMedia.trackingEvents["firstQuartile"])
                 break;
             case (videoProgress >= 0.5 && videoProgress < 0.75 && !savedEvents.includes("MidPoint")):
                 setSavedEvents([...savedEvents, "MidPoint"])
-                console.log("[ EVENT ] : MidPoint");
                 saveVastEvent(vast.linearMedia.trackingEvents["midpoint"])
                 break;
             case (videoProgress >= 0.75 && !savedEvents.includes("ThirdQuartile")):
                 setSavedEvents([...savedEvents, "ThirdQuartile"])
-                console.log("[ EVENT ] : ThirdQuartile");
                 saveVastEvent(vast.linearMedia.trackingEvents["thirdQuartile"])
                 break;
             default:
@@ -270,7 +258,6 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
         setCurrentTime(curT);
     });
     useEventListener(player, "playToEnd", () => {
-        console.log("[ EVENT ] : complete");
         saveVastEvent(vast.linearMedia.trackingEvents["complete"])
         setSavedEvents([...savedEvents, "complete"])
         setIsComplete(true)
@@ -284,7 +271,10 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
         visible={vast !== null}
     >
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.9)" }}>
-            <Text style={{ fontSize: 15, fontWeight: "bold", marginBottom: 10, color: '#fff' }}>{vast?.adTitle}</Text>
+            <View style={{width: '90%'}}>
+                <Text style={{ fontSize: 15, fontWeight: "bold", color: '#fff' }}>{vast?.adAdviser}</Text>
+                <Text style={{ fontSize: 12, marginBottom: 10, color: '#fff' }}>{vast?.adTitle}</Text>
+            </View>
             <Animated.View style={{
                 width,
                 height,
@@ -332,20 +322,29 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
                 }
             </Animated.View>
             <TouchableOpacity style={{
-                backgroundColor: '#2DE485',
                 alignSelf: 'center',
                 borderRadius: 10,
-                marginTop: 20,
+                marginTop: 50,
                 alignItems: 'center',
                 justifyContent: 'center',
-                paddingVertical: 15, paddingHorizontal: 30
+                paddingVertical: 15, paddingHorizontal: 30,
+                borderWidth: 0.5,
+                borderColor: "#fff"
             }} onPress={() => openInterestModal(true)}>
-                <Text style={{ fontSize: 12, color: "#000", fontWeight: 'bold', textAlign: 'center' }}>Je suis interessé</Text>
+                <Image
+                    source={require('../../../../assets/ads/interest.png')}
+                    style={{
+                        width: 30, height: 30,
+                        objectFit: 'contain',
+                        marginBottom: 5
+                    }}
+                />
+                <Text style={{ fontSize: 10, color: "#fff", fontWeight: 'bold', textAlign: 'center' }}>Ça m'intéresse</Text>
+                <Text style={{ fontSize: 10, color: "#fff", fontWeight: 'bold', textAlign: 'center' }}>contactez-moi</Text>
             </TouchableOpacity>
             {
                 isComplete &&
                 <TouchableOpacity style={{
-                    backgroundColor: '#ffaf31',
                     padding: 10,
                     borderWidth: 2,
                     borderColor: "#fff",
@@ -361,9 +360,10 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
                 >
                     <Text style={{
                         color: "#fff",
-                        fontWeight: "bold"
+                        fontWeight: "bold",
+                        fontSize: 10
                     }}>Accéder au contenu</Text>
-                    <AntDesign style={{ marginLeft: 15 }} name="arrowright" size={24} color="#fff" />
+                    <AntDesign style={{ marginLeft: 15 }} name="arrowright" size={15} color="#fff" />
                 </TouchableOpacity>
             }
         </View>
@@ -383,7 +383,7 @@ const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
             const { uri } = await VideoThumbnails.getThumbnailAsync(
                 vastObj.linearMedia.mediaFiles[0],
                 {
-                    time: 15000,
+                    time: 0,
                 }
             );
             setImage(uri);
@@ -403,7 +403,7 @@ const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
         padding: 5,
         borderRadius: 5,
         shadowOffset: {
-            width: 0, height: 3
+            width: 0, height: 4
         },
         shadowRadius: 2,
         shadowOpacity: 0.1
@@ -425,8 +425,8 @@ const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
                 }}
             />
         </View>
-        <Text style={{ color: "#ffaf31", fontSize: 10 }}>{vastObj.adAdviser}</Text>
-        <Text style={{ fontWeight: "bold", fontSize: 10 }}>{vastObj.adTitle?.trim()}</Text>
+        <Text style={{ color: "#000", fontSize: 10, fontWeight: 'bold' }}>{vastObj.adAdviser}</Text>
+        <Text style={{ fontSize: 10, color: '#494949' }}>{vastObj.adTitle?.trim()}</Text>
     </TouchableOpacity>
 }
 
@@ -437,7 +437,7 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
     const [vastArray, setvastArray] = useState<IVASTObject[]>([])
     const [selectedVAST, setSelectedVAST] = useState<IVASTObject>(null)
 
-    const vastsArrayUrl = [
+    const vastsArrayUrl: string[] = [
         "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
         "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
         "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
@@ -450,7 +450,7 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
 
             if (vastObjArray.findIndex(v => v.adTitle === vastObj.adTitle) !== -1) { //VAST OBJ ALREADY EXISTS
                 var i = 0;
-                while (i < 3) { // 3 try
+                while (i < 5) { // 3 try
                     i++;
                     vastObj = await constructVASTObjectWithUrlFromAdButler(vasturl)
                     if (vastObjArray.findIndex(v => v.adTitle === vastObj.adTitle) === -1) { //VAST OBJ NOT EXISTS
@@ -483,10 +483,10 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
                     onClose()
                 }}>
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
-                    <View style={{ width: "90%", backgroundColor: "#F1F1F1", borderRadius: 10, paddingBottom: 20 }}>
-                        <View style={{ paddingLeft: 20, paddingTop: 20 }}>
-                            <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>Accès au média</Text>
-                            <Text style={{ fontSize: 16, marginBottom: 20 }}>Afin de pouvoir accéder à ce contenu, veuillez séléctionnez une annonce à visionner.</Text>
+                    <View style={{ width: "90%", backgroundColor: "#DFDFDF", borderRadius: 10, paddingBottom: 20 }}>
+                        <View style={{ paddingTop: 20, display: "flex", flexDirection: 'column', alignItems: 'center' }}>
+                            {/* <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>Accès au média</Text> */}
+                            <Text style={{ fontSize: 14, marginBottom: 20, width: '90%', textAlign: 'center' }}>Pour accéder à ce contenu, choisissez une communication de l'un de nos partenaires.</Text>
                         </View>
                         <View style={{
                             display: "flex",
@@ -512,13 +512,14 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
 
                         </View>
                         <TouchableOpacity style={{
-                            backgroundColor: '#ffaf31',
                             alignSelf: 'center',
                             paddingVertical: 5, paddingHorizontal: 15,
                             borderRadius: 5,
                             marginTop: 20,
+                            borderWidth: 2,
+                            borderColor: "#FFAF31"
                         }} onPress={onClose}>
-                            <Text style={{ fontSize: 16, color: "#fff", fontWeight: 'bold' }}>Annuler</Text>
+                            <Text style={{ fontSize: 16, color: "#ffaf31", fontWeight: 'bold' }}>Annuler</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -537,6 +538,3 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
 }
 
 
-
-const styles = StyleSheet.create({
-})
