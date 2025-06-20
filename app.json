@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "orientation": "portrait",
     "scheme": "orthomaster",
     "jsEngine": "hermes",
@@ -29,8 +29,11 @@
       "infoPlist": {
         "UIBackgroundModes": [
           "fetch",
+          "remote-notification",
+          "fetch",
           "remote-notification"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.hugotaieb.OrthoMaster"
     },
