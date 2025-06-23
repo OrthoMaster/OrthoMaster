@@ -161,7 +161,11 @@ export function ContentDisplayer({ route, navigation }) {
           : <WebView
             source={require('../../../contenu.html')}
             style={{ flex: 1 }}
-            onMessage={(data)=>console.log(data)}
+            onMessage={(data)=>{
+              console.log("On message");
+              
+              console.log("message :", data)
+            }}
           />
         }
 
