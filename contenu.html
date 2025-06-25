@@ -2,7 +2,7 @@
 <html lang="fr">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" ame="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz dynamiques</title>
     <style>
         body {
@@ -15,10 +15,10 @@
 
         .quiz-container {
             font-family: Arial, sans-serif;
-            background: #fff;
+            background: #fce7d8;
             padding: 20px;
             border-radius: 12px;
-            max-width: 400px;
+            width: 80%;
             margin: 30px auto;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
@@ -28,40 +28,34 @@
             flex-direction: column;
         }
 
-        .quiz-container label {
+
+        .quiz-res-btn {
             position: relative;
             display: block;
             cursor: pointer;
+            transition: all 0.3s;
         }
 
         .quiz-container input[type="radio"],
         .quiz-container input[type="checkbox"] {
-            /* position: absolute; */
-            opacity: 1;
-            /* pointer-events: none; */
+            display: none;
         }
 
-        /* input[type="radio"]:checked {
-            box-shadow: 0 0 0 3px orange;
-        } */
 
         .quiz-option {
-            display: inline-block;
-            padding: 10px 16px;
-            border: 2px solid #ccc;
-            transition: all 0.3s;
-            user-select: none;
+            background: #fff;
+            padding: 10px 10px;
             text-align: center;
-            min-width: 100px;
-            /* background-color: red; */
-            color: #333;
+            border: 2px solid #ffaf31;
         }
 
-        .quiz-container input[type="radio"]:checked + .quiz-option {
-            background-color: green;
+        .quiz-container input:checked+.quiz-option {
+            background-color: #ffaf31;
             color: #fff;
-            border-color: #2196f3;
+            border-color: #fff;
         }
+
+
 
         /* Style spécifique à quizRadio */
         .quizRadio .quiz-option {
@@ -133,6 +127,83 @@
             color: white;
             transform: rotateY(180deg);
         }
+
+        .quiz-instruction-text {
+            font-size: small;
+            color: gray;
+            text-align: center;
+        }
+
+        .number-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: Arial;
+        }
+
+        .number-wrapper button {
+            padding: 8px 14px;
+            margin-top: 0px;
+            font-size: 18px;
+            border: none;
+            background-color: #ffaf31;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .number-wrapper input[type="number"] {
+            width: 60px;
+            text-align: center;
+            font-size: 18px;
+            padding: 6px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            outline-color: #ffaf31;
+            -moz-appearance: textfield;
+        }
+
+        /* Supprime les flèches natives sur Chrome/Safari */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+
+        .dropzone {
+            border: 2px dashed #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            width: 90%;
+            text-align: center;
+        }
+
+        .draggable {
+            background: #fff;
+            border: 2px solid #ffaf31;
+            cursor: move;
+            padding: 10px;
+            margin: 10px 0px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .quizMatch-container {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .quizMatch-responses,
+        .quizMatch-answers {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
     </style>
 </head>
 
@@ -141,10 +212,20 @@
     <!-- Quiz radio -->
     <div class="quiz-container quizRadio" data-quiz-id="1" data-correct-answer="Paris" data-quiz-type="radio">
         <h3>Quiz 1 : Quelle est la capitale de la France ?</h3>
+        <p class="quiz-instruction-text">Séléctionnez une réponse parmis celle proposées</p>
         <form>
-            <label class="quiz-option"><input type="radio" name="q1" value="Lyon"> Lyon</label><br>
-            <label class="quiz-option"><input type="radio" name="q1" value="Paris"> Paris</label><br>
-            <label class="quiz-option"><input type="radio" name="q1" value="Marseille"> Marseille</label><br>
+            <label class="quiz-res-btn">
+                <input type="radio" name="q1" value="Lyon">
+                <div class="quiz-option">Lyon</div>
+            </label><br>
+            <label class="quiz-res-btn">
+                <input type="radio" name="q1" value="Paris">
+                <div class="quiz-option">Paris</div>
+            </label><br>
+            <label class="quiz-res-btn">
+                <input type="radio" name="q1" value="Marseille">
+                <div class="quiz-option">Marseille</div>
+            </label><br>
             <button type="submit">Valider</button>
         </form>
         <div class="result"></div>
@@ -153,66 +234,87 @@
     <!-- Quiz checkbox -->
     <div class="quiz-container quizCheckbox" data-quiz-id="2" data-correct-answer="[2,3]" data-quiz-type="checkbox">
         <h3>Quiz 2 : Quels membres dans la partie sup du corps ?</h3>
+        <p class="quiz-instruction-text">Séléctionnez une ou plusieurs réponse(s) parmis celle proposées</p>
         <form>
-            <label class="quiz-option"><input type="checkbox" name="q2" value="1">Pied</label><br>
-            <label class="quiz-option"><input type="checkbox" name="q2" value="2">Cervicales</label><br>
-            <label class="quiz-option"><input type="checkbox" name="q2" value="3">Epaule</label><br>
+            <label class="quiz-res-btn">
+                <input type="checkbox" name="q2" value="1">
+                <div class="quiz-option">Pied</div>
+            </label><br>
+            <label class="quiz-res-btn">
+                <input type="checkbox" name="q2" value="2">
+                <div class="quiz-option">Cervicales</div>
+            </label><br>
+            <label class="quiz-res-btn">
+                <input type="checkbox" name="q2" value="3">
+                <div class="quiz-option">Epaule</div>
+            </label><br>
             <button type="submit">Valider</button>
         </form>
         <div class="result"></div>
     </div>
 
     <!-- Quiz number -->
-    <div class="quiz-container" data-quiz-id="3" data-correct-answer="5" data-quiz-type="number">
+    <div class="quiz-container quizNumber" data-quiz-id="3" data-correct-answer="5" data-quiz-type="number">
         <h3>Combien de doigts dans la main ?</h3>
+        <p class="quiz-instruction-text">Séléctionnez le bon numéro</p>
         <form>
-            <label><input type="number" name="q2" value="1"></label><br>
+            <div class="number-wrapper">
+                <button type="button" onclick="adjustValue(-1)">-</button>
+                <input type="number" id="customNumber" value="0" min="0" max="10" />
+                <button type="button" onclick="adjustValue(1)">+</button>
+            </div>
             <button type="submit">Valider</button>
         </form>
         <div class="result"></div>
     </div>
 
     <!-- Quiz match -->
-    <div class="quiz-container-tmp">
-        <h3>Quiz 4 : Associe chaque pays à sa capitale</h3>
+    <div class="quiz-container quizMatch" data-quiz-id="4" data-correct-answer="5" data-quiz-type="match">
+        <h3>Quiz 4 : Associe chaque villes à son pays</h3>
+        <p class="quiz-instruction-text">Aligner propositions et réponses</p>
 
-        <div class="pair">
-            <span>France</span>
-            <select data-answer="Paris">
-                <option value="">-- Choisir --</option>
-                <option value="Madrid">Madrid</option>
-                <option value="Paris">Paris</option>
-                <option value="Rome">Rome</option>
-            </select>
-        </div>
+        <form>
+            <div class="quizMatch-container">
+                <div class="quizMatch-responses" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <div class="draggable" draggable="true" ondragstart="drag(event)" data-value="Paris">Paris</div>
+                    <div class="draggable" draggable="true" ondragstart="drag(event)" data-value="Londres">Londres</div>
+                    <div class="draggable" draggable="true" ondragstart="drag(event)" data-value="Tokyo">Tokyo</div>
+                    <div class="draggable" draggable="true" ondragstart="drag(event)" data-value="Berlin">Berlin</div>
+                    <div class="draggable" draggable="true" ondragstart="drag(event)" data-value="Boston">Boston</div>
+                </div>
+                <div class="quizMatch-answers">
+                    <div class="dropzone" data-answer="Paris" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        Ville de France
+                        <div class="dropzone-res"></div>
+                    </div>
+                    <div class="dropzone" data-answer="Boston" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        Ville d'amérique
+                        <div class="dropzone-res"></div>
+                    </div>
+                    <div class="dropzone" data-answer="Tokyo" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        Ville d'asie
+                        <div class="dropzone-res"></div>
+                    </div>
+                    <div class="dropzone" data-answer="Londre" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        Ville de Grande Bretagne
+                        <div class="dropzone-res"></div>
+                    </div>
+                    <div class="dropzone" data-answer="Berlin" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        Ville d'allemagne
+                        <div class="dropzone-res"></div>
+                    </div>
+                </div>
+            </div>
 
-        <div class="pair">
-            <span>Espagne</span>
-            <select data-answer="Madrid">
-                <option value="">-- Choisir --</option>
-                <option value="Lisbonne">Lisbonne</option>
-                <option value="Madrid">Madrid</option>
-                <option value="Paris">Paris</option>
-            </select>
-        </div>
 
-        <div class="pair">
-            <span>Italie</span>
-            <select data-answer="Rome">
-                <option value="">-- Choisir --</option>
-                <option value="Rome">Rome</option>
-                <option value="Berlin">Berlin</option>
-                <option value="Madrid">Madrid</option>
-            </select>
-        </div>
-
-        <button id="validate">Valider</button>
+            <button type="submit">Valider</button>
+        </form>
         <div class="result" id="result"></div>
     </div>
 
 
-    <h3>Carte retournable</h3>
 
+    <h3>Carte retournable</h3>
     <div class="card-container">
         <div class="card" id="flipCard">
             <div class="card-face card-front">
@@ -270,6 +372,16 @@
                 }
             }
 
+            const handleMatchRes = () => {
+                const selected = form.querySelector('input[type="match"]');
+
+                // if (!selected) return -1
+                // else {
+                //     if (selected.value === correctAnswer) return 1
+                //     else return 0
+                // }
+            }
+
             form.addEventListener('submit', function (event) {
                 event.preventDefault();
                 var res = -1
@@ -284,7 +396,8 @@
                     case 'number':
                         res = handleNumberRes()
                         break;
-
+                    case 'match':
+                        res = handleMatchRes()
                     default:
                         break;
                 }
@@ -310,10 +423,74 @@
                 }
             });
         });
+
+
+
+
+
         const card = document.getElementById('flipCard');
         card.addEventListener('click', () => {
             card.classList.toggle('is-flipped');
         });
+
+
+
+
+
+        function adjustValue(change) {
+            const input = document.getElementById("customNumber");
+            const min = parseInt(input.min) || -Infinity;
+            const max = parseInt(input.max) || Infinity;
+            let value = parseInt(input.value) || 0;
+            value = Math.min(max, Math.max(min, value + change));
+            input.value = value;
+        }
+
+
+
+
+
+        let dragged;
+
+        function drag(event) {
+            dragged = event.target;
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            const dropzone = event.target;
+            var targetZone = null
+            // const expected = dropzone.dataset.answer;
+            // const actual = dragged.dataset.value;
+
+            if (dropzone.classList.contains('quizMatch-responses')) {
+                console.log("responses");
+                targetZone = dropzone
+            } else {
+                console.log("answer");
+                targetZone = dropzone.querySelector('.dropzone-res')
+            }
+
+            console.log("dropzone", dropzone);
+            console.log("target zone", targetZone);
+
+
+            console.log("actual :", dragged);
+
+
+            targetZone.insertAdjacentHTML(
+                "beforeend",
+                dragged.outerHTML,
+            );
+            //targetZone.innerHTML = dragged.outerHTML;
+            // dropzone.classList.add("correct");
+            // dragged.style.display = "none";
+            dragged.remove()
+        }
     </script>
 
 </body>
