@@ -2,9 +2,20 @@
 <html lang="fr">
 
 <head>
-    <meta charset="UTF-8" ame="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz dynamiques</title>
     <style>
+        * {
+            -webkit-user-select: none;
+            /* iOS/Safari */
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+  html, body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -203,7 +214,6 @@
             flex-direction: column;
             align-items: center;
         }
-
     </style>
 </head>
 
