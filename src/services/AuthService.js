@@ -30,22 +30,6 @@ class AuthService {
     SecureStore.deleteItemAsync('refreshToken')
   }
 
-  async checkUserConnection(token) {
-
-    const authHeader = 'Bearer ' + token;
-    const res = await axios.get(baseurl + '/connect', { headers: { Authorization: authHeader } });
-    return res
-  }
-
-  async changePassword(credentials) {
-
-    try {
-      return await axios.post(baseurl + '/user/edit/password', credentials);
-    } catch (e) {
-      throw e;
-    }
-  }
-
   async getNewToken() {
     const config = await restoreLocalConfigAsync()
     const refreshToken = await SecureStore.getItemAsync('refreshToken')
@@ -71,70 +55,6 @@ class AuthService {
       })
   }
 
-  async registerNewCompanyAndUser(data) {
-    const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.JWT;
-    return axios
-      .post(baseurl + "/v2/registration", data, { headers: { Authorization: authHeader } })
-  }
-
-  async sendSubscriptionLinkByEmail(body) {
-    const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.JWT;
-
-    return axios
-      .post(baseurl + "/v2/registration/mailing", body, { headers: { Authorization: authHeader } })
-  }
-
-  async activateUser(body) {
-    return axios
-      .post(baseurl + '/v2/registration/activate',
-        {
-          username: body.username,
-          password: body.password,
-          user_id: body.user_id
-        }, {
-        headers: {
-          "invitation-token": body.token
-        }
-      })
-  }
-
-  async inviteUser(data) {
-
-    return axios
-      .post(baseurl + '/v2/registration/register-contact?type=' + data.mode,
-        data.body,
-        {
-          headers: {
-          "invitation-token": data.token
-          }
-        })
-  }
-
-  async getFormSubscriptions() {
-    const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.JWT;
-
-    return axios.get(baseurl + '/v2/subscription/get-products', { headers: { Authorization: authHeader } })
-  }
-
-
-  async getFormProperties({ objectType, property }) {
-    const config = await restoreLocalConfigAsync()
-    const authHeader = 'Bearer ' + config.JWT;
-
-    return axios.get(baseurl + `/v2/registration/get-hs-properties?objectType=${objectType}&property=${property}`,
-      { headers: { Authorization: authHeader } })
-  }
-
-  async retreiveUsernameByEmail(email) {
-    try {
-      return await axios.post(baseurl + '/user/email/username', { email });
-    } catch (e) {
-      throw e;
-    }
-  }
 
 
 }

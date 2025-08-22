@@ -205,7 +205,10 @@ export const PreviewMediaView = ({ navigation, route }) => {
                         <Text style={[styles.mediaTextContainer, { fontWeight: 'bold', fontSize: 16 }]}>{media.title}</Text>
                         <Text style={styles.mediaTextContainer}>⏱️ {media.duration}</Text>
                         <TouchableOpacity style={styles.accessButtonContainer}
-                            onPress={() => setShowAds(true)}
+                            onPress={() => navigation.navigate('flash-media-viewer', {
+                                content: media
+                            })}
+                        // onPress={() => setShowAds(true)}
                         >
                             <FontAwesome name="play" size={18} color="black" />
                             <Text style={{ marginLeft: 10 }}>Accéder</Text>
