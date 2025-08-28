@@ -1,116 +1,135 @@
-import React, { useState, useEffect } from "react";
-
+import React from "react";
+import { StatusBar } from 'expo-status-bar';
 import {
-    SafeAreaView,
-    Text,
-    View,
-    TouchableOpacity,
-    StyleSheet,
-    Linking,
-    Image
+  SafeAreaView,
+  Text,
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Linking,
+  Image
 } from "react-native";
 
-
-
-
+const Colors = require('../../constants/Colors');
+const Styles = require('../../constants/Styles');
 
 export const AuthHome = ({ navigation }) => {
-    const [indicatorIndex, setIndicatorIndex] = useState(0)
+  return (
+    <>
+      <StatusBar style="light" backgroundColor={Colors.primary} />
+      <SafeAreaView style={[Styles.container, styles.container]}>
+        <Image
+          source={require("../../../assets/images/logo/white.webp")}
+          style={styles.logo}
+        />
+        <Text style={styles.title}>OrthoMaster</Text>
+        <Text style={styles.subTitle}>l'orthopédie dans la poche</Text>
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <Image
-                source={require("../../../assets/logo-text-orange.png")}
-                style={{
-                    height: "10%",
-                    width: "50%",
-                    resizeMode: "contain",
-                }}
-            />
-            <Image
-                source={require("../../../assets/auth/mockup.png")}
-                style={{
-                    height: "40%", width: "70%",
-                    resizeMode: 'contain',
-                }}
-            />
-            <View style={{ width: "90%", paddingVertical: 30 }}>
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFAF31' }}>
-                    OrthoMaster optimise
-                </Text>
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFAF31' }}>
-                    votre délivrance orthopédique
-                </Text>
-                <Text style={{ fontSize: 18 }}>
-                    pour un parcours patient
-                </Text>
-                <Text style={{ fontSize: 18 }}>
-                    plus efficace, profitable et bénéfique
-                </Text>
-            </View>
-            <View style={{
-                width: "95%",
-                alignItems: 'center',
-                position: 'absolute',
-                bottom: 50
-            }}>
-                <TouchableOpacity style={[styles.button,
-                {
-                    backgroundColor: '#FFAF31'
-                }]}
-                    onPress={() => {
-                        navigation.navigate('auth-home')
-                    }}
-                >
-                    <Text style={styles.buttonText}>Se connecter</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.button,
-                {
-                    backgroundColor: '#DEDEDE'
-                }]}
-                    onPress={() => {
-                        Linking.openURL("https://espace.orthomaster.fr/inscription")
-                    }}
-                >
-                    <Text style={[styles.buttonText, {color: '#555555'}]}>S'inscrire</Text>
-                </TouchableOpacity>
-            </View>
+        <View style={styles.actionContainer}>
+          <TouchableOpacity style={styles.btnLogin}
+            onPress={() => {
+              navigation.navigate('auth-home')
+            }}
+          >
+            <Text style={styles.btnLoginText}>Se connecter</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.btnRegister}
+            onPress={() => {
+              Linking.openURL("https://espace.orthomaster.fr/inscription")
+            }}
+          >
+            <Text style={styles.btnRegisterText}>S'inscrire</Text>
+          </TouchableOpacity>
 
-        </SafeAreaView>
-    )
+          <TouchableOpacity
+            onPress={() => {
+              Linking.openURL("https://espace.orthomaster.fr/web/reset_password")
+            }}
+          >
+            <Text style={styles.btnForgotText}>Mot de passe oublié ?</Text>
+          </TouchableOpacity>
+        </View>
+
+      </SafeAreaView>
+    </>
+  )
 }
 
 const styles = StyleSheet.create({
-    container: {
-        alignItems: 'center',
-        flex: 1
-    },
-    carouselIndicatorContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '15%'
-    },
-    carouselIndicator: {
-        width: 10,
-        height: 10,
-        borderRadius: 10
-    },
-    buttonsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        height: 90
-    },
-    button: {
-        borderRadius: 5,
-        marginVertical: 5,
-        height: 60,
-        width: '90%',
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    buttonText: {
-        fontSize: 18,
-        color: '#ffffff',
-        fontWeight: 'bold'
-    }
+  container: {
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    verticalAlign: 'middle',
+  },
+  logo: {
+    height: 120,
+    width: 120,
+    resizeMode: 'contain',
+  },
+  title: {
+    fontSize: 26,
+    fontFamily: 'Poppins-Medium',
+    textAlign: 'center',
+    color: Colors.white,
+    marginTop: 16
+  },
+  subTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+    textAlign: 'center',
+    color: Colors.grayLight,
+    paddingBottom: 140,
+  },
+
+  actionContainer: {
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 48
+  },
+
+  btnLogin: {
+    backgroundColor: Colors.white,
+    width: 200,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    shadowColor: Colors.grayLight,
+    marginBottom: 16,
+  },
+  btnLoginText: {
+    color: Colors.primary,
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+
+  btnRegister: {
+    borderWidth: 1,
+    borderColor: Colors.white,
+    width: 200,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  btnRegisterText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  btnForgotText: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 16,
+    color: Colors.grayLight,
+    marginTop: 24,
+    marginBottom: 48,
+  }
 })

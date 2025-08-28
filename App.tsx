@@ -28,7 +28,7 @@ import * as SplashScreen from 'expo-splash-screen';
 export default function App({ navigation }) {
   useSessionEventFlusher()
 
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
   const queryCli = useQueryClient()
   const { data: user, ...userQuery } = useGetUser()
@@ -70,14 +70,14 @@ export default function App({ navigation }) {
    * Prevent capture
    * @author Francis
    */
-  useEffect(() => {
-    ScreenCapture.preventScreenCaptureAsync();
+  // useEffect(() => {
+  //   ScreenCapture.preventScreenCaptureAsync();
 
-    // Prevent with android
-    if (Platform.OS === 'android') {
-      NativeModules.PreventScreenshotModule.activate();
-    }
-  }, []);
+  //   // Prevent with android
+  //   if (Platform.OS === 'android') {
+  //     NativeModules.PreventScreenshotModule.activate();
+  //   }
+  // }, []);
 
   const linking = {
     prefixes: [prefix],
@@ -149,19 +149,25 @@ export default function App({ navigation }) {
     }
   }, [user])
 
+  /** Handle display main views
+   * @autho Hugo
+   * @update Francis
+  */
   const displayView = () => {
-    if (showInitialConfigForm) {
-      return <InitialConfigForm onFinish={() => {
-        AsyncStorage.setItem("initial-conf-slider-displayed", "true")
-        queryCli.invalidateQueries({ queryKey: ['current-user'] })
-        setShowInitialConfigForm(false)
-      }} />
-    }
-    if (showInitialConfigForm == false) {
-      return <NotificationHandler>
-        <AppTab />
-      </NotificationHandler>
-    }
+    return (
+      showInitialConfigForm
+      ?
+        // TODO: Upgrade UX
+        <InitialConfigForm onFinish={() => {
+          AsyncStorage.setItem("initial-conf-slider-displayed", "true")
+          queryCli.invalidateQueries({ queryKey: ['current-user'] })
+          setShowInitialConfigForm(false)
+        }} />
+      :
+        <NotificationHandler>
+          <AppTab />
+        </NotificationHandler>
+    )
   }
 
   if (isLoading) {
@@ -196,10 +202,9 @@ export default function App({ navigation }) {
         setDatePageOpened(getCurrentDate())
       }}
     >
-      {
-        user ?
-          displayView()
-          : <AuthStack />
+      {user
+        ? displayView()
+        : <AuthStack />
       }
     </NavigationContainer>
   );

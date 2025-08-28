@@ -1,206 +1,224 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
-    View,
-    TextInput,
-    Text,
-    StyleSheet,
-    SafeAreaView,
-    TouchableOpacity,
-    Image,
-    Dimensions,
-    TouchableWithoutFeedback,
-    Keyboard,
-    Platform,
-    Linking,
-    ScrollView
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Image,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
+  Linking,
+  ScrollView,
+  ActivityIndicator
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useLogin } from '../../hooks/useLogin.hook';
+
+const Colors = require('../../constants/Colors');
+const Styles = require('../../constants/Styles');
 
 
 export const LoginView = ({ navigation, route }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [statusMessage, setStatusMessage] = useState('')
-    const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
-    const login = useLogin()
+  const login = useLogin();
 
-
-    const handleClick = () => {
-        login.mutate({ email: email, password: password })
+  // Login failed
+  useEffect(() => {
+    if (login.isError) {
+      setIsChecking(false);
     }
+  }, [login.isError]);
 
-    return (
-        <SafeAreaView style={[styles.container]}>
-            <ScrollView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={[{ width: '100%' }]}
-                automaticallyAdjustKeyboardInsets={true}
-                keyboardDismissMode='on-drag'
-                keyboardShouldPersistTaps='never'
-                contentContainerStyle={{ height: '100%' }}
-            >
-                <View style={{
-                    width: "100%", flex: 1,
-                    alignItems: 'center'
-                }}>
+  const handleClick = () => {
+    setIsChecking(true);
+    login.mutate({ email: email, password: password })
+  }
 
+  return (
+    <SafeAreaView style={Styles.container}>
+      <ScrollView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={[{ width: '100%' }]}
+        automaticallyAdjustKeyboardInsets={true}
+        keyboardDismissMode='on-drag'
+        keyboardShouldPersistTaps='never'
+        contentContainerStyle={{ height: '100%' }}
+      >
+        <View style={Styles.container}>
+          <View style={styles.logoContainer}>
+            <Image style={styles.logo}
+              source={require('../../../assets/images/banners/auth.webp')}
+            />
+          </View>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={{ padding: 24 }}>
+              <Text style={styles.title}>Bonjour,</Text>
+              <Text style={styles.subTitle}>Connectez-vous pour continuer !</Text>
 
-                    <View style={styles.logoContainer}>
-                        <Image
-                            style={{
-                                width: '80%',
-                                height: "100%",
-                                resizeMode: 'contain',
-                            }}
-                            source={require('../../../assets/logo-text.png')}
-                        />
-                    </View>
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                        <View style={styles.connectionBox}>
-                            <Text style={styles.title}>Connexion</Text>
+              {
+                login.isError &&
+                <Text style={Styles.errorMessageContainer}>
+                  <Text style={Styles.errorText}>{login.error.response.data.message}</Text>
+                </Text>
+              }
+              <TextInput
+                style={styles.textInput}
+                placeholder="Adresse e-mail"
+                value={email}
+                onChangeText={setEmail}
+                textContentType="email"
+                autoCapitalize={'none'}
+                autoComplete='email'
+                placeholderTextColor={Colors.gray}
+                maxLength={45}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              />
 
-                            <TextInput
-                                style={[styles.intputField]}
-                                placeholder="Adresse e-mail"
-                                value={email}
-                                onChangeText={setEmail}
-                                textContentType="email"
-                                autoCapitalize={'none'}
-                                autoComplete='email'
-                                placeholderTextColor={"gray"}
-                            />
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Mot de passe"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  textContentType="password"
+                  autoComplete='password'
+                  autoCapitalize={'none'}
+                  onBlur={() => Keyboard.dismiss()
+                  }
+                  placeholderTextColor={Colors.gray}
+                  maxLength={45}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                />
+                <Feather
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={24} color={Colors.gray}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              </View>
 
-                            <View style={styles.intputField}>
-                                <TextInput
-                                    style={{ flex: 1, color: '#000' }}
-                                    placeholder="Mot de passe"
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    secureTextEntry={!showPassword}
-                                    textContentType="password"
-                                    autoComplete='password'
-                                    autoCapitalize={'none'}
-                                    onBlur={()=> Keyboard.dismiss()
-                                    }
-                                    placeholderTextColor={"gray"}
-                                />
-                                <Ionicons
-                                    name={showPassword ? "eye-off" : "eye"}
-                                    size={24} color="#aaa"
-                                    onPress={() => setShowPassword(!showPassword)}
-                                />
+              <TouchableOpacity
+                onPress={() => {
+                  Linking.openURL("https://espace.orthomaster.fr/web/reset_password")
+                }}
+              >
+                <Text style={styles.forgotButton}>Mot de passe oublié ?</Text>
+              </TouchableOpacity>
 
-                            </View>
+              <TouchableOpacity
+                style={Styles.btnPrimary}
+                onPress={handleClick}
+                disabled={isChecking}
+              >
+                {isChecking
+                  ? <ActivityIndicator size="small" color={Colors.white} />
+                  : <Text style={Styles.btnPrimaryText}>Continuer</Text>
+                }
+              </TouchableOpacity>
 
-                            {
-                                login.isError &&
-                                <Text style={styles.authText}>{login.error.response.data.message}</Text>
-                            }
-                            {
-                                statusMessage?.length > 0 &&
-                                <Text style={styles.authText}>{statusMessage}</Text>
-                            }
-                            <TouchableOpacity
-                                style={styles.signInButton}
-                                onPress={handleClick}
-                            >
-                                <Text style={styles.signInButtonText}>Continuer</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => {
-                                    Linking.openURL("https://espace.orthomaster.fr/web/reset_password")
-                                }}
-                            >
-                                <Text style={{ color: '#ffaf31', fontSize: 18 }}>Mot de passe oublié</Text>
-                            </TouchableOpacity>
+              <View>
+                <Text style={styles.registerSubtext}>Vous n'avez pas de compte ?</Text>
+                <Text
+                  onPress={() => { Linking.openURL("https://espace.orthomaster.fr/inscription") }}
+                  style={styles.registerButton}>
+                  Inscrivez-vous
+                </Text>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
 
-                            <View style={{
-                                alignItems: 'center',
-                                marginVertical: 20
-                            }}>
-                                <Text>Pas encore de compte ?</Text>
-                                <Text
-                                    onPress={() => { Linking.openURL("https://espace.orthomaster.fr/inscription") }}
-                                    style={{
-                                        color: '#ffaf31',
-                                        fontWeight: 'bold',
-                                        textDecorationLine: 'underline'
-                                    }}>
-                                    Inscrivez-vous
-                                </Text>
-                            </View>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </View>
-
-            </ScrollView>
-        </SafeAreaView>
-    );
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#F1F1F1',
-        flex: 1,
-        alignItems: 'center'
-    },
-    logoContainer: {
-        height: "30%",
-        width: '100%',
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    connectionBox: {
-        backgroundColor: '#FFFEFD',
-        width: '95%',
-        borderRadius: 24,
-        alignItems: 'center',
-        paddingVertical: 20,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: '600',
-        marginBottom: 25,
-        color: '#1B1C1E'
-    },
-    intputField: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 8,
-        backgroundColor: '#f3f3f3',
-        height: 50,
-        width: '80%',
-        justifyContent: 'space-between',
-        paddingHorizontal: 10,
-        marginVertical: 5
-    },
-    signInButton: {
-        width: '90%',
-        height: 60,
-        backgroundColor: "#FFAF31",
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 12,
-        marginTop: 20,
-        marginBottom: 30
-    },
-    signInButtonText: {
-        fontWeight: '600',
-        fontSize: 18,
-        color: '#FFF',
-    },
-    forgetButton: {
-        marginBottom: 50
-    },
-    authText: {
-        color: '#E45204',
-        paddingVertical: 20
-    },
-    redirectMessage: {
-        fontSize: 20,
-        textAlign: 'center',
-        fontWeight: '400',
-        marginBottom: 10
-    }
+  logoContainer: {
+    height: 200,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 200,
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  formContainer: {
+    padding: 24,
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: 'Poppins-Medium',
+    lineHeight: 30,
+    color: Colors.text
+  },
+  subTitle: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    marginBottom: 32,
+    color: Colors.subtext
+  },
+  textInput: {
+    backgroundColor: Colors.grayLight,
+    borderRadius: 8,
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    color: Colors.text,
+    overflow: "hidden",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    paddingVertical: 20,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: Colors.grayLight,
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingEnd: 16,
+  },
+  passwordInput: {
+    width: '80%',
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    color: Colors.text,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+  },
+
+  forgotButton: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    textAlign: 'right',
+    marginTop: 16,
+    marginBottom: 16,
+    color: Colors.primary,
+  },
+
+  registerSubtext: {
+    fontFamily: 'Roboto',
+    fontSize: 14,
+    color: Colors.gray,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginTop: 48
+  },
+  registerButton: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    textAlign: 'center',
+    color: Colors.primary,
+    textTransform: 'uppercase',
+  },
 })

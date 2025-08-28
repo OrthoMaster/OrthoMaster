@@ -31,7 +31,6 @@ export const HomeHeader = ({ navigation, userName }) => {
 
     useEffect(() => {
         if (!nextLesson.isLoading && !nextLesson.error && nextLesson.data) {
-
             navigation.navigate('Formation', {
                 screen: 'formation-content',
                 initial: false,
@@ -92,7 +91,8 @@ export const HomeHeader = ({ navigation, userName }) => {
                             {username}
                         </Text>
                     </View>
-                    : <Image
+                    :
+                    <Image
                         source={logos.full}
                         style={{
                             width: Dimensions.get('screen').width * 0.3,
@@ -101,6 +101,8 @@ export const HomeHeader = ({ navigation, userName }) => {
                         }}
                     />
             }
+
+            {/* Quick buttons */}
             <View
                 style={{
                     flexDirection: 'row',
