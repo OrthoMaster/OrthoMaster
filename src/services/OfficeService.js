@@ -98,7 +98,7 @@ export const removeMemberOffice = async ({ id_user, id_office }) => {
 }
 
 
-export const getUserAttachedOffices = async ({ userId = 0 }) => {
+export const getUserAttachedOffices = async ({ userId }) => {
   const config = await restoreLocalConfigAsync()
   const authHeader = 'Bearer ' + config.JWT;
   
@@ -106,7 +106,7 @@ export const getUserAttachedOffices = async ({ userId = 0 }) => {
     .get(baseurl + "/office/v2/list", {
       headers: { Authorization: authHeader },
       params: {
-        members: [userId > 0 ? userId : config.user.id_user]
+        members: [userId ? userId : config.user.id_user]
       }
 
     })

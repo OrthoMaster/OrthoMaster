@@ -22,6 +22,8 @@ import { navigationRef } from './src/navigation/RootNavigation';
 
 import * as ScreenCapture from "expo-screen-capture";
 import { NativeModules, Platform } from 'react-native';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 
 export default function App({ navigation }) {
   useSessionEventFlusher()
@@ -35,6 +37,47 @@ export default function App({ navigation }) {
   const routeNameRef = React.useRef<string | undefined>(null);
   const [datePageOpened, setDatePageOpened] = useState(getCurrentDate())
   // let datePageOpened = getCurrentDate()
+
+
+  /**
+   * Prevent the splash screen from auto-hiding before asset loading is complete.
+   * @author Francis
+   */
+  SplashScreen.preventAutoHideAsync();
+
+  /**
+   * Load font
+   * @author Francis
+   */
+  const [fontLoaded, fontError] = useFonts({
+    Roboto: require('./assets/fonts/Roboto-VariableFont_wdth,wght.ttf'),
+    'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
+    'Poppins-Light': require('./assets/fonts/Poppins-Light.ttf'),
+    'Poppins-Medium': require('./assets/fonts/Poppins-Medium.ttf'),
+    'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
+  });
+  useEffect(() => {
+    if (fontError) throw fontError;
+  }, [fontError]);
+  useEffect(() => {
+    // Hide splash screen when fonts are loaded
+    if (fontLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontLoaded]);
+
+  /**
+   * Prevent capture
+   * @author Francis
+   */
+  useEffect(() => {
+    ScreenCapture.preventScreenCaptureAsync();
+
+    // Prevent with android
+    if (Platform.OS === 'android') {
+      NativeModules.PreventScreenshotModule.activate();
+    }
+  }, []);
 
   const linking = {
     prefixes: [prefix],
@@ -73,15 +116,6 @@ export default function App({ navigation }) {
         return
       })
   }
-
-  useEffect(() => {
-    // Prevent screen capture
-    ScreenCapture.preventScreenCaptureAsync();
-
-    if (Platform.OS === 'android') {
-      NativeModules.PreventScreenshotModule.activate();
-    }
-  }, []);
 
   useEffect(() => {
     if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
