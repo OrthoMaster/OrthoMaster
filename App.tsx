@@ -20,6 +20,9 @@ import { SessionEventScreen } from './src/utils/myTypes';
 import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
 import { navigationRef } from './src/navigation/RootNavigation';
 
+import * as ScreenCapture from "expo-screen-capture";
+import { NativeModules, Platform } from 'react-native';
+
 export default function App({ navigation }) {
   useSessionEventFlusher()
 
@@ -71,6 +74,14 @@ export default function App({ navigation }) {
       })
   }
 
+  useEffect(() => {
+    // Prevent screen capture
+    ScreenCapture.preventScreenCaptureAsync();
+
+    if (Platform.OS === 'android') {
+      NativeModules.PreventScreenshotModule.activate();
+    }
+  }, []);
 
   useEffect(() => {
     if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
