@@ -20,6 +20,8 @@ import { SessionEventScreen } from './src/utils/myTypes';
 import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
 import { navigationRef } from './src/navigation/RootNavigation';
 
+import CaptureGuard from './src/component/captureGuard/useCaptureGuard';
+
 export default function App({ navigation }) {
   useSessionEventFlusher()
 
@@ -114,7 +116,9 @@ export default function App({ navigation }) {
     }
     if (showInitialConfigForm == false) {
       return <NotificationHandler>
-        <AppTab />
+        <CaptureGuard>
+          <AppTab />
+        </CaptureGuard>
       </NotificationHandler>
     }
   }
@@ -151,10 +155,11 @@ export default function App({ navigation }) {
         setDatePageOpened(getCurrentDate())
       }}
     >
-      {
-        user ?
-          displayView()
-          : <AuthStack />
+      {user
+        ?
+        displayView()
+        :
+        <AuthStack />
       }
     </NavigationContainer>
   );
