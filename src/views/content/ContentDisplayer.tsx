@@ -29,7 +29,6 @@ import { SessionEventContent } from "../../utils/myTypes"
 import { useAppDispatch } from "../../hooks/storeHooks";
 import { saveEvent } from "../../services/SessionEventService";
 
-
 export function ContentDisplayer({ route, navigation }) {
   var { content, formation, demoMode } = route.params;
   const dispatch = useAppDispatch()
@@ -63,7 +62,7 @@ export function ContentDisplayer({ route, navigation }) {
     if (xmlContent.isSuccess && xmlContent.data)
       initContent(xmlContent.data)
   }, [xmlContent.isSuccess, xmlContent.data])
-  
+
 
   useEffect(() => {
     if (lessonIsFinish) {
