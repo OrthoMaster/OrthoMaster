@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { View, Image, Text } from "react-native";
 
 function CaptureGuard({ children }) {
-    const [captured, setCaptured] = useState(true);
+    const [captured, setCaptured] = useState(false);
 
     useEffect(() => {
         // Android: prevent screenshot / record
