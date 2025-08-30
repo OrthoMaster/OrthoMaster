@@ -29,6 +29,10 @@ import { SessionEventContent } from "../../utils/myTypes"
 import { useAppDispatch } from "../../hooks/storeHooks";
 import { saveEvent } from "../../services/SessionEventService";
 
+import { useGlobal } from '../../component/GlobalContext';
+import { useGetUser } from '../../hooks/useGetUser.hook';
+import { AdServingModalMediaAccess } from "../flash/ads/AdServingModalMediaAccess";
+
 export function ContentDisplayer({ route, navigation }) {
   var { content, formation, demoMode } = route.params;
   const dispatch = useAppDispatch()
@@ -37,6 +41,8 @@ export function ContentDisplayer({ route, navigation }) {
   const contentScrollRef = useRef<ScrollView>(null);
   var launchDate = null;
   const [refreshing, setRefreshing] = useState(false)
+
+  const { data: user } = useGetUser()
 
   const lessonIsFinish = useSelector(selectIsFinish)
   const contentIsRunning = useSelector(selectIsRunning)
@@ -63,7 +69,6 @@ export function ContentDisplayer({ route, navigation }) {
       initContent(xmlContent.data)
   }, [xmlContent.isSuccess, xmlContent.data])
 
-
   useEffect(() => {
     if (lessonIsFinish) {
       navigation.push(route.name == 'home-content' ? 'home-content-result' : 'formation-content-result', {
@@ -77,9 +82,11 @@ export function ContentDisplayer({ route, navigation }) {
           animated: true
         })
       }
-    }
-  }, [lessonIsFinish])
 
+      // Show ads
+      checkAdsShowable()
+    }
+  }, [lessonIsFinish, user])
 
   useEffect(() => {
     launchDate = getCurrentDate()
@@ -114,10 +121,9 @@ export function ContentDisplayer({ route, navigation }) {
     })
 
     return () => {
-      appStateListener.remove()
+      appStateListener.remove();
     }
   }, [])
-
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -127,25 +133,130 @@ export function ContentDisplayer({ route, navigation }) {
     }, 2000);
   }, []);
 
-  if (lessonIsFinish || contentIsRunning == false) return
+  /**
+    * Handle Ads
+    * Show ads with students
+    * @author Francis
+    */
+  const ADS_WAIT_TIME = 60 * 20 // seconds - 20 mins
+  const { globalData, setGlobalData } = useGlobal();
+  const [remainingTime, setRemainingTime] = useState<number>(0);
+  const [showAds, setShowAds] = useState(false);
 
+  /**
+   * Check ads showable
+   * Student and out of time
+   * @author Francis
+   * @returns 
+   */
+  const checkAdsShowable = () => {
+    // User is student
+    const adsShowable = (user as any).is_student ? true : false;
+
+    // If not in case showable
+    if (!adsShowable) return;
+
+    if (remainingTime <= 0) {
+      const now = Date.now();
+
+      // Get ads show last time
+      const adsShowNextTime = globalData.adsShowNextTime;
+
+      // Show ads if first time or out of saved next time
+      if (!adsShowNextTime || now >= adsShowNextTime) {
+        setShowAds(true);
+        setRemainingTime(0);
+
+        return;
+      }
+
+      // On waiting
+      const timeLeft = Math.ceil((adsShowNextTime - now) / 1000);
+      setShowAds(false);
+      setRemainingTime(timeLeft);
+
+      return;
+    }
+  }
+
+  /**
+   * Handle close ads
+   * @author Francis
+   */
+  const handleAdsClose = () => {
+    const now = Date.now();
+
+    // Next time to show ads
+    const nextTime = now + (ADS_WAIT_TIME * 1000);
+
+    // Add global param
+    setGlobalData(prevData => ({
+      ...prevData,
+      adsShowNextTime: nextTime
+    }));
+
+    // Close ads and reset timing
+    setShowAds(false);
+    setRemainingTime(ADS_WAIT_TIME);
+  }
+
+  /**
+   * Handle timing when stay screen
+   * @author Francis
+   */
+  const startAdsTiming = (timeInSeconds: number) => {
+    const interval = setInterval(() => {
+      setShowAds(true);
+      clearInterval(interval);
+    }, timeInSeconds * 1000);
+
+    return;
+  };
+  useEffect(() => {
+    // Return if unset timing
+    if (remainingTime <= 0) { return; };
+
+    // Run timer
+    startAdsTiming(remainingTime);
+  }, [remainingTime]);
+
+  /**
+   * Render Ads overlay
+   * @returns 
+   */
+  const AdsOverlay = () => {
+    if (!showAds) return null;
+
+    return (
+      <AdServingModalMediaAccess
+        enabled={showAds}
+        closable={false}
+        onClose={() => { }}
+        grantAccess={handleAdsClose}
+      />
+    )
+  }
+
+  if (lessonIsFinish || contentIsRunning == false) return
   return (
     <SafeAreaView style={styles.container}>
 
-      <Text style={{
-        fontWeight: 'bold',
-        fontSize: 18,
-        textAlign: 'center',
-        paddingVertical: 15,
-        marginLeft: 50
-      }} numberOfLines={1}>
-        {content.title}
-      </Text>
-      <View style={{
-        flex: 1,
-        width: '100%',
-        position: 'relative'
-      }}>
+      <Text
+        style={{
+          fontWeight: 'bold',
+          fontSize: 18,
+          textAlign: 'center',
+          paddingVertical: 16,
+          marginHorizontal: 48
+        }}
+        numberOfLines={1}
+        ellipsizeMode="tail">{content.title}</Text>
+      <View
+        style={{
+          flex: 1,
+          width: '100%',
+          position: 'relative'
+        }}>
         <ScrollView
           overScrollMode="never"
           contentContainerStyle={styles.scrollContainer}
@@ -210,6 +321,9 @@ export function ContentDisplayer({ route, navigation }) {
 
       </View>
 
+      {/* Ads overlay */}
+      <AdsOverlay />
+      
     </SafeAreaView>
   )
 }

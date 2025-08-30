@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, useNavigation, useNavigationContainerRef } from '@react-navigation/native';
@@ -20,7 +20,7 @@ import { SessionEventScreen } from './src/utils/myTypes';
 import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
 import { navigationRef } from './src/navigation/RootNavigation';
 
-import useCaptureGuard from './src/component/captureGuard/useCaptureGuard';
+import { GlobalProvider } from './src/component/GlobalContext';
 
 export default function App({ navigation }) {
   useSessionEventFlusher()
@@ -35,7 +35,7 @@ export default function App({ navigation }) {
   const [datePageOpened, setDatePageOpened] = useState(getCurrentDate())
   // let datePageOpened = getCurrentDate()
 
-  const { CaptureGuardOverlay } = useCaptureGuard();
+
 
   const linking = {
     prefixes: [prefix],
@@ -118,8 +118,9 @@ export default function App({ navigation }) {
     }
     if (showInitialConfigForm == false) {
       return <NotificationHandler>
-        <AppTab />
-        <CaptureGuardOverlay />
+        <GlobalProvider>
+          <AppTab />
+        </GlobalProvider>
       </NotificationHandler>
     }
   }
@@ -156,14 +157,11 @@ export default function App({ navigation }) {
         setDatePageOpened(getCurrentDate())
       }}
     >
-      {user
-        ?
-        displayView()
-        :
-        <AuthStack />
+      {
+        user ?
+          displayView()
+          : <AuthStack />
       }
     </NavigationContainer>
   );
 }
-
-

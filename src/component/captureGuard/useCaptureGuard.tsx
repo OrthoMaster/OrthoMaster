@@ -6,7 +6,7 @@
 
 import * as ScreenCapture from "expo-screen-capture";
 import { useEffect, useState } from "react";
-import { View, Image, Text } from "react-native";
+import { View, Image, Text, Dimensions } from "react-native";
 
 function useCaptureGuard() {
   const [captured, setCaptured] = useState(false);
@@ -34,7 +34,9 @@ function useCaptureGuard() {
         <View
           style={{
             position: "absolute",
-            inset: 0,
+            top: 0,
+            height: Dimensions.get('window').height,
+            width: Dimensions.get('window').width,
             backgroundColor: "#09090b",
             alignItems: 'center',
             justifyContent: 'center',
