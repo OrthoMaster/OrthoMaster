@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLogin } from '../../hooks/useLogin.hook';
 
 export const LoginView = ({ navigation, route }) => {
-  const [email, setEmail] = useState('fx');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isChecking, setIsChecking] = useState(false);

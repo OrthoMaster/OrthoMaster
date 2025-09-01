@@ -1,59 +1,56 @@
-
 /**
- * Capture guard screen
+ * Capture guard screen - Fixed version with proper cleanup
  * @author Francis
  */
 
 import * as ScreenCapture from "expo-screen-capture";
-import { useEffect, useState } from "react";
-import { View, Image, Text, Dimensions } from "react-native";
+import { useEffect } from "react";
+import { View, Alert } from "react-native";
+import { useGlobal } from '../../component/GlobalContext';
 
-function useCaptureGuard() {
-  const [captured, setCaptured] = useState(false);
+export function UseCaptureGuard({ children }) {
+  const { globalData, setGlobalData } = useGlobal();
 
   useEffect(() => {
-    // Android: prevent screenshot / record
-    ScreenCapture.preventScreenCaptureAsync();
-
-    // Listen screenshot event (iOS)
-    const listener = ScreenCapture.addScreenshotListener(() => {
-      setCaptured(true);
-      setTimeout(() => setCaptured(false), 1500);
-    });
-
-    // Cleanup
-    return () => {
-      listener?.remove();
-      ScreenCapture.allowScreenCaptureAsync(); // Re-open
-    };
+    const isCapturePrevented = globalData.isCapturePrevented;
+    if (!isCapturePrevented) {
+      preventCapture();
+      // Add global param
+      setGlobalData(prevData => ({
+        ...prevData,
+        isCapturePrevented: true
+      }));
+    }
   }, []);
 
-  const CaptureGuardOverlay = () => {
-      if (!captured) return null;
-      return (
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            height: Dimensions.get('window').height,
-            width: Dimensions.get('window').width,
-            backgroundColor: "#09090b",
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Image
-            style={{ width: 200, height: 300, resizeMode: "contain" }}
-            source={require('../../../assets/images/capture-guard/capture-guard.webp')}
-          />
-          <Text style={{ color: '#fff', fontSize: 24, fontWeight: '600', textAlign: 'center', paddingTop: 20, width: '70%' }}>
-            Désolé, le contenu{'\n'}est protégé !
-          </Text>
-        </View>
-      );
+  // Safe prevent capture with 3 times
+  const safePreventCapture = async (retryCount = 0) => {
+    try {
+      await ScreenCapture.preventScreenCaptureAsync(`prevent_${Date.now()}_${retryCount}`);
+      return true;
+    } catch (error) {
+      console.warn(`Prevent attempt ${retryCount + 1} failed:`, error);
+      if (retryCount < 2) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return safePreventCapture(retryCount + 1);
+      }
+      return false;
+    }
+  };
+
+  const preventCapture = async () => {
+    try {
+      await safePreventCapture();
+      return true;
+    } catch (error) {
+      Alert.alert("Empêcher la capture d'écran", error);
+      return false;
     };
+  };
 
-    return { CaptureGuardOverlay };
+  return (
+    <View style={{ flex: 1 }}>
+      {children}
+    </View>
+  );
 }
-
-export default useCaptureGuard;

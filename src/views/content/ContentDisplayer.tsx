@@ -8,7 +8,8 @@ import {
   RefreshControl,
   Image,
   TouchableOpacity,
-  SafeAreaView
+  SafeAreaView,
+  InteractionManager
 } from 'react-native';
 
 import { useQuery } from "@tanstack/react-query";
@@ -32,6 +33,8 @@ import { saveEvent } from "../../services/SessionEventService";
 import { useGlobal } from '../../component/GlobalContext';
 import { useGetUser } from '../../hooks/useGetUser.hook';
 import { AdServingModalMediaAccess } from "../flash/ads/AdServingModalMediaAccess";
+
+import { UseCaptureGuard } from '../../component/captureGuard/useCaptureGuard';
 
 export function ContentDisplayer({ route, navigation }) {
   var { content, formation, demoMode } = route.params;
@@ -65,11 +68,6 @@ export function ContentDisplayer({ route, navigation }) {
   };
 
   useEffect(() => {
-    if (xmlContent.isSuccess && xmlContent.data)
-      initContent(xmlContent.data)
-  }, [xmlContent.isSuccess, xmlContent.data])
-
-  useEffect(() => {
     if (lessonIsFinish) {
       navigation.push(route.name == 'home-content' ? 'home-content-result' : 'formation-content-result', {
         formation: formation,
@@ -82,11 +80,13 @@ export function ContentDisplayer({ route, navigation }) {
           animated: true
         })
       }
-
-      // Show ads
-      checkAdsShowable()
     }
-  }, [lessonIsFinish, user])
+  }, [lessonIsFinish])
+
+  useEffect(() => {
+    if (xmlContent.isSuccess && xmlContent.data)
+      initContent(xmlContent.data)
+  }, [xmlContent.isSuccess, xmlContent.data])
 
   useEffect(() => {
     launchDate = getCurrentDate()
@@ -141,6 +141,7 @@ export function ContentDisplayer({ route, navigation }) {
   const ADS_WAIT_TIME = 60 * 20 // seconds - 20 mins
   const { globalData, setGlobalData } = useGlobal();
   const [remainingTime, setRemainingTime] = useState<number>(0);
+  const showAdsRef = useRef(false);
   const [showAds, setShowAds] = useState(false);
 
   /**
@@ -150,42 +151,65 @@ export function ContentDisplayer({ route, navigation }) {
    * @returns 
    */
   const checkAdsShowable = () => {
-    // User is student
-    const adsShowable = (user as any).is_student ? true : false;
-
-    // If not in case showable
-    if (!adsShowable) return;
-
-    if (remainingTime <= 0) {
-      const now = Date.now();
-
-      // Get ads show last time
-      const adsShowNextTime = globalData.adsShowNextTime;
-
-      // Show ads if first time or out of saved next time
-      if (!adsShowNextTime || now >= adsShowNextTime) {
-        setShowAds(true);
-        setRemainingTime(0);
-
-        return;
-      }
-
-      // On waiting
-      const timeLeft = Math.ceil((adsShowNextTime - now) / 1000);
-      setShowAds(false);
-      setRemainingTime(timeLeft);
-
-      return;
-    }
-  }
-
-  /**
-   * Handle close ads
-   * @author Francis
-   */
-  const handleAdsClose = () => {
+    // Get ads show last time
+    const adsShowNextTime = globalData.adsShowNextTime;
     const now = Date.now();
 
+    if (!showAds) {
+
+      // User is student
+      const adsShowable = (user as any).is_student ? true : false;
+
+      // If not in case showable
+      if (!adsShowable) return;
+
+      if (remainingTime <= 0) {
+        // Show ads if first time or out of saved next time
+        if (!adsShowNextTime || now >= adsShowNextTime) {
+          setShowAds(true);
+          setRemainingTime(0);
+
+          return;
+        }
+      }
+    }
+
+    // On waiting
+    const timeLeft = Math.ceil((adsShowNextTime - now) / 1000);
+    setShowAds(false);
+    setRemainingTime(timeLeft);
+
+    return;
+  }
+
+  useEffect(() => {
+    // Wait render completed
+    const task = InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        // Show ads
+        checkAdsShowable()
+      }, 500);
+    });
+
+    return () => task.cancel();
+  }, []);
+
+  /**
+   * Handle action close Ads
+   * @author Francis
+   */
+  const handeAdsClose = (callback?: () => void) => {
+    showAdsRef.current = false;
+    setShowAds(false);
+    callback?.();
+  };
+
+  /**
+   * Handle after watched Ads
+   * @returns 
+   */
+  const handleAdsAfterWatched = () => {
+    const now = Date.now();
     // Next time to show ads
     const nextTime = now + (ADS_WAIT_TIME * 1000);
 
@@ -195,9 +219,7 @@ export function ContentDisplayer({ route, navigation }) {
       adsShowNextTime: nextTime
     }));
 
-    // Close ads and reset timing
-    setShowAds(false);
-    setRemainingTime(ADS_WAIT_TIME);
+    return;
   }
 
   /**
@@ -212,6 +234,7 @@ export function ContentDisplayer({ route, navigation }) {
 
     return;
   };
+
   useEffect(() => {
     // Return if unset timing
     if (remainingTime <= 0) { return; };
@@ -230,9 +253,15 @@ export function ContentDisplayer({ route, navigation }) {
     return (
       <AdServingModalMediaAccess
         enabled={showAds}
-        closable={false}
-        onClose={() => { }}
-        grantAccess={handleAdsClose}
+        closable={true}
+        onClose={() => {
+          handeAdsClose(() => {
+            setTimeout(() => {
+              navigation.goBack()
+            }, 100);
+          })
+        }}
+        grantAccess={handleAdsAfterWatched}
       />
     )
   }
@@ -240,90 +269,90 @@ export function ContentDisplayer({ route, navigation }) {
   if (lessonIsFinish || contentIsRunning == false) return
   return (
     <SafeAreaView style={styles.container}>
-
-      <Text
-        style={{
-          fontWeight: 'bold',
-          fontSize: 18,
-          textAlign: 'center',
-          paddingVertical: 16,
-          marginHorizontal: 48
-        }}
-        numberOfLines={1}
-        ellipsizeMode="tail">{content.title}</Text>
-      <View
-        style={{
-          flex: 1,
-          width: '100%',
-          position: 'relative'
-        }}>
-        <ScrollView
-          overScrollMode="never"
-          contentContainerStyle={styles.scrollContainer}
-          ref={contentScrollRef}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        >
-          {xmlContent.isLoading ? <LoadingContent state={true} onRetry={() => { }} /> : <ContentFactory component={xmlContent.data} contentInfos={content} />}
-        </ScrollView>
-
-        {
-          (demoMode == true && content.demo_access == false) &&
-          <View style={{
-            backgroundColor: "rgba(0, 0,0, 0.8)",
-            position: 'absolute',
-            top: 0, left: 0,
-            height: '100%', width: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 20
+      <UseCaptureGuard>
+        <Text
+          style={{
+            fontWeight: 'bold',
+            fontSize: 18,
+            textAlign: 'center',
+            paddingVertical: 16,
+            marginHorizontal: 48
+          }}
+          numberOfLines={1}
+          ellipsizeMode="tail">{content.title}</Text>
+        <View
+          style={{
+            flex: 1,
+            width: '100%',
+            position: 'relative'
           }}>
-            <Image
-              source={require("../../../assets/locker-icon.png")}
-              style={{
-                height: 75,
-                objectFit: 'contain',
-                margin: 10
-              }}
-            />
-            <Text style={{
-              fontSize: 20,
-              fontWeight: 'bold',
-              margin: 10,
-              color: '#fff'
-            }}>Ooops... </Text>
-            <Text style={{
-              textAlign: 'left',
-              margin: 10,
-              color: '#fff'
+          <ScrollView
+            overScrollMode="never"
+            contentContainerStyle={styles.scrollContainer}
+            ref={contentScrollRef}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          >
+            {xmlContent.isLoading ? <LoadingContent state={true} onRetry={() => { }} /> : <ContentFactory component={xmlContent.data} contentInfos={content} />}
+          </ScrollView>
+
+          {
+            (demoMode == true && content.demo_access == false) &&
+            <View style={{
+              backgroundColor: "rgba(0, 0,0, 0.8)",
+              position: 'absolute',
+              top: 0, left: 0,
+              height: '100%', width: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20
             }}>
-              Ce contenu fait partie d'une formation que vous pouvez débloquer en suivant le lien ci-dessous :
-            </Text>
-            <TouchableOpacity
-              style={{
-                padding: 10,
-                backgroundColor: "#ffaf31",
-                borderRadius: 5,
-                margin: 10
-              }}
-              onPress={() => {
-                navigation.navigate("Formation", {
-                  screen: "formation-home",
-                  params: {
-                    formation2Unlock: formation.id_formation
-                  }
-                })
-              }}
-            >
-              <Text>Débloquer le contenu</Text>
-            </TouchableOpacity>
-          </View>
-        }
+              <Image
+                source={require("../../../assets/locker-icon.png")}
+                style={{
+                  height: 75,
+                  objectFit: 'contain',
+                  margin: 10
+                }}
+              />
+              <Text style={{
+                fontSize: 20,
+                fontWeight: 'bold',
+                margin: 10,
+                color: '#fff'
+              }}>Ooops... </Text>
+              <Text style={{
+                textAlign: 'left',
+                margin: 10,
+                color: '#fff'
+              }}>
+                Ce contenu fait partie d'une formation que vous pouvez débloquer en suivant le lien ci-dessous :
+              </Text>
+              <TouchableOpacity
+                style={{
+                  padding: 10,
+                  backgroundColor: "#ffaf31",
+                  borderRadius: 5,
+                  margin: 10
+                }}
+                onPress={() => {
+                  navigation.navigate("Formation", {
+                    screen: "formation-home",
+                    params: {
+                      formation2Unlock: formation.id_formation
+                    }
+                  })
+                }}
+              >
+                <Text>Débloquer le contenu</Text>
+              </TouchableOpacity>
+            </View>
+          }
 
-      </View>
+        </View>
 
-      {/* Ads overlay */}
-      <AdsOverlay />
-      
+        {/* Ads overlay */}
+        <AdsOverlay />
+      </UseCaptureGuard>
     </SafeAreaView>
   )
 }

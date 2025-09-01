@@ -35,8 +35,6 @@ export default function App({ navigation }) {
   const [datePageOpened, setDatePageOpened] = useState(getCurrentDate())
   // let datePageOpened = getCurrentDate()
 
-
-
   const linking = {
     prefixes: [prefix],
     config: {
@@ -61,7 +59,7 @@ export default function App({ navigation }) {
 
   const userOffices = useQuery({
     queryKey: ["user-offices"],
-    queryFn: () => getUserAttachedOffices({ userId: user.id_user }),
+    queryFn: () => getUserAttachedOffices({ userId: (user as any).id_user }),
     enabled: userQuery.isSuccess && userQuery.isFetched
   })
 
@@ -74,7 +72,6 @@ export default function App({ navigation }) {
         return
       })
   }
-
 
   useEffect(() => {
     if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
@@ -107,6 +104,8 @@ export default function App({ navigation }) {
       };
     }
   }, [user])
+
+  // Capture guard
 
   const displayView = () => {
     if (showInitialConfigForm) {
@@ -160,7 +159,10 @@ export default function App({ navigation }) {
       {
         user ?
           displayView()
-          : <AuthStack />
+          :
+          <GlobalProvider>
+            <AuthStack />
+          </GlobalProvider>
       }
     </NavigationContainer>
   );
