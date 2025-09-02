@@ -21,6 +21,7 @@ import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
 import { navigationRef } from './src/navigation/RootNavigation';
 
 import { GlobalProvider } from './src/component/GlobalContext';
+import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
 
 export default function App({ navigation }) {
   useSessionEventFlusher()
@@ -118,7 +119,9 @@ export default function App({ navigation }) {
     if (showInitialConfigForm == false) {
       return <NotificationHandler>
         <GlobalProvider>
-          <AppTab />
+          <UseCaptureGuard>
+            <AppTab />
+          </UseCaptureGuard>
         </GlobalProvider>
       </NotificationHandler>
     }

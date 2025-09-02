@@ -62,6 +62,7 @@ export const AuthHome = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingTop: 40,
     },
     button: {
         width: '100%',

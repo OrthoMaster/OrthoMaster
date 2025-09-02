@@ -1,11 +1,12 @@
 /**
- * Capture guard screen - Fixed version with proper cleanup
+ * Capture guard screen - Fixed version only Android
+ * 
  * @author Francis
  */
 
 import * as ScreenCapture from "expo-screen-capture";
 import { useEffect } from "react";
-import { View, Alert } from "react-native";
+import { View, Alert, Platform } from "react-native";
 import { useGlobal } from '../../component/GlobalContext';
 
 export function UseCaptureGuard({ children }) {
@@ -26,24 +27,24 @@ export function UseCaptureGuard({ children }) {
   // Safe prevent capture with 3 times
   const safePreventCapture = async (retryCount = 0) => {
     try {
-      await ScreenCapture.preventScreenCaptureAsync(`prevent_${Date.now()}_${retryCount}`);
+      if (Platform.OS === 'android') {
+        await ScreenCapture.preventScreenCaptureAsync(`prevent_${Date.now()}_${retryCount}`);
+      }
       return true;
     } catch (error) {
-      console.warn(`Prevent attempt ${retryCount + 1} failed:`, error);
-      if (retryCount < 2) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return safePreventCapture(retryCount + 1);
-      }
+      Alert.alert("Empêcher la capture d'écran: ", error);
       return false;
     }
   };
 
   const preventCapture = async () => {
     try {
-      await safePreventCapture();
+      if (Platform.OS === 'android') {
+        await safePreventCapture();
+      }
       return true;
     } catch (error) {
-      Alert.alert("Empêcher la capture d'écran", error);
+      Alert.alert("Empêcher la capture d'écran: ", error);
       return false;
     };
   };
