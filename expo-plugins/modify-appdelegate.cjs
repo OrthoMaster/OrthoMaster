@@ -12,11 +12,6 @@ const withCustomAppDelegate = (config) => {
     
     // 1. Add security overlay properties after class declaration
     const securityPropertiesCode = `
-  var window: UIWindow?
-
-  var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
-  var reactNativeFactory: RCTReactNativeFactory?
-
   /**
   * Screen protection - STA
   * @author Francis
