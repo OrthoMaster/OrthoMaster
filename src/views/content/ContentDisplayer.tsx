@@ -30,10 +30,6 @@ import { SessionEventContent } from "../../utils/myTypes"
 import { useAppDispatch } from "../../hooks/storeHooks";
 import { saveEvent } from "../../services/SessionEventService";
 
-import { useGlobal } from '../../component/GlobalContext';
-import { useGetUser } from '../../hooks/useGetUser.hook';
-import { AdServingModalMediaAccess } from "../flash/ads/AdServingModalMediaAccess";
-
 import { UseCaptureGuard } from '../../component/captureGuard/useCaptureGuard';
 
 export function ContentDisplayer({ route, navigation }) {
@@ -44,8 +40,6 @@ export function ContentDisplayer({ route, navigation }) {
   const contentScrollRef = useRef<ScrollView>(null);
   var launchDate = null;
   const [refreshing, setRefreshing] = useState(false)
-
-  const { data: user } = useGetUser()
 
   const lessonIsFinish = useSelector(selectIsFinish)
   const contentIsRunning = useSelector(selectIsRunning)
@@ -133,139 +127,6 @@ export function ContentDisplayer({ route, navigation }) {
     }, 2000);
   }, []);
 
-  /**
-    * Handle Ads
-    * Show ads with students
-    * @author Francis
-    */
-  const ADS_WAIT_TIME = 60 * 20 // seconds - 20 mins
-  const { globalData, setGlobalData } = useGlobal();
-  const [remainingTime, setRemainingTime] = useState<number>(0);
-  const showAdsRef = useRef(false);
-  const [showAds, setShowAds] = useState(false);
-
-  /**
-   * Check ads showable
-   * Student and out of time
-   * @author Francis
-   * @returns 
-   */
-  const checkAdsShowable = () => {
-    // Get ads show last time
-    const adsShowNextTime = globalData.adsShowNextTime;
-    const now = Date.now();
-
-    if (!showAds) {
-
-      // User is student
-      const adsShowable = (user as any).is_student ? true : false;
-
-      // If not in case showable
-      if (!adsShowable) return;
-
-      if (remainingTime <= 0) {
-        // Show ads if first time or out of saved next time
-        if (!adsShowNextTime || now >= adsShowNextTime) {
-          setShowAds(true);
-          setRemainingTime(0);
-
-          return;
-        }
-      }
-    }
-
-    // On waiting
-    const timeLeft = Math.ceil((adsShowNextTime - now) / 1000);
-    setShowAds(false);
-    setRemainingTime(timeLeft);
-
-    return;
-  }
-
-  useEffect(() => {
-    // Wait render completed
-    const task = InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => {
-        // Show ads
-        checkAdsShowable()
-      }, 500);
-    });
-
-    return () => task.cancel();
-  }, []);
-
-  /**
-   * Handle action close Ads
-   * @author Francis
-   */
-  const handeAdsClose = (callback?: () => void) => {
-    showAdsRef.current = false;
-    setShowAds(false);
-    callback?.();
-  };
-
-  /**
-   * Handle after watched Ads
-   * @returns 
-   */
-  const handleAdsAfterWatched = () => {
-    const now = Date.now();
-    // Next time to show ads
-    const nextTime = now + (ADS_WAIT_TIME * 1000);
-
-    // Add global param
-    setGlobalData(prevData => ({
-      ...prevData,
-      adsShowNextTime: nextTime
-    }));
-
-    return;
-  }
-
-  /**
-   * Handle timing when stay screen
-   * @author Francis
-   */
-  const startAdsTiming = (timeInSeconds: number) => {
-    const interval = setInterval(() => {
-      setShowAds(true);
-      clearInterval(interval);
-    }, timeInSeconds * 1000);
-
-    return;
-  };
-
-  useEffect(() => {
-    // Return if unset timing
-    if (remainingTime <= 0) { return; };
-
-    // Run timer
-    startAdsTiming(remainingTime);
-  }, [remainingTime]);
-
-  /**
-   * Render Ads overlay
-   * @returns 
-   */
-  const AdsOverlay = () => {
-    if (!showAds) return null;
-
-    return (
-      <AdServingModalMediaAccess
-        enabled={showAds}
-        closable={true}
-        onClose={() => {
-          handeAdsClose(() => {
-            setTimeout(() => {
-              navigation.goBack()
-            }, 100);
-          })
-        }}
-        grantAccess={handleAdsAfterWatched}
-      />
-    )
-  }
-
   if (lessonIsFinish || contentIsRunning == false) return
   return (
     <SafeAreaView style={styles.container}>
@@ -347,11 +208,7 @@ export function ContentDisplayer({ route, navigation }) {
               </TouchableOpacity>
             </View>
           }
-
         </View>
-
-        {/* Ads overlay */}
-        <AdsOverlay />
       </UseCaptureGuard>
     </SafeAreaView>
   )
