@@ -59,7 +59,8 @@ const QuizFixedBox = ({ item, index }) => {
     return (
         <View
             style={[styles.questionListItem, {
-                backgroundColor: buttonColor[index + 1].color
+                backgroundColor: buttonColor[index + 1].color,
+                width: (Dimensions.get('window').width / 3 + 10),
             }]}
         >
             {
