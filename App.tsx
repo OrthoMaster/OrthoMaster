@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, useNavigation, useNavigationContainerRef } from '@react-navigation/native';
@@ -19,6 +19,9 @@ import { closeSession, getSessionId, saveEvent, startSession } from './src/servi
 import { SessionEventScreen } from './src/utils/myTypes';
 import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
 import { navigationRef } from './src/navigation/RootNavigation';
+
+import { GlobalProvider } from './src/component/GlobalContext';
+import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
 
 export default function App({ navigation }) {
   useSessionEventFlusher()
@@ -57,7 +60,7 @@ export default function App({ navigation }) {
 
   const userOffices = useQuery({
     queryKey: ["user-offices"],
-    queryFn: () => getUserAttachedOffices({ userId: user.id_user }),
+    queryFn: () => getUserAttachedOffices({ userId: (user as any).id_user }),
     enabled: userQuery.isSuccess && userQuery.isFetched
   })
 
@@ -70,7 +73,6 @@ export default function App({ navigation }) {
         return
       })
   }
-
 
   useEffect(() => {
     if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
@@ -104,6 +106,8 @@ export default function App({ navigation }) {
     }
   }, [user])
 
+  // Capture guard
+
   const displayView = () => {
     if (showInitialConfigForm) {
       return <InitialConfigForm onFinish={() => {
@@ -114,7 +118,11 @@ export default function App({ navigation }) {
     }
     if (showInitialConfigForm == false) {
       return <NotificationHandler>
-        <AppTab />
+        <GlobalProvider>
+          <UseCaptureGuard>
+            <AppTab />
+          </UseCaptureGuard>
+        </GlobalProvider>
       </NotificationHandler>
     }
   }
@@ -154,10 +162,11 @@ export default function App({ navigation }) {
       {
         user ?
           displayView()
-          : <AuthStack />
+          :
+          <GlobalProvider>
+            <AuthStack />
+          </GlobalProvider>
       }
     </NavigationContainer>
   );
 }
-
-

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 import {
     SafeAreaView,
@@ -10,69 +10,48 @@ import {
     Image
 } from "react-native";
 
-
-
-
-
 export const AuthHome = ({ navigation }) => {
-    const [indicatorIndex, setIndicatorIndex] = useState(0)
-
     return (
         <SafeAreaView style={styles.container}>
-            <Image
-                source={require("../../../assets/logo-text-orange.png")}
-                style={{
-                    height: "10%",
-                    width: "50%",
-                    resizeMode: "contain",
-                }}
-            />
-            <Image
-                source={require("../../../assets/auth/mockup.png")}
-                style={{
-                    height: "40%", width: "70%",
-                    resizeMode: 'contain',
-                }}
-            />
-            <View style={{ width: "90%", paddingVertical: 30 }}>
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFAF31' }}>
-                    OrthoMaster optimise
-                </Text>
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFAF31' }}>
-                    votre délivrance orthopédique
-                </Text>
-                <Text style={{ fontSize: 18 }}>
-                    pour un parcours patient
-                </Text>
-                <Text style={{ fontSize: 18 }}>
-                    plus efficace, profitable et bénéfique
-                </Text>
+            <View style={{ alignItems: 'center' }}>
+                <Image
+                    source={require("../../../assets/logo-text-orange.png")}
+                    style={{
+                        height: 100,
+                        width: 200,
+                        resizeMode: "contain",
+                    }}
+                />
+                <Image
+                    source={require("../../../assets/auth/mockup.png")}
+                    style={{
+                        height: 250, width: 250,
+                        resizeMode: 'contain',
+                    }}
+                />
             </View>
+            <Text style={{ paddingHorizontal: 30, marginTop: 30, fontSize: 22, fontWeight: 'bold', color: '#FFAF31', marginBottom: 5 }}>
+                OrthoMaster optimise{'\n'}votre délivrance orthopédique
+            </Text>
+            <Text style={{ paddingHorizontal: 30, fontSize: 18 }}>
+                pour un parcours patient{'\n'}plus efficace, profitable et bénéfique
+            </Text>
             <View style={{
-                width: "95%",
                 alignItems: 'center',
                 position: 'absolute',
-                bottom: 50
+                bottom: 50,
+                width: '100%',
+                paddingHorizontal: 30
             }}>
-                <TouchableOpacity style={[styles.button,
-                {
-                    backgroundColor: '#FFAF31'
-                }]}
-                    onPress={() => {
-                        navigation.navigate('auth-home')
-                    }}
+                <TouchableOpacity style={[styles.button, { backgroundColor: '#FFAF31' }]}
+                    onPress={() => navigation.navigate('auth-home')}
                 >
                     <Text style={styles.buttonText}>Se connecter</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button,
-                {
-                    backgroundColor: '#DEDEDE'
-                }]}
-                    onPress={() => {
-                        Linking.openURL("https://espace.orthomaster.fr/inscription")
-                    }}
+                <TouchableOpacity style={[styles.button, { backgroundColor: '#DEDEDE' }]}
+                    onPress={() => Linking.openURL("https://espace.orthomaster.fr/inscription")}
                 >
-                    <Text style={[styles.buttonText, {color: '#555555'}]}>S'inscrire</Text>
+                    <Text style={[styles.buttonText, { color: '#555555' }]}>S'inscrire</Text>
                 </TouchableOpacity>
             </View>
 
@@ -82,29 +61,14 @@ export const AuthHome = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     container: {
-        alignItems: 'center',
-        flex: 1
-    },
-    carouselIndicatorContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '15%'
-    },
-    carouselIndicator: {
-        width: 10,
-        height: 10,
-        borderRadius: 10
-    },
-    buttonsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        height: 90
+        flex: 1,
+        paddingTop: 40,
     },
     button: {
+        width: '100%',
         borderRadius: 5,
-        marginVertical: 5,
+        marginBottom: 16,
         height: 60,
-        width: '90%',
         alignItems: 'center',
         justifyContent: 'center'
     },

@@ -67,13 +67,12 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-video"
+      "expo-video",
+      "./expo-plugins/modify-appdelegate.cjs"
     ],
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "updates": {
-      "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"
+      "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a",
+      "runtimeVersion": "appVersion"
     }
   }
 }
