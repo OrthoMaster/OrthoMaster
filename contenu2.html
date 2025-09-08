@@ -434,8 +434,18 @@
                 '<span class="badge badge-ko">Partiel / Incorrect</span> Attendu : Bichat et Pompidou.';
             }
           }
+          // Post message react native
           window.ReactNativeWebView.postMessage(
             "||||||||||||||||||| Sending correct answer to mobile |||||||||||||||||||||"
+          );
+
+          // Post message react
+          window.top.postMessage(
+            JSON.stringify({
+              error: false,
+              message: "Here we go",
+            }),
+            "*"
           );
         }
 
