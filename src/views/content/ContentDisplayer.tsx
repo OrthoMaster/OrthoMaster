@@ -28,7 +28,7 @@ import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 import { SessionEventContent } from "../../utils/myTypes"
 import { useAppDispatch } from "../../hooks/storeHooks";
 import { saveEvent } from "../../services/SessionEventService";
-import WebView from "react-native-webview";
+import WebView, { WebViewMessageEvent } from "react-native-webview";
 
 
 export function ContentDisplayer({ route, navigation }) {
@@ -159,12 +159,12 @@ export function ContentDisplayer({ route, navigation }) {
         {xmlContent.isLoading ?
           <LoadingContent state={true} onRetry={() => { }} />
           : <WebView
-            source={require('../../../contenu.html')}
+            source={require('../../../contenu2.html')}
             style={{ flex: 1 }}
-            onMessage={(data)=>{
+            onMessage={(data: WebViewMessageEvent)=>{
               console.log("On message");
               
-              console.log("message :", data)
+              console.log("message :", data.nativeEvent.data)
             }}
           />
         }

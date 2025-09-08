@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>L'organisation médicale aux JO de Paris</title>
+    <style>
+      /* ====== Base ====== */
+      :root {
+        --bg: #fff;
+        --fg: #1f2937;
+        --muted: #9ca3af;
+        --accent: #f76f0e;
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b0b0c;
+          --fg: #e5e7eb;
+          --muted: #9ca3af;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          Arial;
+        line-height: 1.6;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Vidéo */
+      .video-block {
+        margin: 20px auto;
+        width: 90%;
+      }
+      .video-embed {
+        position: relative;
+        padding-top: 56.25%;
+        background: #000;
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      }
+      .video-embed iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+      .chapters {
+        margin: 10px 0 0 0;
+        padding-left: 18px;
+      }
+      .chapters a {
+        color: inherit;
+        text-decoration: none;
+        border-bottom: 1px dotted currentColor;
+      }
+      .chapters a:hover {
+        text-decoration: underline;
+      }
+
+      /* Tiroir Résumé */
+      details.resu {
+        margin: 20px auto;
+        width: 90%;
+        border: 1px solid var(--muted);
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: #fff;
+        color: var(--fg);
+      }
+      @media (prefers-color-scheme: dark) {
+        details.resu {
+          background: #111214;
+        }
+      }
+      details.resu summary {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 12px 14px;
+        cursor: pointer;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 18px;
+      }
+      details.resu summary::marker,
+      details.resu summary::-webkit-details-marker {
+        display: none;
+      }
+      details.resu[open] summary {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      }
+      details.resu .content {
+        padding: 12px 14px;
+      }
+      .chev {
+        transition: transform 0.2s ease;
+      }
+      details[open] .chev {
+        transform: rotate(90deg);
+      }
+
+      /* Quiz (radio & checkbox) */
+      .quiz-wrap {
+        width: 90%;
+        margin: 12px auto 32px;
+      }
+      .quiz-card {
+        border: 1px solid var(--muted);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 14px 0;
+        background: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        .quiz-card {
+          background: #0f0f11;
+        }
+      }
+      .quiz-title {
+        font-weight: 700;
+        margin: 0 0 6px;
+      }
+      .quiz-help {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .opts {
+        display: grid;
+        gap: 8px;
+        margin: 10px 0;
+      }
+      .opt {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .opt input {
+        margin-top: 4px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .btn {
+        appearance: none;
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .btn-validate {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-reset {
+        background: #e5e7eb;
+      }
+      @media (prefers-color-scheme: dark) {
+        .btn-reset {
+          background: #1f2937;
+          color: #e5e7eb;
+        }
+      }
+      .feedback {
+        margin-top: 10px;
+        font-weight: 700;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        margin-left: 6px;
+      }
+      .badge-ok {
+        background: #16a34a;
+        color: #fff;
+      }
+      .badge-ko {
+        background: #dc2626;
+        color: #fff;
+      }
+
+      /* Mise en évidence des choix */
+      .correct {
+        outline: 2px solid #16a34a;
+        border-radius: 8px;
+        padding: 6px;
+      }
+      .incorrect {
+        outline: 2px solid #dc2626;
+        border-radius: 8px;
+        padding: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <!-- Titre -->
+      <h1 style="text-align: center; margin: 10px 0 6px">
+        L'organisation médicale aux JO de Paris
+      </h1>
+      <p style="text-align: center; margin: 0 0 14px">
+        Dr Guillaume PERRET – 25 novembre 2024
+      </p>
+
+      <!-- Vidéo + chapitres -->
+      <div class="video-container">
+        <video id="myVideo" controls>
+          <source
+            src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            type="video/mp4"
+          />
+          Votre navigateur ne supporte pas la balise vidéo.
+        </video>
+
+        <ul class="chapters">
+          <li><a href="#" data-time="0">0:00 – Introduction</a></li>
+          <li><a href="#" data-time="10">0:10 – Scène 1</a></li>
+          <li><a href="#" data-time="25">0:25 – Scène comique</a></li>
+          <li><a href="#" data-time="45">0:45 – Conclusion</a></li>
+        </ul>
+      </div>
+
+      <!-- Résumé en tiroir -->
+      <details class="resu">
+        <summary><span class="chev">▶</span> Résumé</summary>
+        <div class="content">
+          <p>
+            Cette présentation, animée par le Dr Guillaume Perret, chef de
+            service en Médecine et Santé des Sports au CHU de Strasbourg,
+            partage un retour d’expérience des Jeux Olympiques de Paris, jugés
+            particulièrement réussis par rapport aux éditions précédentes.
+          </p>
+          <p>
+            La polyclinique olympique, sous la responsabilité du Dr Pierre
+            Boget, a constitué le centre névralgique de l’organisation médicale.
+            Un Medical Operations Center (MOC) a coordonné les urgences et le
+            lien avec les régulations locales.
+          </p>
+          <p>
+            Trois hôpitaux parisiens ont été dédiés : Bichat (athlètes),
+            Pompidou (famille olympique) et un troisième pour les urgences
+            générales. Enjeux clés : anticipation, réseau entre acteurs,
+            pharmacie, lutte contre le dopage, prise en charge des mineurs,
+            accessibilité pour les paralympiques.
+          </p>
+          <p>
+            Conclusion : travail collaboratif et solidarité. Piste
+            d’amélioration : meilleure gestion des stocks médicamenteux pour
+            limiter le gaspillage.
+          </p>
+        </div>
+      </details>
+
+      <!-- QUIZ -->
+      <section class="quiz-wrap" aria-labelledby="qz-title">
+        <h2 id="qz-title" style="margin: 0 0 6px">Quiz</h2>
+
+        <!-- Quiz Radio (1 bonne réponse) -->
+        <article
+          class="quiz-card"
+          data-type="radio"
+          data-name="q1"
+          data-answer="b"
+        >
+          <p class="quiz-title">
+            1) Quel dispositif a servi à coordonner les urgences médicales ?
+          </p>
+          <p class="quiz-help">Choisir une seule réponse.</p>
+          <div
+            class="opts"
+            role="radiogroup"
+            aria-label="Coordination des urgences"
+          >
+            <label class="opt"
+              ><input type="radio" name="q1" value="a" /> Unité de crise
+              hospitalière (UCH) du CHU</label
+            >
+            <label class="opt"
+              ><input type="radio" name="q1" value="b" /> Medical Operations
+              Center (MOC)</label
+            >
+            <label class="opt"
+              ><input type="radio" name="q1" value="c" /> Cellule
+              interministérielle de crise (CIC)</label
+            >
+          </div>
+          <div class="actions">
+            <button class="btn btn-validate" type="button">Valider</button>
+            <button class="btn btn-reset" type="button">Réinitialiser</button>
+          </div>
+          <div class="feedback" aria-live="polite"></div>
+        </article>
+
+        <!-- Quiz Checkbox (plusieurs bonnes réponses) -->
+        <article
+          class="quiz-card"
+          data-type="checkbox"
+          data-name="q2"
+          data-answer="a,c"
+        >
+          <p class="quiz-title">
+            2) Quels hôpitaux ont été dédiés pendant l’événement ?
+          </p>
+          <p class="quiz-help">Plusieurs réponses peuvent être correctes.</p>
+          <div class="opts" aria-label="Hôpitaux dédiés">
+            <label class="opt"
+              ><input type="checkbox" name="q2" value="a" /> Bichat
+              (athlètes)</label
+            >
+            <label class="opt"
+              ><input type="checkbox" name="q2" value="b" /> Saint-Louis (grand
+              public uniquement)</label
+            >
+            <label class="opt"
+              ><input type="checkbox" name="q2" value="c" /> Pompidou (famille
+              olympique)</label
+            >
+            <label class="opt"
+              ><input type="checkbox" name="q2" value="d" /> Necker (pédiatrie
+              uniquement)</label
+            >
+          </div>
+          <div class="actions">
+            <button class="btn btn-validate" type="button">Valider</button>
+            <button class="btn btn-reset" type="button">Réinitialiser</button>
+          </div>
+          <div class="feedback" aria-live="polite"></div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      /* Mini moteur de quiz (radio/checkbox) */
+      (function () {
+        function normSet(arr) {
+          return Array.from(new Set(arr)).sort();
+        }
+        function sameSet(a, b) {
+          if (a.length !== b.length) return false;
+          for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+          return true;
+        }
+        function clearMarks(card) {
+          card.querySelectorAll(".opt").forEach((l) => {
+            l.classList.remove("correct", "incorrect");
+          });
+          card.querySelector(".feedback").innerHTML = "";
+        }
+        function validateCard(card) {
+          const type = card.dataset.type;
+          const name = card.dataset.name;
+          const ans = normSet(
+            (card.dataset.answer || "")
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          );
+          const opts = Array.from(card.querySelectorAll(".opt"));
+          const fb = card.querySelector(".feedback");
+
+          // Récup réponses
+          let user = [];
+          if (type === "radio") {
+            const checked = card.querySelector(
+              'input[type="radio"][name="' + name + '"]:checked'
+            );
+            if (checked) user = [checked.value];
+          } else {
+            user = Array.from(
+              card.querySelectorAll(
+                'input[type="checkbox"][name="' + name + '"]:checked'
+              )
+            ).map((i) => i.value);
+          }
+          user = normSet(user);
+
+          // Marquage visuel
+          opts.forEach((l) => {
+            const input = l.querySelector("input");
+            const val = input.value;
+            l.classList.remove("correct", "incorrect");
+            if (user.includes(val) && ans.includes(val))
+              l.classList.add("correct");
+            if (user.includes(val) && !ans.includes(val))
+              l.classList.add("incorrect");
+            if (!user.includes(val) && ans.includes(val)) {
+              // On peut indiquer la correction légère :
+              // l.classList.add('correct');
+            }
+          });
+
+          // Feedback
+          if (user.length === 0) {
+            fb.innerHTML =
+              '<span class="badge badge-ko">Sélection vide</span> Choisis au moins une option.';
+            return;
+          }
+          if (type === "radio") {
+            if (user[0] === ans[0]) {
+              fb.innerHTML =
+                '<span class="badge badge-ok">Correct</span> Bien vu : MOC.';
+            } else {
+              fb.innerHTML =
+                '<span class="badge badge-ko">Incorrect</span> La bonne réponse est le MOC.';
+            }
+          } else {
+            if (sameSet(user, ans)) {
+              fb.innerHTML =
+                '<span class="badge badge-ok">Correct</span> Les hôpitaux dédiés étaient Bichat et Pompidou.';
+            } else {
+              fb.innerHTML =
+                '<span class="badge badge-ko">Partiel / Incorrect</span> Attendu : Bichat et Pompidou.';
+            }
+          }
+          window.ReactNativeWebView.postMessage(
+            "||||||||||||||||||| Sending correct answer to mobile |||||||||||||||||||||"
+          );
+        }
+
+        document.querySelectorAll(".quiz-card").forEach((card) => {
+          const valBtn = card.querySelector(".btn-validate");
+          const resetBtn = card.querySelector(".btn-reset");
+          valBtn.addEventListener("click", () => validateCard(card));
+          resetBtn.addEventListener("click", () => {
+            clearMarks(card);
+            card.querySelectorAll("input").forEach((i) => {
+              i.checked = false;
+            });
+          });
+        });
+      })();
+
+      const vid = document.getElementById("myVideo");
+      document.querySelectorAll(".chapters a").forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const t = Number(link.getAttribute("data-time")) || 0;
+          vid.currentTime = t;
+          vid.play();
+        });
+      });
+    </script>
+  </body>
+</html>
