@@ -1,200 +1,302 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    StyleSheet,
-    Text,
-    FlatList,
-    View,
-    TouchableOpacity,
-    SafeAreaView,
-    Image,
-    RefreshControl
+  StyleSheet,
+  Text,
+  FlatList,
+  View,
+  TouchableOpacity,
+  SafeAreaView,
+  Image,
+  RefreshControl
 } from 'react-native';
-import Svg, {
-    Path
-} from 'react-native-svg';
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessonByModuleWithProgression } from '../../services/ContentService';
 
 import { getS3Image } from '../../services/S3Service';
 import { LessonButton } from './components/LessonButton';
-import { LoadingContent } from '../../component/LoadingContent';
-import { FontAwesome5 } from '@expo/vector-icons';
+
+import { useGlobal } from '../../component/GlobalContext';
+import { useGetUser } from '../../hooks/useGetUser.hook';
+import { AdServingModalMediaAccess } from "../flash/ads/AdServingModalMediaAccess";
 
 export function LessonsView({ route, navigation }) {
-    let { module, demoMode, formation } = route.params
-    const lessons = useQuery({
-        queryKey: ['Formation', 'GET', 'lessonProgress', module.module.module_num],
-        queryFn: () => fetchLessonByModuleWithProgression(module.module.module_num)
+  let { module, demoMode, formation } = route.params
+  const lessons = useQuery({
+    queryKey: ['Formation', 'GET', 'lessonProgress', module.module.module_num],
+    queryFn: () => fetchLessonByModuleWithProgression(module.module.module_num)
+  })
+  const [refreshing, setRefreshing] = useState(false)
+  const [moduleLogo, setModuleLogo] = useState(null)
+
+  const getModuleLogo = async () => {
+    let path = module.module.logo_path + '/logo.png'
+
+    try {
+      const imageUrl = await getS3Image(path)
+      return (imageUrl)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    lessons.refetch()
+    getModuleLogo().then((value) => {
+      setModuleLogo(value)
     })
-    const [refreshing, setRefreshing] = useState(false)
-    const [moduleLogo, setModuleLogo] = useState(null)
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
 
+  useEffect(() => {
+    var isDisplayed = true
 
-    const getModuleLogo = async () => {
-        let path = module.module.logo_path + '/logo.png'
+    getModuleLogo().then((value) => {
+      if (isDisplayed) {
+        setModuleLogo(value)
+      }
+    })
+    return (() => {
+      isDisplayed = false
+    })
+  }, [])
 
-        try {
-            const imageUrl = await getS3Image(path)
-            return (imageUrl)
-        } catch (error) {
-            throw error
-        }
+  /**
+    * Handle Ads
+    * Show ads with students
+    * @author Francis
+    */
+  const { data: user } = useGetUser();
+  const ADS_WAIT_TIME = 60 * 20 // seconds - 20 mins
+  const showAdsRef = useRef(false);
+  const { globalData, setGlobalData } = useGlobal();
+  const [showAds, setShowAds] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState();
+
+  /**
+   * Check ads showable
+   * Student and out of time
+   * @author Francis
+   * @returns 
+   */
+  const checkAdsShowable = () => {
+    // User is student
+    const adsShowable = user.is_student ? true : false;
+
+    // If not in case showable
+    if (!adsShowable) return false;
+
+    // Get ads show last time
+    const adsShowNextTime = globalData.adsShowNextTime;
+    const now = Date.now();
+
+    // Show ads if first time or out of saved next time
+    if (!adsShowNextTime || now >= adsShowNextTime) {
+      setShowAds(true);
+      return true;
     }
 
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        lessons.refetch()
-        getModuleLogo().then((value) => {
-            setModuleLogo(value)
-        })
-        setTimeout(() => {
-            setRefreshing(false);
-        }, 2000);
-    }, []);
+    return false;
+  }
 
+  /**
+   * Handle action close Ads
+   * @author Francis
+   */
+  const handeAdsClose = () => {
+    setSelectedLesson(null);
+    showAdsRef.current = false;
+    setShowAds(false);
+  };
 
-    useEffect(() => {
-        var isDisplayed = true
+  /**
+   * Handle after watched Ads
+   * @returns 
+   */
+  const handleAdsAfterWatched = () => {
+    const now = Date.now();
+    // Next time to show ads
+    const nextTime = now + (ADS_WAIT_TIME * 1000);
 
-        getModuleLogo().then((value) => {
-            if (isDisplayed) {
-                setModuleLogo(value)
-            }
-        })
-        return (() => {
-            isDisplayed = false
-        })
-    }, [])
+    // Add global param
+    setGlobalData(prevData => ({
+      ...prevData,
+      adsShowNextTime: nextTime
+    }));
+    showAdsRef.current = false;
+    setShowAds(false);
 
+    // Move to selected lesson
+    navigation.push('formation-content', {
+      content: selectedLesson.content,
+      formation: formation,
+      type: "lesson",
+      demoMode: demoMode
+    })
+  }
 
+  /**
+   * Render Ads overlay
+   * @returns 
+   */
+  const AdsOverlay = () => {
+    if (!showAds) return null;
 
+    return (
+      <AdServingModalMediaAccess
+        enabled={showAds}
+        closable={true}
+        onClose={handeAdsClose}
+        grantAccess={handleAdsAfterWatched}
+      />
+    )
+  }
 
+  /**
+   * Handle open content with or without ads popup
+   * @author Francis
+   */
+  const handleOpenContent = (lesson) => {
+    // If publish
+    if (lesson.content.published == true) {
 
-    return <View style={styles.container}>
-        <SafeAreaView style={[styles.headerContainer, { backgroundColor: module.module.theme_color }]} />
+      // Save selected lesson to move content
+      setSelectedLesson(lesson);
 
-        <View style={styles.headerBox}>
-            {
-                moduleLogo &&
-                <Image
-                    source={{ uri: moduleLogo }}
-                    style={{
-                        marginVertical: 5,
-                        width: 100,
-                        height: 100,
-                        resizeMode: 'contain'
-                    }}
-                />
-            }
-            <Text style={styles.headerModule}>Module</Text>
-            <Text style={styles.headerTitle}>{module.module.title}</Text>
+      // Check showable ads popup
+      if (checkAdsShowable() == true) return;
 
-            <View style={styles.progressContanier}>
-                <Text style={styles.progressIcons}>📚</Text>
-                <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressBar, { backgroundColor: module.module.theme_color, width: (module.lesson_succeed * 100 / module.total_lesson).toString() + "%" }]} />
-                </View>
-                <Text style={styles.progressIcons}>👨‍🎓</Text>
-            </View>
+      // If not, move to content
+      navigation.push('formation-content', {
+        content: lesson.content,
+        formation: formation,
+        type: "lesson",
+        demoMode: demoMode
+      })
+    }
+  }
 
-            <FlatList
-                data={lessons.data}
-                showsVerticalScrollIndicator={false}
-                ListFooterComponent={<View style={{ height: 100 }} />}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                renderItem={(item) => <LessonButton
-                    lesson={item.item}
-                    isBlocked={demoMode && item.item.demo_access == false}
-                    onPress={(lesson) => {
-                        if (lesson.content.published == true) {
-                            navigation.push('formation-content', {
-                                content: lesson.content,
-                                formation: formation,
-                                type: "lesson",
-                                demoMode: demoMode
-                            })
-                        }
-                    }}
-                />
-                }
-                keyExtractor={(item, index) => index}
-                style={styles.lessonList}
-            />
+  return <View style={styles.container}>
+    <SafeAreaView style={[styles.headerContainer, { backgroundColor: module.module.theme_color }]} />
+
+    <View style={styles.headerBox}>
+      {
+        moduleLogo &&
+        <Image
+          source={{ uri: moduleLogo }}
+          style={{
+            marginVertical: 5,
+            width: 100,
+            height: 100,
+            resizeMode: 'contain'
+          }}
+        />
+      }
+      <Text style={styles.headerModule}>Module</Text>
+      <Text style={styles.headerTitle}>{module.module.title}</Text>
+
+      <View style={styles.progressContanier}>
+        <Text style={styles.progressIcons}>📚</Text>
+        <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBar, { backgroundColor: module.module.theme_color, width: (module.lesson_succeed * 100 / module.total_lesson).toString() + "%" }]} />
         </View>
+        <Text style={styles.progressIcons}>👨‍🎓</Text>
+      </View>
 
-
+      <FlatList
+        data={lessons.data}
+        showsVerticalScrollIndicator={false}
+        ListFooterComponent={<View style={{ height: 100 }} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        renderItem={(item) => <LessonButton
+          lesson={item.item}
+          isBlocked={demoMode && item.item.demo_access == false}
+          onPress={(lesson) => {
+            handleOpenContent(lesson);
+          }}
+        />
+        }
+        keyExtractor={(item, index) => index}
+        style={styles.lessonList}
+      />
     </View>
+
+    {/* Ads overlay */}
+    <AdsOverlay />
+  </View>
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#fff',
-        flex: 1,
-        alignItems: 'center'
-    },
-    headerContainer: {
-        height: '20%',
-        width: '100%',
-    },
+  container: {
+    backgroundColor: '#fff',
+    flex: 1,
+    alignItems: 'center'
+  },
+  headerContainer: {
+    height: '20%',
+    width: '100%',
+  },
 
-    headerBackButton: {
-        width: 100,
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-    },
-    headerBox: {
-        alignItems: 'center',
-        top: -50,
-        width: '90%',
-        height: '100%',
-    },
-    headerModule: {
-        fontWeight: '400',
-        fontSize: 16,
-        color: '#838393',
-        marginVertical: 5
-    },
-    headerTitle: {
-        fontWeight: '600',
-        fontSize: 22
-    },
-    headerDescription: {
-        fontWeight: '400'
-    },
+  headerBackButton: {
+    width: 100,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  headerBox: {
+    alignItems: 'center',
+    top: -50,
+    width: '90%',
+    height: '100%',
+  },
+  headerModule: {
+    fontWeight: '400',
+    fontSize: 16,
+    color: '#838393',
+    marginVertical: 5
+  },
+  headerTitle: {
+    fontWeight: '600',
+    fontSize: 22
+  },
+  headerDescription: {
+    fontWeight: '400'
+  },
 
-    progressContanier: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center'
-    },
-    progressIcons: {
-        fontSize: 30
-    },
-    progressBarContainer: {
-        backgroundColor: '#BCBCBC',
-        flex: 1,
-        height: '30%',
-        borderRadius: 20
-    },
-    progressBar: {
-        flex: 1,
-        borderRadius: 20
-    },
-    lessonList: {
-        width: '100%',
-        flex: 1,
-    },
+  progressContanier: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  progressIcons: {
+    fontSize: 30
+  },
+  progressBarContainer: {
+    backgroundColor: '#BCBCBC',
+    flex: 1,
+    height: '30%',
+    borderRadius: 20
+  },
+  progressBar: {
+    flex: 1,
+    borderRadius: 20
+  },
+  lessonList: {
+    width: '100%',
+    flex: 1,
+  },
 
-    invertedRadiusHeader: {
-        backgroundColor: '#fffefd',
-        width: 800,
-        height: 800,
-        borderRadius: 500,
-        transform: [
-            { scaleX: 2 }
-        ],
-        position: 'absolute',
-        top: '18%'
-    }
+  invertedRadiusHeader: {
+    backgroundColor: '#fffefd',
+    width: 800,
+    height: 800,
+    borderRadius: 500,
+    transform: [
+      { scaleX: 2 }
+    ],
+    position: 'absolute',
+    top: '18%'
+  }
 });
