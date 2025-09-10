@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "orientation": "portrait",
     "scheme": "orthomaster",
     "jsEngine": "hermes",
