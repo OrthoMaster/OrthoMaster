@@ -139,26 +139,28 @@ export function ContentDisplayer({ route, navigation }) {
       launchDate = getCurrentDate();
     });
 
-    navigation.setOptions({
-      headerBackImage: () => (
-        <TouchableOpacity
-          style={{
-            width: 40,
-            height: 40,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onPress={() => {
-            navigation.popTo("formation-modules", {
-              userFormationId: formation.id,
-              demoMode: demoMode,
-            });
-          }}
-        >
-          <AntDesign name="left" size={24} color="black" />
-        </TouchableOpacity>
-      ),
-    });
+    if (route.name == "formation-content") { // Navigation go back handling only in formation contents
+      navigation.setOptions({
+        headerBackImage: () => (
+          <TouchableOpacity
+            style={{
+              width: 40,
+              height: 40,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={() => {
+              navigation.popTo("formation-modules", {
+                userFormationId: formation.id,
+                demoMode: demoMode,
+              });
+            }}
+          >
+            <AntDesign name="left" size={24} color="black" />
+          </TouchableOpacity>
+        ),
+      });
+    }
 
     return () => {
       appStateListener.remove();
