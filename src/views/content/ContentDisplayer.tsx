@@ -11,7 +11,7 @@ import {
   SafeAreaView,
   InteractionManager,
 } from "react-native";
-
+import AntDesign from "@expo/vector-icons/AntDesign";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { fetchLessonContent } from "../../services/ContentService";
@@ -67,13 +67,13 @@ export function ContentDisplayer({ route, navigation }) {
       login: data.started_at,
       logout: data.ended_at,
       contentId: data.content_id,
-      idUserRegisteredFormation: data.id_user_registered_formation
+      idUserRegisteredFormation: data.id_user_registered_formation,
     });
   };
 
   useEffect(() => {
     if (lessonIsFinish) {
-      navigation.push(
+      navigation.navigate(
         route.name == "home-content"
           ? "home-content-result"
           : "formation-content-result",
@@ -83,6 +83,11 @@ export function ContentDisplayer({ route, navigation }) {
         }
       );
     } else {
+      console.log("Content state routes :");
+
+      navigation.getState().routes.map((value, index) => {
+        console.log(value.name);
+      });
       if (contentScrollRef.current) {
         contentScrollRef.current.scrollTo({
           y: 0,
@@ -132,6 +137,27 @@ export function ContentDisplayer({ route, navigation }) {
     });
     navigation.addListener("focus", (e) => {
       launchDate = getCurrentDate();
+    });
+
+    navigation.setOptions({
+      headerBackImage: () => (
+        <TouchableOpacity
+          style={{
+            width: 40,
+            height: 40,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onPress={() => {
+            navigation.popTo("formation-modules", {
+              userFormationId: formation.id,
+              demoMode: demoMode,
+            });
+          }}
+        >
+          <AntDesign name="left" size={24} color="black" />
+        </TouchableOpacity>
+      ),
     });
 
     return () => {

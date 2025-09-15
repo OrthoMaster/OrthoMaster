@@ -81,7 +81,7 @@ export const LessonStack = () => {
           headerBackButtonDisplayMode: "minimal",
           headerTintColor: '#000',
           headerTransparent: true,
-          headerBackImage: () => (<ReturnButtonIcon />)
+          // headerBackImage: () => (<ReturnButtonIcon />)
         }}
       />
       <LessonStackNav.Screen
