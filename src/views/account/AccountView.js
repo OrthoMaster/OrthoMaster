@@ -12,7 +12,6 @@ import {
   Platform
 } from 'react-native';
 
-import { AccountProgress } from './components/AccountProgress';
 import { Trophies } from './components/trophies/Trophies';
 
 import { CompanyArea } from './components/CompanyArea';
@@ -78,9 +77,6 @@ export const AccountView = ({ navigation }) => {
           contentContainerStyle={[styles.container, styles.AndroidSafeArea]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <Text style={styles.sectionTitle}>Ma progression</Text>
-          <AccountProgress userId={user.id_user} refreshing={refreshing} />
-
           <Text style={[styles.sectionTitle]}>Mes trophés</Text>
 
           <Trophies refreshing={refreshing} />
