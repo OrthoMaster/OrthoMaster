@@ -56,7 +56,7 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer, currentResponse })
                 if (isMounted) {
                     setAnswerImage(url)
                 }
-            }).catch((error)=>{
+            }).catch((error) => {
                 throw error
             })
         }
@@ -90,7 +90,7 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer, currentResponse })
     >
         <Animated.View
             style={[styles.buttonRadio, {
-                width: '100%', 
+                width: '100%',
                 backgroundColor: quizDone && clicked ? boxInterpolation : null,
                 borderColor: clicked ? '#ffffff' : '#ED7D32',
                 padding: 5
@@ -101,8 +101,8 @@ const QuizRadioButton = ({ config, quizDone, onPress, answer, currentResponse })
                     answerImage ?
                         <Image source={{ uri: answerImage }} style={{
                             resizeMode: 'contain',
-                            height: '100%',
-                            width: '100%',
+                            width: parseInt(config.children[0].attributes.width),
+                            height: parseInt(config.children[0].attributes.height),
                         }} />
                         : <ActivityIndicator />
                     : <Text style={styles.textButton}>{config.value}</Text>

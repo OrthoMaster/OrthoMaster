@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     container: {
         width: '100%',
         alignItems: 'center',
-        marginVertical: 20
+        marginVertical: 20,
     },
     questionBox: {
         width: '100%',

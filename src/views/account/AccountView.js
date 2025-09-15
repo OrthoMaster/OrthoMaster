@@ -17,8 +17,6 @@ import { Trophies } from './components/trophies/Trophies';
 import { CompanyArea } from './components/CompanyArea';
 
 import { AccountMenu } from './menu/AccountMenu';
-import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from '../../services/UserService';
 import { useGetUser } from '../../hooks/useGetUser.hook';
 
 
