@@ -83,7 +83,7 @@ export const OrthoCarousel = ({ entries, onSelect }) => {
     return <SimpleAdaptiveCarousel
         items={formattedEntries}
         widthPercent={1}
-        height={180}
+        height={250}
         cardSpacing={5}
 
     />

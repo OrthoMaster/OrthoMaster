@@ -200,11 +200,6 @@ export const LessonEndingView = ({ navigation, route }) => {
 
 
   useEffect(() => {
-      console.log("Leson Ending state routes :");
-      
-          navigation.getState().routes.map((value, index) => {
-        console.log(value.name);
-      });
     var lessonStatus = false
 
     if (stateContent.quizPassed.length === stateContent.nbQuiz) {

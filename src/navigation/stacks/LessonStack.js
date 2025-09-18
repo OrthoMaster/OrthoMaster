@@ -45,19 +45,9 @@ export const LessonStack = () => {
         name="formation-modules"
         component={ModuleLayout}
         options={{
-          headerShown: true,
-          headerTitle: "",
-          headerBackButtonDisplayMode: "minimal",
-          headerTintColor: '#000',
-          headerStyle: {
-            backgroundColor: "#8089D1",
-          },
-          headerTitleStyle:{
-            marginLeft: 10,
-            color: '#fff'
-          },
-          headerTitleAlign: "center",
-          headerBackImage: ()=>(<ReturnButtonIcon />)
+          headerShown: false,
+          // headerShown: true,
+          // headerBackImage: ()=>(<ReturnButtonIcon />)
         }}
       />
       <LessonStackNav.Screen

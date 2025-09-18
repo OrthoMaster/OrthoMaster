@@ -83,11 +83,6 @@ export function ContentDisplayer({ route, navigation }) {
         }
       );
     } else {
-      console.log("Content state routes :");
-
-      navigation.getState().routes.map((value, index) => {
-        console.log(value.name);
-      });
       if (contentScrollRef.current) {
         contentScrollRef.current.scrollTo({
           y: 0,
@@ -141,6 +136,7 @@ export function ContentDisplayer({ route, navigation }) {
 
     if (route.name == "formation-content") { // Navigation go back handling only in formation contents
       navigation.setOptions({
+        headerTitle: route.params.headerTitle,
         headerBackImage: () => (
           <TouchableOpacity
             style={{
