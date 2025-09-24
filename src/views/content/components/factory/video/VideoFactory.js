@@ -49,7 +49,7 @@ const SummaryVideoFactory = ({ summary, onSelectChapter }) => {
                             <Text style={{ fontSize: 15 }}>• {value.value}</Text>
                         </View>
                         <View style={{ flex: 1, alignItems: 'center' }}>
-                            <AntDesign name="playcircleo" size={18} color="#F38B8B" />
+                            <AntDesign name="play-circle" size={18} color="#F38B8B" />
                         </View>
                     </TouchableOpacity>
                 })
@@ -80,7 +80,9 @@ const DefaultPlayer = ({ videoUrl, seekTo }) => {
         contentFit="contain"
         player={player}
         nativeControls={true}
-        allowsFullscreen
+        fullscreenOptions={{
+            allowsFullscreen: true
+        }}
         allowsPictureInPicture
     />
 }

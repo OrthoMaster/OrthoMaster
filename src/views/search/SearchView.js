@@ -318,7 +318,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                                         }}
                                     >
                                         <Text style={{ marginRight: 5, color: '#fff', textAlign: 'center' }}>Commencer la formation maintenant</Text>
-                                        <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
+                                        <AntDesign name="play-circle" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
                                     </TouchableOpacity>
                                 </View>
                         }

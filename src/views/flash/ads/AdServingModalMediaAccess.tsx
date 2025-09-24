@@ -130,11 +130,11 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
           }}>
             {
               isError &&
-              <AntDesign name="exclamationcircle" size={70} color="#F25151" />
+              <AntDesign name="exclamation-circle" size={70} color="#F25151" />
             }
             {
               isSent &&
-              <AntDesign name="checkcircle" size={70} color="#6AF28E" />
+              <AntDesign name="check-circle" size={70} color="#6AF28E" />
             }
 
             <Text style={{
@@ -285,7 +285,7 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
           }}
           contentFit="contain"
           player={player}
-          allowsFullscreen={false}
+          
           allowsPictureInPicture={false}
           allowsVideoFrameAnalysis={false}
           nativeControls={false}
@@ -316,7 +316,7 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
             alignItems: 'center', justifyContent: 'center'
           }} onPress={onSkip}>
             <Text style={{ color: "#fff" }}>Passer</Text>
-            <AntDesign style={{ marginLeft: 10 }} name="stepforward" size={15} color="#fff" />
+            <AntDesign style={{ marginLeft: 10 }} name="step-forward" size={15} color="#fff" />
           </TouchableOpacity>
         }
       </Animated.View>
@@ -362,7 +362,7 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
             fontWeight: "bold",
             fontSize: 10
           }}>Accéder au contenu</Text>
-          <AntDesign style={{ marginLeft: 15 }} name="arrowright" size={15} color="#fff" />
+          <AntDesign style={{ marginLeft: 15 }} name="arrow-right" size={15} color="#fff" />
         </TouchableOpacity>
       }
     </View>

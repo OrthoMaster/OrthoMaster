@@ -4,14 +4,13 @@ import {
   TouchableOpacity,
   Modal,
   View,
-  SafeAreaView,
   StatusBar,
   Image,
   Pressable,
   Dimensions,
   Platform
 } from "react-native";
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import YoutubePlayer from "react-native-youtube-iframe";
 
 import { VideoControls } from "./VideoControls";

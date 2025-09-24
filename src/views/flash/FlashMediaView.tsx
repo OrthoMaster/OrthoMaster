@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Platform,
   Text,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
 import { useQuery } from "@tanstack/react-query";
 

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, StatusBar, Dimensions, ScrollView, StyleSheet, PixelRatio, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StatusBar, Dimensions, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useAsyncStorage } from "../../hooks/useAsyncStorage";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import IntroPage1 from "./pages/IntroPage1";
 import IntroPage2 from "./pages/IntroPage2";
@@ -8,8 +9,6 @@ import IntroPage3 from "./pages/IntroPage3";
 import IntroPage4 from "./pages/IntroPage4";
 import IntroPage5 from "./pages/IntroPage5";
 import IntroPage6 from "./pages/IntroPage6";
-
-
 
 export const IntroView = ({ navigation, onClose }) => {
     const [introHasBeenDisplayed, setIntroDisplayed] = useAsyncStorage('intro-slider-displayed', false)

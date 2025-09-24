@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useLayoutEffect } from 'react'
-import { Text, SafeAreaView, View, StyleSheet, TouchableOpacity, Image, TextInput, StatusBar, Platform } from 'react-native'
-
+import React, { useEffect, useState } from 'react'
+import { View, StyleSheet, TouchableOpacity, Image, TextInput, StatusBar, Platform } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const SearchHeader = ({ navigation, onReturn, placeholder, onChangeText }) => {
     const [text, settext] = useState()

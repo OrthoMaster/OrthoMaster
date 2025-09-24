@@ -4,7 +4,6 @@ import * as SecureStore from 'expo-secure-store';
 import { restoreLocalConfigAsync } from "../futils";
 import { osName } from 'expo-device';
 import { Buffer } from "buffer";
-import { deleteUserExpoPushToken } from "./NotificationService";
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL
 
@@ -24,7 +23,6 @@ class AuthService {
 
 
   async logout() {
-    deleteUserExpoPushToken()
     AsyncStorage.clear()
     SecureStore.deleteItemAsync('JWT')
     SecureStore.deleteItemAsync('refreshToken')

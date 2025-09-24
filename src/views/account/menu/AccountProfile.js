@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-    SafeAreaView,
     View,
     Text,
     TouchableOpacity,
@@ -10,13 +9,10 @@ import {
     ScrollView,
     Linking
 } from "react-native";
-
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGetUser } from "../../../hooks/useGetUser.hook";
 
 const DisplayUserInfo = ({ dataType, data }) => {
-
-
     if (dataType == 'Type de compte') {
         switch (data) {
             case 0:
@@ -48,8 +44,8 @@ const DisplayUserInfo = ({ dataType, data }) => {
 }
 
 
-export const AccountProfile = ({navigation}) => {
-    const {data: user, ...userQuery} = useGetUser()
+export const AccountProfile = ({ navigation }) => {
+    const { data: user, ...userQuery } = useGetUser()
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>

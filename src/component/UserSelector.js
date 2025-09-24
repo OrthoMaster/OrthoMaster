@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 
-export default UserSelector = ({usersArray = [], onSelect}) => {
+const UserSelector = ({ usersArray = [], onSelect }) => {
 
     const [selectedCollaborators, setSelectedCollaborators] = useState([])
 
@@ -24,7 +24,7 @@ export default UserSelector = ({usersArray = [], onSelect}) => {
     const addAllCollaborator = () => {
         const newArray = []
         usersArray.forEach(user => {
-            newArray.push({ id_user: user.id_user, complete_name: user.name})
+            newArray.push({ id_user: user.id_user, complete_name: user.name })
         });
 
         setSelectedCollaborators(newArray)
@@ -34,9 +34,9 @@ export default UserSelector = ({usersArray = [], onSelect}) => {
     }
 
     useEffect(() => {
-      onSelect(selectedCollaborators)
+        onSelect(selectedCollaborators)
     }, [selectedCollaborators])
-    
+
 
     return <View style={{
         borderWidth: 0.5,
@@ -52,7 +52,7 @@ export default UserSelector = ({usersArray = [], onSelect}) => {
             fillColor="#ffaf31"
             unFillColor="#FFFFFF"
             text={"Tous"}
-            textStyle={[styles.checkBoxText, {color: '#ffaf31', fontWeight: 'bold'}]}
+            textStyle={[styles.checkBoxText, { color: '#ffaf31', fontWeight: 'bold' }]}
             innerIconStyle={{ borderWidth: 2 }}
             style={{ marginVertical: 5 }}
             onPress={(isChecked) => {
@@ -86,6 +86,9 @@ export default UserSelector = ({usersArray = [], onSelect}) => {
         />
     </View>
 }
+
+export default UserSelector;
+
 const styles = StyleSheet.create({
     container: {
         height: "60%",

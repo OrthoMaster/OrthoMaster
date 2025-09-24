@@ -1,7 +1,6 @@
 import React from "react";
 
 import {
-    SafeAreaView,
     Text,
     View,
     TouchableOpacity,
@@ -9,6 +8,7 @@ import {
     Linking,
     Image
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const AuthHome = ({ navigation }) => {
     return (

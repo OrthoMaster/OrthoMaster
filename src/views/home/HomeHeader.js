@@ -4,12 +4,11 @@ import {
     Image,
     Text,
     StyleSheet,
-    SafeAreaView,
-    Alert,
     Linking,
-    StatusBar, ImageBackground, TouchableOpacity, Dimensions,
+    StatusBar, TouchableOpacity, Dimensions,
     Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 
 import { useQuery } from "@tanstack/react-query";
@@ -22,7 +21,7 @@ import { useGetUser } from '../../hooks/useGetUser.hook';
 export const HomeHeader = ({ navigation, userName }) => {
     const nextLesson = useQuery({
         queryKey: ['Home', 'GET', 'userNextLesson'],
-        queryFn: ()=>getUserNextLesson(),
+        queryFn: () => getUserNextLesson(),
         refetchOnWindowFocus: false,
         enabled: false
     })
@@ -42,7 +41,7 @@ export const HomeHeader = ({ navigation, userName }) => {
 
 
     let username = user.data?.name
-    
+
     return (
         <View>
 

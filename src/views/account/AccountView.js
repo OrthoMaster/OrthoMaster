@@ -1,6 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
-  SafeAreaView,
   Text,
   StyleSheet,
   ScrollView,
@@ -11,14 +10,10 @@ import {
   RefreshControl,
   Platform
 } from 'react-native';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Trophies } from './components/trophies/Trophies';
-
 import { CompanyArea } from './components/CompanyArea';
-
 import { AccountMenu } from './menu/AccountMenu';
-import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from '../../services/UserService';
 import { useGetUser } from '../../hooks/useGetUser.hook';
 
 
@@ -88,7 +83,7 @@ export const AccountView = ({ navigation }) => {
             navigation={navigation}
           />
 
-          <View style={{height: 200}}/>
+          <View style={{ height: 200 }} />
         </ScrollView>
         {
           menuIsActive ?

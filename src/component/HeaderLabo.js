@@ -1,5 +1,6 @@
 import { useTheme } from "@react-navigation/native"
-import { Dimensions, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AntDesign, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 
 export default HeaderLabo = ({navigation}) => {

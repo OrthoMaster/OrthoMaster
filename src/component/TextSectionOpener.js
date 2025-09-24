@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-export default TextSectionOpener = ({ title, text }) => {
+const TextSectionOpener = ({ title, text }) => {
     const [isOpen, setIsOpen] = useState(false)
-    
+
     return <View style={{
         borderTopWidth: 0.4,
         borderColor: '#000'
-        }}>
+    }}>
         <TouchableOpacity
             style={{
                 flexDirection: 'row',
@@ -30,7 +30,7 @@ export default TextSectionOpener = ({ title, text }) => {
         </TouchableOpacity>
         {
             isOpen &&
-            <View style={{marginBottom: 10}}>
+            <View style={{ marginBottom: 10 }}>
                 <Text style={styles.paragraphe}>
                     {text}
                 </Text>
@@ -38,6 +38,8 @@ export default TextSectionOpener = ({ title, text }) => {
         }
     </View>
 }
+
+export default TextSectionOpener;
 
 const styles = StyleSheet.create({
     subtitle: {

@@ -1,6 +1,11 @@
 const { withAppDelegate } = require('@expo/config-plugins');
 
 const withCustomAppDelegate = (config) => {
+  if (!config.ios) {
+    console.log('⏭️ No iOS config found, skipping');
+    return config;
+  }
+
   return withAppDelegate(config, async (config) => {
     let appDelegate = config.modResults.contents;
     

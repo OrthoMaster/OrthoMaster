@@ -13,7 +13,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { addMemberOffice } from "../../services/OfficeService";
 import { orthomasterShare } from "../../futils";
 
-export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEnd }) => {
+const AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEnd }) => {
     const [userAdded, setUserAdded] = useState([])
     const [email, setEmail] = useState("")
     const { status: formStatus, data: formData, isLoading, mutate: mutateForm } = useMutation({
@@ -210,3 +210,5 @@ export default AddMemberOfficeForm = ({ onSuccess, onError, attachedOffice, onEn
     </View>
 }
 
+
+export default AddMemberOfficeForm;

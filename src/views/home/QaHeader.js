@@ -2,17 +2,15 @@ import React, { useState } from 'react';
 
 import {
     Text,
-    SafeAreaView,
     Image,
     StyleSheet,
     View,
     TouchableOpacity
-} from 'react-native'
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export const QaHeader = ({ onBack, onSearch }) => {
-
-
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>

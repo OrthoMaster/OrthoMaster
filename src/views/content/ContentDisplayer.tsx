@@ -8,15 +8,12 @@ import {
   RefreshControl,
   Image,
   TouchableOpacity,
-  SafeAreaView,
-  InteractionManager,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-
 import { fetchLessonContent } from "../../services/ContentService";
-
-import { exitContent, runContent } from "../../actions/contentAction";
+import { runContent } from "../../actions/contentAction";
 
 import { getCurrentDate } from "../../futils";
 import { ContentFactory } from "./components/ContentFactory";
@@ -180,7 +177,7 @@ export function ContentDisplayer({ route, navigation }) {
             }
           >
             {xmlContent.isLoading ? (
-              <LoadingContent state={true} onRetry={() => {}} />
+              <LoadingContent state={true} onRetry={() => { }} />
             ) : (
               <ContentFactory
                 component={xmlContent.data}

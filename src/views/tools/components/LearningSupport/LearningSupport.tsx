@@ -1,5 +1,6 @@
 import React from "react";
-import { Dimensions, Image, Linking, Text, TouchableOpacity, View, StyleSheet, SafeAreaView } from "react-native";
+import { Dimensions, Image, Text, TouchableOpacity, View, StyleSheet } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { IContent } from "../../../../utils/interfaces";
@@ -20,14 +21,14 @@ export const LearningSupportButton: React.FC<{ onPress: () => any }> = ({ onPres
         }}
         onPress={onPress}
     >
-            <Image
-                source={require('../../../../../assets/tools/learning-support/access-icon.png')}
-                style={{
-                    width: screenWidth / 6,
-                    height: screenWidth / 6,
-                    marginBottom: 10
-                }}
-            />
+        <Image
+            source={require('../../../../../assets/tools/learning-support/access-icon.png')}
+            style={{
+                width: screenWidth / 6,
+                height: screenWidth / 6,
+                marginBottom: 10
+            }}
+        />
         <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Supports pédagogiques</Text>
     </TouchableOpacity>)
 }
@@ -74,9 +75,10 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
     const toolContents = useQuery({
         queryKey: ['Tools', 'GET', 'Contents'],
         queryFn: () => fetchSearchList({
-        contentType: ['tool'],
-        filters: null
-    })})
+            contentType: ['tool'],
+            filters: null
+        })
+    })
 
 
     return (

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  SafeAreaView,
   View,
   TouchableOpacity,
   Text,
@@ -10,6 +9,7 @@ import {
   StatusBar,
   Platform
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrophyProgression } from "./trophy/TrophyProgression";
 
 import { useStore, useDispatch } from "react-redux";

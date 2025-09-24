@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 
-export default AskOfficeCreationPage = ({ onCreateOffice, onSkip }) => {
+const AskOfficeCreationPage = ({ onCreateOffice, onSkip }) => {
     return <View style={{ flex: 1 }}>
         <Text style={{
             textAlign: 'center',
@@ -26,6 +26,8 @@ export default AskOfficeCreationPage = ({ onCreateOffice, onSkip }) => {
         </View>
     </View>
 }
+
+export default AskOfficeCreationPage;
 
 const styles = StyleSheet.create({
     button: {

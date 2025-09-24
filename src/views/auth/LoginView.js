@@ -4,7 +4,6 @@ import {
   TextInput,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Image,
   TouchableWithoutFeedback,
@@ -13,7 +12,8 @@ import {
   Linking,
   ScrollView,
   ActivityIndicator
-} from 'react-native'
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLogin } from '../../hooks/useLogin.hook';
 
@@ -116,13 +116,13 @@ export const LoginView = ({ navigation, route }) => {
                   : <Text style={styles.signInButtonText}>Continuer</Text>
                 }
               </TouchableOpacity>
-              
+
 
               <View style={{
                 alignItems: 'center',
                 marginTop: 16
               }}>
-                <Text style={{ fontSize: 16, color:'#aaa' }}>Pas encore de compte ?</Text>
+                <Text style={{ fontSize: 16, color: '#aaa' }}>Pas encore de compte ?</Text>
                 <Text
                   onPress={() => { Linking.openURL("https://espace.orthomaster.fr/inscription") }}
                   style={{

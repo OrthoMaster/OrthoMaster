@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from "react";
 import {
-    SafeAreaView,
     StyleSheet, View,
     Text,
     Image,
     Dimensions,
-    ActivityIndicator,
     ScrollView,
     Linking,
     TouchableOpacity
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ReadMore from 'react-native-read-more-text';
 import { useQuery } from "@tanstack/react-query";
 import { fetchMedias } from "../../services/FlashMediasService";

@@ -167,7 +167,7 @@ const ArticleCard = ({ config, onLikeOrDislike }) => {
                 {
                     isLiked ?
                         <AntDesign name="heart" size={24} color="#FF495C" />
-                        : <AntDesign name="hearto" size={24} color="#FF495C" />
+                        : <Feather name="heart" size={24} color="#FF495C" />
                 }
             </TouchableOpacity>
         </View>

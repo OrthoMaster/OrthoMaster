@@ -5,10 +5,10 @@ import {
     TouchableOpacity,
     View,
     ScrollView,
-    SafeAreaView,
     Image, Dimensions,
-} from "react-native"
-import { useQuery } from "@tanstack/react-query"
+} from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQuery } from "@tanstack/react-query";
 import { getAPIqueChoisirRedFlags, getAPIqueChoisirStep } from "../../../../../services/tools/QueChoisirService";
 import BottomArrow from '../../../../../../assets/queChoisir/bottom_arrow.svg'
 import UpperArrow from '../../../../../../assets/queChoisir/upper_arrow.svg'
@@ -60,7 +60,8 @@ export const QueChoisirView = ({ navigation, route }) => {
         queryFn: () => getAPIgetProducts(category).then((data) => {
             setFiltredProducts(data)
             return data;
-        })})
+        })
+    })
     const getCurrentImage = useQuery({
         queryKey: ['Tools', 'GET', 'currentImage', category, questionIndex],
         queryFn: () => getS3Image(globalSteps[questionIndex].question.image_path).then((data) => {
@@ -80,7 +81,7 @@ export const QueChoisirView = ({ navigation, route }) => {
             });
             let newSelection = []
             products.data.forEach(product => {
-                if (refToSearch.every(item => product.qc_ref.includes(item))) { 
+                if (refToSearch.every(item => product.qc_ref.includes(item))) {
 
                     newSelection.push(product)
                 }

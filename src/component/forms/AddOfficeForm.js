@@ -12,7 +12,7 @@ import DropdownComponent from "../DropdownComponent";
 
 import { createOffice, getCountries, getStructures } from "../../services/OfficeService";
 
-export default AddOfficeForm = ({ onSuccess, onError }) => {
+const AddOfficeForm = ({ onSuccess, onError }) => {
     const [formDatas, setFormDatas] = useState({})
     const countries = useQuery({
         queryKey: ["countries"],
@@ -146,6 +146,8 @@ export default AddOfficeForm = ({ onSuccess, onError }) => {
         </TouchableOpacity>
     </View>
 }
+
+export default AddOfficeForm;
 
 const styles = StyleSheet.create({
     container: {

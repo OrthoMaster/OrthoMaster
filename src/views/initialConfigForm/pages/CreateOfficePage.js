@@ -3,7 +3,7 @@ import { ScrollView, Text, View } from "react-native";
 import AddOfficeForm from "../../../component/forms/AddOfficeForm";
 import Toast from 'react-native-toast-message';
 
-export default CreateOfficePage = ({ onFinish }) => {
+const CreateOfficePage = ({ onFinish }) => {
     const showToast = ({
         type = 'success',
         text1 = 'Hello',
@@ -57,3 +57,5 @@ export default CreateOfficePage = ({ onFinish }) => {
 
     </View>
 }
+
+export default CreateOfficePage;

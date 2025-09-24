@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import TextSectionOpener from "../../../component/TextSectionOpener";
 
-export default MoreInfosModal = ({ formation, onClose }) => {
+const MoreInfosModal = ({ formation, onClose }) => {
 
     return <View style={{
         alignItems: 'center',
@@ -40,6 +40,8 @@ export default MoreInfosModal = ({ formation, onClose }) => {
         </ScrollView>
     </View>
 }
+
+export default MoreInfosModal;
 
 const styles = StyleSheet.create({
     subtitle: {

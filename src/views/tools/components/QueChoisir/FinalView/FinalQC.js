@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import {
     ActivityIndicator,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { evaluateExpression } from "../tools";
@@ -43,7 +43,7 @@ const DisplaySubHeader = ({ title }) => {
 export const FinalQC = ({ route, navigation }) => {
     const { userHistory, filtredProducts } = route.params.content
     const { filtersConfig, category } = route.params
-    const saveEntries = useMutation({mutationFn: saveQCEntries})
+    const saveEntries = useMutation({ mutationFn: saveQCEntries })
     const [productsPref, setProductsPref] = useState([]);
     const [productsOther, setProductsOther] = useState([]);
     const [nbProduct, setNbProduct] = useState(0)

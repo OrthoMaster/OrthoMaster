@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
   TouchableOpacity,
   Dimensions,
   Image,
@@ -13,12 +12,12 @@ import {
   ImageBackground,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from "@tanstack/react-query";
 
 import { useGetUser } from "../../hooks/useGetUser.hook";
 import { getS3Image } from "../../services/S3Service";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { IContent } from "../../utils/interfaces";
 

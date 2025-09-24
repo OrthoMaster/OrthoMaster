@@ -10,7 +10,7 @@ import {
 import PriceRecap from "../../components/PriceRecap";
 
 
-export default ConfirmationStep = ({
+const ConfirmationStep = ({
     formation,
     users,
     billingAddress,
@@ -100,6 +100,8 @@ export default ConfirmationStep = ({
 
 
 }
+
+export default ConfirmationStep;
 
 const styles = StyleSheet.create({
     textPrimary: {

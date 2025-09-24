@@ -8,9 +8,9 @@ import {
   Platform,
   StatusBar,
   RefreshControl,
-  SafeAreaView,
   InteractionManager
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { fetchMedias } from '../../services/FlashMediasService';

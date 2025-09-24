@@ -170,11 +170,11 @@ const BillingAddressCard = ({
     </TouchableOpacity>
 }
 
-export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
+const BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
     const {
         data: billingAddress,
         isLoading, isFetching
-    } = useQuery({queryKey: ["billing-address"], queryFn: () => getBillingAddress()})
+    } = useQuery({ queryKey: ["billing-address"], queryFn: () => getBillingAddress() })
     const [selectedAddress, setSelectedAddress] = useState(null)
     const [showAddBillingAddrForm, setShowAddBillingAddrForm] = useState(false)
 
@@ -305,3 +305,5 @@ export default BillingAddressSelection = ({ onValidation, onCreateEspace }) => {
 
     </View >
 }
+
+export default BillingAddressSelection;
