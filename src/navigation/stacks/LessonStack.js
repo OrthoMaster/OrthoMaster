@@ -13,6 +13,7 @@ import SearchView from '../../views/search/SearchView';
 import { LessonEndingView } from '../../views/content/LessonEndingView';
 import { createStackNavigator } from '@react-navigation/stack';
 
+import { LessonContent } from "../../views/formation/LessonContent";
 
 const LessonStackNav = createStackNavigator()
 export const LessonStack = () => {
@@ -89,6 +90,14 @@ export const LessonStack = () => {
         component={LessonEndingView}
         options={{
           headerShown: false
+        }}
+      />
+      <LessonStackNav.Screen
+        name="lesson-content"
+        component={LessonContent}
+        options={{
+          headerShown: false,
+          headerTitle: "",
         }}
       />
     </LessonStackNav.Navigator>
