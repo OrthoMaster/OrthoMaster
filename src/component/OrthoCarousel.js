@@ -5,14 +5,14 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import { useQuery } from "@tanstack/react-query";
-import SimpleAdaptiveCarousel from './carousel/SimpleAdaptiveCarousel';
-import { getS3Image } from '../services/S3Service'
+import { getS3Image } from '../services/S3Service';
 
-const { width: screenWidth } = Dimensions.get('screen')
-const nbCarouselCardOnScreen = 2.5
+import AntDesign from '@expo/vector-icons/AntDesign';
+import Colors from '../../constants/Colors';
+import Spacings from '../../constants/Spacings';
 
 const CarousselCard = ({ item, onPress }) => {
     const imageUrl = useQuery({
@@ -24,89 +24,92 @@ const CarousselCard = ({ item, onPress }) => {
         <TouchableOpacity style={styles.card}
             onPress={() => onPress()}
         >
-            {
-                imageUrl.data ?
-                    <Image
-                        style={styles.thumbnail}
-                        source={{ uri: imageUrl?.data }}
-                    />
-                    : <View style={[styles.thumbnail, { backgroundColor: '#F1F1F1' }]} />
-
-            }
-            <Text style={styles.title}>{item.title}</Text>
-            <View style={{ display: 'flex', flexDirection: 'row' }}>
-                <Text style={{ fontSize: 10, color: '#ffaf31', fontWeight: 'bold' }}>{item.author}</Text>
-                <Text style={{ fontSize: 10, marginLeft: 10 }}>⏱️ {item.duration}</Text>
-            </View>
-            <Text style={{
-                fontSize: 10, color: 'gray'
-            }}
-                numberOfLines={2}
-                ellipsizeMode="tail"
-            >
+            <View style={styles.image}>
                 {
-                    item.tags?.split(";").map((value, index) => {
-                        return <Text key={index}>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}, </Text>
-                    })
+                    imageUrl.data ?
+                        <Image
+                            style={styles.thumbnail}
+                            source={{ uri: imageUrl?.data }}
+                        />
+                        : <View style={[styles.thumbnail, { backgroundColor: Colors.grayLight }]} />
+
                 }
-            </Text>
+            </View>
+            <View style={styles.detail}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.author}>{item.author}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <AntDesign name="clock-circle" size={10} color={Colors.text} style={{ paddingRight: Spacings.xxs }}/>
+                    <Text style={{ fontSize: 10, fontFamily: 'Roboto' }}>{item.duration}</Text>
+                </View>
+                {item.tags &&
+                    <Text style={styles.description}
+                        numberOfLines={3}
+                        ellipsizeMode="tail"
+                    >
+                        {
+                            item.tags?.split(";").map((value, index) => {
+                                return <Text key={index}>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}, </Text>
+                            })
+                        }
+                    </Text>
+                }
+            </View>
         </TouchableOpacity>
     );
 }
 
 
 export const OrthoCarousel = ({ entries, onSelect }) => {
-    const [formattedEntries, setformattedEntries] = useState([])
-
-    useEffect(() => {
-        if (entries) {
-            let finalArray = []
-            for (const entry of entries) {
-
-                finalArray.push({
-                    key: entry.id_content,
-                    content: <CarousselCard
-                        item={entry}
-                        onPress={() => onSelect(entry)}
-                    />
-                })
-            }
-
-            setformattedEntries(finalArray)
-        }
-
-    }, [entries])
-
-
-
-
-    return <SimpleAdaptiveCarousel
-        items={formattedEntries}
-        widthPercent={1}
-        height={180}
-        cardSpacing={5}
-
-    />
+    return (
+        <View style={styles.container}>
+            {entries?.map((item) => (
+                <CarousselCard
+                    key={item.id_content}
+                    item={item}
+                    onPress={() => onSelect(item)}
+                />
+            ))}
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
     card: {
-        height: '100%',
-        width: screenWidth / nbCarouselCardOnScreen,
+        flex: 1,
+        flexDirection: 'row',
+        marginHorizontal: Spacings.lg,
+        marginVertical: Spacings.xs
+    },
+    image: {
+        flex: 0.8,
+    },
+    detail: {
+        flex: 1.2,
+        paddingLeft: Spacings.md,
     },
     title: {
         fontWeight: '600',
+        fontSize: 14,
+        lineHeight: 14,
+        marginBottom: Spacings.xxxs,
+        marginTop: Spacings.xs,
+    },
+    author: {
         fontSize: 12,
-        marginTop: 5
+        color: Colors.primary,
+        fontWeight: '500',
+        marginBottom: Spacings.xxxs,
     },
     description: {
-        fontWeight: '400',
-        fontSize: 10
+        marginTop: Spacings.xxxs,
+        fontSize: 10,
+        color: Colors.subtext,
     },
     thumbnail: {
         width: '100%',
-        height: (screenWidth / nbCarouselCardOnScreen) * 9 / 16,
-        resizeMode: 'contain',
+        height: 120,
+        resizeMode: 'cover',
         borderRadius: 8
-    }
+    },
 })

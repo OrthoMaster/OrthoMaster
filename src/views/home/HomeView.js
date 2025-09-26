@@ -8,18 +8,12 @@ import {
   Platform,
   StatusBar,
   RefreshControl,
-  SafeAreaView,
   InteractionManager
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { fetchMedias } from '../../services/FlashMediasService';
-import {
-  fetchFeedCategories,
-  fetchFeedsFromCategory,
-  fetchLikedArticles
-} from "../../services/FeedService";
-import { FeedDisplayer, FeedHeader, LIKE_CATEGORY_ID } from './components/Feed';
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 
@@ -28,6 +22,8 @@ import { getUserRegisteredFormation } from '../../services/FormationService';
 import { useGetUser } from '../../hooks/useGetUser.hook';
 import { navigate } from '../../navigation/RootNavigation';
 
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
 
 export const HomeView = ({ navigation, route }) => {
 
@@ -35,34 +31,11 @@ export const HomeView = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
   const flashPreview = useQuery({
     queryKey: ["flash-preview"], queryFn: () => fetchMedias({
-      limit: 10
+      limit: 6
     })
   });
 
-  const [selectedFeedCategoryId, setSelectedFeedCategoryId] = useState(1)
-  const [scrollReachedEnd, setScrollReachedEnd] = useState(false)
-  const feedCategories = useQuery({ queryKey: ["GET", "categories", "feed"], queryFn: () => fetchFeedCategories() })
-  const [allFeed, setAllFeed] = useState([])
-  const {
-    data: articles,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetching,
-    isFetchingNextPage,
-    status,
-    refetch
-  } = useInfiniteQuery({
-    queryKey: ['feed', selectedFeedCategoryId],
-    queryFn: fetchFeedsFromCategory,
-    getNextPageParam: (lastPage, pages) => lastPage.nextCursor,
-    onSettled: () => {
-      setScrollReachedEnd(false)
-    }
-  })
-
   const savedArticles = useQuery({ queryKey: ["GET", "liked", "feed"], queryFn: () => fetchLikedArticles() })
-  // const copilote = useCopilot()
 
   const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }) => {
     const paddingToBottom = 20;
@@ -125,91 +98,32 @@ export const HomeView = ({ navigation, route }) => {
     }
   }, [route.params])
 
-
-  useEffect(() => {
-    if (scrollReachedEnd) {
-      if (hasNextPage && isFetching == false) {
-        fetchNextPage()
-      }
-    }
-  }, [scrollReachedEnd])
-
   return (
     <View style={{ flex: 1 }}>
       <StatusBar
         animated={true}
-        barStyle={Platform.OS === "android" ? 'light-content' : 'dark-content'}
-        backgroundColor={"#000"}
+        barStyle={'dark-content'}
       />
-      <ScrollView style={{ backgroundColor: '#fff', flex: 1 }}
+      <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         stickyHeaderIndices={[2]}
-        onScroll={({ nativeEvent }) => {
-          if (isCloseToBottom(nativeEvent)) {
-            if (isFetching == false && hasNextPage && scrollReachedEnd == false)
-              setScrollReachedEnd(true)
-          }
-        }}
-
-        scrollEventThrottle={800}
       >
         <HomeHeader navigation={navigation} />
 
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
-
             <Text style={styles.carouselHeaderTitle}>Nos derniers contenus</Text>
             <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Médias')}>
-              <Text style={[styles.carouselHeaderButtonText, { color: "#ffaf31" }]}>Voir tous</Text>
+              <Text style={styles.carouselHeaderViewMoreButton}>Voir tous</Text>
             </Pressable>
           </View>
           <OrthoCarousel entries={flashPreview.data} onSelect={(content) => {
             navigate('Médias', {
               screen: 'flash-media-home',
             });
-
-            InteractionManager.runAfterInteractions(() => {
-              navigate('flash-media-preview', {
-                media: content,
-                type: "flash"
-              });
-            });
           }} />
         </View>
-
-        <SafeAreaView style={{ backgroundColor: "#E3E3F1" }}>
-          <FeedHeader
-            categories={feedCategories.data}
-            isLoading={feedCategories.isLoading}
-            onCategorySelect={(id) => {
-              setSelectedFeedCategoryId(id)
-              setAllFeed([])
-            }}
-            selectedFeedCategoryId={selectedFeedCategoryId}
-            nbSavedArticle={savedArticles.data?.length}
-          />
-        </SafeAreaView>
-        {
-          selectedFeedCategoryId == LIKE_CATEGORY_ID &&
-          <FeedDisplayer
-            feed={savedArticles.data}
-            onLikeOrDislike={() => { savedArticles.refetch() }}
-          />
-
-        }
-        {
-          selectedFeedCategoryId != LIKE_CATEGORY_ID &&
-          articles?.pages?.map((value, index) => {
-            return <FeedDisplayer
-              key={index}
-              feed={value.data}
-              onLikeOrDislike={() => { savedArticles.refetch() }}
-            />
-          })
-        }
       </ScrollView>
-
-
     </View>
   );
 }
@@ -217,38 +131,39 @@ export const HomeView = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   carouselContainer: {
-    marginVertical: 40
+    marginVertical: Spacings.md
   },
   carouselHeader: {
     width: '100%',
     display: 'flex',
     flexDirection: 'row',
-    marginBottom: 5
+    marginBottom: Spacings.md,
+    alignItems: 'center'
   },
   carouselHeaderTitle: {
     flex: 2,
     alignSelf: 'flex-start',
-    marginLeft: 5,
-    fontSize: 15,
+    marginLeft: Spacings.lg,
+    fontSize: 18,
+    color: Colors.primary,
+    fontWeight: '700',
   },
   carouselHeaderButton: {
     flex: 1,
     alignItems: 'flex-end',
-
   },
-  carouselHeaderButtonText: {
-    fontWeight: '600',
+  carouselHeaderViewMoreButton: {
     fontSize: 14,
-    marginEnd: 15
+    color: Colors.gray,
+    marginRight: Spacings.lg,
   },
   notificationIndicator: {
-    backgroundColor: 'red',
+    backgroundColor: Colors.danger,
     width: 10,
     height: 10,
     borderRadius: 100,
     position: 'absolute',
     alignSelf: 'flex-end'
   },
-
 })
 

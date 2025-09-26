@@ -1,6 +1,9 @@
-import React, { useEffect, useState, useLayoutEffect } from 'react'
-import { Text, SafeAreaView, View, StyleSheet, TouchableOpacity, Image, TextInput, StatusBar, Platform } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { View, StyleSheet, TouchableOpacity, Image, TextInput, StatusBar, Platform } from 'react-native'
 
+import Feather from '@expo/vector-icons/Feather';
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
 
 export const SearchHeader = ({ navigation, onReturn, placeholder, onChangeText }) => {
     const [text, settext] = useState()
@@ -26,64 +29,54 @@ export const SearchHeader = ({ navigation, onReturn, placeholder, onChangeText }
         }
     }
 
-    return <SafeAreaView style={styles.container}>
-        <View style={[styles.header, styles.AndroidSafeArea]}>
+    return <View style={styles.container}>
+        <View style={styles.header}>
             <TouchableOpacity
                 style={styles.button}
                 onPress={onReturn}
             >
-                <Image
-                    source={require('../../../assets/navigation/arrow.png')}
-                />
+                <Feather name="chevron-left" size={24} color={Colors.text} />
             </TouchableOpacity>
             <View style={styles.searchContainer}>
                 <TextInput
-                    style={styles.search}
+                    style={styles.searchInput}
                     onChangeText={(text) => handleSearchText(text)}
                     value={text}
                     placeholder={placeholder}
                     autoCapitalize={'none'}
-                    placeholderTextColor={"gray"}
+                    placeholderTextColor={Colors.gray}
                 />
             </View>
-
         </View>
-    </SafeAreaView>
+    </View>
 
 }
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#fffefd',
         width: '100%',
-        height: 90,
+        paddingVertical: Spacings.md,
+
     },
     header: {
-        width: '100%',
         flexDirection: 'row',
-        height: '100%',
         alignItems: 'center',
     },
     button: {
-        flex: 1,
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center'
+        width: 40,
+        height: 40,
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        marginLeft: Spacings.lg,
     },
     searchContainer: {
         flex: 1,
-        flexBasis: '70%',
-        height: '80%',
         borderRadius: 50,
-        marginRight: 15,
-        backgroundColor: '#f1f1f1',
+        backgroundColor: Colors.grayLight,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'flex-start',
+        marginRight: Spacings.lg,
+        paddingLeft: Spacings.lg,
+        height: 40,
     },
-    search: {
-        width: '90%',
-    },
-    AndroidSafeArea: {
-        paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
-    }
 })

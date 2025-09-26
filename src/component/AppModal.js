@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default AppModal = ({ isVisible, onClose, customRender, style, title, subtitle, text }) => {
+const AppModal = ({ isVisible, onClose, customRender, style, title, subtitle, text }) => {
     if (!isVisible)
         return null
     return (
@@ -43,6 +43,8 @@ export default AppModal = ({ isVisible, onClose, customRender, style, title, sub
         </View>
     );
 };
+
+export default AppModal;
 
 const styles = StyleSheet.create({
     centeredView: {

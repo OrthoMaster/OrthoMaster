@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     StyleSheet,
     View,
@@ -12,14 +12,13 @@ import {
     Keyboard,
     ScrollView,
     Image,
-    SafeAreaView,
     NativeScrollEvent,
-    TouchableWithoutFeedback
-} from 'react-native'
-import { TouchableOpacity } from 'react-native-gesture-handler';
+    TouchableOpacity
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
 
-import Animated, { useSharedValue, withSpring, LinearTransition } from 'react-native-reanimated';
+import Animated, { useSharedValue, withSpring } from 'react-native-reanimated';
 import { getS3Image } from '../services/S3Service.js';
 
 import { useQuery } from "@tanstack/react-query";

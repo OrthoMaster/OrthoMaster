@@ -5,19 +5,17 @@ import {
     StyleSheet
 } from "react-native";
 
-export default PriceRecap = ({ selectedCollaborators, unitPrice }) => {
+const PriceRecap = ({ selectedCollaborators, unitPrice }) => {
     const [reducedPrice, setReducedPrice] = useState([])
 
-
-
     useEffect(() => {
-        
+
         if (selectedCollaborators.length <= 0) {
             setReducedPrice(0)
         } else {
             if (selectedCollaborators.length < 11) {
                 const packDiscountPercentPerLicence = 2.5
-                const discount = packDiscountPercentPerLicence * (selectedCollaborators.length - 1 )
+                const discount = packDiscountPercentPerLicence * (selectedCollaborators.length - 1)
                 setReducedPrice(unitPrice * ((100 - discount) / 100))
 
             } else {
@@ -86,6 +84,8 @@ export default PriceRecap = ({ selectedCollaborators, unitPrice }) => {
             }}>Prix total : </Text>{reducedPrice * selectedCollaborators.length} € HT</Text>
     </View>
 }
+
+export default PriceRecap;
 
 const styles = StyleSheet.create({
     recapHeaderBox: {

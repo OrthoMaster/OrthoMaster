@@ -1,7 +1,6 @@
 import React from "react";
 
 import {
-    SafeAreaView,
     Text,
     View,
     TouchableOpacity,
@@ -9,10 +8,12 @@ import {
     Linking,
     Image
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const AuthHome = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.container}>
+            
             <View style={{ alignItems: 'center' }}>
                 <Image
                     source={require("../../../assets/logo-text-orange.png")}

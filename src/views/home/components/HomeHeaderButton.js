@@ -21,26 +21,22 @@ const styles = StyleSheet.create({
     container: {
         width: 100,
         height: 100,
-        borderRadius: 16,
+        borderRadius: 12,
         justifyContent: 'space-around',
         alignItems: 'center',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5
+        padding: 12,
     },
     textButton: {
         fontSize: 12,
         alignSelf: 'center',
         textAlign: 'center',
-        marginHorizontal: 5,
+        marginTop: 5,
         color: "#fff",
-        fontWeight: 'bold'
+        fontWeight: '600',
     },
     icons: {
         resizeMode: 'contain',
-        width: 50,
-        height: 50,
-        borderRadius: 5
+        width: 40,
+        height: 40,
     }
 })

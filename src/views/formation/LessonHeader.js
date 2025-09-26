@@ -1,13 +1,9 @@
-import React, { useEffect } from 'react';
-import { View, TouchableOpacity, Image, StyleSheet, Text, SafeAreaView, StatusBar, Platform } from 'react-native'
+import React from 'react';
+import { View, TouchableOpacity, Image, StyleSheet, StatusBar, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 export const LessonHeader = ({ onSearch, title, navigation, searchEnabled = true, returnEnabed = false }) => {
-    useEffect(() => {
-        //navigation.setParams({ search: false })
-    }, [])
-
-
     return <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
         <View style={searchEnabled || returnEnabed ? {
             flexDirection: 'row',
@@ -27,7 +23,7 @@ export const LessonHeader = ({ onSearch, title, navigation, searchEnabled = true
                 </TouchableOpacity>
             }
 
-            
+
             {
                 searchEnabled &&
                 < TouchableOpacity

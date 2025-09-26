@@ -4,11 +4,10 @@ import {
   Text,
   FlatList,
   View,
-  TouchableOpacity,
-  SafeAreaView,
   Image,
   RefreshControl
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessonByModuleWithProgression } from '../../services/ContentService';
 
@@ -129,12 +128,7 @@ export function LessonsView({ route, navigation }) {
     setShowAds(false);
 
     // Move to selected lesson
-    navigation.push('formation-content', {
-      content: selectedLesson.content,
-      formation: formation,
-      type: "lesson",
-      demoMode: demoMode
-    })
+    return handleDisplayLessonContent(selectedLesson);
   }
 
   /**
@@ -169,13 +163,24 @@ export function LessonsView({ route, navigation }) {
       if (checkAdsShowable() == true) return;
 
       // If not, move to content
-      navigation.push('formation-content', {
-        content: lesson.content,
-        formation: formation,
-        type: "lesson",
-        demoMode: demoMode
-      })
+      return handleDisplayLessonContent(lesson);
+
     }
+  }
+
+  const handleDisplayLessonContent = (lesson) => {
+    // navigation.push('lesson-content', {
+    //   lessonTitle: lesson.content.title,
+    //   formationName: formation.formation_name
+    // })
+
+
+    navigation.push('formation-content', {
+      content: lesson.content,
+      formation: formation,
+      type: "lesson",
+      demoMode: demoMode
+    })
   }
 
   return <View style={styles.container}>

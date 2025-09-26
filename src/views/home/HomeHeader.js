@@ -4,25 +4,26 @@ import {
     Image,
     Text,
     StyleSheet,
-    SafeAreaView,
-    Alert,
     Linking,
-    StatusBar, ImageBackground, TouchableOpacity, Dimensions,
-    Platform
+    TouchableOpacity
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeHeaderButton } from './components/HomeHeaderButton';
 
 import { useQuery } from "@tanstack/react-query";
 import { getUserNextLesson } from '../../services/ContentService';
 import { useTheme } from '@react-navigation/native';
-import { FontAwesome } from '@expo/vector-icons';
 import { useGetUser } from '../../hooks/useGetUser.hook';
+
+import Feather from '@expo/vector-icons/Feather';
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
 
 
 export const HomeHeader = ({ navigation, userName }) => {
     const nextLesson = useQuery({
         queryKey: ['Home', 'GET', 'userNextLesson'],
-        queryFn: ()=>getUserNextLesson(),
+        queryFn: () => getUserNextLesson(),
         refetchOnWindowFocus: false,
         enabled: false
     })
@@ -42,13 +43,12 @@ export const HomeHeader = ({ navigation, userName }) => {
 
 
     let username = user.data?.name
-    
-    return (
-        <View>
 
-            <SafeAreaView style={[styles.containerHeader, styles.AndroidSafeArea]}>
+    return (
+        <SafeAreaView>
+            <View style={styles.containerHeader}>
                 <Image
-                    style={[styles.logo, { opacity: isLabo ? 0 : 1 }]}
+                    style={styles.logo}
                     source={require('../../../assets/logo-text-orange.png')}
                 />
                 <View style={styles.headerButtonGroup}>
@@ -58,61 +58,31 @@ export const HomeHeader = ({ navigation, userName }) => {
                             navigation.navigate('home-search')
                         }}
                     >
-                        <FontAwesome name="search" size={24} color="gray" />
+                        <Feather name="search" size={24} color={Colors.gray} />
                     </TouchableOpacity>
                 </View>
+            </View>
 
+            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: Colors.gray, fontSize: 16, fontWeight: '400' }}>
+                    Bonjour
+                </Text>
+                <Text style={{ color: Colors.primary, fontSize: 22, fontWeight: '600' }}>
+                    {username}
+                </Text>
+            </View>
 
-
-            </SafeAreaView>
-
-            {
-                !isLabo ?
-                    <View style={{
-                        height: Dimensions.get('screen').width * 0.3,
-                        justifyContent: 'center',
-                        alignItems: 'center'
-                    }}>
-                        <Text
-                            style={{
-                                color: 'gray',
-                                fontSize: 16,
-                                fontWeight: '400'
-                            }}
-                        >
-                            Bonjour
-                        </Text>
-                        <Text
-                            style={{
-                                color: 'gray',
-                                fontSize: 22,
-                                fontWeight: '600',
-                            }}
-                        >
-                            {username}
-                        </Text>
-                    </View>
-                    : <Image
-                        source={logos.full}
-                        style={{
-                            width: Dimensions.get('screen').width * 0.3,
-                            height: Dimensions.get('screen').width * 0.3,
-                            resizeMode: 'contain',
-                        }}
-                    />
-            }
             <View
                 style={{
                     flexDirection: 'row',
-                    width: '100%',
                     justifyContent: 'center',
                     flex: 1,
                     display: 'flex',
-                    marginVertical: 20
+                    marginTop: Spacings.xl
                 }}>
                 <HomeHeaderButton
                     value='Poser une question'
-                    color='#F98407'
+                    color='#ff9500'
                     icon={require('../../../assets/navigation/question-icon.png')}
                     style={styles.secondaryButton}
                     onPress={() => {
@@ -121,7 +91,7 @@ export const HomeHeader = ({ navigation, userName }) => {
                 />
                 <HomeHeaderButton
                     value='Outils'
-                    color='#1662A8'
+                    color='#0070c0'
                     style={styles.primaryButton}
                     icon={require('../../../assets/navigation/outils-icon.png')}
                     onPress={() => {
@@ -129,43 +99,35 @@ export const HomeHeader = ({ navigation, userName }) => {
                     }}
                 />
                 <HomeHeaderButton
-                    value='Recherche          de contenu'
-                    color='#71A11E'
+                    value='Rechercher          de contenu'
+                    color='#85b238'
                     icon={require('../../../assets/navigation/rechercher-icon.png')}
                     style={styles.secondaryButton}
                     onPress={() => navigation.navigate('home-search')}
                 />
             </View>
-
-
-        </View>
-
-
+        </SafeAreaView>
     )
 }
 
 var styles = StyleSheet.create({
-    container: {
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-    },
-
     secondaryButton: {
-        marginTop: 20
+        marginTop: Spacings.md
     },
     primaryButton: {
-        marginHorizontal: 15
+        marginHorizontal: Spacings.md
     },
     containerHeader: {
-        width: '100%',
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
+        marginHorizontal: Spacings.lg,
+        marginBottom: Spacings.xl
     },
     logo: {
         resizeMode: 'contain',
         height: 50,
-        flex: 2,
-        alignSelf: 'center',
+        flex: 1,
     },
     headerButtonGroup: {
         flex: 1,
@@ -173,9 +135,5 @@ var styles = StyleSheet.create({
     },
     headerButton: {
         resizeMode: 'contain',
-        marginHorizontal: 15,
-    },
-    AndroidSafeArea: {
-        paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
-    },
+    }
 })

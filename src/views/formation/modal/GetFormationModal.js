@@ -4,7 +4,7 @@ import { PaymentFormationModal } from "./paymentModal/PaymentFormationModal";
 import { SponsoredFormationModal } from "./sponsoredModal/SponsoredFormationModal";
 
 
-export default GetFormationModal = ({ formation, onClose, navigation }) => {
+const GetFormationModal = ({ formation, onClose, navigation }) => {
     const [action, setAction] = useState(null)
 
     const priceArray = [
@@ -133,6 +133,8 @@ export default GetFormationModal = ({ formation, onClose, navigation }) => {
         }
     </View>
 }
+
+export default GetFormationModal;
 
 const styles = StyleSheet.create({
     buttonContainer: {

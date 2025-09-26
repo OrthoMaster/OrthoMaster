@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Share } from 'react-native';
 import * as Sharing from 'expo-sharing';
-import { saveEvent } from './services/SessionEventService';
+// import { saveEvent } from './services/SessionEventService';
 
 export const getCurrentDate = () => {
 	return new Date().toISOString().slice(0, 19).replace('T', ' ')
@@ -55,11 +55,11 @@ export const orthomasterShare = (
 		message: message,
 		url: url
 	}).then(() => {
-		saveEvent("share_use", {
-			share_type: share_type, // can be: app sharing or inviteShare or content share
-			content_id: content_id, // if content share 
-			occured_at: getCurrentDate()
-		})
+		// saveEvent("share_use", {
+		// 	share_type: share_type, // can be: app sharing or inviteShare or content share
+		// 	content_id: content_id, // if content share 
+		// 	occured_at: getCurrentDate()
+		// })
 	})
 }
 
@@ -71,17 +71,17 @@ export const orthomasterShareFile = async (fileUri, options, fileName) => {
 
 	Sharing.shareAsync(fileUri, options)
 		.then(() => {
-			saveEvent("share_use", {
-				share_type: 'file-'+fileName,
-				content_id: null,
-				occured_at: getCurrentDate()
-			})
+			// saveEvent("share_use", {
+			// 	share_type: 'file-'+fileName,
+			// 	content_id: null,
+			// 	occured_at: getCurrentDate()
+			// })
 		})
 
 }
 
 
 export const hmsToMilliseconds = (hms) => {
-  const [hours, minutes, seconds] = hms.split(':').map(Number);
-  return ((hours * 3600) + (minutes * 60) + seconds) * 1000;
+	const [hours, minutes, seconds] = hms.split(':').map(Number);
+	return ((hours * 3600) + (minutes * 60) + seconds) * 1000;
 }

@@ -18,8 +18,6 @@ export const SearchFilters = ({ route, onSelect, values }) => {
         }
     }, [filters])
 
-
-
     const onClickButton = (button) => {
         if (!filters) {
             setfilters([])
@@ -32,7 +30,6 @@ export const SearchFilters = ({ route, onSelect, values }) => {
                 return value != button.filter;
             }))
         }
-
     }
 
     return (
@@ -58,8 +55,8 @@ export const SearchFilters = ({ route, onSelect, values }) => {
 
 const styles = StyleSheet.create({
     filtersConainer: {
+        alignItems: 'center',
         height: 40,
-        backgroundColor: '#fffefd',
-        marginVertical: 5
+        marginBottom: 16,
     }
 })

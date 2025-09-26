@@ -12,8 +12,6 @@ import {
 import { connect } from 'react-redux';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-//import { useQuery, useQueryClient } from "@tanstack/react-query"
-
 import { getSearchList, searchSuccess, listEnded } from '../../actions/searchAction';
 
 import { navigate } from '../../navigation/RootNavigation';
@@ -26,6 +24,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSearchList } from '../../services/SearchService';
 import { getCurrentUser } from '../../services/UserService';
 import { registerFormation, getUserRegisteredFormation } from '../../services/FormationService';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PAGE_SIZE = 10
 
@@ -181,24 +181,26 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
 
 
 
-    return <View style={styles.container}>
-        <SearchHeader
-            navigation={navigation}
-            onReturn={() => {
-                dispatch({
-                    type: API_SEARCH_CLEAN,
-                })
-                navigation.goBack()
-            }}
-            placeholder={'trouver un contenu...'}
-            onChangeText={(text) => searchWithText(text)}
-        />
+    return <SafeAreaView style={styles.container}>
+        <View>
+            <SearchHeader
+                navigation={navigation}
+                onReturn={() => {
+                    dispatch({
+                        type: API_SEARCH_CLEAN,
+                    })
+                    navigation.goBack()
+                }}
+                placeholder={'Trouver un contenu ...'}
+                onChangeText={(text) => searchWithText(text)}
+            />
 
-        <SearchFilters
-            route={route}
-            values={['Formation', 'Ressources']}
-            onSelect={(filters) => searchWithFiltersArray(filters)}
-        />
+            <SearchFilters
+                route={route}
+                values={['Formation', 'Ressources']}
+                onSelect={(filters) => searchWithFiltersArray(filters)}
+            />
+        </View>
 
         {
             contentModel.loading ?
@@ -318,7 +320,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                                         }}
                                     >
                                         <Text style={{ marginRight: 5, color: '#fff', textAlign: 'center' }}>Commencer la formation maintenant</Text>
-                                        <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
+                                        <AntDesign name="play-circle" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
                                     </TouchableOpacity>
                                 </View>
                         }
@@ -327,13 +329,12 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
                 </View>
             </View>
         </Modal>
-    </View>
+    </SafeAreaView>
 }
 
 const styles = StyleSheet.create({
     container: {
-        width: '100%',
-        alignItems: 'center',
+        flex: 1,
         backgroundColor: '#fffefd',
         height: '100%'
     }

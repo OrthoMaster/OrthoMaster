@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import DropdownComponent from "../../../../component/DropdownComponent";
 import { getJobsFunction } from "../../../../services/UserService";
 
-export default AskSponsoredFormationForm = ({ onSubmit }) => {
+const AskSponsoredFormationForm = ({ onSubmit }) => {
     const { data: jobFunctions } = useQuery('jobs-functions', () => getJobsFunction())
     const [addUserIsOpen, setAddUserIsOpen] = useState(false)
     const [formDatas, setFormDatas] = useState({
@@ -208,3 +208,5 @@ export default AskSponsoredFormationForm = ({ onSubmit }) => {
         </ScrollView>
     </View>
 }
+
+export default AskSponsoredFormationForm;

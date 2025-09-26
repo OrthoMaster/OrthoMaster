@@ -11,7 +11,6 @@ import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
 import { getUserAttachedOffices } from './src/services/OfficeService';
 import { LoadingContent } from './src/component/LoadingContent';
-import { NotificationHandler } from './src/component/NotificationHandler';
 import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
 import { useGetUser } from './src/hooks/useGetUser.hook';
 import { getCurrentDate } from './src/futils';
@@ -24,7 +23,7 @@ import { GlobalProvider } from './src/component/GlobalContext';
 import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
 
 export default function App({ navigation }) {
-  useSessionEventFlusher()
+  // useSessionEventFlusher()
 
   const [isLoading, setIsLoading] = useState(true)
   const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
@@ -34,7 +33,6 @@ export default function App({ navigation }) {
 
   const routeNameRef = React.useRef<string | undefined>(null);
   const [datePageOpened, setDatePageOpened] = useState(getCurrentDate())
-  // let datePageOpened = getCurrentDate()
 
   const linking = {
     prefixes: [prefix],
@@ -90,16 +88,16 @@ export default function App({ navigation }) {
   useEffect(() => {
     if (user && getSessionId() == null) {
       const userSessionHandling = AppState.addEventListener("change", nextAppState => {
-        if (appState.current.match(/inactive|background/) &&
-          nextAppState === "active") {
-          startSession()
-        } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
-          closeSession()
-        }
+        // if (appState.current.match(/inactive|background/) &&
+        //   nextAppState === "active") {
+        //   startSession()
+        // } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
+        //   closeSession()
+        // }
         appState.current = nextAppState;
       });
 
-      startSession()
+      // startSession()
       return () => {
         userSessionHandling.remove();
       };
@@ -117,13 +115,11 @@ export default function App({ navigation }) {
       }} />
     }
     if (showInitialConfigForm == false) {
-      return <NotificationHandler>
-        <GlobalProvider>
+      return <GlobalProvider>
           <UseCaptureGuard>
             <AppTab />
           </UseCaptureGuard>
         </GlobalProvider>
-      </NotificationHandler>
     }
   }
 
@@ -143,7 +139,7 @@ export default function App({ navigation }) {
         const currentRouteName = navigationRef.current.getCurrentRoute().name;
         const saveSessionScreenView = (sessionData: SessionEventScreen) => {
           // Your implementation of analytics goes here!
-          saveEvent("screen_view", sessionData)
+          // saveEvent("screen_view", sessionData)
         };
 
         if (previousRouteName !== currentRouteName) {

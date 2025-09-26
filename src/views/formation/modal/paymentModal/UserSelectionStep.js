@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getUsersByOfficeId } from "../../../../services/UserService";
 import PriceRecap from "../../components/PriceRecap";
 
-export default UserSelectionStep = ({ formation, onSubmit, billingAddress, onAddMember2Espace }) => {
+const UserSelectionStep = ({ formation, onSubmit, billingAddress, onAddMember2Espace }) => {
     const users = useQuery({
         queryKey: ["office-users"],
         queryFn: () => getUsersByOfficeId(billingAddress.id_buyer)
@@ -78,3 +78,5 @@ export default UserSelectionStep = ({ formation, onSubmit, billingAddress, onAdd
     </View >
 
 }
+
+export default UserSelectionStep;

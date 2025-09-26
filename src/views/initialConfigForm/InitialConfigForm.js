@@ -1,20 +1,12 @@
 import React, { useState } from "react";
-import {
-    SafeAreaView,
-    Text,
-    View
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import CreateOfficePage from "./pages/CreateOfficePage";
 import AddMemberOfficePage from "./pages/AddMemberOfficePage";
-import { useQueryClient } from "@tanstack/react-query";
 import AskOfficeCreationPage from "./pages/AskOfficeCreationPage";
 
 export const InitialConfigForm = ({ onFinish }) => {
     const [officeCreated, setOfficeCreated] = useState(null)
     const [pageIndex, setPageIndex] = useState(0)
-
-
 
     return <SafeAreaView style={{
         backgroundColor: "#fff",
@@ -26,7 +18,7 @@ export const InitialConfigForm = ({ onFinish }) => {
             pageIndex == 0 &&
             <AskOfficeCreationPage
                 onCreateOffice={() => {
-                setPageIndex(1)
+                    setPageIndex(1)
                 }}
                 onSkip={() => {
                     onFinish()

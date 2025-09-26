@@ -5,7 +5,7 @@ import Toast from 'react-native-toast-message';
 import { useQueryClient } from "@tanstack/react-query";
 import AddMemberOfficeForm from "../../../component/forms/AddMemberOfficeForm";
 
-export default AddOfficeView = ({ route, navigation }) => {
+const AddOfficeView = ({ route, navigation }) => {
     const queryClient = useQueryClient()
     const [office, setOffice] = useState(null)
     const showToast = ({
@@ -78,3 +78,5 @@ export default AddOfficeView = ({ route, navigation }) => {
         <Toast position="bottom" />
     </View>
 }
+
+export default AddOfficeView;

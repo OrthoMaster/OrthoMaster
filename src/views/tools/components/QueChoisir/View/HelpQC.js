@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
-import { SafeAreaView, View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import React from "react";
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../../../../services/S3Service";

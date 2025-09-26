@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "2.3.1",
+    "version": "2.4.0",
     "orientation": "portrait",
     "scheme": "orthomaster",
     "jsEngine": "hermes",
@@ -15,7 +15,9 @@
       "image": "./assets/appicon.png"
     },
     "userInterfaceStyle": "light",
+    
     "newArchEnabled": true,
+
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -58,7 +60,13 @@
             "DEFAULT"
           ]
         }
-      ]
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      },
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "buildToolsVersion": "34.0.0"
     },
     "extra": {
       "eas": {
@@ -68,11 +76,12 @@
     "plugins": [
       "expo-secure-store",
       "expo-video",
-      "./expo-plugins/modify-appdelegate.cjs"
+      "./expo-plugins/modify-appdelegate.cjs",
+      "expo-asset",
+      "expo-font"
     ],
     "updates": {
-      "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a",
-      "runtimeVersion": "appVersion"
+      "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"
     }
   }
 }

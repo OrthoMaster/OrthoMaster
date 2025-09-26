@@ -24,6 +24,7 @@ import { LoadingContent } from '../../component/LoadingContent';
 import { getS3Image } from '../../services/S3Service';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
+// Doing Cards
 const RunningFormationCard = ({ params, thumbnail_url }) => {
 
     const navigation = useNavigation()
@@ -94,7 +95,7 @@ const RunningFormationCard = ({ params, thumbnail_url }) => {
                     }}
                     resizeMode='contain'
                 />
-                <AntDesign name="playcircleo" size={70} color="rgba(255,255,255,0.8)"
+                <AntDesign name="play-circle" size={70} color="rgba(255,255,255,0.8)"
                     style={{
                         position: 'absolute',
                     }} />
@@ -116,6 +117,7 @@ const RunningFormationCard = ({ params, thumbnail_url }) => {
     </View>
 }
 
+// Cards
 const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_url, onShowMore }) => {
 
     const navigation = useNavigation()
@@ -209,7 +211,7 @@ const CatalogFormationCard = ({ params, onUnlockFormation, isStudent, thumbnail_
                             fontWeight: 'bold',
                             fontSize: 12
                         }}>{(params.id_product_odoo && isStudent == false) ? "Démo" : "Commencer"}</Text>
-                        <AntDesign name="playcircleo" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
+                        <AntDesign name="play-circle" size={18} color="#fff" style={{ paddingHorizontal: 5 }} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={[cardStyle.buttonStyle, { backgroundColor: '#8089D1' }]}

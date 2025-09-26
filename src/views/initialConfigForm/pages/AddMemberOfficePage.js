@@ -4,7 +4,7 @@ import AddMemberOfficeForm from "../../../component/forms/AddMemberOfficeForm";
 import Toast from 'react-native-toast-message';
 
 
-export default AddMemberOfficePage = ({ office, onFinish }) => {
+const AddMemberOfficePage = ({ office, onFinish }) => {
     const showToast = ({
         type = 'success',
         text1 = 'Hello',
@@ -63,3 +63,5 @@ export default AddMemberOfficePage = ({ office, onFinish }) => {
         <Toast position="bottom" />
     </View>
 }
+
+export default AddMemberOfficePage;
