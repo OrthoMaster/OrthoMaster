@@ -115,19 +115,16 @@ export const FlashMediaView = ({ navigation, route }) => {
     })
   })
 
-
   const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([])
   const [openMediaIsLoading, setOpenMediaIsLoading] = useState<boolean>(false)
   const [openMediaErrorMessage, setOpenMediaErrorMessage] = useState<string>(null)
   const [isSearching, setIsSearching] = useState(false)
-
 
   const handleNavigation = (card: IContent) => {
     navigation.push('flash-media-preview', {
       media: card
     } as PreviewMediaParams)
   }
-
 
   const handleOpenMediaLink = async (id: number) => {
     return new Promise(async (resolve, reject) => {
@@ -170,17 +167,16 @@ export const FlashMediaView = ({ navigation, route }) => {
   }, [route.params, categories.data])
 
   return (
-    <SafeAreaView style={[styles.container, styles.AndroidSafeArea]}>
-
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <ScrollView
         scrollEnabled={!isSearching}
         nestedScrollEnabled={true}
       >
-
         <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2, paddingBottom: 30, marginTop: 0 }]}>
           <Text style={[styles.categoryTitle, {
             color: "#fff",
-            backgroundColor: 'none'
+            backgroundColor: 'none',
+            marginTop: 30,
           }]}>Tendances sur OrthoMaster</Text>
           {
             lastRelease.isLoading ?
@@ -204,7 +200,7 @@ export const FlashMediaView = ({ navigation, route }) => {
           }}
             onPress={() => setIsSearching(true)}
           >
-            <Text style={{ color: 'gray' }}>Rechercher...</Text>
+            <Text style={{ color: 'gray' }}>Rechercher ...</Text>
           </TouchableOpacity>
         </View>
 
@@ -324,12 +320,8 @@ export const FlashMediaView = ({ navigation, route }) => {
 }
 
 const styles = StyleSheet.create({
-  AndroidSafeArea: {
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0
-  },
   container: {
     backgroundColor: '#303030',
-    // backgroundColor: '#F1F1F1'
   },
   sectionContainer: {
     // marginTop: 5,
@@ -344,7 +336,8 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 20,
     marginVertical: 5,
-    paddingLeft: 10, paddingRight: 20,
+    paddingLeft: 10,
+    paddingRight: 20,
     paddingVertical: 3,
     fontWeight: "bold",
     backgroundColor: "#ffaf31",

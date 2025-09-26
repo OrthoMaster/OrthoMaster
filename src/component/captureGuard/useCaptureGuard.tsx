@@ -6,8 +6,9 @@
 
 import * as ScreenCapture from "expo-screen-capture";
 import { useEffect } from "react";
-import { View, Alert, Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import { useGlobal } from '../../component/GlobalContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export function UseCaptureGuard({ children }) {
   const { globalData, setGlobalData } = useGlobal();
@@ -50,8 +51,8 @@ export function UseCaptureGuard({ children }) {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaProvider style={{ flex: 1 }}>
       {children}
-    </View>
+    </SafeAreaProvider>
   );
 }

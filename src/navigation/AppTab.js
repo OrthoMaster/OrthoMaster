@@ -13,15 +13,16 @@ import { ToolsStack } from './stacks/ToolsStack';
 import { ProfilStack } from './stacks/ProfilStack';
 
 const Tab = createBottomTabNavigator();
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const AppTab = ({ }) => {
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       initialRouteName='Accueil'
       screenOptions={({ route }) => ({
-        tabBarStyle: { backgroundColor: 'white', height: Platform.OS === 'ios' ? 80 : 90 },
+        tabBarStyle: { backgroundColor: 'white', paddingBottom: insets.bottom },
         tabBarItemStyle: {
         },
         tabBarIcon: ({ focused, color, size }) => {

@@ -177,10 +177,6 @@ const SearchCardDefault = ({ card, onSelect, studentMode }) => {
     </TouchableOpacity>
 }
 
-
-
-
-
 const QaCard = ({ card, onSelect, color }) => {
     const thumbnail = useQuery({
         queryKey: ['Qa', 'GET', 'qaThumbnail', card.id_content, card.title],
@@ -269,6 +265,7 @@ export const ContentSelection = ({
     )
 
 }
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -317,7 +314,7 @@ const stylesDefault = StyleSheet.create({
 
 const stylesQa = StyleSheet.create({
     card: {
-        width: '80%',
+        width: '100%',
         marginBottom: 20,
         alignSelf: 'center',
     },
@@ -337,7 +334,6 @@ const stylesQa = StyleSheet.create({
         width: "100%",
         height: '100%'
     },
-
     cardTitle: {
         color: '#fffefd',
         fontWeight: '700',

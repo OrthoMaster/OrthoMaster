@@ -181,7 +181,7 @@ const SearchView = ({ contentModel, dispatch, navigation, route }) => {
 
 
 
-    return <SafeAreaView style={styles.container}>
+    return <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View>
             <SearchHeader
                 navigation={navigation}
@@ -336,7 +336,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fffefd',
-        height: '100%'
     }
 })
 
