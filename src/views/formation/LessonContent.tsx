@@ -250,8 +250,7 @@ export const LessonContent = ({ navigation, route }) => {
 
     return (
       <View style={styles.loadingFooter}>
-        <ActivityIndicator size="small" color={Colors.primary} />
-        <Text style={styles.loadingText}>Đang tải thêm nội dung...</Text>
+        <ActivityIndicator size="small" color={Colors.grayLight} />
       </View>
     );
   };
@@ -279,7 +278,7 @@ export const LessonContent = ({ navigation, route }) => {
   }
 
   return (
-    <SafeAreaView style={Styles.container}>
+    <SafeAreaView style={Styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Enhanced Animated Header */}

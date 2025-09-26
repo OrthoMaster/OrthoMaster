@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     paddingRight: Spacings.xl
   },
   btnCheck: {
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.success,
     padding: Spacings.sm,
     borderRadius: 6,
     alignItems: 'center',

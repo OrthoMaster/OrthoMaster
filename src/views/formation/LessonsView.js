@@ -81,6 +81,9 @@ export function LessonsView({ route, navigation }) {
    * @returns 
    */
   const checkAdsShowable = () => {
+    // For testing
+    return false;
+
     // User is student
     const adsShowable = user.is_student ? true : false;
 
@@ -168,19 +171,22 @@ export function LessonsView({ route, navigation }) {
     }
   }
 
+  /**
+   * Handle display lesson
+   */
   const handleDisplayLessonContent = (lesson) => {
-    // navigation.push('lesson-content', {
-    //   lessonTitle: lesson.content.title,
-    //   formationName: formation.formation_name
-    // })
-
-
-    navigation.push('formation-content', {
-      content: lesson.content,
-      formation: formation,
-      type: "lesson",
-      demoMode: demoMode
+    navigation.push('lesson-content', {
+      lessonTitle: lesson.content.title,
+      formationName: formation.formation_name
     })
+
+
+    // navigation.push('formation-content', {
+    //   content: lesson.content,
+    //   formation: formation,
+    //   type: "lesson",
+    //   demoMode: demoMode
+    // })
   }
 
   return <View style={styles.container}>
