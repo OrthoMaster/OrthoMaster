@@ -239,7 +239,7 @@ export const ContentSelection = ({
     const renderEmpty = () => {
         return (
             <View>
-                <Text>Nous ne trouvons pas de contenu pour le moment...</Text>
+                <Text style={{ textAlign: 'center' }}>Nous ne trouvons pas de contenu pour le moment !</Text>
                 <Button onPress={() => onRetry()} title='Réessayer' />
             </View>
         )

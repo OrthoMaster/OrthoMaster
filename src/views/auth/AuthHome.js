@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export const AuthHome = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.container}>
+            
             <View style={{ alignItems: 'center' }}>
                 <Image
                     source={require("../../../assets/logo-text-orange.png")}
