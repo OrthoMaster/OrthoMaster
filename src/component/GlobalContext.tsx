@@ -14,23 +14,26 @@ interface GlobalData {
 interface GlobalContextType {
   globalData: GlobalData;
   setGlobalData: React.Dispatch<React.SetStateAction<GlobalData>>;
+  handleLoginSuccess?: () => void;
 }
 
 // Interface Provider props
 interface GlobalProviderProps {
   children: ReactNode;
+  handleLoginSuccess?: () => void;
 }
 
 // Create Context
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 
 // Provider Component
-export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
+export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children, handleLoginSuccess }) => {
   const [globalData, setGlobalData] = useState<GlobalData>({});
 
   const value: GlobalContextType = {
     globalData,
-    setGlobalData
+    setGlobalData,
+    handleLoginSuccess
   };
 
   return (

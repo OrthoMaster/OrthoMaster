@@ -14,6 +14,8 @@ import ReturnButtonIcon from '../components/ReturnButton';
 const HomeStackNav = createStackNavigator();
 
 
+import VideoFairPlayNoAuth from '../../component/TestVideoPlayer';
+
 export const HomeStack = (user) => {
 
   return (

@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useState } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, useNavigation, useNavigationContainerRef } from '@react-navigation/native';
@@ -20,149 +20,96 @@ import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
 import { navigationRef } from './src/navigation/RootNavigation';
 
 import { GlobalProvider } from './src/component/GlobalContext';
+import { Provider } from 'react-native-paper';
 import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
+import * as Font from 'expo-font';
+import CustomSplashScreen from './src/views/splash/CustomSplashScreen';
+import * as AuthService from './src/services/v2/AuthService';
+import { User } from './src/services/v2/AuthService';
 
 export default function App({ navigation }) {
-  // useSessionEventFlusher()
+  // author: Francis
+  const navigationRef = useNavigationContainerRef();
 
-  const [isLoading, setIsLoading] = useState(true)
-  const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
-  const queryCli = useQueryClient()
-  const { data: user, ...userQuery } = useGetUser()
-  const appState = useRef(AppState.currentState);
+  const [appIsReady, setAppIsReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  const routeNameRef = React.useRef<string | undefined>(null);
-  const [datePageOpened, setDatePageOpened] = useState(getCurrentDate())
+  // Handle login success
+  const handleLoginSuccess = useCallback(() => {
+    setIsAuthenticated(true);
+  }, []);
 
-  const linking = {
-    prefixes: [prefix],
-    config: {
-      screens: {
-        'Accueil': {
-          screens: {
-            "home-home": {
-              path: "open/content/:id"
-            }
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // 1. Load fonts
+        console.log('📱 Loading fonts...');
+        await Font.loadAsync({
+          Roboto: require('./assets/fonts/Roboto-VariableFont_wdth,wght.ttf'),
+          'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
+          'Poppins-Light': require('./assets/fonts/Poppins-Light.ttf'),
+          'Poppins-Medium': require('./assets/fonts/Poppins-Medium.ttf'),
+          'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
+        });
+        console.log('✅ Fonts loaded');
+
+        // 2. Kiểm tra token
+        const token = await AuthService.getToken();
+        console.log('🔑 Token exists:', token);
+
+        if (token) {
+          // 3. Verify token với API /me
+          console.log('🔍 Verifying token...');
+          const userData = await AuthService.me();
+
+          if (userData) {
+            console.log('✅ Token valid, user:', userData.email);
+            setIsAuthenticated(true);
+            setUser(userData);
+          } else {
+            console.log('❌ Token invalid');
+            setIsAuthenticated(false);
+            // setUser(null);
           }
-        },
-        'Médias': {
-          screens: {
-            'flash-media-home': {
-              path: "open/media-preview/:id"
-            }
-          }
+        } else {
+          console.log('❌ No token found');
         }
+
+        // 4. Simulate loading
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+      } catch (error) {
+        console.error('❌ Error during initialization:', error);
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setAppIsReady(true);
       }
     }
-  };
 
-  const userOffices = useQuery({
-    queryKey: ["user-offices"],
-    queryFn: () => getUserAttachedOffices({ userId: (user as any).id_user }),
-    enabled: userQuery.isSuccess && userQuery.isFetched
-  })
+    prepare();
+  }, []);
 
-  const askEspaceProCreation = async () => {
-    AsyncStorage.getItem("initial-conf-slider-displayed")
-      .then(displayInitialConfigForm => {
-        if (!displayInitialConfigForm) {
-          setShowInitialConfigForm(true)
-        }
-        return
-      })
+  if (!appIsReady || showSplash) {
+    return <CustomSplashScreen onFinish={() => setShowSplash(false)} />;
   }
-
-  useEffect(() => {
-    if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
-      askEspaceProCreation()
-    }
-  }, [userOffices.data])
-
-  useEffect(() => {
-    if (!userQuery.isFetching && !userQuery.isLoading && userQuery.isFetched)
-      setIsLoading(false)
-    if (user)
-      AsyncStorage.setItem('user', JSON.stringify(user))
-  }, [user, userQuery])
-
-  useEffect(() => {
-    if (user && getSessionId() == null) {
-      const userSessionHandling = AppState.addEventListener("change", nextAppState => {
-        // if (appState.current.match(/inactive|background/) &&
-        //   nextAppState === "active") {
-        //   startSession()
-        // } else if (appState.current == "active" && (nextAppState === "background" || nextAppState == "inactive")) {
-        //   closeSession()
-        // }
-        appState.current = nextAppState;
-      });
-
-      // startSession()
-      return () => {
-        userSessionHandling.remove();
-      };
-    }
-  }, [user])
-
-  // Capture guard
-
-  const displayView = () => {
-    if (showInitialConfigForm) {
-      return <InitialConfigForm onFinish={() => {
-        AsyncStorage.setItem("initial-conf-slider-displayed", "true")
-        queryCli.invalidateQueries({ queryKey: ['current-user'] })
-        setShowInitialConfigForm(false)
-      }} />
-    }
-    if (showInitialConfigForm == false) {
-      return <GlobalProvider>
-          <UseCaptureGuard>
-            <AppTab />
-          </UseCaptureGuard>
-        </GlobalProvider>
-    }
-  }
-
-  if (isLoading) {
-    return <LoadingContent state={true} onRetry={() => { }} />
-  }
+  // End
 
   return (
-    <NavigationContainer linking={linking}
-      ref={navigationRef}
-      onReady={() => {
-        routeNameRef.current = navigationRef.current.getCurrentRoute().name;
-        setDatePageOpened(getCurrentDate())
-      }}
-      onStateChange={async () => {
-        const previousRouteName = routeNameRef.current;
-        const currentRouteName = navigationRef.current.getCurrentRoute().name;
-        const saveSessionScreenView = (sessionData: SessionEventScreen) => {
-          // Your implementation of analytics goes here!
-          // saveEvent("screen_view", sessionData)
-        };
-
-        if (previousRouteName !== currentRouteName) {
-          // Replace the line below to add the tracker from a mobile analytics SDK
-          saveSessionScreenView({
-            screen_name: previousRouteName,
-            started_at: datePageOpened,
-            ended_at: getCurrentDate()
-          });
-        }
-        // Save the current route name for later comparison
-        routeNameRef.current = currentRouteName;
-        setDatePageOpened(getCurrentDate())
-      }}
-    >
-      {
-        user ?
-          displayView()
-          :
-          <GlobalProvider>
+    <NavigationContainer ref={navigationRef}>
+      <GlobalProvider handleLoginSuccess={handleLoginSuccess}>
+        <Provider>
+          {isAuthenticated ? (
             <AuthStack />
-          </GlobalProvider>
-      }
+          ) : (
+            <UseCaptureGuard>
+              <AppTab />
+            </UseCaptureGuard>
+          )}
+        </Provider>
+      </GlobalProvider>
     </NavigationContainer>
   );
 }

@@ -1,16 +1,21 @@
 import React from 'react'
 import {
   Image,
-  Platform
+  Text
 } from 'react-native'
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { HomeStack } from './stacks/HomeStack';
+
+import { TrainingStack } from './stacks/TrainingStack';
+
 import { LessonStack } from './stacks/LessonStack';
 import { FlashStack } from './stacks/FlashStack';
 import { ToolsStack } from './stacks/ToolsStack';
 import { ProfilStack } from './stacks/ProfilStack';
+
+import Colors from '../../constants/Colors';
 
 const Tab = createBottomTabNavigator();
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,9 +23,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export const AppTab = ({ }) => {
   const insets = useSafeAreaInsets();
 
+  const CustomTabBarLabel = ({
+    title,
+    focused,
+    activeColor,
+  }: {
+    title: string;
+    focused: boolean;
+    activeColor: string;
+  }) => (
+    <Text style={{
+      color: focused ? activeColor : Colors.gray,
+      fontSize: 10,
+      fontFamily: focused ? 'Poppins-Medium' : 'Poppins-Regular',
+      textTransform: 'none'
+    }}>
+      {title}
+    </Text>
+  );
+
   return (
     <Tab.Navigator
-      initialRouteName='Accueil'
+      id={"main-tabs" as unknown as undefined}
+      initialRouteName='home'
       screenOptions={({ route }) => ({
         tabBarStyle: { backgroundColor: 'white', paddingBottom: insets.bottom },
         tabBarItemStyle: {
@@ -29,11 +54,12 @@ export const AppTab = ({ }) => {
           let iconName;
 
           switch (route.name) {
-            case 'Accueil':
+            case 'training':
               iconName = focused
-                ? require('../../assets/navigation/accueil-icon.png')
-                : require('../../assets/navigation/accueil-icon-transparent.png')
+                ? require('../../assets/navigation/formation-icon.png')
+                : require('../../assets/navigation/formation-icon-transparent.png')
               break;
+
             case 'Formation':
               iconName = focused
                 ? require('../../assets/navigation/formation-icon.png')
@@ -55,7 +81,6 @@ export const AppTab = ({ }) => {
                 : require('../../assets/navigation/tableau-de-bord-icon-transparent.png')
               break;
 
-
             default:
               iconName = focused
                 ? require('../../assets/navigation/accueil-icon.png')
@@ -71,14 +96,37 @@ export const AppTab = ({ }) => {
             }}
           />;
         },
-        tabBarActiveTintColor: 'black',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: Colors.black,
+        tabBarInactiveTintColor: Colors.gray,
       })}
     >
       <Tab.Screen
-        name="Accueil"
+        name="home"
         component={HomeStack}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: false,
+          tabBarLabel: ({ focused }) => (
+            <CustomTabBarLabel
+              title="Acceuil"
+              focused={focused}
+              activeColor={Colors.primary}
+            />
+          )
+        }}
+      />
+      <Tab.Screen
+        name="training"
+        component={TrainingStack}
+        options={{
+          headerShown: false,
+          tabBarLabel: ({ focused }) => (
+            <CustomTabBarLabel
+              title="Formation"
+              focused={focused}
+              activeColor={Colors.blue}
+            />
+          )
+        }}
       />
       <Tab.Screen
         name="Formation"
@@ -89,7 +137,6 @@ export const AppTab = ({ }) => {
         name="Médias"
         component={FlashStack}
         options={{ headerShown: false }}
-
       />
       <Tab.Screen
         name="Outils"

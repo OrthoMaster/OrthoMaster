@@ -18,6 +18,8 @@ import { useGlobal } from '../../component/GlobalContext';
 import { useGetUser } from '../../hooks/useGetUser.hook';
 import { AdServingModalMediaAccess } from "../flash/ads/AdServingModalMediaAccess";
 
+import { checkExistContent } from "../../services/v2/LessonService";
+
 export function LessonsView({ route, navigation }) {
   let { module, demoMode, formation } = route.params
   const lessons = useQuery({
@@ -174,19 +176,25 @@ export function LessonsView({ route, navigation }) {
   /**
    * Handle display lesson
    */
-  const handleDisplayLessonContent = (lesson) => {
-    navigation.push('lesson-content', {
-      lessonTitle: lesson.content.title,
-      formationName: formation.formation_name
-    })
+  const handleDisplayLessonContent = async (lesson) => {
+    const newContentLesson = await checkExistContent({
+      contentId: lesson.content.id_content
+    });
 
-
-    // navigation.push('formation-content', {
-    //   content: lesson.content,
-    //   formation: formation,
-    //   type: "lesson",
-    //   demoMode: demoMode
-    // })
+    if (newContentLesson !== null) {
+      navigation.navigate('lesson-content', {
+        newLessonId: newContentLesson.id,
+        lessonTitle: lesson.content.title,
+        formationName: formation.formation_name
+      })
+    } else {
+      navigation.push('formation-content', {
+        content: lesson.content,
+        formation: formation,
+        type: "lesson",
+        demoMode: demoMode
+      })
+    }
   }
 
   return <View style={styles.container}>

@@ -14,10 +14,12 @@ export const Styles = StyleSheet.create({
     paddingHorizontal: Spacings.md,
     borderRadius: 8,
     marginBottom: Spacings.md,
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.danger
   },
   errorText: {
     color: Colors.danger,
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 20,
     fontFamily: 'Roboto'
   },
@@ -25,7 +27,7 @@ export const Styles = StyleSheet.create({
     marginBottom: Spacings.md,
   },
   textInput: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.grayLight,
     borderRadius: 8,
   },
   textInputContent: {
@@ -57,17 +59,79 @@ export const Styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     shadowColor: Colors.primary,
+    borderWidth: 1,
+    borderColor: Colors.primary
+  },
+  btnPrimaryLight: {
+    backgroundColor: Colors.primaryLight,
+    padding: Spacings.md,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    shadowColor: Colors.primary,
   },
   btnPrimaryText: {
     color: Colors.white,
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Poppins-Medium',
-    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+
+  btnWhite: {
+    backgroundColor: Colors.white,
+    padding: Spacings.md,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    shadowColor: Colors.grayLight,
+    borderWidth: 1,
+    borderColor: Colors.primary
+  },
+  btnWhiteText: {
+    color: Colors.primary,
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
     textAlign: 'center',
   },
   btnDisabled: {
     backgroundColor: Colors.disabledBackground,
+    borderColor: Colors.disabledBackground,
+    borderWidth: 1,
     elevation: 0,
     shadowOpacity: 0,
   },
+
+  // Portal Dialog
+  dialogContentTop: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dialogTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    marginTop: Spacings.md,
+    marginBottom: Spacings.sm
+  },
+  dialogText: {
+    fontFamily: 'Roboto',
+    color: Colors.gray,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  dialogSingleButton: {
+    paddingHorizontal: Spacings.lg,
+    borderRadius: 8,
+    marginTop: Spacings.md,
+  },
+  dialogButtonText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 12,
+    color: Colors.white
+  }
 });

@@ -9,6 +9,7 @@ interface TextPart {
 
 interface ParagraphBlockProps {
   htmlContent: string;
+  type?: '' | 'citation' | 'details';
   style?: TextStyle;
 }
 
@@ -37,8 +38,6 @@ const parseHtmlText = (htmlString: string): TextPart[] => {
     } else if (segment === '</i>') {
       isItalic = false;
     } else if (segment && !segment.match(/^<\/?[bi]>$/)) {
-      // This is actual text content
-      // Không cần check trim() vì có thể cần preserve spaces
       parts.push({
         text: segment,
         bold: isBold,
@@ -50,9 +49,10 @@ const parseHtmlText = (htmlString: string): TextPart[] => {
   return parts;
 };
 
-const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ htmlContent, style }) => {
+const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ htmlContent, type, style }) => {
   const textParts = parseHtmlText(htmlContent);
-  
+  const defaultStyle = (type === 'citation' ? 'italic' : 'normal');
+
   return (
     <Text style={style}>
       {textParts.map((part, index) => (
@@ -60,7 +60,7 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ htmlContent, style }) =
           key={index}
           style={{
             fontWeight: part.bold ? 'bold' : 'normal',
-            fontStyle: part.italic ? 'italic' : 'normal',
+            fontStyle: part.italic ? 'italic' : defaultStyle,
           }}
         >
           {part.text}

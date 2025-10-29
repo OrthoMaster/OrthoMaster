@@ -204,7 +204,7 @@ const QuizSelectBlock: React.FC<QuizSelectBlockProps> = ({
             styles.resultText,
             validationResult === 'correct' ? styles.correctResultText : styles.incorrectResultText
           ]}>
-            {validationResult === 'correct' ? 'Bravo ! Bonne réponse' : 'Mauvaise réponse, essayez encore'}
+            {validationResult === 'correct' ? 'Bravo ! Bonne réponse' : 'Pas tout à fait, ne vous découragez pas !'}
           </Text>
         </View>
       )}

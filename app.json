@@ -10,14 +10,12 @@
       "ios",
       "android"
     ],
-    "icon": "./assets/appicon.png",
+    "icon": "./assets/v2_images/logo/icon.png",
     "splash": {
-      "image": "./assets/appicon.png"
+      "image": "./assets/v2_images/logo/logo_primary_1024.png"
     },
     "userInterfaceStyle": "light",
-    
     "newArchEnabled": true,
-
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -33,6 +31,10 @@
           "fetch",
           "remote-notification",
           "fetch",
+          "remote-notification",
+          "fetch",
+          "remote-notification",
+          "fetch",
           "remote-notification"
         ],
         "ITSAppUsesNonExemptEncryption": false
@@ -41,7 +43,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/appicon.png",
+        "foregroundImage": "./assets/v2_images/logo/adaptive_icon.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.hugotaieb.OrthoMaster",
@@ -66,7 +68,11 @@
       },
       "compileSdkVersion": 34,
       "targetSdkVersion": 34,
-      "buildToolsVersion": "34.0.0"
+      "buildToolsVersion": "34.0.0",
+      "permissions": [
+        "INTERNET"
+      ],
+      "usesCleartextTraffic": false
     },
     "extra": {
       "eas": {
@@ -75,13 +81,23 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-video",
       "./expo-plugins/modify-appdelegate.cjs",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
+      ["react-native-video", { "iosCategory": "playback" }]
     ],
     "updates": {
       "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

@@ -21,10 +21,13 @@ import Spacings from "../../../constants/Spacings";
 import { Styles } from "../../../constants/Styles";
 
 import { useQuery } from "@tanstack/react-query";
-import { getLessonContent } from "../../services/LessonService";
+import { getLessonContent } from "../../services/v2/LessonService";
 import ParagraphBlock from "./components/ParagraphBlock";
+import ListBlock from "./components/ListBlock";
 import ImageBlock from "./components/ImageBlock";
 import QuizSelectBlock from "./components/QuizSelectBlock";
+import FairPlayVideoPlayer from '../../component/FairPlayVideoPlayer';
+import LessonSkeleton from './components/LessonSkeleton';
 
 const HEADER_HEIGHT = 120;
 const SCROLL_THRESHOLD = 5;
@@ -45,8 +48,7 @@ interface RouteParams {
 type ScrollDirection = 'up' | 'down' | null;
 
 export const LessonContent = ({ navigation, route }) => {
-  const LIMIT = 10;
-  const { lessonTitle, formationName } = route.params;
+  const { lessonTitle, formationName, newLessonId } = route.params;
 
   // State management for pagination
   const [allBlocks, setAllBlocks] = useState<Block[]>([]);
@@ -120,13 +122,12 @@ export const LessonContent = ({ navigation, route }) => {
   };
 
   // Get first data
-  const lessonId = 1;
+  const lessonId = newLessonId;
   const { data, isLoading, error } = useQuery({
-    queryKey: ['lessonContent', lessonId, 1, 5],
+    queryKey: ['lessonContent', lessonId, 1],
     queryFn: () => getLessonContent({
       id: lessonId,
       page: 1,
-      limit: LIMIT
     }),
     enabled: !!lessonId,
   });
@@ -151,7 +152,6 @@ export const LessonContent = ({ navigation, route }) => {
       const result = await getLessonContent({
         id: lessonId,
         page: currentPage,
-        limit: LIMIT
       });
 
       if (result?.success) {
@@ -160,8 +160,9 @@ export const LessonContent = ({ navigation, route }) => {
         setLoadedPages(prev => new Set([...prev, currentPage]));
         setCurrentPage(prev => prev + 1);
       }
+
     } catch (error) {
-      console.error('Error loading more content:', error);
+      setLoadingMore(false);
     } finally {
       setLoadingMore(false);
     }
@@ -191,6 +192,30 @@ export const LessonContent = ({ navigation, route }) => {
           <ParagraphBlock style={blockStyles.calloutText} htmlContent={block.data.text} />
         </View>
       }
+
+      // Citation
+      if (block.tunes.textVariant === 'citation') {
+        return <View key={`${block.id}_${index}`} style={blockStyles.citationBlock}>
+          <ParagraphBlock style={blockStyles.citationText} type="citation" htmlContent={block.data.text} />
+        </View>
+      }
+
+      // Details
+      if (block.tunes.textVariant === 'details') {
+        return <View key={`${block.id}_${index}`} style={blockStyles.detailsBlock}>
+          <ParagraphBlock style={blockStyles.detailsText} type="details" htmlContent={block.data.text} />
+        </View>
+      }
+    }
+
+    // List
+    if (block.type === 'list') {
+      return <View key={`${block.id}_${index}`} style={blockStyles.listBlock}>
+        <ListBlock
+          items={block.data.items}
+          style={block.data.style}
+        />
+      </View>
     }
 
     // Image
@@ -212,6 +237,21 @@ export const LessonContent = ({ navigation, route }) => {
           correctAnswers={block.data.correctAnswers}
         />
       </View>
+    }
+
+    // Video
+    if (block.type === 'video') {
+      return (
+        <View key={`${block.id}_${index}`} style={blockStyles.videoBlock}>
+          <FairPlayVideoPlayer
+            type={block.data.type}
+            url={block.data.type === 'hls' ? block.data.url : block.data.embedUrl}
+          />
+          {block.data.title !== '' &&
+            <Text style={blockStyles.videoTitle}>{block.data.title}</Text>
+          }
+        </View>
+      )
     }
 
     return (
@@ -254,28 +294,6 @@ export const LessonContent = ({ navigation, route }) => {
       </View>
     );
   };
-
-  // Show loading for initial load
-  if (isLoading) {
-    return (
-      <SafeAreaView style={[Styles.container, styles.centerContainer]}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Đang tải nội dung...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  // Show error
-  if (error) {
-    return (
-      <SafeAreaView style={[Styles.container, styles.centerContainer]}>
-        <Text style={styles.errorText}>Có lỗi xảy ra khi tải nội dung</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.retryButton}>
-          <Text style={styles.retryText}>Quay lại</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={Styles.container} edges={['top', 'left', 'right']}>
@@ -333,18 +351,24 @@ export const LessonContent = ({ navigation, route }) => {
         bounces={true}
         scrollEventThrottle={16}
       >
+        {/* Show error  */}
+        {error && !isLoading &&
+          <View style={[Styles.container, styles.errorContainer]}>
+            <Text style={styles.errorText}>Impossible de charger le contenu. Réessayez ou contactez-nous si le problème persiste.</Text>
+          </View>
+        }
+
+
+        {/* Show loading for initial load */}
+        {isLoading &&
+          <LessonSkeleton numberOfObjects={2} />
+        }
+
         {/* Render all blocks */}
         {allBlocks.map((block: Block, index: number) => renderBlock(block, index))}
 
         {/* Loading footer */}
         {renderFooter()}
-
-        {/* End indicator */}
-        {!hasMore && allBlocks.length > 0 && (
-          <View style={styles.endContainer}>
-            <Text style={styles.endText}>Đã hiển thị hết nội dung</Text>
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -386,19 +410,56 @@ const blockStyles = StyleSheet.create({
     color: Colors.text,
   },
   calloutBlock: {
-    marginTop: Spacings.xs,
-    marginBottom: Spacings.lg,
     padding: Spacings.lg,
-    backgroundColor: Colors.black
+    backgroundColor: Colors.black,
+    marginBottom: Spacings.lg
   },
   calloutText: {
     textAlign: 'justify',
     fontSize: 14,
     color: Colors.white,
   },
+  citationBlock: {
+    paddingVertical: Spacings.xl,
+    paddingHorizontal: Spacings.lg,
+    backgroundColor: Colors.grayLight,
+  },
+  citationText: {
+    textAlign: 'justify',
+    fontSize: 14,
+    lineHeight: 14,
+    color: Colors.text,
+  },
+  detailsBlock: {
+    marginHorizontal: Spacings.lg,
+    marginBottom: Spacings.lg,
+    paddingLeft: Spacings.md,
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.primary,
+  },
+  detailsText: {
+    textAlign: 'justify',
+    fontSize: 12,
+    lineHeight: 12,
+    color: Colors.text,
+  },
+  listBlock: {
+    marginHorizontal: Spacings.lg,
+    marginBottom: Spacings.sm,
+  },
   imageBlock: {
     marginBottom: Spacings.lg,
   },
+  videoBlock: {
+    marginBottom: 0,
+  },
+  videoTitle: {
+    marginTop: Spacings.sm,
+    marginHorizontal: Spacings.lg,
+    marginBottom: Spacings.lg,
+    fontSize: 14,
+    color: Colors.subtext
+  }
 })
 
 const styles = StyleSheet.create({
@@ -450,7 +511,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingTop: HEADER_HEIGHT - Spacings.xxl,
-    paddingBottom: Spacings.lg,
+    // paddingBottom: Spacings.lg,
     // paddingHorizontal: Spacings.lg,
   },
 
@@ -466,43 +527,26 @@ const styles = StyleSheet.create({
   },
 
   // Loading and error styles
-  centerContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   loadingFooter: {
     paddingVertical: Spacings.lg,
     alignItems: 'center',
   },
-  loadingText: {
-    marginTop: Spacings.sm,
-    fontSize: 14,
-    color: Colors.subtext,
-    fontFamily: 'Roboto',
-  },
-  errorText: {
-    fontSize: 16,
-    color: Colors.danger,
-    textAlign: 'center',
-    marginBottom: Spacings.lg,
-  },
-  retryButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacings.lg,
-    paddingVertical: Spacings.sm,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  endContainer: {
-    paddingVertical: Spacings.lg,
+  errorContainer: {
+    marginTop: Spacings.md,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  endText: {
+  errorText: {
     fontSize: 14,
-    color: Colors.subtext,
+    fontFamily: 'Roboto',
+    color: Colors.danger,
+    textAlign: 'center',
+    backgroundColor: Colors.dangerBackground,
+    marginHorizontal: Spacings.lg,
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.md,
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.danger, 
   },
+  
 });

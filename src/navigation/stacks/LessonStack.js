@@ -1,7 +1,5 @@
 import React from 'react'
 
-
-
 import { LessonsView } from "../../views/formation/LessonsView";
 import { FormationView } from '../../views/formation/FormationView';
 import { ModuleLayout } from '../../views/formation/ModuleLayout';
