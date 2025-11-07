@@ -29,22 +29,31 @@ export const getUsersByOfficeId = async (officeId) => {
 
 export const getCurrentUser = async () => {
     try {
-        const config = await restoreLocalConfigAsync()
-        const authHeader = 'Bearer ' + config.JWT;
-        const parts = config.JWT.split('.').map((part) => Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'),'base64').toString());
-        const userId = JSON.parse(parts[1])?.id_user;
+        // const config = await restoreLocalConfigAsync()
+        // const authHeader = 'Bearer ' + config.JWT;
+        // const parts = config.JWT.split('.').map((part) => Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'),'base64').toString());
+        // const userId = JSON.parse(parts[1])?.id_user;
         
+        // return axios
+        //     .get(baseurl + "/",{
+        //         headers: { Authorization: authHeader },
+        //         params: {
+        //             id_user: userId
+        //         }
+        //     })
+        //     .then((response) => {
+        //         return response.data;
+        //     })
+
         return axios
-            .get(baseurl + "/",{
-                headers: { Authorization: authHeader },
+            .get("http://127.0.0.1:8000/api/test",{
                 params: {
-                    id_user: userId
+                    id_user: 1
                 }
             })
             .then((response) => {
                 return response.data;
             })
-        
     } catch (error) {
         return null
     }

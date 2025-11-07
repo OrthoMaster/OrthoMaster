@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Constants
 const AUTH_TOKEN_KEY = 'userToken';
-const USER_DATA_KEY = 'userData';
+const USER_DATA_KEY = 'user';
 
 // Base URL
 const baseUrl = process.env.EXPO_PUBLIC_API_V2_URL + '/auth';
@@ -18,6 +18,7 @@ export interface User {
     updated_at: string;
     avatar?: string;
     phone?: string;
+    id_user: number;
 }
 
 export interface LoginResponse {
@@ -76,7 +77,7 @@ axios.interceptors.response.use(
  * Login with email & password
  */
 export const login = async ({ email, password }: LoginParams) => {
-    const result = await axios
+    return axios
         .post(`${baseUrl}/login`, { email, password })
         .then((response) => {
             return response.data;
@@ -85,13 +86,13 @@ export const login = async ({ email, password }: LoginParams) => {
             throw e;
         });
 
-    if (result && 'status' in result && result.status === 'success') {
-        // Store token and user data
-        await saveAuthData(result.data.token, result.data.user);
-        return result;
-    }
+    // if (result && 'status' in result && result.status === 'success') {
+    //     // Store token and user data
+    //     await saveAuthData(result.data.token, result.data.user);
+    //     return result;
+    // }
 
-    throw new Error('Login failed');
+    // throw new Error('Login failed');
 };
 
 /**

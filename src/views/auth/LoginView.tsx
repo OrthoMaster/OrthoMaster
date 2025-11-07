@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator
 } from 'react-native';
+
+import { useLogin } from '../../hooks/useLogin.hook';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextInput } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
@@ -21,7 +24,7 @@ import Spacings from '../../../constants/Spacings';
 import { Styles } from '../../../constants/Styles';
 
 import { useGlobal } from '../../component/GlobalContext';
-import { login } from '../../services/v2/AuthService';
+// import { login } from '../../services/v2/AuthService';
 import { AxiosError } from 'axios';
 
 interface FormData {
@@ -35,7 +38,10 @@ interface FormErrors {
 }
 
 export const LoginView = ({ navigation, route }) => {
-  const { handleLoginSuccess } = useGlobal();
+  // const { handleLoginSuccess } = useGlobal();
+
+  const login = useLogin();
+
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -81,8 +87,15 @@ export const LoginView = ({ navigation, route }) => {
     return Object.keys(errors).length === 0;
   };
 
+  useEffect(() => {
+    if (login.isError) {
+      setIsLoading(false);
+      setErrorMessage(login.error.response.data.error);
+    }
+  }, [login.isError]);
+
   // Handle login action
-  const handleLogin = async () => {
+  const handleLogin = () => {
     // Dismiss keyboard
     Keyboard.dismiss();
 
@@ -92,33 +105,38 @@ export const LoginView = ({ navigation, route }) => {
     }
 
     setIsLoading(true);
+    login.mutate({ email: formData.email.trim(), password: formData.password });
 
-    try {
-      const response = await login({
-        email: formData.email.trim(),
-        password: formData.password,
-      });
 
-      if (response.status === 'success') {
-        if (handleLoginSuccess) {
-          await handleLoginSuccess();
-        }
-      }
-    } catch (error) {
-      let message = 'Une erreur est survenue. Veuillez réessayer !';
+    // try {
+    // const response = await login({
+    //   email: formData.email.trim(),
+    //   password: formData.password,
+    // });
+    // if (response.status === 'success') {
+    //   // if (handleLoginSuccess) {
+    //   //   await handleLoginSuccess();
+    //   // }
+    // }
 
-      if (error instanceof AxiosError) {
-        if (error.response?.status === 422) {
-          message = 'Vos identifiants ne semblent pas corrects. Veuillez réessayer !';
-        } else if (!error.response) {
-          message = 'Erreur de connexion. Vérifiez votre internet !';
-        }
-      }
+    // } catch (error) {
 
-      setErrorMessage(message);
-    } finally {
-      setIsLoading(false);
-    }
+    //   let message = 'Une erreur est survenue. Veuillez réessayer !';
+
+    //   console.log(error);
+
+    //   if (error instanceof AxiosError) {
+    //     if (error.response?.status === 422) {
+    //       message = 'Vos identifiants ne semblent pas corrects. Veuillez réessayer !';
+    //     } else if (!error.response) {
+    //       message = 'Erreur de connexion. Vérifiez votre internet !';
+    //     }
+    //   }
+
+    //   setErrorMessage(message);
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
 
 
