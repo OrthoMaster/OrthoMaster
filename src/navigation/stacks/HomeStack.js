@@ -14,7 +14,7 @@ import ReturnButtonIcon from '../components/ReturnButton';
 const HomeStackNav = createStackNavigator();
 
 
-import VideoFairPlayNoAuth from '../../component/TestVideoPlayer';
+import TestVideoPlayer from '../../component/TestVideoPlayer';
 
 export const HomeStack = (user) => {
 
@@ -25,6 +25,7 @@ export const HomeStack = (user) => {
       <HomeStackNav.Screen
         name={"home-home"}
         component={HomeView}
+        // component={TestVideoPlayer}
         options={{
           headerShown: false
         }}
