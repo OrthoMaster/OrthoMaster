@@ -13,7 +13,10 @@ import DropdownComponent from "../../../../component/DropdownComponent";
 import { getJobsFunction } from "../../../../services/UserService";
 
 const AskSponsoredFormationForm = ({ onSubmit }) => {
-    const { data: jobFunctions } = useQuery('jobs-functions', () => getJobsFunction())
+    const { data: jobFunctions } = useQuery({
+        queryKey: ['jobs-functions'],
+        queryFn: getJobsFunction,
+    });
     const [addUserIsOpen, setAddUserIsOpen] = useState(false)
     const [formDatas, setFormDatas] = useState({
         tel: "",
