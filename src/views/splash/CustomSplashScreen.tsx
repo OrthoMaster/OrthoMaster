@@ -13,7 +13,7 @@ interface CustomSplashScreenProps {
 
 const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.3)).current;
+  const scaleAnim = useRef(new Animated.Value(0.7)).current;
 
   useEffect(() => {
     // Hide splash screen native
@@ -23,7 +23,7 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 2000,
+        duration: 1500,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
@@ -38,10 +38,8 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
         toValue: 0,
         duration: 500,
         useNativeDriver: true,
-      }).start(() => {
-        onFinish();
-      });
-    }, 5000);
+      }).start(onFinish);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);

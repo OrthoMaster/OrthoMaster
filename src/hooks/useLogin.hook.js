@@ -13,15 +13,17 @@ export function useLogin() {
     // create the mutation
     return useMutation({
         mutationFn: async (data) => {
-            // return AuthService.login({ email: data.email, password: data.password })
+            // return AuthService.login({ email: data.email, password: data.password });
+
             return login({ email: data.email, password: data.password });
         },
         onSuccess: async (res) => {
-            // SecureStore.setItemAsync('JWT', data.token.jwt_token)
-            // SecureStore.setItemAsync('refreshToken', data.token.refresh_token)
-            // AsyncStorage.setItem('user', JSON.stringify(data.user))
-            queryClient.setQueryData(['current-user'], res.user);
-            await queryClient.invalidateQueries({ queryKey: ['current-user'] });
+            SecureStore.setItemAsync('JWT', res.data.token.jwt_token);
+            SecureStore.setItemAsync('refreshToken', res.data.token.refresh_token);
+            AsyncStorage.setItem('user', JSON.stringify(res.data.user));
+
+            queryClient.setQueryData(['current-user'], res.data.user);
+            // await queryClient.invalidateQueries({ queryKey: ['current-user'] });
         }
     })
 };

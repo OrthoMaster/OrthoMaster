@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Constants
-const AUTH_TOKEN_KEY = 'userToken';
+const AUTH_TOKEN_KEY = 'JWT';
 const USER_DATA_KEY = 'user';
 
 // Base URL
@@ -85,14 +85,6 @@ export const login = async ({ email, password }: LoginParams) => {
         .catch((e: AxiosError) => {
             throw e;
         });
-
-    // if (result && 'status' in result && result.status === 'success') {
-    //     // Store token and user data
-    //     await saveAuthData(result.data.token, result.data.user);
-    //     return result;
-    // }
-
-    // throw new Error('Login failed');
 };
 
 /**
@@ -138,6 +130,7 @@ export const me = async () => {
     const result = await axios
         .get(`${baseUrl}/me`)
         .then((response) => {
+            console.log(response.data);
             return response.data;
         })
         .catch((e: AxiosError) => {
@@ -162,7 +155,7 @@ export const isAuthenticated = async (): Promise<boolean> => {
     const token = await getToken();
     if (!token) return false;
 
-    // Verify token bằng cách gọi API /me
+    // Verify token
     const user = await me();
     return user !== null;
 };

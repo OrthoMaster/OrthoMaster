@@ -30,9 +30,11 @@ import { User } from './src/services/v2/AuthService';
 export default function App({ navigation }) {
   // author: Francis
   const navigationRef = useNavigationContainerRef();
+  const queryClient = useQueryClient();
 
   const [appIsReady, setAppIsReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [animationDone, setAnimationDone] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 

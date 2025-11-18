@@ -1,39 +1,31 @@
 
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer, useNavigation, useNavigationContainerRef } from '@react-navigation/native';
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { NavigationContainer } from '@react-navigation/native';
+import { useQueryClient } from "@tanstack/react-query";
 import * as Linking from "expo-linking"
 const prefix = Linking.createURL('/');
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
-import { getUserAttachedOffices } from './src/services/OfficeService';
 import { LoadingContent } from './src/component/LoadingContent';
-import { InitialConfigForm } from './src/views/initialConfigForm/InitialConfigForm';
-import { useGetUser } from './src/hooks/useGetUser.hook';
-import { getCurrentDate } from './src/futils';
-import { closeSession, getSessionId, saveEvent, startSession } from './src/services/SessionEventService';
-import { SessionEventScreen } from './src/utils/myTypes';
-import { useSessionEventFlusher } from './src/hooks/useSessionEventFlusher';
 import { navigationRef } from './src/navigation/RootNavigation';
 
 import { GlobalProvider } from './src/component/GlobalContext';
 import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
+import * as Font from 'expo-font';
+import CustomSplashScreen from './src/views/splash/CustomSplashScreen';
+import { useGetUser } from './src/hooks/auth.hook';
 
 export default function App({ navigation }) {
-  // useSessionEventFlusher()
+  const queryClient = useQueryClient();
 
-  const [isLoading, setIsLoading] = useState(true)
-  const [showInitialConfigForm, setShowInitialConfigForm] = useState(false)
-  const queryCli = useQueryClient()
-  const { data: user, ...userQuery } = useGetUser()
-  const appState = useRef(AppState.currentState);
+  const [showSplash, setShowSplash] = useState(true);
+  const [appIsReady, setAppIsReady] = useState(false);
+
+  const { data: user } = useGetUser();
 
   const routeNameRef = React.useRef<string | undefined>(null);
-  const [datePageOpened, setDatePageOpened] = useState(getCurrentDate())
-
   const linking = {
     prefixes: [prefix],
     config: {
@@ -56,104 +48,65 @@ export default function App({ navigation }) {
     }
   };
 
-  const userOffices = useQuery({
-    queryKey: ["user-offices"],
-    queryFn: () => getUserAttachedOffices({ userId: (user as any).id_user }),
-    enabled: userQuery.isSuccess && userQuery.isFetched
-  })
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Load fonts
+        await Font.loadAsync({
+          Roboto: require('./assets/fonts/Roboto-VariableFont_wdth,wght.ttf'),
+          'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
+          'Poppins-Light': require('./assets/fonts/Poppins-Light.ttf'),
+          'Poppins-Medium': require('./assets/fonts/Poppins-Medium.ttf'),
+          'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
+        });
 
-  const askEspaceProCreation = async () => {
-    AsyncStorage.getItem("initial-conf-slider-displayed")
-      .then(displayInitialConfigForm => {
-        if (!displayInitialConfigForm) {
-          setShowInitialConfigForm(true)
+        // Check saved user
+        const savedUser = await AsyncStorage.getItem('user');
+        if (savedUser) {
+          queryClient.setQueryData(['current-user'], JSON.parse(savedUser));
+        } else {
+          queryClient.setQueryData(['current-user'], null);
         }
-        return
-      })
+      } catch (error) {
+        // TODO: Send api emergency
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
+  }, []);
+
+  if (!appIsReady || showSplash) {
+    return <CustomSplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  useEffect(() => {
-    if (userOffices.data && Array.isArray(userOffices.data) && userOffices.data.length == 0) {
-      askEspaceProCreation()
-    }
-  }, [userOffices.data])
-
-  useEffect(() => {
-    if (!userQuery.isFetching && !userQuery.isLoading && userQuery.isFetched)
-      setIsLoading(false)
-    if (user)
-      AsyncStorage.setItem('user', JSON.stringify(user))
-  }, [user, userQuery])
-
-  useEffect(() => {
-    if (user && getSessionId() == null) {
-      const userSessionHandling = AppState.addEventListener("change", nextAppState => {
-        appState.current = nextAppState;
-      });
-
-      // startSession()
-      return () => {
-        userSessionHandling.remove();
-      };
-    }
-  }, [user])
-
-  // Capture guard
-
-  const displayView = () => {
-    if (showInitialConfigForm) {
-      return <InitialConfigForm onFinish={() => {
-        AsyncStorage.setItem("initial-conf-slider-displayed", "true")
-        queryCli.invalidateQueries({ queryKey: ['current-user'] })
-        setShowInitialConfigForm(false)
-      }} />
-    }
-    if (showInitialConfigForm == false) {
-      return <GlobalProvider>
-          <UseCaptureGuard>
-            <AppTab />
-          </UseCaptureGuard>
-        </GlobalProvider>
-    }
-  }
-
-  if (isLoading) {
-    return <LoadingContent state={true} onRetry={() => { }} />
-  }
+  // if (isLoading) {
+  //   return <LoadingContent />
+  // }
 
   return (
     <NavigationContainer linking={linking}
       ref={navigationRef}
       onReady={() => {
         routeNameRef.current = navigationRef.current.getCurrentRoute().name;
-        setDatePageOpened(getCurrentDate())
       }}
       onStateChange={async () => {
-        const previousRouteName = routeNameRef.current;
         const currentRouteName = navigationRef.current.getCurrentRoute().name;
-        const saveSessionScreenView = (sessionData: SessionEventScreen) => {};
-
-        if (previousRouteName !== currentRouteName) {
-          // Replace the line below to add the tracker from a mobile analytics SDK
-          saveSessionScreenView({
-            screen_name: previousRouteName,
-            started_at: datePageOpened,
-            ended_at: getCurrentDate()
-          });
-        }
         // Save the current route name for later comparison
         routeNameRef.current = currentRouteName;
-        setDatePageOpened(getCurrentDate())
       }}
     >
-      {
-        user ?
-          displayView()
-          :
-          <GlobalProvider>
+      <GlobalProvider>
+        {
+          user ?
+            <UseCaptureGuard>
+              <AppTab />
+            </UseCaptureGuard>
+            :
             <AuthStack />
-          </GlobalProvider>
-      }
+        }
+      </GlobalProvider>
     </NavigationContainer>
   );
 }

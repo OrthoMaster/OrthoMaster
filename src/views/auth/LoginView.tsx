@@ -7,14 +7,12 @@ import {
   Image,
   Keyboard,
   Platform,
-  Alert,
-  Linking,
   ScrollView,
   KeyboardAvoidingView,
   ActivityIndicator
 } from 'react-native';
 
-import { useLogin } from '../../hooks/useLogin.hook';
+import { useLogin } from '../../hooks/auth.hook';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextInput } from 'react-native-paper';
@@ -23,9 +21,7 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 import { Styles } from '../../../constants/Styles';
 
-import { useGlobal } from '../../component/GlobalContext';
-// import { login } from '../../services/v2/AuthService';
-import { AxiosError } from 'axios';
+import axios from 'axios';
 
 interface FormData {
   email: string;
@@ -37,9 +33,11 @@ interface FormErrors {
   password?: string;
 }
 
-export const LoginView = ({ navigation, route }) => {
-  // const { handleLoginSuccess } = useGlobal();
+interface ApiError {
+  error?: string;
+};
 
+export const LoginView = ({ navigation, route }) => {
   const login = useLogin();
 
   const [formData, setFormData] = useState<FormData>({
@@ -48,7 +46,6 @@ export const LoginView = ({ navigation, route }) => {
   });
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -88,11 +85,22 @@ export const LoginView = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    if (login.isError) {
-      setIsLoading(false);
-      setErrorMessage(login.error.response.data.error);
+    if (!login.isError) return;
+
+    const err = login.error;
+    if (axios.isAxiosError<ApiError>(err)) {
+      const apiMessage = err.response?.data?.error;
+      
+      const networkMsg =
+        err.code === "ECONNABORTED"
+          ? "La connexion a expiré, veuillez réessayer."
+          : "Impossible de se connecter au serveur, veuillez vérifier votre connexion réseau.";
+
+      setErrorMessage(apiMessage || networkMsg);
+    } else {
+      setErrorMessage("Une erreur inconnue s’est produite, veuillez réessayer.");
     }
-  }, [login.isError]);
+  }, [login.isError, login.error]);
 
   // Handle login action
   const handleLogin = () => {
@@ -104,42 +112,9 @@ export const LoginView = ({ navigation, route }) => {
       return;
     }
 
-    setIsLoading(true);
+    // Login
     login.mutate({ email: formData.email.trim(), password: formData.password });
-
-
-    // try {
-    // const response = await login({
-    //   email: formData.email.trim(),
-    //   password: formData.password,
-    // });
-    // if (response.status === 'success') {
-    //   // if (handleLoginSuccess) {
-    //   //   await handleLoginSuccess();
-    //   // }
-    // }
-
-    // } catch (error) {
-
-    //   let message = 'Une erreur est survenue. Veuillez réessayer !';
-
-    //   console.log(error);
-
-    //   if (error instanceof AxiosError) {
-    //     if (error.response?.status === 422) {
-    //       message = 'Vos identifiants ne semblent pas corrects. Veuillez réessayer !';
-    //     } else if (!error.response) {
-    //       message = 'Erreur de connexion. Vérifiez votre internet !';
-    //     }
-    //   }
-
-    //   setErrorMessage(message);
-    // } finally {
-    //   setIsLoading(false);
-    // }
   };
-
-
 
   return (
     <SafeAreaView style={Styles.container}>
@@ -185,7 +160,7 @@ export const LoginView = ({ navigation, route }) => {
                 autoCorrect={false}
                 autoComplete="email"
                 textContentType="emailAddress"
-                disabled={isLoading}
+                disabled={login.isPending}
                 returnKeyType="next"
                 error={!!formErrors.email}
                 style={Styles.textInput}
@@ -220,7 +195,7 @@ export const LoginView = ({ navigation, route }) => {
                 autoCorrect={false}
                 autoComplete="password"
                 textContentType="password"
-                disabled={isLoading}
+                disabled={login.isPending}
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
                 error={!!formErrors.password}
@@ -237,7 +212,7 @@ export const LoginView = ({ navigation, route }) => {
                       />
                     )}
                     onPress={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
+                    disabled={login.isPending}
                   />
                 }
                 theme={{
@@ -256,7 +231,7 @@ export const LoginView = ({ navigation, route }) => {
             <View style={styles.forgotPasswordWrapper}>
               <TouchableOpacity
                 onPress={() => { navigation.navigate('forgot') }}
-                disabled={isLoading}
+                disabled={login.isPending}
               >
                 <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
               </TouchableOpacity>
@@ -266,13 +241,13 @@ export const LoginView = ({ navigation, route }) => {
             <TouchableOpacity
               style={[
                 Styles.btnPrimary,
-                isLoading && Styles.btnDisabled
+                login.isPending && Styles.btnDisabled
               ]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={login.isPending}
               activeOpacity={0.8}
             >
-              {isLoading ? (
+              {login.isPending ? (
                 <ActivityIndicator color={Colors.disabled} size="small" />
               ) : (
                 <Text style={Styles.btnPrimaryText}>Continuer</Text>
@@ -285,7 +260,7 @@ export const LoginView = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.registerButton}
               onPress={() => { navigation.navigate('register') }}
-              disabled={isLoading}
+              disabled={login.isPending}
             >
               <Text style={styles.registerText}>S'inscrire</Text>
             </TouchableOpacity>
