@@ -23,7 +23,7 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1500,
+        duration: 1000,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
@@ -39,7 +39,7 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
         duration: 500,
         useNativeDriver: true,
       }).start(onFinish);
-    }, 2000);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -65,7 +65,11 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.brand}>OrthoMaster</Text>
+          <Image
+            source={require('../../../assets/v2_images/logo/brand_name_white.png')}
+            style={styles.brand}
+            resizeMode="contain"
+          />
         </Animated.View>
       </ImageBackground>
     </SafeAreaProvider>
@@ -88,9 +92,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.md,
   },
   brand: {
-    fontSize: 30,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.white,
+    height: 30,
+    width: 150,
   },
 });
 

@@ -9,11 +9,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeStack } from './stacks/HomeStack';
 
 import { TrainingStack } from './stacks/TrainingStack';
+import { ProfileStack } from './stacks/ProfileStack';
 
 import { LessonStack } from './stacks/LessonStack';
 import { FlashStack } from './stacks/FlashStack';
 import { ToolsStack } from './stacks/ToolsStack';
 import { ProfilStack } from './stacks/ProfilStack';
+
+
 
 import Colors from '../../constants/Colors';
 
@@ -141,6 +144,10 @@ export const AppTab = ({ }) => {
       <Tab.Screen
         name="Outils"
         component={ToolsStack}
+        options={{ headerShown: false }}
+      />
+      <Tab.Screen name="Profil"
+        component={ProfileStack}
         options={{ headerShown: false }}
       />
       <Tab.Screen name="Mon espace"

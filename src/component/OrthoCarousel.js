@@ -39,7 +39,7 @@ const CarousselCard = ({ item, onPress }) => {
         <Text style={styles.author}>{item.author}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <AntDesign name="clock-circle" size={10} color={Colors.text} style={{ paddingRight: Spacings.xxs }} />
-          <Text style={{ fontSize: 10, fontFamily: 'Roboto' }}>{item.duration}</Text>
+          <Text style={styles.metaText}>{item.duration}</Text>
         </View>
         {item.tags &&
           <Text style={styles.description}
@@ -95,10 +95,10 @@ const styles = StyleSheet.create({
     marginTop: Spacings.xs,
   },
   author: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.primary,
     fontWeight: '500',
-    marginBottom: Spacings.xxxs,
+    marginBottom: Spacings.xxs,
   },
   description: {
     marginTop: Spacings.xxs,
@@ -111,4 +111,8 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
     borderRadius: 8
   },
+  metaText: {
+    fontSize: 10,
+    fontFamily: 'Poppins-Light'
+  }
 })

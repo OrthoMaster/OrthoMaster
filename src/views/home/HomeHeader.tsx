@@ -120,7 +120,8 @@ var styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginHorizontal: Spacings.lg,
-    marginBottom: Spacings.xl
+    marginBottom: Spacings.xl,
+    paddingTop: Spacings.md,
   },
   logoContainer: {
     flexDirection: 'row',
@@ -129,8 +130,8 @@ var styles = StyleSheet.create({
   },
   logo: {
     resizeMode: 'contain',
-    width: 30,
-    height: 30,
+    width: 25,
+    height: 25,
     marginRight: Spacings.xs
   },
   logoText: {

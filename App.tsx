@@ -65,7 +65,7 @@ export default function App({ navigation }) {
         if (savedUser) {
           queryClient.setQueryData(['current-user'], JSON.parse(savedUser));
         } else {
-          queryClient.setQueryData(['current-user'], null);
+          queryClient.setQueryData(['current-user'], false);
         }
       } catch (error) {
         // TODO: Send api emergency

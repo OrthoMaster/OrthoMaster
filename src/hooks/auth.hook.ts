@@ -39,12 +39,28 @@ export function useLogin() {
 }
 
 export function useGetUser() {
-    // run the query
-    return useQuery({
-        queryKey: ['current-user'],
-        // queryFn: () => getCurrentUser(), // Old version
-        queryFn: () => me(),
-        enabled: false,
-        staleTime: Infinity,
-    });
+  return useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => me(),
+    enabled: false,
+    staleTime: Infinity,
+  });
 };
+
+export function useLogout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => {
+      return logout();
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['current-user'], false);
+    },
+  })
+};
+
+async function logout() {
+  AsyncStorage.clear()
+  SecureStore.deleteItemAsync('JWT')
+  SecureStore.deleteItemAsync('refreshToken')
+}

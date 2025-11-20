@@ -1,3 +1,4 @@
+/** @author Francis */
 import React from 'react'
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -20,7 +21,7 @@ export const TrainingStack = () => {
         }}
       />
       <TrainingStackNav.Screen
-        name="training"
+        name="training-view"
         component={TrainingView}
         options={{
           headerShown: false,

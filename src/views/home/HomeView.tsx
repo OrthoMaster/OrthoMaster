@@ -8,6 +8,7 @@ import {
   StatusBar,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useQuery } from "@tanstack/react-query"
 import { fetchMedias } from '../../services/FlashMediasService';
@@ -15,6 +16,8 @@ import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 
 import { IContent } from '../../utils/interfaces';
+
+import MediaSkeleton from '../../views/media/components/MediaSkeleton';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -46,11 +49,9 @@ export const HomeView = ({ navigation, route }) => {
   const reload = () => { refetch(); };
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar
-        animated={true}
-        barStyle={'dark-content'}
-      />
+    <SafeAreaView style={{ flex: 1 }} edges={['left', 'right']}>
+      <StatusBar barStyle="dark-content" animated={true} backgroundColor={Colors.white} />
+
       <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}>
         <HomeHeader navigation={navigation} />
 
@@ -71,13 +72,15 @@ export const HomeView = ({ navigation, route }) => {
               </Pressable>
             )}
           </View>
+          {isFlashLoading && (
+            <MediaSkeleton numberOfObjects={3} />
+          )}
           {!isFlashLoading && !isError && (
             <OrthoCarousel entries={flashData} onSelect={handleNavigation} />
           )}
         </View>
-
       </ScrollView >
-    </View >
+    </SafeAreaView >
   );
 }
 

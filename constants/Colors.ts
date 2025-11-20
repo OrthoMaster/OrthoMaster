@@ -30,6 +30,8 @@ export default {
   disabledBackground: '#CDCDCF',
   disabled: '#979797',
 
+  line: '#EBEBEB',
+
   light: {
     text: '#000',
     background: '#fff',

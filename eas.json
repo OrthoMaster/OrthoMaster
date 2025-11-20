@@ -8,8 +8,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.1.69:3000"
-        
+        "EXPO_PUBLIC_API_URL": "http://192.168.1.69:3000",
+        "EXPO_PUBLIC_API_V2_URL": "http://127.0.0.1:8000/api"
       },
       "ios": {
         "resourceClass": "m-medium"
@@ -26,13 +26,15 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr"
+        "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr",
+        "EXPO_PUBLIC_API_V2_URL": "https://v2.api.orthomaster.fr/api"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr"
+        "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr",
+        "EXPO_PUBLIC_API_V2_URL": "https://v2.api.orthomaster.fr/api"
       },
       "ios": {
         "resourceClass": "m-medium"

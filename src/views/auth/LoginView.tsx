@@ -90,11 +90,11 @@ export const LoginView = ({ navigation, route }) => {
     const err = login.error;
     if (axios.isAxiosError<ApiError>(err)) {
       const apiMessage = err.response?.data?.error;
-      
+
       const networkMsg =
         err.code === "ECONNABORTED"
           ? "La connexion a expiré, veuillez réessayer."
-          : "Impossible de se connecter au serveur, veuillez vérifier votre connexion réseau.";
+          : "Impossible de se connecter au serveur, veuillez vérifier votre connexion réseau. " + err.code;
 
       setErrorMessage(apiMessage || networkMsg);
     } else {

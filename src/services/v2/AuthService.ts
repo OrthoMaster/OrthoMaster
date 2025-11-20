@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Constants
@@ -50,7 +51,7 @@ interface ForgotParam {
 // Configure axios interceptor to add token
 axios.interceptors.request.use(
     async (config) => {
-        const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+        const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -67,7 +68,8 @@ axios.interceptors.response.use(
     async (error: AxiosError) => {
         if (error.response?.status === 401) {
             // Token expired or invalid, clear local data
-            await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, USER_DATA_KEY]);
+            await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+            await AsyncStorage.clear();
         }
         return Promise.reject(error);
     }
@@ -97,7 +99,6 @@ export const forgot = async ({ email }: ForgotParam) => {
             return response.data;
         })
         .catch((e: AxiosError) => {
-            console.log(e);
             throw e;
         });
 
@@ -127,25 +128,14 @@ export const logout = async () => {
  * Return null if token invalid
  */
 export const me = async () => {
-    const result = await axios
+    return axios
         .get(`${baseUrl}/me`)
         .then((response) => {
-            console.log(response.data);
-            return response.data;
+            return response.data.data.user;
         })
         .catch((e: AxiosError) => {
-            return null;
+            throw e;
         });
-
-    if (result && 'status' in result && result.status === 'success') {
-        // Update user data
-        await updateUserData(result.data.user);
-        return result.data.user;
-    }
-
-    // Token invalid, clear data
-    await clearAuthData();
-    return null;
 };
 
 /**
@@ -165,7 +155,7 @@ export const isAuthenticated = async (): Promise<boolean> => {
  */
 export const getToken = async (): Promise<string | null> => {
     try {
-        return await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+        return await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
     } catch (error) {
         console.error('Error getting token:', error);
         return null;
@@ -190,7 +180,7 @@ export const getUserData = async (): Promise<User | null> => {
  */
 const saveAuthData = async (token: string, user: User): Promise<void> => {
     try {
-        await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+        await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
         await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
     } catch (error) {
         console.error('Error saving auth data:', error);
@@ -214,7 +204,8 @@ const updateUserData = async (user: User): Promise<void> => {
  */
 const clearAuthData = async (): Promise<void> => {
     try {
-        await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, USER_DATA_KEY]);
+        await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+        await AsyncStorage.clear();
     } catch (error) {
         console.error('Error clearing auth data:', error);
     }

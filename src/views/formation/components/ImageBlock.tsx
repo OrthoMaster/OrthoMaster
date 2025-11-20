@@ -37,7 +37,7 @@ const ImageBlock: React.FC<ImageBlockProps> = ({ source, fullWidth = false, titl
         },
         (error) => {
           // TODO: Log error
-          console.log('Get size error:', error);
+          // console.log('Get size error:', error);
           setHasError(true);
         }
       );
@@ -49,7 +49,7 @@ const ImageBlock: React.FC<ImageBlockProps> = ({ source, fullWidth = false, titl
   };
 
   const handleImageError = (error: any) => {
-    console.log('Image load error:', error);
+    // console.log('Image load error:', error);
     setHasError(true);
   };
 
