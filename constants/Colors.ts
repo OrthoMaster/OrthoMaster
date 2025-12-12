@@ -8,6 +8,13 @@ export default {
   green: '#4BB6BE',
   blueDark: '#1D3470',
 
+  blueBackgound: '#E3F2FD',
+
+  primaryDisabled: '#E5AF61',
+  primaryLightDisabled: '#FFD07A',
+  blueDisabled: '#8BB7E8',
+  greenDisabled: '#7ECED3',
+
   yellow: '#FFC107',
   white: '#ffffff',
   gray: '#979797',

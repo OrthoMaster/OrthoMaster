@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from "expo-linking"
 const prefix = Linking.createURL('/');
 
@@ -12,13 +12,20 @@ import { LoadingContent } from './src/component/LoadingContent';
 import { navigationRef } from './src/navigation/RootNavigation';
 
 import { GlobalProvider } from './src/component/GlobalContext';
+import { Provider } from 'react-native-paper';
 import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
 import * as Font from 'expo-font';
 import CustomSplashScreen from './src/views/splash/CustomSplashScreen';
 import { useGetUser } from './src/hooks/auth.hook';
+import { useGlobalNotification } from './src/hooks/useGlobalNotification';
+
+import Colors from './constants/Colors';
+import Spacings from './constants/Spacings';
+import Toast, { BaseToast } from 'react-native-toast-message';
 
 export default function App({ navigation }) {
   const queryClient = useQueryClient();
+  // const newQueryClient = new QueryClient();
 
   const [showSplash, setShowSplash] = useState(true);
   const [appIsReady, setAppIsReady] = useState(false);
@@ -48,6 +55,101 @@ export default function App({ navigation }) {
     }
   };
 
+  const toastConfig = {
+    info: (props: any) => (
+      <BaseToast
+        {...props}
+        style={{
+          borderLeftColor: Colors.info,
+          backgroundColor: Colors.infoBackground,
+          width: 'auto',
+          marginRight: Spacings.md,
+          marginLeft: Spacings.md,
+        }}
+        text1Style={{
+          fontSize: 14,
+          fontFamily: 'Poppins-Medium',
+          color: Colors.info
+        }}
+        text2Style={{
+          fontSize: 11,
+          fontFamily: 'Poppins-Light',
+          color: Colors.text
+        }}
+        text2NumberOfLines={3}
+      />
+    ),
+    success: (props: any) => (
+      <BaseToast
+        {...props}
+        style={{
+          borderLeftColor: Colors.success,
+          backgroundColor: Colors.successBackground,
+          width: 'auto',
+          marginRight: Spacings.md,
+          marginLeft: Spacings.md,
+        }}
+        text1Style={{
+          fontSize: 14,
+          fontFamily: 'Poppins-Medium',
+          color: Colors.success
+        }}
+        text2Style={{
+          fontSize: 11,
+          fontFamily: 'Poppins-Light',
+          color: Colors.text
+        }}
+        text2NumberOfLines={3}
+      />
+    ),
+    warning: (props: any) => (
+      <BaseToast
+        {...props}
+        style={{
+          borderLeftColor: Colors.warning,
+          backgroundColor: Colors.warningBackground,
+          width: 'auto',
+          marginRight: Spacings.md,
+          marginLeft: Spacings.md,
+        }}
+        text1Style={{
+          fontSize: 14,
+          fontFamily: 'Poppins-Medium',
+          color: Colors.warning
+        }}
+        text2Style={{
+          fontSize: 11,
+          fontFamily: 'Poppins-Light',
+          color: Colors.text
+        }}
+        text2NumberOfLines={3}
+      />
+    ),
+    danger: (props: any) => (
+      <BaseToast
+        {...props}
+        style={{
+          borderLeftColor: Colors.danger,
+          backgroundColor: Colors.dangerBackground,
+          width: 'auto',
+          marginRight: Spacings.md,
+          marginLeft: Spacings.md,
+        }}
+        text1Style={{
+          fontSize: 14,
+          fontFamily: 'Poppins-Medium',
+          color: Colors.danger
+        }}
+        text2Style={{
+          fontSize: 11,
+          fontFamily: 'Poppins-Light',
+          color: Colors.text
+        }}
+        text2NumberOfLines={3}
+      />
+    ),
+  };
+
   useEffect(() => {
     async function prepare() {
       try {
@@ -60,12 +162,11 @@ export default function App({ navigation }) {
           'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
         });
 
-        // Check saved user
         const savedUser = await AsyncStorage.getItem('user');
-        if (savedUser) {
-          queryClient.setQueryData(['current-user'], JSON.parse(savedUser));
+        if (!savedUser) {
+          queryClient.clear();
         } else {
-          queryClient.setQueryData(['current-user'], false);
+          queryClient.setQueryData(['current-user'], JSON.parse(savedUser));
         }
       } catch (error) {
         // TODO: Send api emergency
@@ -85,6 +186,11 @@ export default function App({ navigation }) {
   //   return <LoadingContent />
   // }
 
+  const NotificationWatcher = () => {
+    useGlobalNotification(); // hook polling
+    return null;
+  };
+
   return (
     <NavigationContainer linking={linking}
       ref={navigationRef}
@@ -98,14 +204,20 @@ export default function App({ navigation }) {
       }}
     >
       <GlobalProvider>
-        {
-          user ?
-            <UseCaptureGuard>
-              <AppTab />
-            </UseCaptureGuard>
-            :
-            <AuthStack />
-        }
+        <Provider>
+          {
+            user ?
+              <UseCaptureGuard>
+                <QueryClientProvider client={queryClient}>
+                  <AppTab />
+                  <NotificationWatcher />
+                  <Toast config={toastConfig} />
+                </QueryClientProvider>
+              </UseCaptureGuard>
+              :
+              <AuthStack />
+          }
+        </Provider>
       </GlobalProvider>
     </NavigationContainer>
   );

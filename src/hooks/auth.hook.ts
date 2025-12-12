@@ -42,8 +42,8 @@ export function useGetUser() {
   return useQuery({
     queryKey: ['current-user'],
     queryFn: () => me(),
-    enabled: false,
     staleTime: Infinity,
+    gcTime: Infinity
   });
 };
 

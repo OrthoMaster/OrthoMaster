@@ -107,6 +107,20 @@ export const Styles = StyleSheet.create({
     shadowOpacity: 0,
   },
 
+  btnBottom: {
+    backgroundColor: Colors.primary,
+    padding: Spacings.sm,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    shadowColor: Colors.primary,
+    borderWidth: 1,
+    borderColor: Colors.primary
+  },
+
   // Portal Dialog
   dialogContentTop: {
     justifyContent: 'center',

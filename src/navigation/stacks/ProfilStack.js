@@ -57,6 +57,7 @@ export const ProfilStack = () => {
           }
         }}
       />
+
     </ProfilStackNav.Navigator>
   );
 }

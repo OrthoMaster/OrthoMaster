@@ -7,7 +7,8 @@ const AUTH_TOKEN_KEY = 'JWT';
 const USER_DATA_KEY = 'user';
 
 // Base URL
-const baseUrl = process.env.EXPO_PUBLIC_API_V2_URL + '/auth';
+const baseUrl = process.env.EXPO_PUBLIC_API_V2_URL;
+const authUrl = process.env.EXPO_PUBLIC_API_V2_URL + '/auth';
 
 // Types
 export interface User {
@@ -20,23 +21,6 @@ export interface User {
     avatar?: string;
     phone?: string;
     id_user: number;
-}
-
-export interface LoginResponse {
-    success: boolean;
-    message?: string;
-    token: string;
-    user: User;
-}
-
-export interface MeResponse {
-    success: boolean;
-    user: User;
-}
-
-export interface LogoutResponse {
-    success: boolean;
-    message: string;
 }
 
 interface LoginParams {
@@ -80,7 +64,7 @@ axios.interceptors.response.use(
  */
 export const login = async ({ email, password }: LoginParams) => {
     return axios
-        .post(`${baseUrl}/login`, { email, password })
+        .post(`${authUrl}/login`, { email, password })
         .then((response) => {
             return response.data;
         })
@@ -94,7 +78,7 @@ export const login = async ({ email, password }: LoginParams) => {
  */
 export const forgot = async ({ email }: ForgotParam) => {
     const result = await axios
-        .post(`${baseUrl}/login`, { email })
+        .post(`${authUrl}/login`, { email })
         .then((response) => {
             return response.data;
         })
@@ -110,7 +94,7 @@ export const forgot = async ({ email }: ForgotParam) => {
  */
 export const logout = async () => {
     return axios
-        .post(`${baseUrl}/logout`)
+        .post(`${authUrl}/logout`)
         .then((response) => {
             return response.data;
         })
@@ -129,12 +113,30 @@ export const logout = async () => {
  */
 export const me = async () => {
     return axios
-        .get(`${baseUrl}/me`)
+        .get(`${authUrl}/me`)
         .then((response) => {
             return response.data.data.user;
         })
         .catch((e: AxiosError) => {
             throw e;
+        });
+};
+
+/**
+ * Get full info of user
+ */
+export const getMoreInfo = async () => {
+    return axios
+        .get(`${authUrl}/more`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
         });
 };
 
@@ -157,7 +159,6 @@ export const getToken = async (): Promise<string | null> => {
     try {
         return await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
     } catch (error) {
-        console.error('Error getting token:', error);
         return null;
     }
 };
@@ -170,34 +171,10 @@ export const getUserData = async (): Promise<User | null> => {
         const userData = await AsyncStorage.getItem(USER_DATA_KEY);
         return userData ? JSON.parse(userData) : null;
     } catch (error) {
-        console.error('Error getting user data:', error);
         return null;
     }
 };
 
-/**
- * Store token and user data into AsyncStorage
- */
-const saveAuthData = async (token: string, user: User): Promise<void> => {
-    try {
-        await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
-        await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
-    } catch (error) {
-        console.error('Error saving auth data:', error);
-        throw error;
-    }
-};
-
-/**
- * Update user data on AsyncStorage
- */
-const updateUserData = async (user: User): Promise<void> => {
-    try {
-        await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
-    } catch (error) {
-        console.error('Error updating user data:', error);
-    }
-};
 
 /**
  * Clear all auth data
@@ -207,6 +184,224 @@ const clearAuthData = async (): Promise<void> => {
         await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
         await AsyncStorage.clear();
     } catch (error) {
-        console.error('Error clearing auth data:', error);
+        return;
     }
 };
+
+/**
+ * Get last notification
+ */
+export const getLastestNotification = async () => {
+    return axios
+        .get(`${baseUrl}/notifications/lastest`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Get notifications
+ */
+export const getNotifications = async () => {
+    return axios
+        .get(`${baseUrl}/notifications`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Mark all notifications as read
+ */
+export const markAllAsRead = async () => {
+    return axios
+        .post(`${baseUrl}/notifications/read`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Mark all notifications as read
+ */
+export const deleteAllNotification = async () => {
+    return axios
+        .delete(`${baseUrl}/notifications`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Mark notification as read
+ */
+export const markAsRead = async (notiId: string) => {
+    return axios
+        .put(`${baseUrl}/notifications/${notiId}/read`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Delete a notification
+ */
+export const deleteNotification = async (notiId: string) => {
+    return axios
+        .delete(`${baseUrl}/notifications/${notiId}`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Accept a confirm notification
+ */
+export const acceptNotification = async (notiId: string) => {
+    return axios
+        .put(`${baseUrl}/notifications/${notiId}/accept`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Reject a confirm notification
+ */
+export const rejectNotification = async (notiId: string) => {
+    return axios
+        .put(`${baseUrl}/notifications/${notiId}/reject`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Prepare data before form
+ */
+export const getPreFormData = async () => {
+    return axios
+        .get(`${baseUrl}/profile/pre-data`)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+/**
+ * Update profile
+ * @param data 
+ */
+export const updateProfile = async (data: {
+    name: string;
+    first_name: string;
+    first_name_birth: string;
+    date_of_birth: string;
+    phone: string;
+    postal_code: string;
+    city: string;
+    country: string;
+    profession_id: string;
+    funding_organization_id: string;
+    no_secu: string;
+}) => {
+    return axios
+        .put(`${baseUrl}/profile`, data)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+export const changePassword = async (data : {
+    new_password: string
+    new_password_confirmation: string
+}) => {
+    return axios
+        .post(`${baseUrl}/profile/password`, data)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: e.response?.data?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+}
+
+export const sendEmailVerification = (data : { email: string }) => {
+    return
+}
+export const verifyEmailCode = () => {
+    return;
+}

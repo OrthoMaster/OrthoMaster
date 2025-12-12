@@ -38,7 +38,7 @@ export const HomeHeader = ({ navigation }) => {
     }
   }, [nextLesson])
 
-  let username = user.name;
+  let username = user ? user.name : '';
 
   return (
     <SafeAreaView>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,28 +7,38 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
-  Linking
+  Linking,
+  RefreshControl
 } from 'react-native';
+import { Divider, Dialog, Portal, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+import { Styles } from '../../../constants/Styles';
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useLogout, useGetUser } from '../../hooks/auth.hook';
 import { orthomasterShare } from "../../futils";
+
+import { BouncingDots } from '../../component/LoadingDots';
+
+import { getMoreInfo } from '../../services/v2/AuthService';
+import { quitCompany } from '../../services/v2/CompanyService';
+
 
 interface MenuItemProps {
   iconName: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle?: string;
+  disableLeftIcon?: boolean;
   onPress?: () => void;
   isLast?: boolean;
   showWarning?: boolean;
 }
 
-const MenuItem: React.FC<MenuItemProps> = ({ iconName, title, subtitle, onPress, isLast, showWarning }) => (
+const MenuItem: React.FC<MenuItemProps> = ({ iconName, title, subtitle, disableLeftIcon, onPress, isLast, showWarning }) => (
   <TouchableOpacity
     style={[styles.menuItem, !isLast && styles.menuItemBorder]}
     onPress={onPress}
@@ -48,18 +58,67 @@ const MenuItem: React.FC<MenuItemProps> = ({ iconName, title, subtitle, onPress,
         {subtitle && <Text style={styles.menuItemSubtitle}>{subtitle}</Text>}
       </View>
     </View>
-    <Ionicons name="chevron-forward" size={20} color={Colors.gray} />
+    {!disableLeftIcon &&
+      < Ionicons name="chevron-forward" size={20} color={Colors.gray} />
+    }
   </TouchableOpacity >
 );
 
 export const ProfileView = ({ navigation, route }) => {
   const queryClient = useQueryClient();
-  const { data: user, refetch } = useGetUser();
+  const { data: user, isLoading: isLoadingUser, refetch: refetchUser, isFetching: isFetchingUser, error: errorUser } = useGetUser();
   const logout = useLogout();
 
-  const nofi = () => {
-    refetch()
+  const { data: more, isLoading: isLoadingMore, refetch: refetchMore, isFetching: isFetchingMore, error: errorMore } = useQuery({
+    queryKey: ['user-more'],
+    queryFn: () => getMoreInfo(),
+    retry: 1,
+    retryDelay: 1000,
+    meta: {
+      timeout: 20000
+    }
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    setIsLoading(isLoadingUser || isLoadingMore);
+  }, [isLoadingUser, isLoadingMore]);
+
+  const [visibleConfirmExit, setVisibleConfirmExit] = useState(false);
+  const handleConfirmExitCompany = async () => {
+    setIsLoading(true);
+    try {
+      const result = await quitCompany();
+
+      if (result?.success) {
+        refetchUser();
+        refetchMore();
+        setVisibleConfirmExit(false);
+        Alert.alert('Succès', result?.message);
+      } else {
+        Alert.alert('Erreur', result?.message || 'Une erreur est survenue');
+      }
+    } catch (error) {
+      Alert.alert('Erreur', error.message);
+    }
+
+    setIsLoading(false);
+    return;
   }
+
+  const nofi = () => {
+    navigation.navigate('notification-list');
+  }
+
+  const reload = () => {
+    refetchUser();
+    refetchMore();
+  };
+
+  const openCompanyInfo = () => {
+    navigation.navigate('company-new');
+  }
+
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -70,23 +129,75 @@ export const ProfileView = ({ navigation, route }) => {
         <Text style={styles.headerTitle}>Profil</Text>
         <TouchableOpacity style={styles.notificationButton} onPress={nofi}>
           <Ionicons name="notifications-outline" size={20} color={Colors.text} />
-          <View style={styles.notificationDot} />
+          {more && more?.data?.hasNotifications &&
+            <View style={styles.notificationDot} />
+          }
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={(isFetchingUser || isFetchingMore) && (!!errorUser || !!errorMore)}
+            onRefresh={reload}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }>
+
+        {(errorUser || errorMore) && (
+          <View style={[Styles.errorMessageContainer, { marginTop: Spacings.md }]}>
+            <Text style={Styles.errorText}>Erreur de chargement des données, veuillez réessayer !</Text>
+          </View>
+        )}
+
         <View style={styles.content}>
           {/* User Info Card */}
           <View style={styles.userCard}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={styles.userEmail}>{user.email}</Text>
-            {
-              user && user.student_flg == true && user.expires_at !== null &&
-              <Text style={styles.userExpiresAt}>Expire le <Text style={{ fontFamily: 'Poppins-Medium', color: Colors.primary }}>{user.expires_at}</Text>
-              </Text>
-            }
-
+            <View style={styles.userInfo}>
+              <View>
+                <Text style={styles.userName}>{user.name + ' ' + user.first_name}</Text>
+                <Text style={styles.userEmail}>{user.email}</Text>
+                {
+                  user && user.student_flg == true && user.expires_at !== null &&
+                  <View style={styles.studentWrapper}>
+                    <Text style={styles.studentLabel}>Étudiant</Text>
+                    <Text style={styles.userExpiresAt}>Expire le <Text
+                      style={{ fontFamily: 'Poppins-Bold', color: Colors.primary }}>{user.expires_at}</Text>
+                    </Text>
+                  </View>
+                }
+              </View>
+            </View>
+            {more && more?.data?.companyIsMember && (
+              <>
+                <Divider style={{ marginVertical: Spacings.sm }} />
+                <View style={styles.companyWrapper}>
+                  <View>
+                    <Text style={styles.companyType}>{more?.data?.companyIsMember.establishment?.name}</Text>
+                    <Text style={styles.companyName}>{more?.data?.companyIsMember.name}</Text>
+                    <Text style={styles.companyData}>{(more?.data?.companyIsMember.postal_code || '') + ' ' + (more?.data.companyIsMember.city || '') + ' ' + (more?.data.companyIsMember.country || '')}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setVisibleConfirmExit(true)}>
+                    <Ionicons name='exit-outline' size={20} color={Colors.danger} />
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
+
+          {/* Espace Pro Card */}
+          {!user.has_company && !user.student_flg &&
+            <TouchableOpacity style={styles.proCard} onPress={openCompanyInfo}>
+              <MaterialCommunityIcons name='account-group-outline' size={40} color={Colors.white} />
+              <View style={styles.proCardMetadata}>
+                <Text style={styles.proCardTitle}>Créer votre Espace Pro</Text>
+                <Text style={styles.proCardText}>Devenir responsable pédagogique et explorer avec votre équipe.</Text>
+              </View>
+            </TouchableOpacity>
+          }
 
           {/* Account Section */}
           <View style={styles.section}>
@@ -96,13 +207,15 @@ export const ProfileView = ({ navigation, route }) => {
             <MenuItem
               iconName="person-outline"
               title="Informations personnelles"
+              onPress={() => (navigation.navigate('profile-info', { profile: user }))}
             />
             <MenuItem
               iconName="shield-checkmark-outline"
               title="Sécurité"
               subtitle="Mis à jour votre mot de passe"
               isLast
-              showWarning
+              showWarning={user.reset_password_flg}
+              onPress={() => (navigation.navigate('change-password'))}
             />
           </View>
 
@@ -114,20 +227,26 @@ export const ProfileView = ({ navigation, route }) => {
             <MenuItem
               iconName="help-circle-outline"
               title="Obtenir de l'aide"
+              disableLeftIcon
               onPress={() => (Linking.openURL('mailto:question@orthomaster.fr'))}
             />
             <MenuItem
               iconName="document-outline"
               title="Mentions légales"
+              disableLeftIcon
+              onPress={() => (Linking.openURL('https://www.orthomaster.fr/mentions-l%C3%A9gales'))}
             />
             <MenuItem
               iconName="document-text-outline"
               title="Politique de confidentialité"
+              disableLeftIcon
+              onPress={() => (Linking.openURL('https://www.orthomaster.fr/politique-de-confidentialit%C3%A9'))}
             />
             <MenuItem
               iconName="share-social-outline"
               title="Partager"
               subtitle="Inviter à rejoindre OrthoMaster"
+              disableLeftIcon
               isLast
               onPress={() => {
                 orthomasterShare({
@@ -167,6 +286,46 @@ export const ProfileView = ({ navigation, route }) => {
           </View>
         </View>
       </ScrollView>
+
+      {isLoading &&
+        <BouncingDots
+          color={Colors.primary}
+          size={10}
+          bounceHeight={5}
+          containerStyle={{
+            backgroundColor: 'transparent',
+            position: 'absolute',
+            bottom: Spacings.xs,
+            left: 0,
+            right: 0,
+            zIndex: 999,
+            elevation: 5,
+          }}
+        />
+      }
+
+      {/* Confirm exit company */}
+      <Portal>
+        <Dialog visible={visibleConfirmExit}
+          onDismiss={() => setVisibleConfirmExit(false)}
+          theme={{
+            colors: {
+              primary: Colors.primary,
+              elevation: {
+                level3: Colors.white, // background của dialog
+              }
+            }
+          }}>
+          <Dialog.Title style={{ fontFamily: 'Poppins-Medium', fontSize: 18, color: Colors.danger }}>Quitter l'équipe</Dialog.Title>
+          <Dialog.Content>
+            <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 14, color: Colors.text }}>Êtes-vous sûr de vouloir quitter cette équipe ?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }} onPress={() => setVisibleConfirmExit(false)}>Annuler</Button>
+            <Button textColor={Colors.danger} labelStyle={{ fontFamily: 'Poppins-Medium' }} onPress={handleConfirmExitCompany}>Quitter</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 };
@@ -197,7 +356,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacings.lg,
-    paddingVertical: Spacings.lg,
+    paddingTop: Spacings.lg,
   },
   userCard: {
     backgroundColor: Colors.white,
@@ -220,20 +379,88 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontFamily: 'Poppins-Medium',
     color: Colors.primary,
+    marginBottom: -4,
   },
   userEmail: {
     fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.text,
-    paddingLeft: Spacings.xxs
+    paddingLeft: Spacings.xxxs
+  },
+  studentWrapper: {
+    marginTop: Spacings.xs,
+  },
+  studentLabel: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 9,
+    backgroundColor: Colors.green,
+    color: Colors.white,
+    paddingHorizontal: Spacings.xxs,
+    paddingVertical: Spacings.xxxs,
+    width: 50,
+    textAlign: 'center',
+    borderRadius: 8,
   },
   userExpiresAt: {
-    marginTop: Spacings.xs,
-    fontSize: 10,
+    fontSize: 8,
     fontFamily: 'Poppins-Light',
     color: Colors.gray,
-    textAlign: 'right',
+    marginLeft: Spacings.xxxs
   },
+
+  companyWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  companyType: {
+    fontSize: 9,
+    marginBottom: -3,
+    paddingLeft: 1,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.gray,
+  },
+  companyName: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.blue,
+    marginBottom: -3,
+  },
+  companyData: {
+    fontSize: 9,
+    fontFamily: 'Poppins-Light',
+    color: Colors.text,
+  },
+
+  proCard: {
+    backgroundColor: Colors.blue,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.md,
+  },
+  proCardMetadata: {
+    flex: 1,
+    paddingRight: Spacings.xl
+  },
+  proCardTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+  },
+  proCardText: {
+    fontSize: 9,
+    fontFamily: 'Poppins-Light',
+    color: Colors.white,
+  },
+
   section: {
     marginBottom: Spacings.md,
     overflow: 'hidden',
