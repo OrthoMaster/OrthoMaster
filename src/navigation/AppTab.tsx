@@ -2,7 +2,10 @@ import React from 'react'
 import {
   Image,
   Text
-} from 'react-native'
+} from 'react-native';
+
+import 'react-native-gesture-handler';
+import 'react-native-reanimated';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';

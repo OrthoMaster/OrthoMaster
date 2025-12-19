@@ -8,7 +8,9 @@ export default {
   green: '#4BB6BE',
   blueDark: '#1D3470',
 
-  blueBackgound: '#E3F2FD',
+  blueBackground: '#E3F2FD',
+  greenBackground: '#E8F5E9',
+  primaryLightBackground: '#FFF3E0',
 
   primaryDisabled: '#E5AF61',
   primaryLightDisabled: '#FFD07A',

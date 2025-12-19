@@ -9,7 +9,7 @@ import { getLastestNotification } from "../services/v2/AuthService";
 export const useGlobalNotification = () => {
   const lastNotificationIdRef = useRef<string | null>(null);
   const allowedTypes = ['danger', 'success', 'warning'];
-  
+
   const { data } = useQuery({
     queryKey: ['lastest-notification'],
     queryFn: getLastestNotification,
@@ -25,19 +25,21 @@ export const useGlobalNotification = () => {
       const isNewNotification = lastNotificationIdRef.current !== latestNotif.id;
 
       if (isFirstTime || isNewNotification) {
-        Toast.show({
-          type: allowedTypes.includes(latestNotif.type) ? latestNotif.type : 'info',
-          text1: latestNotif.title,
-          text2: latestNotif.content,
-          topOffset: 80,
-          visibilityTime: 4000,
-          onPress: () => {
-            Toast.hide();
-            RootNavigation.navigate('profile', {
-              screen: 'notification-list'
-            });
-          }
-        });
+        if (!latestNotif.read_flg) {
+          Toast.show({
+            type: allowedTypes.includes(latestNotif.type) ? latestNotif.type : 'info',
+            text1: latestNotif.title,
+            text2: latestNotif.content,
+            topOffset: 80,
+            visibilityTime: 4000,
+            onPress: () => {
+              Toast.hide();
+              RootNavigation.navigate('profile', {
+                screen: 'notification-list'
+              });
+            }
+          });
+        }
 
         lastNotificationIdRef.current = latestNotif.id;
       }

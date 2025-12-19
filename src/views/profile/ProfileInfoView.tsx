@@ -605,7 +605,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
               value={formData.dateOfBirth}
               onChangeText={(value) => handleInputChange('dateOfBirth', value)}
               placeholder="01/01/1990"
-              keyboardType="number-pad"
+              keyboardType="numbers-and-punctuation"
               autoCapitalize="none"
               disabled={isModifyingEmail}
               returnKeyType="next"
@@ -1228,7 +1228,7 @@ const styles = StyleSheet.create({
   errorModalContent: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: Spacings.xl,
+    padding: Spacings.lg,
     width: '100%',
     maxWidth: 340,
     alignItems: 'center',
@@ -1242,10 +1242,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.md,
   },
   errorModalTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Bold',
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
     color: Colors.text,
-    marginBottom: Spacings.sm,
+    marginBottom: Spacings.xs,
     textAlign: 'center',
   },
   errorModalMessage: {
@@ -1286,6 +1286,7 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     textAlign: 'center',
     lineHeight: 20,
+    paddingTop: Spacings.xxs,
     marginBottom: Spacings.lg,
   },
 });

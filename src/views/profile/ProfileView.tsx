@@ -65,7 +65,6 @@ const MenuItem: React.FC<MenuItemProps> = ({ iconName, title, subtitle, disableL
 );
 
 export const ProfileView = ({ navigation, route }) => {
-  const queryClient = useQueryClient();
   const { data: user, isLoading: isLoadingUser, refetch: refetchUser, isFetching: isFetchingUser, error: errorUser } = useGetUser();
   const logout = useLogout();
 

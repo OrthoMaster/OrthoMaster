@@ -6,7 +6,7 @@ export const Styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.white,
-    fontFamily: 'Roboto'
+    fontFamily: 'Roboto',
   },
   errorMessageContainer: {
     backgroundColor: Colors.dangerBackground,

@@ -134,7 +134,7 @@ export const getMoreInfo = async () => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -200,7 +200,7 @@ export const getLastestNotification = async () => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -218,7 +218,7 @@ export const getNotifications = async () => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -236,7 +236,7 @@ export const markAllAsRead = async () => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -254,7 +254,7 @@ export const deleteAllNotification = async () => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -272,7 +272,7 @@ export const markAsRead = async (notiId: string) => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -290,7 +290,7 @@ export const deleteNotification = async (notiId: string) => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -308,7 +308,7 @@ export const acceptNotification = async (notiId: string) => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -326,7 +326,7 @@ export const rejectNotification = async (notiId: string) => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -344,7 +344,7 @@ export const getPreFormData = async () => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -375,7 +375,7 @@ export const updateProfile = async (data: {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -393,7 +393,7 @@ export const changePassword = async (data : {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });

@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     gap: Spacings.xs,
   },
   promoteButton: {
-    backgroundColor: Colors.blueBackgound,
+    backgroundColor: Colors.blueBackground,
     borderWidth: 1,
     borderColor: Colors.blue,
   },

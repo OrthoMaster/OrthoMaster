@@ -8,19 +8,6 @@ const AUTH_TOKEN_KEY = 'JWT';
 // Base URL
 const baseUrl = process.env.EXPO_PUBLIC_API_V2_URL;
 
-// Types
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    email_verified_at?: string | null;
-    created_at: string;
-    updated_at: string;
-    avatar?: string;
-    phone?: string;
-    id_user: number;
-}
-
 // Configure axios interceptor to add token
 axios.interceptors.request.use(
     async (config) => {
@@ -56,9 +43,6 @@ export const getCompany = async () => {
         .get(`${baseUrl}/company`)
         .then((response) => {
             if (response.data?.success == true) {
-
-                console.log(response.data.data);
-
                 return response.data.data;
             }
 
@@ -92,7 +76,7 @@ export const createCompany = async (companyData: {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -122,7 +106,7 @@ export const updateCompany = async (companyData: {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -140,7 +124,7 @@ export const quitCompany = async () => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -161,7 +145,7 @@ export const updateManager = async (data: {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -181,7 +165,7 @@ export const removeMember = async (data: {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -201,7 +185,7 @@ export const inviteMember = async (data: {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
@@ -219,7 +203,7 @@ export const getPreFormData = async () => {
         .catch((e: AxiosError) => {
             return {
                 success: false,
-                message: e.response?.data?.message || 'Une erreur est survenue',
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
                 statusCode: e.response?.status
             };
         });
