@@ -10,7 +10,8 @@ import {
   Animated,
   PanResponder,
   RefreshControl,
-  Dimensions
+  Dimensions,
+  Vibration
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,7 +30,8 @@ import {
 } from '../../services/v2/AuthService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SWIPE_THRESHOLD = -100;
+const SWIPE_THRESHOLD = -80; // Giảm ngưỡng để dễ trigger hơn
+const DELETE_ZONE_WIDTH = 100; // Độ rộng vùng xóa
 
 interface Notification {
   id: string;
@@ -61,37 +63,88 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
   onRefuse
 }) => {
   const translateX = useRef(new Animated.Value(0)).current;
+  const deleteOpacity = useRef(new Animated.Value(0)).current;
+  const deleteScale = useRef(new Animated.Value(0.8)).current;
+
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hasReachedThreshold, setHasReachedThreshold] = useState(false);
+  const hasVibratedRef = useRef(false);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 5;
+        // Chỉ bắt đầu pan khi vuốt ngang đủ mạnh
+        return Math.abs(gestureState.dx) > 5 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
       },
       onPanResponderMove: (_, gestureState) => {
+        // Chỉ cho phép vuốt sang trái
         if (gestureState.dx < 0) {
-          translateX.setValue(gestureState.dx);
+          const clampedDx = Math.max(gestureState.dx, -DELETE_ZONE_WIDTH);
+          translateX.setValue(clampedDx);
+
+          // Tính toán opacity và scale cho delete icon
+          const progress = Math.min(Math.abs(clampedDx) / DELETE_ZONE_WIDTH, 1);
+          deleteOpacity.setValue(progress);
+          deleteScale.setValue(0.8 + (progress * 0.2)); // Scale từ 0.8 đến 1.0
+
+          // Check if reached threshold
+          const reachedThreshold = gestureState.dx < SWIPE_THRESHOLD;
+          if (reachedThreshold && !hasVibratedRef.current) {
+            // Haptic feedback khi đạt ngưỡng
+            Vibration.vibrate(10);
+            hasVibratedRef.current = true;
+            setHasReachedThreshold(true);
+          } else if (!reachedThreshold && hasVibratedRef.current) {
+            hasVibratedRef.current = false;
+            setHasReachedThreshold(false);
+          }
         }
       },
       onPanResponderRelease: (_, gestureState) => {
+        // Reset vibration flag
+        hasVibratedRef.current = false;
+        setHasReachedThreshold(false);
+
+        // Nếu đã vuốt qua ngưỡng, thực hiện xóa
         if (gestureState.dx < SWIPE_THRESHOLD) {
-          // Swipe to delete
-          Animated.timing(translateX, {
-            toValue: -SCREEN_WIDTH,
-            duration: 300,
-            useNativeDriver: true,
-          }).start(() => {
+          // Animate to fully off screen
+          Animated.parallel([
+            Animated.timing(translateX, {
+              toValue: -SCREEN_WIDTH,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(deleteOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          ]).start(() => {
             setIsDeleting(true);
-            setTimeout(() => onDelete(notification.id), 100);
+            setTimeout(() => onDelete(notification.id), 50);
           });
         } else {
-          // Return to original position
-          Animated.spring(translateX, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 10,
-          }).start();
+          // Quay về vị trí ban đầu với spring animation mượt mà
+          Animated.parallel([
+            Animated.spring(translateX, {
+              toValue: 0,
+              useNativeDriver: true,
+              tension: 100,
+              friction: 10,
+            }),
+            Animated.timing(deleteOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.spring(deleteScale, {
+              toValue: 0.8,
+              useNativeDriver: true,
+              tension: 100,
+              friction: 10,
+            })
+          ]).start();
         }
       },
     })
@@ -111,16 +164,35 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
 
   return (
     <View style={styles.swipeContainer}>
-      {/* Delete Background */}
+      {/* Delete Background - với animated opacity và scale */}
       <View style={styles.deleteBackground}>
-        <Ionicons name="trash-bin" size={24} color={Colors.white} />
+        <Animated.View
+          style={[
+            styles.deleteIconContainer,
+            {
+              opacity: deleteOpacity,
+              transform: [{ scale: deleteScale }]
+            }
+          ]}
+        >
+          <Ionicons
+            name="trash-bin"
+            size={28}
+            color={Colors.white}
+          />
+          <Text style={styles.deleteText}>Supprimer</Text>
+        </Animated.View>
       </View>
 
       {/* Notification Card */}
       <Animated.View
         style={[
           styles.notificationCard,
-          { transform: [{ translateX }] }
+          {
+            transform: [{ translateX }],
+          },
+          // Thêm highlight khi đạt ngưỡng
+          hasReachedThreshold && styles.notificationCardThreshold
         ]}
         {...panResponder.panHandlers}
       >
@@ -422,6 +494,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginBottom: Spacings.xxs,
     height: 'auto',
+    overflow: 'hidden',
   },
   deleteBackground: {
     position: 'absolute',
@@ -430,14 +503,30 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: Colors.danger,
     justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingRight: Spacings.lg,
-    width: '100%',
+    alignItems: 'center',
+    width: DELETE_ZONE_WIDTH,
+  },
+  deleteIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontFamily: 'Poppins-Medium',
+    marginTop: Spacings.xxxs,
   },
 
   // Notification Card
   notificationCard: {
     backgroundColor: Colors.white,
+  },
+  notificationCardThreshold: {
+    elevation: 4,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   notificationContent: {
     paddingVertical: Spacings.md,

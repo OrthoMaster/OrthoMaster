@@ -8,15 +8,22 @@ import {
   TouchableOpacity,
   Animated,
   Platform,
-  Dimensions
+  Dimensions,
+  Alert
 } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+
 import Colors from "../../../constants/Colors";
 import Spacings from "../../../constants/Spacings";
 import { Styles } from "../../../constants/Styles";
+
+import { getCartDetails, addToCart, removeFromCart } from "../../services/v2/CartService";
 
 type Tab = 'detail' | 'course';
 
@@ -27,21 +34,38 @@ const ITEM_WIDTH = (width - (Spacings.lg * 2) - (ITEM_SPACING * (COLUMN_COUNT - 
 
 export const InactiveTrainingView = ({ navigation, route }) => {
   // Hide bottom nav
-  useEffect(() => {
-    // Hide
-    navigation.getParent()?.setOptions({
-      tabBarStyle: { display: 'none' }
-    });
-
-    // Re-Show when unmount
-    return () => {
+  useFocusEffect(
+    useCallback(() => {
+      // Hide
       navigation.getParent()?.setOptions({
-        tabBarStyle: { display: 'flex' }
+        tabBarStyle: { display: 'none' }
       });
-    };
-  }, [navigation]);
 
+      // Re-Show when unmount
+      return () => {
+        navigation.getParent()?.setOptions({
+          tabBarStyle: { display: 'flex' }
+        });
+      };
+    }, [navigation])
+  );
+
+  const queryClient = useQueryClient();
   const { pkg, headerColor = Colors.blue } = route.params || {};
+
+  // Query cart để check xem package có trong giỏ hàng không
+  const { data: cartData } = useQuery({
+    queryKey: ['cart'],
+    queryFn: getCartDetails,
+    retry: 1,
+    retryDelay: 1000,
+  });
+
+  // Check xem package hiện tại có trong cart không
+  const isInCart = useMemo(() => {
+    if (!cartData || !cartData.items) return false;
+    return cartData.items.some(item => item.package_id === pkg.id);
+  }, [cartData, pkg.id]);
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [currentLessons, setCurrentLessons] = useState([]);
@@ -151,9 +175,11 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   // Handle add to cart
   const [showFlyingCart, setShowFlyingCart] = useState(false);
   const flyingAnimation = useRef(new Animated.Value(0)).current;
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // Handle Add to Cart with animation
-  const handleAddToCart = useCallback(() => {
+  const handleAddToCart = useCallback((packageId: any) => {
+    setIsAddingToCart(true);
     setShowFlyingCart(true);
 
     // Reset animation value
@@ -164,14 +190,60 @@ export const InactiveTrainingView = ({ navigation, route }) => {
       toValue: 1,
       duration: 800, // 800ms
       useNativeDriver: true,
-    }).start(() => {
+    }).start(async () => {
       // Hide after animation completes
       setShowFlyingCart(false);
 
-      // TODO: Thêm logic add to cart thực tế ở đây
-      console.log('Added to cart!');
+      const result = await addToCart(packageId);
+      if (result) {
+        await queryClient.invalidateQueries({ queryKey: ['cart'] });
+        setIsAddingToCart(false);
+      } else {
+        setIsAddingToCart(false);
+        Alert.alert('Erreur', 'Vous ne pouvez pas ajouter ce produit à votre panier, veuillez réessayer.');
+      }
     });
-  }, [flyingAnimation]);
+  }, [flyingAnimation, queryClient]);
+
+  // Handle remove from cart
+  const [isDeletingFromCart, setIsDeletingFromCart] = useState(false);
+  const handleRemoveFromCart = useCallback(async (packageId: any) => {
+    Alert.alert(
+      'Confirmation',
+      'Voulez-vous supprimer ce produit du panier ?',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel'
+        },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeletingFromCart(true);
+
+            const result = await removeFromCart(packageId);
+            if (result) {
+              await queryClient.invalidateQueries({ queryKey: ['cart'] });
+              setIsDeletingFromCart(false);
+            } else {
+              setIsDeletingFromCart(false);
+              Alert.alert('Erreur', 'Ce produit ne peut pas être retiré du panier, veuillez réessayer.');
+            }
+          }
+        }
+      ]
+    );
+  }, [queryClient]);
+
+  // Handle view cart
+  const handleViewCart = useCallback(() => {
+    navigation.getParent()?.setOptions({
+      tabBarStyle: { display: 'flex' }
+    });
+
+    navigation.navigate('cart-view');
+  }, [navigation]);
 
   // Calculate animated styles
   const flyingCartStyle = {
@@ -219,7 +291,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
                 />
                 :
                 <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={40} color={Colors.gray} />
-               }
+              }
             </View>
           </View>
         </View>
@@ -246,14 +318,14 @@ export const InactiveTrainingView = ({ navigation, route }) => {
             {/* Tab Navigation */}
             <View style={styles.tabContainer}>
               <TouchableOpacity
-                style={[styles.tab, currentTab === 'detail' && [styles.activeTab, {backgroundColor: headerColor}]]}
+                style={[styles.tab, currentTab === 'detail' && [styles.activeTab, { backgroundColor: headerColor }]]}
                 disabled={currentTab === 'detail'}
                 onPress={() => setCurrentTab('detail')}
               >
                 <Text style={[styles.tabText, currentTab === 'detail' && styles.activeTabText]}>À propos</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.tab, currentTab === 'course' && [styles.activeTab, {backgroundColor: headerColor}]]}
+                style={[styles.tab, currentTab === 'course' && [styles.activeTab, { backgroundColor: headerColor }]]}
                 disabled={currentTab === 'course'}
                 onPress={() => setCurrentTab('course')}
               >
@@ -289,13 +361,47 @@ export const InactiveTrainingView = ({ navigation, route }) => {
               </ScrollView>
             }
 
-            {/* Add to Cart Button */}
+            {/* Bottom Buttons */}
             {!pkg.available_flg &&
               <View style={styles.bottomButtonContainer}>
-                <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
-                  <Ionicons name="cart-outline" size={20} color={Colors.white} />
-                  <Text style={styles.addToCartText}>Ajouter au panier</Text>
-                </TouchableOpacity>
+                {!isInCart ? (
+                  // Nút Ajouter au panier khi chưa có trong giỏ
+                  <TouchableOpacity
+                    style={[styles.addToCartButton, { backgroundColor: isAddingToCart ? Colors.gray : Colors.blue }]}
+                    onPress={() => handleAddToCart(pkg.id)}
+                    disabled={isAddingToCart}
+                  >
+                    {isAddingToCart ?
+                      <ActivityIndicator size={20} animating={true} color={Colors.white} />
+                      :
+                      <Ionicons name="cart-outline" size={20} color={Colors.white} />
+                    }
+                    <Text style={styles.addToCartText}>
+                      {isAddingToCart ? 'Ajout en cours...' : 'Ajouter au panier'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                      style={styles.removeFromCartButton}
+                      onPress={() => handleRemoveFromCart(pkg.id)}
+                      disabled={isDeletingFromCart}
+                    >
+                      {isDeletingFromCart
+                        ? <ActivityIndicator size={20} animating={true} color={Colors.white} />
+                        : <MaterialCommunityIcons name="cart-minus" size={20} color={Colors.white} />
+                      }
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.viewCartButton}
+                      onPress={handleViewCart}
+                      disabled={isDeletingFromCart}
+                    >
+                      <Text style={styles.viewCartText}>Voir le panier</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             }
             {/* Flying Cart Animation */}
@@ -618,6 +724,42 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
     paddingLeft: Spacings.xs,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: Spacings.sm,
+  },
+  viewCartButton: {
+    flex: 3,
+    flexDirection: 'row',
+    backgroundColor: Colors.green,
+    paddingVertical: Spacings.md,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  viewCartText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+    paddingLeft: Spacings.xs,
+  },
+  removeFromCartButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: Colors.danger,
+    paddingVertical: Spacings.md,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   flyingCart: {
     position: 'absolute',

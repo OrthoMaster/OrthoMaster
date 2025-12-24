@@ -15,8 +15,21 @@ export interface CartItem {
 }
 
 export interface Cart {
-  items: CartItem[];
-  total: number;
+    items: CartItem[];
+    total: number;
+}
+
+export interface PaymentIntentResponse {
+    success: boolean;
+    client_secret: string;
+    payment_intent_id: string;
+    publishable_key: string;
+}
+
+export interface PaymentConfirmResponse {
+    success: boolean;
+    message: string;
+    invoice?: any;
 }
 
 // Configure axios interceptor to add token
@@ -49,12 +62,12 @@ axios.interceptors.response.use(
 /**
  * Get cart
  */
-export const getCartItems = async () => {
+export const getCartDetails = async () => {
     return axios
         .get(`${baseUrl}/cart`)
         .then((response) => {
             if (response.data?.success == true) {
-                return response.data.data;
+                return response.data.data[0];
             }
 
             return null;
@@ -64,6 +77,138 @@ export const getCartItems = async () => {
         });
 };
 
-export const removeFromCart = () => { return null; };
-export const clearCart = () => { return null; };
-export const updateCartItemQuantity = () => { return null; };
+export const addToCart = async (itemId: any) => {
+    return axios
+        .put(`${baseUrl}/cart/add/${itemId}`)
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+};
+
+export const removeFromCart = async (itemId: any) => {
+    return axios
+        .delete(`${baseUrl}/cart/remove/${itemId}`)
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+};
+
+export const clearCart = async () => {
+    return axios
+        .delete(`${baseUrl}/cart/clear`)
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+};
+
+export const syncMembers = async (memberIds: string[]) => {
+    return axios
+        .put(`${baseUrl}/cart/members`, { members: memberIds })
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+};
+
+export const createPaymentIntent = async (invoiceId: number): Promise<PaymentIntentResponse | null> => {
+    try {
+        const response = await axios.post(`${baseUrl}/payments/invoices/${invoiceId}/create-intent`);
+        
+        if (response.data?.success === true) {
+            return {
+                success: true,
+                client_secret: response.data.client_secret,
+                payment_intent_id: response.data.payment_intent_id,
+                publishable_key: response.data.publishable_key,
+            };
+        }
+        
+        return null;
+    } catch (e: any) {
+        console.error('Create Payment Intent Error:', e.response?.data || e.message);
+        throw e;
+    }
+};
+
+export const confirmPayment = async (
+    invoiceId: number,
+    paymentIntentId: string
+): Promise<PaymentConfirmResponse> => {
+    try {
+        const response = await axios.post(`${baseUrl}/payments/invoices/${invoiceId}/confirm`, {
+            payment_intent_id: paymentIntentId,
+        });
+        
+        if (response.data?.success === true) {
+            return {
+                success: true,
+                message: response.data.message || 'Payment successful',
+                invoice: response.data.invoice,
+            };
+        }
+        
+        return {
+            success: false,
+            message: response.data?.message || 'Payment confirmation failed',
+        };
+    } catch (e: any) {
+        console.error('Confirm Payment Error:', e.response?.data || e.message);
+        return {
+            success: false,
+            message: e.response?.data?.message || 'Payment confirmation failed',
+        };
+    }
+};
+
+export const cancelPayment = async (invoiceId: number): Promise<boolean> => {
+    try {
+        const response = await axios.post(`${baseUrl}/payments/invoices/${invoiceId}/cancel`);
+        
+        return response.data?.success === true;
+    } catch (e: any) {
+        console.error('Cancel Payment Error:', e.response?.data || e.message);
+        return false;
+    }
+};
+
+export const getInvoiceStatus = async (invoiceId: number) => {
+    try {
+        const response = await axios.get(`${baseUrl}/invoices/${invoiceId}`);
+        
+        if (response.data?.success === true) {
+            return response.data.data;
+        }
+        
+        return null;
+    } catch (e: any) {
+        console.error('Get Invoice Status Error:', e.response?.data || e.message);
+        throw e;
+    }
+};

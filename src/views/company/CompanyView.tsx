@@ -27,6 +27,7 @@ import { updateManager, removeMember, inviteMember } from '../../services/v2/Com
 interface Member {
   id: string;
   name: string;
+  first_name: string,
   email: string;
   organization: {
     name: string
@@ -57,18 +58,18 @@ export const CompanyView = ({ navigation, route }) => {
       activeOpacity={0.7}
     >
       <View style={styles.memberInfo}>
-        <Text style={styles.memberName}>{item.name}</Text>
+        <Text style={styles.memberName}>{item.name + ' ' + item.first_name}</Text>
         <Text style={styles.memberRole}>{item.email}</Text>
         {item.organization &&
           <View style={{
             flexDirection: 'row',
             alignItems: 'flex-end'
           }}>
-            <Text style={styles.memberOrganization}>{item.organization.name}</Text>
-            {!item.missing_fields_message &&
-              <Text style={styles.memberMissingText}>asdfasdfasd</Text>
-            }
+            <Text style={styles.memberOrganization}>{item.organization?.name}</Text>
           </View>
+        }
+        {item.missing_fields_message &&
+          <Text style={styles.memberMissingText}>{item.missing_fields_message}</Text>
         }
       </View>
       {item.progress &&
@@ -624,21 +625,20 @@ const styles = StyleSheet.create({
   },
   memberOrganization: {
     flex: 0,
-    marginTop: Spacings.xs,
-    fontSize: 7,
+    marginVertical: Spacings.xxs,
     color: Colors.gray,
-    fontFamily: 'Poppins-Regular',
+    fontSize: 10,
+    fontFamily: 'Poppins-Medium',
     borderWidth: 0.5,
     borderRadius: 4,
     borderColor: Colors.gray,
     paddingVertical: Spacings.xxxs,
-    paddingHorizontal: Spacings.xxs
+    paddingHorizontal: Spacings.xxs,
   },
   memberMissingText: {
     fontSize: 7,
     fontFamily: 'Poppins-Light',
     color: Colors.danger,
-    paddingLeft: Spacings.xs
   },
   progressContainer: {
     marginLeft: 12,

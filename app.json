@@ -91,7 +91,13 @@
           "supportsPictureInPicture": true
         }
       ],
-      ["react-native-video", { "iosCategory": "playback" }]
+      ["react-native-video", { "iosCategory": "playback" }],
+      ["@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.orthomaster",
+          "enableGooglePay": true
+        }
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"

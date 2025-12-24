@@ -11,7 +11,8 @@ import {
   PanResponder,
   RefreshControl,
   Dimensions,
-  Image
+  Image,
+  Vibration
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,101 +22,110 @@ import { BouncingDots } from '../../component/LoadingDots';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-import {
-  getCartItems,
-  removeFromCart,
-  clearCart,
-  updateCartItemQuantity
-} from '../../services/v2/CartService';
-
-const DEMO_COURSES: Course[] = [
-  {
-    id: '1',
-    title: 'Graffiti Mastery',
-    image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800&q=80',
-    modules: 3,
-    lessons: 24,
-    duration: 4,
-  },
-  {
-    id: '2',
-    title: 'Base de l\'orthopédie',
-    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80',
-    modules: 5,
-    lessons: 32,
-    duration: 4,
-  },
-  {
-    id: '3',
-    title: 'Bases biomécaniques',
-    image: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&q=80',
-    modules: 4,
-    lessons: 28,
-    duration: 4,
-  },
-  {
-    id: '4',
-    title: 'Anatomie avancée',
-    image: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=800&q=80',
-    modules: 6,
-    lessons: 42,
-    duration: 4,
-  }
-];
+import { getCartDetails, removeFromCart, clearCart } from '../../services/v2/CartService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SWIPE_THRESHOLD = -100;
+const SWIPE_THRESHOLD = -80; // Ngưỡng để trigger xóa (giảm xuống để dễ trigger hơn)
+const DELETE_ZONE_WIDTH = 100; // Độ rộng vùng hiển thị nút xóa
 
-interface Course {
+interface Item {
   id: string;
-  title: string;
-  image: string;
-  modules: number;
-  lessons: number;
-  duration: number;
+  package: {
+    id: string;
+    name: string;
+    lesson_total: number;
+    duration: number;
+    duration_text: string;
+    image: string;
+  }
 }
 
-interface SwipeableCourseProps {
-  course: Course;
+interface SwipeableItemProps {
+  course: Item;
   onDelete: (id: string) => void;
 }
 
-const SwipeableCourse: React.FC<SwipeableCourseProps> = ({
+const SwipeableItem: React.FC<SwipeableItemProps> = ({
   course,
   onDelete
 }) => {
   const translateX = useRef(new Animated.Value(0)).current;
+  const deleteOpacity = useRef(new Animated.Value(0)).current;
+  const deleteScale = useRef(new Animated.Value(0.8)).current;
+
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hasReachedThreshold, setHasReachedThreshold] = useState(false);
+  const hasVibratedRef = useRef(false);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 5;
+        return Math.abs(gestureState.dx) > 5 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
       },
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dx < 0) {
-          translateX.setValue(gestureState.dx);
+          const clampedDx = Math.max(gestureState.dx, -DELETE_ZONE_WIDTH);
+          translateX.setValue(clampedDx);
+
+          const progress = Math.min(Math.abs(clampedDx) / DELETE_ZONE_WIDTH, 1);
+          deleteOpacity.setValue(progress);
+          deleteScale.setValue(0.8 + (progress * 0.2)); // Scale 0.8 to 1.0
+
+          // Check if reached threshold
+          const reachedThreshold = gestureState.dx < SWIPE_THRESHOLD;
+          if (reachedThreshold && !hasVibratedRef.current) {
+            Vibration.vibrate(10);
+            hasVibratedRef.current = true;
+            setHasReachedThreshold(true);
+          } else if (!reachedThreshold && hasVibratedRef.current) {
+            hasVibratedRef.current = false;
+            setHasReachedThreshold(false);
+          }
         }
       },
       onPanResponderRelease: (_, gestureState) => {
+        // Reset vibration flag
+        hasVibratedRef.current = false;
+        setHasReachedThreshold(false);
+
         if (gestureState.dx < SWIPE_THRESHOLD) {
-          // Swipe to delete
-          Animated.timing(translateX, {
-            toValue: -SCREEN_WIDTH,
-            duration: 300,
-            useNativeDriver: true,
-          }).start(() => {
+          // Animate to fully off screen
+          Animated.parallel([
+            Animated.timing(translateX, {
+              toValue: -SCREEN_WIDTH,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(deleteOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          ]).start(() => {
             setIsDeleting(true);
-            setTimeout(() => onDelete(course.id), 100);
+            setTimeout(() => onDelete(course.id), 50);
           });
         } else {
-          // Return to original position
-          Animated.spring(translateX, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 10,
-          }).start();
+          Animated.parallel([
+            Animated.spring(translateX, {
+              toValue: 0,
+              useNativeDriver: true,
+              tension: 100,
+              friction: 10,
+            }),
+            Animated.timing(deleteOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.spring(deleteScale, {
+              toValue: 0.8,
+              useNativeDriver: true,
+              tension: 100,
+              friction: 10,
+            })
+          ]).start();
         }
       },
     })
@@ -125,21 +135,36 @@ const SwipeableCourse: React.FC<SwipeableCourseProps> = ({
     return null;
   }
 
-  const hasDiscount = 0;
-  const discountPercent = hasDiscount ? 0 : 0;
-
   return (
     <View style={styles.swipeContainer}>
-      {/* Delete Background */}
       <View style={styles.deleteBackground}>
-        <Ionicons name="trash-bin" size={24} color={Colors.white} />
+        <Animated.View
+          style={[
+            styles.deleteIconContainer,
+            {
+              opacity: deleteOpacity,
+              transform: [{ scale: deleteScale }]
+            }
+          ]}
+        >
+          <MaterialCommunityIcons
+            name="cart-minus"
+            size={28}
+            color={Colors.white}
+          />
+          <Text style={styles.deleteText}>Supprimer</Text>
+        </Animated.View>
       </View>
 
-      {/* Course Card */}
+      {/* Item Card */}
       <Animated.View
         style={[
           styles.courseCard,
-          { transform: [{ translateX }] }
+          {
+            transform: [{ translateX }],
+          },
+          // Thêm highlight khi đạt ngưỡng
+          hasReachedThreshold && styles.courseCardThreshold
         ]}
         {...panResponder.panHandlers}
       >
@@ -147,33 +172,37 @@ const SwipeableCourse: React.FC<SwipeableCourseProps> = ({
           activeOpacity={0.7}
           style={styles.courseContent}
         >
-          {/* Course Image */}
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: course.image }}
-              style={styles.courseImage}
-            />
+          {/* Item Image */}
+          <View style={[styles.imageContainer]}>
+            {course.package.image ?
+              <Image
+                source={{ uri: process.env.EXPO_EXPO_PUBLIC_S3_URL + course.package.image }}
+                style={styles.courseImage}
+              />
+              :
+              <MaterialCommunityIcons name={'book-open-page-variant-outline'}
+                size={30} color={Colors.blue}
+              />
+            }
           </View>
 
-          {/* Course Info */}
+          {/* Item Info */}
           <View style={styles.courseInfo}>
             <Text style={styles.courseTitle} numberOfLines={2}>
-              {course.title}
+              {course.package.name}
             </Text>
 
             {/* Meta Info */}
             <View style={styles.metaContainer}>
               <View style={styles.metaItem}>
                 <Ionicons name="book-outline" size={12} color={Colors.gray} />
-                <Text style={styles.metaText}>
-                  {course.modules} modules • {course.lessons} leçons
-                </Text>
+                <Text style={styles.metaText}>{course.package.lesson_total} leçon{course.package.lesson_total > 1 ? 's' : ''}</Text>
               </View>
             </View>
 
             {/* Price */}
             <View style={styles.priceContainer}>
-              <Text style={styles.price}>{course.duration.toFixed(2)} h</Text>
+              <Text style={styles.price}>{course.package.duration_text}</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -183,17 +212,35 @@ const SwipeableCourse: React.FC<SwipeableCourseProps> = ({
 };
 
 export const CartView = ({ navigation }) => {
-  const { data: initCart, isLoading, refetch, isFetching } = useQuery({
+  const { data: cartData, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['cart'],
-    queryFn: () => getCartItems(),
+    queryFn: () => getCartDetails(),
+    retry: 1,
+    retryDelay: 1000,
   });
 
-  const [cartItems, setCartItems] = useState<Course[]>(DEMO_COURSES);
+  const [cartItems, setCartItems] = useState<Item[]>();
   const [refreshing, setRefreshing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const handleDelete = (id: string) => {
-    setCartItems(prev => prev?.filter(item => item.id !== id) || []);
-    // removeFromCart('id');
+  useEffect(() => {
+    if (cartData) {
+      setCartItems(cartData.items);
+    }
+  }, [cartData]);
+
+  const handleDelete = async (id: string, packageId: string) => {
+    setDeleting(true);
+    const result = await removeFromCart(packageId);
+    if (result) {
+      setCartItems(prev => prev?.filter(item => item.id !== id) || []);
+      setDeleting(false);
+    } else {
+      Alert.alert('Erreur', 'Cette article ne peut pas être retiré du panier, veuillez réessayer.');
+      setDeleting(false);
+    }
+
+    refetch();
   };
 
   const handleClearAll = () => {
@@ -205,9 +252,17 @@ export const CartView = ({ navigation }) => {
         {
           text: 'Supprimer',
           style: 'destructive',
-          onPress: () => {
-            clearCart();
-            setCartItems([]);
+          onPress: async () => {
+            setDeleting(true);
+
+            const result = await clearCart();
+            if (result) {
+              setCartItems([]);
+              setDeleting(false);
+            } else {
+              setDeleting(false);
+              Alert.alert('Erreur', 'Échec de la suppression du panier, veuillez réessayer.');
+            }
           }
         }
       ]
@@ -229,16 +284,10 @@ export const CartView = ({ navigation }) => {
     if (cartItems.length === 0) return;
 
     // Navigate to checkout screen
-    navigation.navigate('attach-member-view');
+    navigation.navigate('attach-member-view', { memberIds: cartData.member_ids || [] });
   };
 
-  // Calculate total
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.duration, 0);
-  const totalOriginalPrice = cartItems.reduce(
-    (sum, item) => sum + (item.duration),
-    0
-  );
-  const totalSavings = totalOriginalPrice - totalPrice;
+
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -249,15 +298,15 @@ export const CartView = ({ navigation }) => {
         <View style={styles.headerLeft}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.popToTop()}
           >
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>Mon Panier</Text>
-            {cartItems.length > 0 && (
+            {cartItems && cartItems.length > 0 && (
               <Text style={styles.itemCount}>
-                {cartItems.length} course
+                {cartItems.length} article{cartItems.length > 1 ? 's' : ''}
               </Text>
             )}
           </View>
@@ -268,87 +317,114 @@ export const CartView = ({ navigation }) => {
             style={styles.headerAction}
             onPress={handleClearAll}
           >
-            <Ionicons name="trash-outline" size={22} color={Colors.danger} />
+            <MaterialCommunityIcons name="cart-remove" size={22} color={Colors.danger} />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Loading */}
-      {(isLoading || isFetching) && (
+      {(isLoading || isFetching || deleting) && !error && (
         <BouncingDots
-          color={Colors.gray}
+          color={Colors.blue}
           size={10}
           bounceHeight={5}
           containerStyle={{
-            backgroundColor: Colors.grayLight,
+            position: 'absolute',
+            backgroundColor: 'transparent',
             zIndex: 999,
             elevation: 5,
+            bottom: 80,
+            left: '45%',
           }}
         />
       )}
-
-      {/* Content */}
-      {!cartItems || cartItems.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="cart-outline" size={80} color={Colors.gray} />
-          <Text style={styles.emptyTitle}>Votre panier est vide</Text>
-          <Text style={styles.emptySubtitle}>
-            Explorez nos formations et ajoutez des cours à votre panier
-          </Text>
-          <TouchableOpacity
-            style={styles.browseButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.browseButtonText}>Parcourir les formations</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          <ScrollView
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing || isFetching}
-                onRefresh={onRefresh}
-                colors={[Colors.primary]}
-                tintColor={Colors.primary}
-              />
-            }
-          >
-            <View style={styles.content}>
-              {/* Cart Items List */}
-              <View style={styles.cartList}>
-                {cartItems.map((course) => (
-                  <SwipeableCourse
-                    key={course.id}
-                    course={course}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </View>
-
-              {/* Spacer for bottom button */}
-              <View style={{ height: 100 }} ></View>
-            </View>
-          </ScrollView>
-
-          {/* Checkout Button */}
-          <View style={styles.checkoutContainer}>
-            <View style={styles.checkoutInfo}>
-              <Text style={styles.checkoutTotal}>Total</Text>
-              <Text style={styles.checkoutPrice}>{totalPrice.toFixed(2)} h</Text>
-            </View>
+      {error
+        ? (
+          <View style={styles.errorContainer}>
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={64}
+              color={Colors.danger}
+            />
+            <Text style={styles.errorTitle}>Erreur de chargement</Text>
+            <Text style={styles.errorMessage}>
+              Impossible de charger le panier
+            </Text>
             <TouchableOpacity
-              style={styles.checkoutButton}
-              onPress={handleCheckout}
+              style={styles.retryButton}
+              onPress={() => refetch()}
             >
-              <Text style={styles.checkoutButtonText}>Assigner membres</Text>
-              <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+              <Ionicons name="refresh" size={20} color={Colors.white} />
+              <Text style={styles.retryButtonText}>Réessayer</Text>
             </TouchableOpacity>
           </View>
-        </>
-      )}
+        ) : (
+          <>
+            {(!cartItems || cartItems.length === 0) ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="cart-outline" size={80} color={Colors.gray} />
+                <Text style={styles.emptyTitle}>Votre panier est vide</Text>
+                <Text style={styles.emptySubtitle}>
+                  Explorez nos formations et ajoutez des cours à votre panier
+                </Text>
+                <TouchableOpacity
+                  style={styles.browseButton}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Text style={styles.browseButtonText}>Parcourir les formations</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <ScrollView
+                  style={styles.scrollView}
+                  showsVerticalScrollIndicator={false}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing || isFetching}
+                      onRefresh={onRefresh}
+                      colors={[Colors.primary]}
+                      tintColor={Colors.primary}
+                    />
+                  }
+                >
+                  <View style={styles.content}>
+                    {/* Cart Items List */}
+                    <View style={styles.cartList}>
+                      {cartItems.map((course) => (
+                        <SwipeableItem
+                          key={course.id}
+                          course={course}
+                          onDelete={() => handleDelete(course.id, course.package.id)}
+                        />
+                      ))}
+                    </View>
+
+                    {/* Spacer for bottom button */}
+                    <View style={{ height: 100 }}>
+                      <Text style={{ textAlign: 'center', fontSize: 10, color: Colors.gray, fontFamily: 'Poppins-Medium' }}>Glissez vers la gauche pour supprimer</Text>
+                    </View>
+                  </View>
+                </ScrollView>
+
+                {/* Checkout Button */}
+                <View style={styles.checkoutContainer}>
+                  <View style={styles.checkoutInfo}>
+                    <Text style={styles.checkoutTotal}>Total</Text>
+                    <Text style={styles.checkoutPrice}>{cartData.duration_text || '-'}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.checkoutButton}
+                    onPress={handleCheckout}
+                  >
+                    <Text style={styles.checkoutButtonText}>Assigner membres</Text>
+                    <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </>
+        )}
     </SafeAreaView>
   );
 };
@@ -406,6 +482,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginBottom: Spacings.sm,
     marginHorizontal: Spacings.lg,
+    overflow: 'hidden',
   },
   deleteBackground: {
     position: 'absolute',
@@ -414,22 +491,36 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: Colors.danger,
     justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingRight: Spacings.lg,
-    width: '100%',
-    borderRadius: 12,
+    alignItems: 'center',
+    width: DELETE_ZONE_WIDTH,
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  deleteIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontFamily: 'Poppins-Medium',
+    marginTop: Spacings.xxs,
   },
 
-  // Course Card
+  // Item Card
   courseCard: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 15,
     overflow: 'hidden',
     elevation: 2,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  courseCardThreshold: {
+    elevation: 4,
+    shadowOpacity: 0.2,
   },
   courseContent: {
     flexDirection: 'row',
@@ -438,12 +529,18 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     marginRight: Spacings.md,
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.blueBackground,
+    borderRadius: 16,
   },
   courseImage: {
     width: 80,
     height: 80,
-    borderRadius: 8,
-    backgroundColor: Colors.grayLight,
+    borderRadius: 16,
+    backgroundColor: Colors.blueBackground,
   },
   discountBadge: {
     position: 'absolute',
@@ -486,6 +583,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.xs,
+
   },
   price: {
     fontSize: 16,
@@ -519,6 +617,7 @@ const styles = StyleSheet.create({
     marginTop: Spacings.xs,
     marginBottom: Spacings.xl,
     textAlign: 'center',
+    width: '80%',
   },
   browseButton: {
     backgroundColor: Colors.blue,
@@ -580,6 +679,43 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   checkoutButtonText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+  },
+
+  // Error
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacings.xl,
+    backgroundColor: Colors.grayLight,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+    marginTop: Spacings.lg,
+    marginBottom: Spacings.xs,
+  },
+  errorMessage: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    textAlign: 'center',
+    marginBottom: Spacings.xl,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.blue,
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.sm,
+    borderRadius: 8,
+    gap: Spacings.xs,
+  },
+  retryButtonText: {
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,

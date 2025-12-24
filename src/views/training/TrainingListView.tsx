@@ -17,12 +17,13 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import Colors from "../../../constants/Colors";
 import Spacings from "../../../constants/Spacings";
 import { Styles } from "../../../constants/Styles";
 
+import { BouncingDots } from '../../component/LoadingDots';
 import { useQuery } from "@tanstack/react-query";
 import { getTrainings } from "../../services/v2/TrainingService";
 
@@ -424,6 +425,43 @@ export const TrainingListView = ({ navigation, route }) => {
         />
       </Animated.View>
 
+      {/* Loading */}
+      {(isLoading || isFetching) && !error && (
+        <BouncingDots
+          color={Colors.blue}
+          size={10}
+          bounceHeight={5}
+          containerStyle={{
+            position: 'absolute',
+            backgroundColor: 'transparent',
+            zIndex: 999,
+            elevation: 5,
+            bottom: 0,
+            left: '45%',
+          }}
+        />
+      )}
+      {error && (
+        <View style={styles.errorContainer}>
+          <MaterialCommunityIcons
+            name="alert-circle-outline"
+            size={64}
+            color={Colors.danger}
+          />
+          <Text style={styles.errorTitle}>Erreur de chargement</Text>
+          <Text style={styles.errorMessage}>
+            Impossible de charger les formation
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => refetch()}
+          >
+            <Ionicons name="refresh" size={20} color={Colors.white} />
+            <Text style={styles.retryButtonText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Content */}
       <ScrollView style={styles.scrollView}
         contentContainerStyle={styles.scrollContainer}
@@ -441,7 +479,7 @@ export const TrainingListView = ({ navigation, route }) => {
         }>
 
         {/* Training cards with horizontal pkg scroll */}
-        {(DEMO_TRAININGS).map((training) => (
+        {!error && trainings && trainings.map((training) => (
           <View key={training.id} style={styles.trainingCard}>
             <View style={styles.trainingHeaderNew}>
               <Text style={styles.trainingTitleNew} numberOfLines={2} ellipsizeMode='tail'>
@@ -531,7 +569,7 @@ const styles = StyleSheet.create({
 
   scrollView: {
     flex: 1,
-    paddingTop: Spacings.md,
+    paddingTop: Spacings.sm,
   },
   scrollContainer: {
     paddingTop: HEADER_HEIGHT - Spacings.xxl,
@@ -617,5 +655,42 @@ const styles = StyleSheet.create({
   },
   imageText: {
     fontSize: 28,
+  },
+
+  // Error
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: Spacings.md,
+    paddingHorizontal: Spacings.xl,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+    marginTop: Spacings.lg,
+    marginBottom: Spacings.xs,
+  },
+  errorMessage: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    textAlign: 'center',
+    marginBottom: Spacings.xl,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.blue,
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.sm,
+    borderRadius: 8,
+    gap: Spacings.xs,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
   },
 });
