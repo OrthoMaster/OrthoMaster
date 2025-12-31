@@ -7,16 +7,22 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { StripeProvider, CardField, useConfirmPayment } from '@stripe/stripe-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
-import { createPaymentIntent, confirmPayment } from '../../../services/v2/CartService';
+import { confirmPayment } from '../../../services/v2/CartService';
 
 interface StripePaymentModalProps {
   visible: boolean;
-  invoiceId: number;
+  clientSecret: string;
+  invoiceId: string;
   amount: number;
   onClose: () => void;
   onSuccess: () => void;
@@ -24,34 +30,13 @@ interface StripePaymentModalProps {
 
 const PaymentContent = ({
   invoiceId,
+  clientSecret,
   amount,
   onClose,
   onSuccess
 }: Omit<StripePaymentModalProps, 'visible'>) => {
   const [loading, setLoading] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string>('');
-  const [paymentIntentId, setPaymentIntentId] = useState<string>('');
   const { confirmPayment: confirmStripePayment } = useConfirmPayment();
-
-  useEffect(() => {
-    initializePayment();
-  }, []);
-
-  const initializePayment = async () => {
-    try {
-      const paymentData = await createPaymentIntent(invoiceId);
-      if (paymentData) {
-        setClientSecret(paymentData.client_secret);
-        setPaymentIntentId(paymentData.payment_intent_id);
-      } else {
-        Alert.alert('Erreur', 'Impossible d\'initialiser le paiement');
-        onClose();
-      }
-    } catch (error: any) {
-      Alert.alert('Erreur', error.message || 'Une erreur est survenue');
-      onClose();
-    }
-  };
 
   const handlePayment = async () => {
     if (!clientSecret) {
@@ -112,17 +97,14 @@ const PaymentContent = ({
         <Text style={styles.cardLabel}>Informations de carte</Text>
         <CardField
           postalCodeEnabled={true}
-          placeholders={{ number: '4242 4242 4242 4242' }}
-          cardStyle={styles.card}
+          placeholders={{ number: '0000 0000 0000 0000' }}
+          cardStyle={{
+            backgroundColor: Colors.grayLight,
+            borderRadius: 8,
+            textColor: '#32343E'
+          }}
           style={styles.cardField}
         />
-      </View>
-
-      <View style={styles.testInfo}>
-        <Ionicons name="information-circle-outline" size={16} color={Colors.blue} />
-        <Text style={styles.testInfoText}>
-          Mode test: utilisez 4242 4242 4242 4242
-        </Text>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -156,6 +138,7 @@ const PaymentContent = ({
 export default function StripePaymentModal({
   visible,
   invoiceId,
+  clientSecret,
   amount,
   onClose,
   onSuccess,
@@ -169,7 +152,14 @@ export default function StripePaymentModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.modalOverlay}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.overlay} />
+        </TouchableWithoutFeedback>
+
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Paiement sécurisé</Text>
@@ -178,16 +168,22 @@ export default function StripePaymentModal({
             </TouchableOpacity>
           </View>
 
-          <StripeProvider publishableKey={publishableKey}>
-            <PaymentContent
-              invoiceId={invoiceId}
-              amount={amount}
-              onClose={onClose}
-              onSuccess={onSuccess}
-            />
-          </StripeProvider>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <StripeProvider publishableKey={publishableKey}>
+              <PaymentContent
+                invoiceId={invoiceId}
+                clientSecret={clientSecret}
+                amount={amount}
+                onClose={onClose}
+                onSuccess={onSuccess}
+              />
+            </StripeProvider>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -198,11 +194,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
+  overlay: {
+    flex: 1,
+  },
   modalContent: {
     backgroundColor: Colors.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 40,
+    paddingBottom: Spacings.md,
+    maxHeight: '90%'
   },
   modalHeader: {
     flexDirection: 'row',
@@ -214,30 +214,31 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Poppins-Medium',
     color: Colors.text,
   },
   loadingContainer: {
-    padding: 60,
+    padding: Spacings.lg,
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: Spacings.md,
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
   },
   paymentContent: {
     padding: Spacings.lg,
+    paddingBottom: Spacings.xl,
   },
   amountLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
     textAlign: 'center',
   },
   amountValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontFamily: 'Poppins-Bold',
     color: Colors.text,
     textAlign: 'center',
@@ -249,7 +250,7 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
-    color: Colors.text,
+    color: Colors.gray,
     marginBottom: Spacings.sm,
   },
   cardField: {
@@ -258,36 +259,23 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.grayLight,
     borderRadius: 8,
-  },
-  testInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.xs,
-    padding: Spacings.sm,
-    backgroundColor: Colors.blueBackground,
-    borderRadius: 8,
-    marginBottom: Spacings.lg,
-  },
-  testInfoText: {
-    flex: 1,
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.blue,
+    color: Colors.text
   },
   buttonContainer: {
     flexDirection: 'row',
     gap: Spacings.md,
+    marginTop: Spacings.md,
   },
   cancelButton: {
     flex: 1,
     paddingVertical: Spacings.md,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.line,
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
   },
@@ -298,8 +286,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacings.xs,
     paddingVertical: Spacings.md,
-    borderRadius: 12,
-    backgroundColor: Colors.warning,
+    borderRadius: 16,
+    backgroundColor: Colors.blue,
   },
   payButtonDisabled: {
     opacity: 0.6,

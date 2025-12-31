@@ -17,7 +17,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import Colors from "../../../constants/Colors";
 import Spacings from "../../../constants/Spacings";
@@ -398,15 +398,16 @@ export const TrainingListView = ({ navigation, route }) => {
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Formation</Text>
           <View style={styles.headerRightIcons}>
-            <TouchableOpacity onPress={closeScreen}>
-              <Ionicons name="trophy-outline" size={24} color={Colors.blue}></Ionicons>
-            </TouchableOpacity>
+            {/* <TouchableOpacity onPress={closeScreen}>
+              <MaterialIcons name="emoji-events" size={24} color={Colors.blue} />
+            </TouchableOpacity> */}
             <TouchableOpacity onPress={() => { navigation.navigate('cart-view') }}>
-              <Ionicons name="cart-outline" size={24} color={Colors.blue}></Ionicons>
+              <Image
+                source={require("../../../assets/v2_images/icon/bag_icon.png")} style={{ height: 25, width: 25 }} resizeMode={'contain'} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={closeScreen}>
-              <Ionicons name="search-outline" size={24} color={Colors.blue}></Ionicons>
-            </TouchableOpacity>
+            {/* <TouchableOpacity onPress={closeScreen}>
+              <MaterialIcons name="search" size={24} color={Colors.blue} />
+            </TouchableOpacity> */}
           </View>
         </View>
 

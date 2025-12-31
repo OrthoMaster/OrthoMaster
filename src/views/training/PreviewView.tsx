@@ -11,17 +11,26 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+import { Styles } from '../../../constants/Styles';
 
 import StripePaymentModal from './components/StripePaymentModal';
+import CelebrationScreen from './components/CelebrationScreen';
 
-import { getCartDetails } from '../../services/v2/CartService';
+import {
+  getCartDetails,
+  validatePromotionCode,
+  createPaymentIntent,
+} from '../../services/v2/CartService';
 
 interface Item {
   id: string;
@@ -35,23 +44,12 @@ interface Item {
   }
 }
 
-interface Member {
-  id: string;
-  name: string;
-  first_name: string;
-  email: string;
-}
-
-interface Organization {
-  funding_organization_id: string;
-  funding_organization_name: string;
-  members: Member[]
-}
-
 interface PromoCode {
   code: string;
   description: string;
   discount: number;
+  tvaAmount: number;
+  finalAmount: number;
 }
 
 const CourseItem = ({ course }: { course: Item }) => {
@@ -87,28 +85,6 @@ const CourseItem = ({ course }: { course: Item }) => {
   );
 };
 
-const MemberItem = ({ member, organizationName }: { member: Member, organizationName: string }) => {
-  return (
-    <View style={styles.memberItem}>
-      <View style={styles.memberAvatar}>
-        <Text style={styles.memberAvatarText}>
-          {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-        </Text>
-      </View>
-      <View style={styles.memberItemInfo}>
-        <Text style={styles.memberItemName}>{member.name}</Text>
-        <Text style={styles.memberItemEmail} numberOfLines={1}>
-          {member.email}
-        </Text>
-      </View>
-      <View style={styles.memberRoleBadge}>
-        <Text style={styles.memberRoleText}>{organizationName}</Text>
-      </View>
-    </View>
-  );
-};
-
-
 export const PreviewView = ({ navigation, route }) => {
   const { data: cartData, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['cart'],
@@ -126,54 +102,62 @@ export const PreviewView = ({ navigation, route }) => {
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [checkingCode, setCheckingCode] = useState(false);
   const [validatedPromo, setValidatedPromo] = useState<PromoCode | null>(null);
+  const [errorPromotionCode, setErrorPromotionCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [savingTotal, setSavingTotal] = useState(null);
+  const [finalAmount, setFinalAmount] = useState(null);
+  const [tvaAmount, setTvaAmount] = useState(null);
+
+  // Company info states
+  const [companyName, setCompanyName] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyAddressError, setCompanyAddressError] = useState('');
 
   useEffect(() => {
     if (cartData) {
       setCartItems(cartData.items);
+      setFinalAmount(appliedPromo ? appliedPromo.finalAmount : cartData.price_total);
+      setTvaAmount(appliedPromo ? appliedPromo.tvaAmount : cartData.tva_total);
     }
   }, [cartData]);
 
-  // Calculate totals
-  const totalSavings = 0;
-
   const handleCheckPromoCode = async () => {
     if (!promoCodeInput.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un code');
+      setErrorPromotionCode('Veuillez entrer un code');
       return;
     }
 
+    setErrorPromotionCode('');
     setCheckingCode(true);
 
-    // TODO: Replace with actual API call
-    // Simulate API call
-    setTimeout(() => {
-      // Mock validation - replace with actual API call
-      if (promoCodeInput.toUpperCase() === 'PROMO10') {
+    try {
+      const validate = await validatePromotionCode(promoCodeInput.toUpperCase(), cartData.price_total_ht);
+      if (validate && validate.success) {
         setValidatedPromo({
           code: promoCodeInput.toUpperCase(),
-          description: 'Réduction de 10% sur votre commande',
-          discount: 10
-        });
-      } else if (promoCodeInput.toUpperCase() === 'WELCOME20') {
-        setValidatedPromo({
-          code: promoCodeInput.toUpperCase(),
-          description: 'Bienvenue! 20% de réduction',
-          discount: 20
+          description: validate.data.promotion.name,
+          discount: validate.data.discount_amount.toFixed(2),
+          tvaAmount: validate.data.tva_amount.toFixed(2),
+          finalAmount: validate.data.final_amount.toFixed(2),
         });
       } else {
-        Alert.alert('Code invalide', 'Ce code promotionnel n\'existe pas ou a expiré');
+        setErrorPromotionCode(validate.message || 'Le code promotionnel est invalide');
         setValidatedPromo(null);
       }
-      setCheckingCode(false);
-    }, 1000);
+    } catch (error: any) {
+      Alert.alert('Erreur', error.message || 'Une erreur est survenue');
+      setValidatedPromo(null);
+    }
+
+    setCheckingCode(false);
   };
 
   const handleApplyPromoCode = () => {
     if (validatedPromo) {
       setAppliedPromo(validatedPromo);
-      setSavingTotal(validatedPromo.discount * cartData.price_total / 100);
+      setSavingTotal(validatedPromo.discount);
+      setFinalAmount(validatedPromo.finalAmount);
+      setTvaAmount(validatedPromo.tvaAmount);
 
       setShowPromoModal(false);
       setPromoCodeInput('');
@@ -184,13 +168,17 @@ export const PreviewView = ({ navigation, route }) => {
   const handleRemovePromoCode = () => {
     Alert.alert(
       'Retirer le code',
-      'Voulez-vous retirer ce code promotionnel?',
+      'Voulez-vous retirer ce code promotionnel ?',
       [
         { text: 'Annuler', style: 'cancel' },
         {
           text: 'Retirer',
           style: 'destructive',
-          onPress: () => setAppliedPromo(null)
+          onPress: () => {
+            setAppliedPromo(null);
+            setFinalAmount(cartData.price_total);
+            setTvaAmount(cartData.tva_total);
+          }
         }
       ]
     );
@@ -198,44 +186,69 @@ export const PreviewView = ({ navigation, route }) => {
 
   // Payment 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [currentInvoiceId, setCurrentInvoiceId] = useState<number | null>(1);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const [currentInvoiceId, setCurrentInvoiceId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [showCelebration, setShowCelebration] = useState(false);
+  const queryClient = useQueryClient();
 
-  const handleConfirmPayment = () => {
-    Alert.alert(
-      'Confirmer le paiement',
-      `Vous allez payer ${cartData.price_total} € pour ${cartData.items.length} formation${cartData.items.length > 1 ? 's' : ''} assignée${cartData.items.length > 1 ? 's' : ''} à ${cartData.member_ids.length} membre${cartData.member_ids.length > 1 ? 's' : ''}.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Confirmer',
-          onPress: () => {
-            // TODO: Create invoice
+  const handleConfirmPayment = async () => {
+    // Validate required address field
+    if (!companyAddress.trim()) {
+      Alert.alert(
+        'Facturation',
+        "Veuillez renseigner l’adresse de facturation.",
+        [
+          { text: 'D’accord', style: 'default' }
+        ]
+      );
 
-            setShowPaymentModal(true);
-          }
-        }
-      ]
-    );
+      setCompanyAddressError('L\'adresse est obligatoire');
+      return;
+    }
+    setCompanyAddressError('');
+
+    setCreatingInvoice(true);
+    try {
+      const paymentData = await createPaymentIntent(
+        finalAmount,
+        !!appliedPromo ? appliedPromo.code : '',
+        !!appliedPromo ? appliedPromo.discount : 0,
+        !!appliedPromo ? appliedPromo.tvaAmount : cartData.tva_total,
+        companyName,
+        companyAddress
+      );
+      if (paymentData.success) {
+        setTimeout(() => {
+          setClientSecret(paymentData.client_secret);
+          setCurrentInvoiceId(paymentData.invoice_id);
+        }, 1000);
+
+        setShowPaymentModal(true);
+        setCreatingInvoice(false);
+      } else {
+        Alert.alert('Erreur', paymentData.message);
+        refetch();
+        setCreatingInvoice(false);
+      }
+
+    } catch (error: any) {
+      Alert.alert('Erreur', error.message || 'Une erreur est survenue');
+      refetch();
+      setCreatingInvoice(false);
+    }
   };
-  const handlePaymentSuccess = () => {
+
+  const handlePaymentSuccess = async () => {
     setShowPaymentModal(false);
-
-    // Navigation vers formation
-    Alert.alert(
-      'Succès',
-      'Votre paiement a été effectué avec succès!',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.popToTop()
-        }
-      ]
-    );
+    setShowCelebration(true);
+    await queryClient.invalidateQueries({ queryKey: ['trainings'] });
+    // navigation.popToTop();
   };
-
-  const handleSignContract = () => {
-    navigation.navigate('contract-view');
-  }
+  const handleCelebrationClose = () => {
+    setShowCelebration(false);
+    navigation.popToTop();
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -251,8 +264,8 @@ export const PreviewView = ({ navigation, route }) => {
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}>Résumé de la commande</Text>
-            <Text style={styles.headerSubtitle}>Vérifiez avant de payer</Text>
+            <Text style={styles.headerTitle}>Résumé</Text>
+            <Text style={styles.headerSubtitle}>Vérifiez la commande</Text>
           </View>
         </View>
       </View>
@@ -281,29 +294,59 @@ export const PreviewView = ({ navigation, route }) => {
             </View>
           </View>
 
-          {/* Members Section */}
+          {/* Faturation */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name={'account-group-outline'} size={20} color={Colors.success} />
-              <Text style={styles.sectionTitle}>
-                {cartData.member_ids.length > 1 ?
-                  'Membres assignés (' + cartData.member_ids.length + ')' : 'Membre assigné'
-                }
-              </Text>
+              <MaterialCommunityIcons name="invoice-text-outline" size={20} color={Colors.success} />
+              <Text style={styles.sectionTitle}>Facturation</Text>
             </View>
-
-
-            {cartData.members_grouped.map((org: Organization) => (
-              <View key={org.funding_organization_id} style={[styles.sectionContent, { marginBottom: Spacings.md }]}>
-                <Text style={styles.organizationName}>
-                  {org.funding_organization_name}
+            <View style={styles.invoiceInfoContent}>
+              {/* Company Name Input */}
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>
+                  Établissement <Text style={styles.optionalText}>(optionnel)</Text>
                 </Text>
-                {org.members.map((mem: Member) => (
-                  <MemberItem key={mem.id} member={mem} organizationName={org.funding_organization_name} />
-                ))}
+                <TextInput
+                  style={styles.formInput}
+                  value={companyName}
+                  onChangeText={setCompanyName}
+                  placeholder="Nom de l'établissement"
+                  placeholderTextColor={Colors.gray}
+                />
               </View>
-            ))}
 
+              {/* Company Address Input */}
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>
+                  Adresse <Text style={styles.requiredText}>*</Text>
+                </Text>
+                <TextInput
+                  style={[
+                    styles.formInput,
+                    styles.textArea,
+                    companyAddressError ? styles.inputError : null
+                  ]}
+                  value={companyAddress}
+                  onChangeText={(text) => {
+                    setCompanyAddress(text);
+                    if (text.trim()) {
+                      setCompanyAddressError('');
+                    }
+                  }}
+                  placeholder="Entrez l'adresse complète"
+                  placeholderTextColor={Colors.gray}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+                {companyAddressError ? (
+                  <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle" size={14} color={Colors.danger} />
+                    <Text style={styles.errorText}>{companyAddressError}</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
           </View>
 
           {/* Offre Section */}
@@ -316,13 +359,15 @@ export const PreviewView = ({ navigation, route }) => {
                   <Text style={styles.emptyPromoText}>Aucun code promotionnel appliqué</Text>
                 }
               </View>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => setShowPromoModal(true)}
-              >
-                <Ionicons name="add" size={14} color={Colors.green} />
-                <Text style={styles.addButtonText}>Ajouter</Text>
-              </TouchableOpacity>
+              {!appliedPromo &&
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => setShowPromoModal(true)}
+                >
+                  <Ionicons name="add" size={14} color={Colors.warning} />
+                  <Text style={styles.addButtonText}>Ajouter</Text>
+                </TouchableOpacity>
+              }
             </View>
 
             {appliedPromo && (
@@ -339,18 +384,19 @@ export const PreviewView = ({ navigation, route }) => {
                     style={styles.removePromoButton}
                     onPress={handleRemovePromoCode}
                   >
-                    <Ionicons name="close-circle" size={20} color={Colors.danger} />
+                    <MaterialCommunityIcons name="window-close" size={20} color={Colors.danger} />
                   </TouchableOpacity>
                 </View>
               </View>
             )}
           </View>
 
+
           {/* Price Summary Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="grid" size={20} color={Colors.primary} />
-              <Text style={styles.sectionTitle}>Détails de la commande</Text>
+              <Ionicons name="grid-outline" size={20} color={Colors.info} />
+              <Text style={styles.sectionTitle}>Résumé</Text>
             </View>
             <View style={styles.priceSummaryContent}>
               <View style={styles.priceRow}>
@@ -363,20 +409,11 @@ export const PreviewView = ({ navigation, route }) => {
                 <Text style={styles.priceValue}>{cartData.unit_price} €</Text>
               </View>
 
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>Nombre de membres</Text>
-                <Text style={styles.priceValue}>× {cartData.member_ids.length}</Text>
-              </View>
-
               <View style={styles.dividerLine} />
 
               <View style={styles.priceRow}>
                 <Text style={styles.priceLabel}>Total (HT)</Text>
                 <Text style={styles.priceValue}>{cartData.price_total_ht} €</Text>
-              </View>
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>TVA {cartData.tva}%</Text>
-                <Text style={styles.priceValue}>{cartData.tva_total} €</Text>
               </View>
 
               {appliedPromo &&
@@ -385,24 +422,23 @@ export const PreviewView = ({ navigation, route }) => {
                     Réductions ({appliedPromo.code})
                   </Text>
                   <Text style={[styles.priceValue, styles.savingsValue]}>
-                    - {savingTotal.toFixed(2)} €
+                    - {savingTotal} €
                   </Text>
                 </View>
               }
+
+              <View style={styles.priceRow}>
+                <Text style={styles.priceLabel}>TVA {cartData.tva}%</Text>
+                <Text style={styles.priceValue}>{tvaAmount} €</Text>
+              </View>
+
               <View style={styles.dividerLine} />
 
               <View style={styles.priceRow}>
                 <Text style={styles.totalLabel}>Total à payer:</Text>
-                <Text style={styles.totalValue}>{appliedPromo ? (cartData.price_total - savingTotal).toFixed(2) : cartData.price_total} €</Text>
+                <Text style={styles.totalValue}>{finalAmount} €</Text>
               </View>
 
-              {/* Info Box */}
-              <View style={styles.infoBox}>
-                <Ionicons name="information-circle-outline" size={20} color={Colors.blue} />
-                <Text style={styles.infoText}>
-                  Les formations seront immédiatement disponibles pour tous les membres sélectionnés après le paiement.
-                </Text>
-              </View>
             </View>
           </View>
 
@@ -414,27 +450,20 @@ export const PreviewView = ({ navigation, route }) => {
       {/* Confirm Payment Button */}
       <View style={styles.confirmContainer}>
         <View style={styles.confirmInfo}>
-          <Text style={styles.confirmLabel}>Total</Text>
-          <Text style={styles.confirmAmount}>{cartData.price_total} €</Text>
-          <Text style={styles.confirmDetails}>
-            {cartData.items.length} formation{cartData.items.length > 1 ? 's' : ''} • {cartData.member_ids.length} membre{cartData.member_ids.length > 1 ? 's' : ''}
-          </Text>
+          <Text style={styles.confirmLabel}>Total à payer</Text>
+          <Text style={styles.confirmAmount}>{finalAmount} €</Text>
         </View>
         <View style={styles.confirmActions}>
           <TouchableOpacity
             style={styles.paymentButton}
             onPress={handleConfirmPayment}
+            disabled={creatingInvoice}
           >
-            <Ionicons name="card-sharp" size={20} color={Colors.white} />
+            {creatingInvoice
+              ? <ActivityIndicator size="small" color={Colors.white} />
+              : <Ionicons name="card-sharp" size={20} color={Colors.white} />
+            }
             <Text style={styles.confirmButtonText}>Paiement</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.confirmButton}
-            onPress={handleSignContract}
-          >
-            <FontAwesome6 name="signature" size={20} color={Colors.white} />
-            <Text style={styles.confirmButtonText}>Dossier</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -450,76 +479,106 @@ export const PreviewView = ({ navigation, route }) => {
           setValidatedPromo(null);
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Code promotionnel</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowPromoModal(false);
-                  setPromoCodeInput('');
-                  setValidatedPromo(null);
-                }}
-              >
-                <Ionicons name="close" size={24} color={Colors.gray} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.promoInput}
-                  value={promoCodeInput}
-                  onChangeText={setPromoCodeInput}
-                  placeholder="Ex: PROMO10"
-                  placeholderTextColor={Colors.gray}
-                  autoCapitalize="characters"
-                  editable={!validatedPromo}
-                />
-                {!validatedPromo && (
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={Keyboard.dismiss}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ width: '100%', alignItems: 'center' }}
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              style={{ width: '100%', maxWidth: 400, paddingHorizontal: Spacings.lg }}
+            >
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Code promotionnel</Text>
                   <TouchableOpacity
-                    style={styles.checkButton}
-                    onPress={handleCheckPromoCode}
-                    disabled={checkingCode}
+                    onPress={() => {
+                      setShowPromoModal(false);
+                      setPromoCodeInput('');
+                      setValidatedPromo(null);
+                      setErrorPromotionCode('');
+                    }}
                   >
-                    {checkingCode ? (
-                      <ActivityIndicator size="small" color={Colors.white} />
-                    ) : (
-                      <Text style={styles.checkButtonText}>Vérifier</Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {validatedPromo && (
-                <View style={styles.validPromoContainer}>
-                  <View style={styles.validPromoHeader}>
-                    <Ionicons name="checkmark-circle" size={24} color={Colors.success} />
-                    <Text style={styles.validPromoTitle}>Code valide!</Text>
-                  </View>
-                  <Text style={styles.validPromoDescription}>
-                    {validatedPromo.description}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.applyButton}
-                    onPress={handleApplyPromoCode}
-                  >
-                    <Text style={styles.applyButtonText}>Appliquer</Text>
+                    <Ionicons name="close" size={24} color={Colors.gray} />
                   </TouchableOpacity>
                 </View>
-              )}
-            </View>
-          </View>
-        </View>
+
+                <View style={styles.modalBody}>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.promoInput}
+                      value={promoCodeInput}
+                      onChangeText={setPromoCodeInput}
+                      placeholder="Ex: PROMO10"
+                      placeholderTextColor={Colors.gray}
+                      autoCapitalize="characters"
+                      editable={!validatedPromo}
+                    />
+                    {!validatedPromo && (
+                      <TouchableOpacity
+                        style={styles.checkButton}
+                        onPress={handleCheckPromoCode}
+                        disabled={checkingCode}
+                      >
+                        {checkingCode ? (
+                          <ActivityIndicator size="small" color={Colors.white} />
+                        ) : (
+                          <Text style={styles.checkButtonText}>Vérifier</Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {errorPromotionCode &&
+                    <View style={Styles.errorMessageContainer}>
+                      <Text style={Styles.errorText}>{errorPromotionCode}</Text>
+                    </View>
+                  }
+                  {validatedPromo && (
+                    <View style={styles.validPromoContainer}>
+                      <View style={styles.validPromoHeader}>
+                        <MaterialCommunityIcons name="ticket-percent" size={20} color={Colors.success} />
+                        <View>
+                          <Text style={styles.validPromoTitle}>Code valide!</Text>
+                          <Text style={styles.validPromoDescription}>
+                            {validatedPromo.description}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.applyButton}
+                        onPress={handleApplyPromoCode}
+                      >
+                        <Text style={styles.applyButtonText}>Appliquer</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          </KeyboardAvoidingView>
+        </TouchableOpacity>
       </Modal>
 
       {/* Payment Modal */}
       <StripePaymentModal
         visible={showPaymentModal}
         invoiceId={currentInvoiceId}
-        amount={cartData.price_total}
+        amount={finalAmount}
+        clientSecret={clientSecret}
         onClose={() => setShowPaymentModal(false)}
         onSuccess={handlePaymentSuccess}
+      />
+
+      {/* Celebration Screen */}
+      <CelebrationScreen
+        visible={showCelebration}
+        onClose={handleCelebrationClose}
       />
     </SafeAreaView>
   );
@@ -598,15 +657,15 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingHorizontal: Spacings.xs,
     paddingVertical: Spacings.xxs,
-    backgroundColor: Colors.greenBackground,
+    backgroundColor: Colors.warningBackground,
     borderRadius: 8,
     borderWidth: 0.5,
-    borderColor: Colors.green
+    borderColor: Colors.warning
   },
   addButtonText: {
     fontSize: 10,
     fontFamily: 'Poppins-Medium',
-    color: Colors.green,
+    color: Colors.warning,
   },
 
   // Empty Promo
@@ -685,6 +744,70 @@ const styles = StyleSheet.create({
   modalBody: {
     padding: Spacings.lg,
   },
+
+  // Form Group (Company Info Modal)
+  formGroup: {
+    marginBottom: Spacings.lg,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+    marginBottom: Spacings.xs,
+  },
+  optionalText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+  },
+  requiredText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.danger,
+  },
+  formInput: {
+    backgroundColor: Colors.grayLight,
+    borderRadius: 8,
+    paddingHorizontal: Spacings.md,
+    paddingVertical: Spacings.sm,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.line,
+  },
+  textArea: {
+    minHeight: 80,
+    paddingTop: Spacings.sm,
+  },
+  inputError: {
+    borderColor: Colors.danger,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: Spacings.xs,
+  },
+  errorText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.danger,
+  },
+  validateButton: {
+    backgroundColor: Colors.blue,
+    paddingVertical: Spacings.md,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: Spacings.sm,
+  },
+  validateButtonText: {
+    fontSize: 15,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.white,
+  },
+
+  // Promo Modal Inputs
   inputContainer: {
     flexDirection: 'row',
     gap: Spacings.sm,
@@ -725,26 +848,26 @@ const styles = StyleSheet.create({
   },
   validPromoHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.sm,
+    alignItems: 'flex-start',
+    gap: Spacings.xs,
     marginBottom: Spacings.sm,
   },
   validPromoTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Poppins-Bold',
     color: Colors.success,
   },
   validPromoDescription: {
-    fontSize: 13,
+    fontSize: 10,
     fontFamily: 'Poppins-Regular',
     color: Colors.text,
-    marginBottom: Spacings.md,
   },
   applyButton: {
     backgroundColor: Colors.success,
-    paddingVertical: Spacings.md,
+    paddingVertical: Spacings.xs,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: Spacings.sm
   },
   applyButtonText: {
     fontSize: 14,
@@ -878,6 +1001,19 @@ const styles = StyleSheet.create({
   },
 
   // Price Summary
+  invoiceInfoContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    paddingVertical: Spacings.lg,
+    paddingHorizontal: Spacings.md,
+    elevation: 2,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  // Price Summary
   priceSummaryContent: {
     backgroundColor: Colors.white,
     borderRadius: 12,
@@ -907,15 +1043,16 @@ const styles = StyleSheet.create({
   },
   savingsLabel: {
     color: Colors.success,
+    fontSize: 11,
   },
   savingsValue: {
     color: Colors.success,
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Poppins-Medium',
   },
   dividerLine: {
     height: 1,
     backgroundColor: Colors.line,
-    marginVertical: Spacings.md,
+    marginBottom: Spacings.md,
   },
   totalLabel: {
     fontSize: 16,
@@ -967,17 +1104,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
+    textAlign: 'right',
   },
   confirmAmount: {
     fontSize: 24,
     fontFamily: 'Poppins-Bold',
-    color: Colors.text,
-  },
-  confirmDetails: {
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.gray,
-    marginTop: -2,
+    color: Colors.blue,
+    textAlign: 'right',
   },
   confirmActions: {
     flexDirection: 'row',

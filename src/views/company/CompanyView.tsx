@@ -8,7 +8,8 @@ import {
   StatusBar,
   RefreshControl,
   Alert,
-  Modal
+  Modal,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -37,8 +38,16 @@ interface Member {
 }
 
 export const CompanyView = ({ navigation, route }) => {
-  let colorProcess = Colors.primary;
-  let colorProcessBackground = '#E5E5EA';
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'membres' | 'formations'>('membres');
+
+  // Calculate dynamic circle width
+  const screenWidth = Dimensions.get('window').width;
+  const containerPadding = Spacings.lg * 2;
+  const numberOfCircles = 6;
+  const gapWidth = Spacings.sm * (numberOfCircles - 1);
+  const circleWidth = (screenWidth - containerPadding - gapWidth) / numberOfCircles;
+  const circleSize = circleWidth - 10; // Reduce slightly for padding
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['company'],
@@ -46,6 +55,25 @@ export const CompanyView = ({ navigation, route }) => {
     retry: 1,
     retryDelay: 1000,
   });
+
+  // Demo courses data
+  const demoCoursesData = [
+    { id: 1, name: 'Formation 1' },
+    { id: 2, name: 'Formation 2' },
+    { id: 3, name: 'Formation 3' },
+    { id: 4, name: 'Formation 4' },
+    { id: 5, name: 'Formation 5' },
+    { id: 6, name: 'Formation 6' },
+    { id: 7, name: 'Formation 7' },
+    { id: 8, name: 'Formation 8' },
+    { id: 9, name: 'Formation 9' },
+    { id: 10, name: 'Formation 10' },
+    { id: 11, name: 'Formation 11' },
+    { id: 12, name: 'Formation 12' },
+  ];
+
+  // Expanded members state
+  const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
 
   const renderMemberItem = ({ item, isAdmin = false }: { item: Member; isAdmin?: boolean }) => (
     <TouchableOpacity
@@ -65,32 +93,15 @@ export const CompanyView = ({ navigation, route }) => {
             flexDirection: 'row',
             alignItems: 'flex-end'
           }}>
-            <Text style={styles.memberOrganization}>{item.organization?.name}</Text>
           </View>
         }
         {item.missing_fields_message &&
           <Text style={styles.memberMissingText}>{item.missing_fields_message}</Text>
         }
       </View>
-      {item.progress &&
-        <View style={styles.progressContainer}>
-          <View style={styles.progressCircle}>
-            <View
-              style={[
-                styles.progressRing,
-                {
-                  borderColor: item.progress >= 100 ? colorProcess : colorProcessBackground,
-                  borderTopColor: colorProcess,
-                  borderRightColor: item.progress >= 50 ? colorProcess : colorProcessBackground,
-                  borderBottomColor: item.progress >= 75 ? colorProcess : colorProcessBackground,
-                  borderLeftColor: item.progress >= 25 ? colorProcess : colorProcessBackground,
-                }
-              ]}
-            />
-            <Text style={styles.progressText}>{item.progress}%</Text>
-          </View>
-        </View>
-      }
+      <View style={styles.progressContainer}>
+        <Text style={styles.memberOrganization}>{item.organization?.name}</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -226,6 +237,130 @@ export const CompanyView = ({ navigation, route }) => {
     });
   }
 
+  // Render course circle
+  const renderCourseCircle = (course) => (
+    <View key={course.id} style={[styles.courseItem, { width: circleWidth }]}>
+      <View style={[styles.courseCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2 }]}>
+        <Text style={styles.courseIcon}>📚</Text>
+      </View>
+      <Text style={styles.courseName} numberOfLines={2}>{course.name}</Text>
+    </View>
+  );
+
+  // Render member formation item
+  const renderMemberFormationItem = (member) => {
+    const isExpanded = expandedMembers.has(member.id);
+    const displayCourses = isExpanded ? demoCoursesData : demoCoursesData.slice(0, 5);
+    const remainingCount = demoCoursesData.length - 5;
+
+    const toggleExpand = () => {
+      const newExpanded = new Set(expandedMembers);
+      if (isExpanded) {
+        newExpanded.delete(member.id);
+      } else {
+        newExpanded.add(member.id);
+      }
+      setExpandedMembers(newExpanded);
+    };
+
+    return (
+      <View key={member.id} style={styles.formationMemberCard}>
+        <View style={styles.formationMemberHeader}>
+          <View style={styles.formationMemberInfo}>
+            <Text style={styles.formationMemberName}>
+              {member.name + ' ' + member.first_name}
+            </Text>
+            <Text style={styles.formationMemberEmail}>{member.email}</Text>
+          </View>
+          {demoCoursesData.length > 5 && (
+            <TouchableOpacity onPress={toggleExpand} activeOpacity={0.7}>
+              <Ionicons 
+                name={isExpanded ? "chevron-up" : "chevron-down"} 
+                size={24} 
+                color={Colors.blue} 
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.coursesContainer}>
+          <View style={styles.coursesGrid}>
+            {displayCourses.map(course => renderCourseCircle(course))}
+            {!isExpanded && remainingCount > 0 && (
+              <TouchableOpacity
+                key="more"
+                style={[styles.courseItem, { width: circleWidth }]}
+                onPress={toggleExpand}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.courseCircle, styles.moreCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2 }]}>
+                  <Text style={styles.moreText}>+{remainingCount}</Text>
+                </View>
+                <Text style={styles.courseName}>Plus</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // Render Membres Tab Content
+  const renderMembresContent = () => (
+    <>
+      {data && !error &&
+        <View style={styles.content}>
+          {/* Company Info Card */}
+          <TouchableOpacity style={styles.companyCard} onPress={openCompanyInfo}>
+            <View style={styles.companyMetadata}>
+              <Text style={styles.companyType}>{data.company.establishment?.name}</Text>
+              <Text style={styles.companyName}>{data.company.name}</Text>
+              <Text style={styles.companyData}>{data.company.postal_code + ' ' + data.company.city + ' ' + data.company.country}</Text>
+            </View>
+            <View style={styles.companyIconWrapper}>
+              <Ionicons name={'medical-sharp'} size={30} color={Colors.blue} />
+            </View>
+          </TouchableOpacity>
+
+          {/* Manager Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{data.managers.length > 1 ? 'Responsables' : 'Responsable'}</Text>
+            </View>
+            {data.managers.map((admin) => (
+              <View key={admin.id}>{renderMemberItem({ item: admin, isAdmin: true })}</View>
+            ))}
+          </View>
+
+          {/* Member Section */}
+          {data.members &&
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{data.members.length > 1 ? 'Membres (' + data.members.length + ')' : 'Membre'}</Text>
+              </View>
+              {data.members.map((member) => (
+                <View key={member.id}>{renderMemberItem({ item: member, isAdmin: false })}</View>
+              ))}
+            </View>
+          }
+        </View>
+      }
+    </>
+  );
+
+  // Render Formations Tab Content
+  const renderFormationsContent = () => {
+    if (!data || error) return null;
+
+    const allMembers = [...(data.managers || []), ...(data.members || [])];
+
+    return (
+      <View style={styles.formationsContent}>
+        {allMembers.map(member => renderMemberFormationItem(member))}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.blue} />
@@ -242,6 +377,28 @@ export const CompanyView = ({ navigation, route }) => {
             <Ionicons name="share-social-outline" size={20} color={Colors.white} />
           </TouchableOpacity> */}
         </View>
+      </View>
+
+      {/* Tab Bar */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'membres' && styles.activeTab]}
+          onPress={() => setActiveTab('membres')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.tabText, activeTab === 'membres' && styles.activeTabText]}>
+            Membres
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'formations' && styles.activeTab]}
+          onPress={() => setActiveTab('formations')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.tabText, activeTab === 'formations' && styles.activeTabText]}>
+            Formations
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Body */}
@@ -282,7 +439,8 @@ export const CompanyView = ({ navigation, route }) => {
         </View>
       )}
 
-      <ScrollView style={styles.scrollView}
+      <ScrollView 
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -291,56 +449,24 @@ export const CompanyView = ({ navigation, route }) => {
             colors={[Colors.blue]}
             tintColor={Colors.blue}
           />
-        }>
-        {data && !error &&
-          <View style={styles.content}>
-            {/* Company Info Card */}
-            <TouchableOpacity style={styles.companyCard} onPress={openCompanyInfo}>
-              <View style={styles.companyMetadata}>
-                <Text style={styles.companyType}>{data.company.establishment?.name}</Text>
-                <Text style={styles.companyName}>{data.company.name}</Text>
-                <Text style={styles.companyData}>{data.company.postal_code + ' ' + data.company.city + ' ' + data.company.country}</Text>
-              </View>
-              <View style={styles.companyIconWrapper}>
-                <Ionicons name={'medical-sharp'} size={30} color={Colors.blue} />
-              </View>
-            </TouchableOpacity>
-
-            {/* Manager Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{data.managers.length > 1 ? 'Responsables' : 'Responsable'}</Text>
-              </View>
-              {data.managers.map((admin) => (
-                <View key={admin.id}>{renderMemberItem({ item: admin, isAdmin: true })}</View>
-              ))}
-            </View>
-
-            {/* Mamber Section */}
-            {data.members &&
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>{data.members.length > 1 ? 'Membres (' + data.members.length + ')' : 'Membre'}</Text>
-                </View>
-                {data.members.map((member) => (
-                  <View key={member.id}>{renderMemberItem({ item: member, isAdmin: false })}</View>
-                ))}
-              </View>
-            }
-          </View>
         }
+      >
+        {activeTab === 'membres' && renderMembresContent()}
+        {activeTab === 'formations' && renderFormationsContent()}
       </ScrollView>
 
-      {/* Floating Action Buttons */}
-      <View style={styles.fabContainer}>
-        <TouchableOpacity
-          style={styles.fabPrimary}
-          onPress={() => setShowAddMemberModal(true)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add-sharp" size={26} color={Colors.white} />
-        </TouchableOpacity>
-      </View>
+      {/* Floating Action Buttons - Only show on Membres tab */}
+      {activeTab === 'membres' && (
+        <View style={styles.fabContainer}>
+          <TouchableOpacity
+            style={styles.fabPrimary}
+            onPress={() => setShowAddMemberModal(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add-sharp" size={26} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Member Detail Modal */}
       <Modal
@@ -486,8 +612,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.blue,
     paddingHorizontal: Spacings.lg,
     paddingBottom: Spacings.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center'
@@ -506,6 +630,32 @@ const styles = StyleSheet.create({
     paddingRight: Spacings.xxxs,
   },
 
+  // Tab Bar
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: Colors.blue,
+    paddingHorizontal: Spacings.lg,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: Spacings.sm,
+    alignItems: 'center',
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: Colors.grayLight,
+  },
+  tabText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  activeTabText: {
+    fontFamily: 'Poppins-Bold',
+    color: Colors.blue,
+  },
+
   content: {
     paddingHorizontal: Spacings.lg,
     paddingVertical: Spacings.lg,
@@ -516,8 +666,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
+    padding: Spacings.lg,
+    marginBottom: Spacings.lg,
+    marginTop: Spacings.md,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -604,7 +755,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
     borderLeftWidth: 3,
-    borderLeftColor: Colors.gray,
+    borderLeftColor: Colors.success,
   },
   managerInfo: {
     borderLeftWidth: 3,
@@ -633,7 +784,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderColor: Colors.gray,
     paddingVertical: Spacings.xxxs,
-    paddingHorizontal: Spacings.xxs,
+    paddingHorizontal: Spacings.sm,
   },
   memberMissingText: {
     fontSize: 7,
@@ -642,26 +793,6 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginLeft: 12,
-  },
-  progressCircle: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  progressRing: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    transform: [{ rotate: '-45deg' }],
-  },
-  progressText: {
-    fontSize: 7,
-    fontFamily: 'Poppins-Light',
-    color: Colors.gray,
   },
 
   // Member Modal Styles
@@ -789,6 +920,94 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
+  },
+
+  // Formations Tab Styles
+  formationsContent: {
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.lg,
+  },
+  formationMemberCard: {
+    marginBottom: Spacings.lg,
+  },
+  formationMemberHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacings.sm,
+  },
+  formationMemberInfo: {
+    flex: 1,
+  },
+  formationMemberName: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  formationMemberEmail: {
+    fontSize: 10,
+    fontFamily: 'Poppins-Light',
+    color: Colors.gray,
+  },
+  coursesContainer: {
+    flexDirection: 'row',
+  },
+  coursesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacings.sm,
+  },
+  courseItem: {
+    alignItems: 'center',
+  },
+  courseCircle: {
+    backgroundColor: Colors.blueBackground,
+    borderWidth: 2,
+    borderColor: Colors.blue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacings.xxs,
+  },
+  moreCircle: {
+    backgroundColor: Colors.white,
+  },
+  moreText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.blue,
+  },
+  courseIcon: {
+    fontSize: 24,
+  },
+  courseName: {
+    fontSize: 8,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    textAlign: 'center',
+    lineHeight: 10,
+  },
+
+  // Empty state (for Formations tab)
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacings.xl,
+    paddingVertical: Spacings.xxxl * 2,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+    marginTop: Spacings.lg,
+    marginBottom: Spacings.xs,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    textAlign: 'center',
   },
 
   // Error

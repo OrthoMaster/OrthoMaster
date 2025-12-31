@@ -147,8 +147,8 @@ const SwipeableItem: React.FC<SwipeableItemProps> = ({
             }
           ]}
         >
-          <MaterialCommunityIcons
-            name="cart-minus"
+          <Ionicons
+            name="trash-bin"
             size={28}
             color={Colors.white}
           />
@@ -226,6 +226,8 @@ export const CartView = ({ navigation }) => {
   useEffect(() => {
     if (cartData) {
       setCartItems(cartData.items);
+    } else {
+      setCartItems([]);
     }
   }, [cartData]);
 
@@ -236,7 +238,7 @@ export const CartView = ({ navigation }) => {
       setCartItems(prev => prev?.filter(item => item.id !== id) || []);
       setDeleting(false);
     } else {
-      Alert.alert('Erreur', 'Cette article ne peut pas être retiré du panier, veuillez réessayer.');
+      Alert.alert('Erreur', 'Cette article ne peut pas être retiré du cartable, veuillez réessayer.');
       setDeleting(false);
     }
 
@@ -245,8 +247,8 @@ export const CartView = ({ navigation }) => {
 
   const handleClearAll = () => {
     Alert.alert(
-      'Vider le panier',
-      'Êtes-vous sûr de vouloir supprimer tous les cours du panier ?',
+      'Vider le cartable',
+      'Êtes-vous sûr de vouloir supprimer tous les cours du cartable ?',
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -261,7 +263,7 @@ export const CartView = ({ navigation }) => {
               setDeleting(false);
             } else {
               setDeleting(false);
-              Alert.alert('Erreur', 'Échec de la suppression du panier, veuillez réessayer.');
+              Alert.alert('Erreur', 'Échec de la suppression du cartable, veuillez réessayer.');
             }
           }
         }
@@ -284,7 +286,7 @@ export const CartView = ({ navigation }) => {
     if (cartItems.length === 0) return;
 
     // Navigate to checkout screen
-    navigation.navigate('attach-member-view', { memberIds: cartData.member_ids || [] });
+    navigation.navigate('preview-view');
   };
 
 
@@ -303,7 +305,7 @@ export const CartView = ({ navigation }) => {
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}>Mon Panier</Text>
+            <Text style={styles.headerTitle}>Mon Cartable</Text>
             {cartItems && cartItems.length > 0 && (
               <Text style={styles.itemCount}>
                 {cartItems.length} article{cartItems.length > 1 ? 's' : ''}
@@ -317,7 +319,7 @@ export const CartView = ({ navigation }) => {
             style={styles.headerAction}
             onPress={handleClearAll}
           >
-            <MaterialCommunityIcons name="cart-remove" size={22} color={Colors.danger} />
+            <Ionicons name="trash-bin-outline" size={22} color={Colors.danger} />
           </TouchableOpacity>
         )}
       </View>
@@ -348,7 +350,7 @@ export const CartView = ({ navigation }) => {
             />
             <Text style={styles.errorTitle}>Erreur de chargement</Text>
             <Text style={styles.errorMessage}>
-              Impossible de charger le panier
+              Impossible de charger le cartable
             </Text>
             <TouchableOpacity
               style={styles.retryButton}
@@ -362,10 +364,13 @@ export const CartView = ({ navigation }) => {
           <>
             {(!cartItems || cartItems.length === 0) ? (
               <View style={styles.emptyContainer}>
-                <Ionicons name="cart-outline" size={80} color={Colors.gray} />
-                <Text style={styles.emptyTitle}>Votre panier est vide</Text>
+                <Image
+                  source={require("../../../assets/v2_images/icon/bag_icon.png")}
+                  style={{ height: 50, width: 50, opacity: 0.4 }}
+                  resizeMode={'contain'} />
+                <Text style={styles.emptyTitle}>Votre cartable est vide</Text>
                 <Text style={styles.emptySubtitle}>
-                  Explorez nos formations et ajoutez des cours à votre panier
+                  Explorez nos formations et ajoutez des cours à votre cartable
                 </Text>
                 <TouchableOpacity
                   style={styles.browseButton}
@@ -411,13 +416,13 @@ export const CartView = ({ navigation }) => {
                 <View style={styles.checkoutContainer}>
                   <View style={styles.checkoutInfo}>
                     <Text style={styles.checkoutTotal}>Total</Text>
-                    <Text style={styles.checkoutPrice}>{cartData.duration_text || '-'}</Text>
+                    <Text style={styles.checkoutPrice}>{!!cartData ? cartData.duration_text : '-'}</Text>
                   </View>
                   <TouchableOpacity
                     style={styles.checkoutButton}
                     onPress={handleCheckout}
                   >
-                    <Text style={styles.checkoutButtonText}>Assigner membres</Text>
+                    <Text style={styles.checkoutButtonText}>Confirmer</Text>
                     <Ionicons name="arrow-forward" size={20} color={Colors.white} />
                   </TouchableOpacity>
                 </View>

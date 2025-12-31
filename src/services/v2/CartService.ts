@@ -21,6 +21,7 @@ export interface Cart {
 
 export interface PaymentIntentResponse {
     success: boolean;
+    invoice_id: string;
     client_secret: string;
     payment_intent_id: string;
     publishable_key: string;
@@ -67,7 +68,7 @@ export const getCartDetails = async () => {
         .get(`${baseUrl}/cart`)
         .then((response) => {
             if (response.data?.success == true) {
-                return response.data.data[0];
+                return response.data.data;
             }
 
             return null;
@@ -122,6 +123,108 @@ export const clearCart = async () => {
         });
 };
 
+
+
+
+/**
+ * Payment
+ */
+export const createPaymentIntent = async (
+    amount: number,
+    promotionCode: string,
+    discountAmount: number,
+    tvaAmount: number,
+    companyName: string,
+    companyAddress: string,
+) => {
+    return axios.post(`${baseUrl}/payments/invoices/create-intent`,
+        {
+            amount: amount,
+            promotionCode: promotionCode,
+            discountAmount: discountAmount,
+            tvaAmount: tvaAmount,
+            companyName,
+            companyAddress
+        }, {
+        validateStatus: (status) => {
+            // status code 200-499 is success
+            return status >= 200 && status < 500;
+        }
+    }).then((response) => {
+        if (response.data?.success === true) {
+            return {
+                success: true,
+                invoice_id: response.data.invoice_id,
+                client_secret: response.data.client_secret,
+                payment_intent_id: response.data.payment_intent_id,
+                publishable_key: response.data.publishable_key,
+            };
+        }
+
+        return {
+            success: false,
+            message: response.data.message
+        }
+    }).catch((e: AxiosError) => {
+        throw e;
+    });
+};
+
+export const confirmPayment = async (
+    invoiceId: string,
+    paymentIntentId: string
+): Promise<PaymentConfirmResponse> => {
+    try {
+        const response = await axios.put(`${baseUrl}/payments/invoices/${invoiceId}/confirm`, {
+            payment_intent_id: paymentIntentId,
+        });
+
+        if (response.data?.success === true) {
+            return {
+                success: true,
+                message: response.data.message || 'Payment successful',
+                invoice: response.data.invoice,
+            };
+        }
+
+        return {
+            success: false,
+            message: response.data?.message || 'Payment confirmation failed',
+        };
+    } catch (e: any) {
+        console.error('Confirm Payment Error:', e.response?.data || e.message);
+        return {
+            success: false,
+            message: e.response?.data?.message || 'Payment confirmation failed',
+        };
+    }
+};
+
+/**
+ * Validate promotion code
+ */
+export const validatePromotionCode = async (code: string, priceTotal: number) => {
+    return axios
+        .post(`${baseUrl}/promotions/validate`, {
+            code: code,
+            order_amount: priceTotal
+        }, {
+            validateStatus: (status) => {
+                // status code 200-499 is success
+                return status >= 200 && status < 500;
+            }
+        })
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            throw e;
+        });
+};
+
+
+
+
 export const syncMembers = async (memberIds: string[]) => {
     return axios
         .put(`${baseUrl}/cart/members`, { members: memberIds })
@@ -137,78 +240,45 @@ export const syncMembers = async (memberIds: string[]) => {
         });
 };
 
-export const createPaymentIntent = async (invoiceId: number): Promise<PaymentIntentResponse | null> => {
-    try {
-        const response = await axios.post(`${baseUrl}/payments/invoices/${invoiceId}/create-intent`);
-        
-        if (response.data?.success === true) {
-            return {
-                success: true,
-                client_secret: response.data.client_secret,
-                payment_intent_id: response.data.payment_intent_id,
-                publishable_key: response.data.publishable_key,
-            };
+
+/**
+ * Contract
+ */
+export const previewContract = async () => {
+    return axios.get(`${baseUrl}/contracts/preview`, {
+        validateStatus: (status) => {
+            // status code 200-499 is success
+            return status >= 200 && status < 500;
         }
-        
-        return null;
-    } catch (e: any) {
-        console.error('Create Payment Intent Error:', e.response?.data || e.message);
+    }).then((response) => {
+        return response.data;
+    }).catch((e: AxiosError) => {
         throw e;
-    }
+    });
 };
 
-export const confirmPayment = async (
-    invoiceId: number,
-    paymentIntentId: string
-): Promise<PaymentConfirmResponse> => {
-    try {
-        const response = await axios.post(`${baseUrl}/payments/invoices/${invoiceId}/confirm`, {
-            payment_intent_id: paymentIntentId,
-        });
-        
-        if (response.data?.success === true) {
-            return {
-                success: true,
-                message: response.data.message || 'Payment successful',
-                invoice: response.data.invoice,
-            };
+export const generateContract = async () => {
+    return axios.post(`${baseUrl}/contracts/generate`, {
+        validateStatus: (status) => {
+            // status code 200-499 is success
+            return status >= 200 && status < 500;
         }
-        
-        return {
-            success: false,
-            message: response.data?.message || 'Payment confirmation failed',
-        };
-    } catch (e: any) {
-        console.error('Confirm Payment Error:', e.response?.data || e.message);
-        return {
-            success: false,
-            message: e.response?.data?.message || 'Payment confirmation failed',
-        };
-    }
-};
-
-export const cancelPayment = async (invoiceId: number): Promise<boolean> => {
-    try {
-        const response = await axios.post(`${baseUrl}/payments/invoices/${invoiceId}/cancel`);
-        
-        return response.data?.success === true;
-    } catch (e: any) {
-        console.error('Cancel Payment Error:', e.response?.data || e.message);
-        return false;
-    }
-};
-
-export const getInvoiceStatus = async (invoiceId: number) => {
-    try {
-        const response = await axios.get(`${baseUrl}/invoices/${invoiceId}`);
-        
-        if (response.data?.success === true) {
-            return response.data.data;
-        }
-        
-        return null;
-    } catch (e: any) {
-        console.error('Get Invoice Status Error:', e.response?.data || e.message);
+    }).then((response) => {
+        return response.data?.data;
+    }).catch((e: AxiosError) => {
         throw e;
-    }
+    });
+};
+
+export const signContract = async (signData: any) => {
+    return axios.post(`${baseUrl}/contracts/sign`, { signData }, {
+        validateStatus: (status) => {
+            // status code 200-499 is success
+            return status >= 200 && status < 500;
+        }
+    }).then((response) => {
+        return response.data?.data;
+    }).catch((e: AxiosError) => {
+        throw e;
+    });
 };

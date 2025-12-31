@@ -200,7 +200,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
         setIsAddingToCart(false);
       } else {
         setIsAddingToCart(false);
-        Alert.alert('Erreur', 'Vous ne pouvez pas ajouter ce produit à votre panier, veuillez réessayer.');
+        Alert.alert('Erreur', 'Vous ne pouvez pas ajouter ce produit à votre cartable, veuillez réessayer.');
       }
     });
   }, [flyingAnimation, queryClient]);
@@ -210,7 +210,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   const handleRemoveFromCart = useCallback(async (packageId: any) => {
     Alert.alert(
       'Confirmation',
-      'Voulez-vous supprimer ce produit du panier ?',
+      'Voulez-vous supprimer ce produit du cartable ?',
       [
         {
           text: 'Annuler',
@@ -228,7 +228,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
               setIsDeletingFromCart(false);
             } else {
               setIsDeletingFromCart(false);
-              Alert.alert('Erreur', 'Ce produit ne peut pas être retiré du panier, veuillez réessayer.');
+              Alert.alert('Erreur', 'Ce produit ne peut pas être retiré du cartable, veuillez réessayer.');
             }
           }
         }
@@ -365,19 +365,17 @@ export const InactiveTrainingView = ({ navigation, route }) => {
             {!pkg.available_flg &&
               <View style={styles.bottomButtonContainer}>
                 {!isInCart ? (
-                  // Nút Ajouter au panier khi chưa có trong giỏ
+                  // Ajouter
                   <TouchableOpacity
                     style={[styles.addToCartButton, { backgroundColor: isAddingToCart ? Colors.gray : Colors.blue }]}
                     onPress={() => handleAddToCart(pkg.id)}
                     disabled={isAddingToCart}
                   >
-                    {isAddingToCart ?
+                    {isAddingToCart &&
                       <ActivityIndicator size={20} animating={true} color={Colors.white} />
-                      :
-                      <Ionicons name="cart-outline" size={20} color={Colors.white} />
                     }
                     <Text style={styles.addToCartText}>
-                      {isAddingToCart ? 'Ajout en cours...' : 'Ajouter au panier'}
+                      {isAddingToCart ? 'Ajout en cours...' : 'Ajouter au cartable'}
                     </Text>
                   </TouchableOpacity>
                 ) : (
@@ -389,7 +387,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
                     >
                       {isDeletingFromCart
                         ? <ActivityIndicator size={20} animating={true} color={Colors.white} />
-                        : <MaterialCommunityIcons name="cart-minus" size={20} color={Colors.white} />
+                        : <Ionicons name="trash-bin-sharp" size={20} color={Colors.white} />
                       }
                     </TouchableOpacity>
 
@@ -398,7 +396,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
                       onPress={handleViewCart}
                       disabled={isDeletingFromCart}
                     >
-                      <Text style={styles.viewCartText}>Voir le panier</Text>
+                      <Text style={styles.viewCartText}>Mon cartable</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -407,7 +405,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
             {/* Flying Cart Animation */}
             {showFlyingCart && (
               <Animated.View style={[styles.flyingCart, flyingCartStyle]}>
-                <Ionicons name="cart" size={40} color={Colors.blue} />
+                <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={40} color={Colors.blue} />
               </Animated.View>
             )}
           </View>
@@ -732,7 +730,7 @@ const styles = StyleSheet.create({
   viewCartButton: {
     flex: 3,
     flexDirection: 'row',
-    backgroundColor: Colors.green,
+    backgroundColor: Colors.success,
     paddingVertical: Spacings.md,
     borderRadius: 30,
     alignItems: 'center',
