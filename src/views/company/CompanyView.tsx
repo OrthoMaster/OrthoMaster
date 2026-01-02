@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Svg, Circle } from 'react-native-svg';
 import { TextInput } from 'react-native-paper';
 
 import Colors from '../../../constants/Colors';
@@ -99,7 +100,7 @@ export const CompanyView = ({ navigation, route }) => {
           <Text style={styles.memberMissingText}>{item.missing_fields_message}</Text>
         }
       </View>
-      <View style={styles.progressContainer}>
+      <View style={styles.organizationContainer}>
         <Text style={styles.memberOrganization}>{item.organization?.name}</Text>
       </View>
     </TouchableOpacity>
@@ -112,7 +113,6 @@ export const CompanyView = ({ navigation, route }) => {
   const isSelectedMananger = () => {
     return data?.managers?.some(manager => manager.id === selectedMember?.id) || false;
   };
-
   const handleRemoveMember = () => {
     setShowMemberModal(false);
     Alert.alert(
@@ -146,7 +146,6 @@ export const CompanyView = ({ navigation, route }) => {
       ]
     );
   };
-
   const handlePromoteToManager = () => {
     setShowMemberModal(false);
     Alert.alert(
@@ -194,7 +193,6 @@ export const CompanyView = ({ navigation, route }) => {
       setEmailError('');
     }
   };
-
   const handleSendInvite = async () => {
     // Reset error
     setEmailError('');
@@ -237,21 +235,79 @@ export const CompanyView = ({ navigation, route }) => {
     });
   }
 
+  // User trainings - STA
   // Render course circle
-  const renderCourseCircle = (course) => (
-    <View key={course.id} style={[styles.courseItem, { width: circleWidth }]}>
-      <View style={[styles.courseCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2 }]}>
-        <Text style={styles.courseIcon}>📚</Text>
+  const renderCourseCircle = (course) => {
+    const progress = course.pivot?.progress || 0;
+    const strokeWidth = 2.5;
+    const radius = (circleSize - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (circumference * progress) / 100;
+
+    return (
+      <View key={course.id} style={[styles.courseItem, { width: circleWidth }]}>
+        <View style={{ position: 'relative' }}>
+          {/* Background circle */}
+          <View style={[styles.courseCircle,
+          {
+            width: circleSize,
+            height: circleSize,
+            borderRadius: circleSize / 2,
+            backgroundColor: course.training?.background_color || Colors.blueBackground,
+          }]}>
+            <Text style={styles.courseIcon}>📚</Text>
+          </View>
+
+          {/* Progress border using SVG */}
+          <Svg
+            width={circleSize}
+            height={circleSize}
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          >
+            {/* Background circle (gray/light border) */}
+            <Circle
+              cx={circleSize / 2}
+              cy={circleSize / 2}
+              r={radius}
+              stroke={course.training?.background_color || Colors.blueBackground}
+              strokeWidth={strokeWidth}
+              fill="none"
+            />
+
+            {/* Progress circle */}
+            <Circle
+              cx={circleSize / 2}
+              cy={circleSize / 2}
+              r={radius}
+              stroke={course.training?.color || Colors.blue}
+              strokeWidth={strokeWidth}
+              fill="none"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              rotation="-90"
+              origin={`${circleSize / 2}, ${circleSize / 2}`}
+            />
+          </Svg>
+        </View>
+
+        <Text style={styles.courseName} numberOfLines={1} ellipsizeMode='tail'>
+          {course.name}
+        </Text>
+        <Text style={[styles.courseProgress, { color: course.training?.color || Colors.blue }]}>
+          {progress}%
+        </Text>
       </View>
-      <Text style={styles.courseName} numberOfLines={2}>{course.name}</Text>
-    </View>
-  );
+    );
+  };
 
   // Render member formation item
   const renderMemberFormationItem = (member) => {
     const isExpanded = expandedMembers.has(member.id);
-    const displayCourses = isExpanded ? demoCoursesData : demoCoursesData.slice(0, 5);
-    const remainingCount = demoCoursesData.length - 5;
+
+    const sliceNumber = member.packages.length <= 6 ? 6 : 5
+    const displayCourses = isExpanded ? member.packages : member.packages.slice(0, sliceNumber);
+    const remainingCount = member.packages.length - sliceNumber;
 
     const toggleExpand = () => {
       const newExpanded = new Set(expandedMembers);
@@ -272,18 +328,24 @@ export const CompanyView = ({ navigation, route }) => {
             </Text>
             <Text style={styles.formationMemberEmail}>{member.email}</Text>
           </View>
-          {demoCoursesData.length > 5 && (
+          {member.packages.length > sliceNumber && (
             <TouchableOpacity onPress={toggleExpand} activeOpacity={0.7}>
-              <Ionicons 
-                name={isExpanded ? "chevron-up" : "chevron-down"} 
-                size={24} 
-                color={Colors.blue} 
+              <Ionicons
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={Colors.blue}
               />
             </TouchableOpacity>
           )}
         </View>
 
         <View style={styles.coursesContainer}>
+          {member.packages.length == 0 && (
+            <View style={styles.coursesGrid}>
+              <Text style={styles.coursesEmptyText}>Aucune formation pour le moment</Text>
+            </View>
+          )}
+
           <View style={styles.coursesGrid}>
             {displayCourses.map(course => renderCourseCircle(course))}
             {!isExpanded && remainingCount > 0 && (
@@ -296,7 +358,7 @@ export const CompanyView = ({ navigation, route }) => {
                 <View style={[styles.courseCircle, styles.moreCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2 }]}>
                   <Text style={styles.moreText}>+{remainingCount}</Text>
                 </View>
-                <Text style={styles.courseName}>Plus</Text>
+                <Text style={styles.textViewMore}>Voir plus</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -352,7 +414,7 @@ export const CompanyView = ({ navigation, route }) => {
   const renderFormationsContent = () => {
     if (!data || error) return null;
 
-    const allMembers = [...(data.managers || []), ...(data.members || [])];
+    const allMembers = [...(data.users || [])];
 
     return (
       <View style={styles.formationsContent}>
@@ -360,6 +422,8 @@ export const CompanyView = ({ navigation, route }) => {
       </View>
     );
   };
+
+  // User trainings - END
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -439,7 +503,7 @@ export const CompanyView = ({ navigation, route }) => {
         </View>
       )}
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -468,6 +532,20 @@ export const CompanyView = ({ navigation, route }) => {
         </View>
       )}
 
+      {/* Floating Action Buttons - Only show on Membres tab */}
+      {activeTab === 'formations' && (
+        <View style={styles.fabContainer}>
+          <TouchableOpacity
+            style={styles.fabSecondary}
+            onPress={() => navigation.navigate('payment-method')}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={18} color={Colors.white} />
+            <Text style={styles.fabSecondaryText}>Ajouter formations</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Member Detail Modal */}
       <Modal
         visible={showMemberModal}
@@ -488,7 +566,11 @@ export const CompanyView = ({ navigation, route }) => {
 
             {/* Member Info */}
             <View style={styles.memberModalInfo}>
-              <Ionicons name="person-circle" size={40} color={Colors.gray} />
+              <View style={styles.memberAvatar}>
+                <Text style={styles.memberAvatarText}>
+                  {selectedMember?.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                </Text>
+              </View>
               <Text style={styles.memberModalName}>{selectedMember?.name}</Text>
               <Text style={styles.memberModalRole}>{selectedMember?.email}</Text>
             </View>
@@ -669,11 +751,11 @@ const styles = StyleSheet.create({
     padding: Spacings.lg,
     marginBottom: Spacings.lg,
     marginTop: Spacings.md,
-    shadowColor: Colors.black,
+    shadowColor: Colors.gray,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 3,
     borderWidth: 1,
     borderColor: Colors.blue
   },
@@ -741,6 +823,20 @@ const styles = StyleSheet.create({
   },
 
   // Member
+  memberAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.successBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacings.sm,
+  },
+  memberAvatarText: {
+    fontSize: 30,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.success,
+  },
   memberItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -749,11 +845,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacings.sm,
     borderRadius: 8,
     marginBottom: Spacings.sm,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
     borderLeftWidth: 3,
     borderLeftColor: Colors.success,
   },
@@ -791,7 +882,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Light',
     color: Colors.danger,
   },
-  progressContainer: {
+  organizationContainer: {
     marginLeft: 12,
   },
 
@@ -800,7 +891,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     paddingHorizontal: Spacings.xl,
   },
   memberModalContent: {
@@ -892,7 +983,28 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 6,
+  },
+  fabSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 16,
+    backgroundColor: Colors.blue,
+    opacity: 0.8,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabSecondaryText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+    marginLeft: Spacings.xxs
   },
 
   // Invite member
@@ -925,7 +1037,8 @@ const styles = StyleSheet.create({
   // Formations Tab Styles
   formationsContent: {
     paddingHorizontal: Spacings.lg,
-    paddingVertical: Spacings.lg,
+    paddingTop: Spacings.lg,
+    paddingBottom: Spacings.xxxl,
   },
   formationMemberCard: {
     marginBottom: Spacings.lg,
@@ -935,23 +1048,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: Spacings.sm,
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.blue,
+    paddingLeft: Spacings.xs
   },
   formationMemberInfo: {
     flex: 1,
   },
   formationMemberName: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
     color: Colors.text,
-    marginBottom: 2,
+    marginBottom: -2,
   },
   formationMemberEmail: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Poppins-Light',
     color: Colors.gray,
   },
   coursesContainer: {
     flexDirection: 'row',
+  },
+  coursesEmptyText: {
+    fontSize: 8,
+    fontFamily: 'Poppins-Light',
+    color: Colors.subtext,
+    textAlign: 'center',
+    marginTop: -8,
   },
   coursesGrid: {
     flexDirection: 'row',
@@ -963,29 +1087,41 @@ const styles = StyleSheet.create({
   },
   courseCircle: {
     backgroundColor: Colors.blueBackground,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: Colors.blue,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacings.xxs,
   },
   moreCircle: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.grayLight,
   },
   moreText: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: 'Poppins-Medium',
     color: Colors.blue,
   },
+  textViewMore: {
+    fontSize: 8,
+    fontFamily: 'Roboto',
+    color: Colors.blue,
+  },
+
   courseIcon: {
-    fontSize: 24,
+    fontSize: 14,
   },
   courseName: {
     fontSize: 8,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Light',
     color: Colors.text,
     textAlign: 'center',
-    lineHeight: 10,
+    marginBottom: -2
+  },
+  courseProgress: {
+    fontSize: 9,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.subtext,
+    textAlign: 'center',
   },
 
   // Empty state (for Formations tab)

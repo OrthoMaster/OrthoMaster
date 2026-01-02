@@ -9,7 +9,6 @@ import { TrainingView } from '../../views/training/TrainingView';
 import { LessonContent } from '../../views/training/LessonContent';
 
 import { CartView } from '../../views/training/CartView';
-import { AttachMemberView } from '../../views/training/AttachMemberView';
 import { PreviewView } from '../../views/training/PreviewView';
 
 import { ContractView } from '../../views/contract/ContractView';
@@ -113,14 +112,7 @@ export const TrainingStack = () => {
           presentation: 'card',
         }}
       />
-      <TrainingStackNav.Screen
-        name="attach-member-view"
-        component={AttachMemberView}
-        options={{
-          headerShown: false,
-          presentation: 'card',
-        }}
-      />
+      
       <TrainingStackNav.Screen
         name="preview-view"
         component={PreviewView}

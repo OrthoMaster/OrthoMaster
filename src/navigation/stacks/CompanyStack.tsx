@@ -4,6 +4,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import { CompanyView } from '../../views/company/CompanyView';
 import { CompanyInfoView } from '../../views/company/CompanyInfoView';
+import { PaymentMethodView } from '../../views/company/PaymentMethodView';
+import { AttachMemberView } from '../../views/company/AttachMemberView';
 
 const CompanyStackNav = createStackNavigator();
 export const CompanyStack = () => {
@@ -21,12 +23,21 @@ export const CompanyStack = () => {
       <CompanyStackNav.Screen
         name="company-info"
         component={CompanyInfoView}
-        options={{
-          headerShown: false,
-        }}
+        options={{ headerShown: false }}
       />
 
-      
+      <CompanyStackNav.Screen
+        name="payment-method"
+        component={PaymentMethodView}
+        options={{ headerShown: false }}
+      />
+
+      <CompanyStackNav.Screen
+        name="attach-member-view"
+        component={AttachMemberView}
+        options={{ headerShown: false }}
+      />
+
     </CompanyStackNav.Navigator>
   );
 }

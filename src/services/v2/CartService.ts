@@ -123,9 +123,6 @@ export const clearCart = async () => {
         });
 };
 
-
-
-
 /**
  * Payment
  */
@@ -223,7 +220,39 @@ export const validatePromotionCode = async (code: string, priceTotal: number) =>
 };
 
 
+/**
+ * Espace-Pro
+ */
+export const getPaymentMethods = async () => {
+    return axios
+        .get(`${baseUrl}/payment-methods`)
+        .then((response) => {
+            if (response.data?.success == true) {
+                return response.data.data;
+            }
 
+            return null;
+        })
+        .catch((e: AxiosError) => {
+            throw e;
+        });
+};
+
+export const getProCartDetails = async (paymentMethod: string) => {
+    return axios
+        .get(`${baseUrl}/pro-cart`, { params: { payment_method: paymentMethod } })
+        .then((response) => {
+            if (response.data?.success == true) {
+                console.log(response.data.data.members);
+                return response.data.data;
+            }
+
+            return null;
+        })
+        .catch((e: AxiosError) => {
+            throw e;
+        });
+};
 
 export const syncMembers = async (memberIds: string[]) => {
     return axios

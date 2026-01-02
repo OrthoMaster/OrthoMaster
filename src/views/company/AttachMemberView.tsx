@@ -10,15 +10,15 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ActivityIndicator } from 'react-native-paper';
-import { useQuery } from "@tanstack/react-query";
+
+import Stepper from './components/Stepper';
 
 import { BouncingDots } from '../../component/LoadingDots';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-import { getCompany } from '../../services/v2/CompanyService';
 import { syncMembers } from '../../services/v2/CartService';
 
 interface Member {
@@ -109,11 +109,11 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, isSelected, onToggle, i
       {/* Selection Indicator */}
       <View style={styles.selectionIndicator}>
         {isDisabled ? (
-          <Ionicons name="warning" size={28} color={Colors.warning} />
+          <Ionicons name="warning" size={20} color={Colors.warning} />
         ) : isSelected ? (
-          <Ionicons name="checkmark-circle" size={28} color={Colors.success} />
+          <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
         ) : (
-          <View style={styles.uncheckedCircle} />
+          <MaterialCommunityIcons name="circle-outline" size={20} color={Colors.gray} />
         )}
       </View>
     </TouchableOpacity>
@@ -121,26 +121,10 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, isSelected, onToggle, i
 };
 
 export const AttachMemberView = ({ navigation, route }) => {
-  // Selected member ids from api
-  const { memberIds } = route.params;
+  const { memberIds, members } = route.params;
 
-  // Load current member list
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['company'],
-    queryFn: () => getCompany(),
-    retry: 1,
-    retryDelay: 1000,
-  });
-
-  const [members, setMembers] = useState<Member[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>(memberIds || []);
-  const [refreshing, setRefreshing] = useState(false);
   const [synchronizing, setSynchronizing] = useState(false);
-
-  // Update members when data is fetched
-  useEffect(() => {
-    setMembers(() => [...data?.managers || [], ...data?.members || []]);
-  }, [data]);
 
   const handleToggleMember = (id: string) => {
     setSelectedMembers(prev => {
@@ -165,26 +149,14 @@ export const AttachMemberView = ({ navigation, route }) => {
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await refetch();
-    } catch (error) {
-      // TODO: Handle error
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const handleReviewOrder = async () => {
+  const handleContinueChosePackage = async () => {
     if (selectedMembers.length === 0) return;
-    // const selectedMemberData = members.filter(m => selectedMembers.includes(m.id));
 
     setSynchronizing(true);
     const result = await syncMembers(selectedMembers);
     if (result) {
       setSynchronizing(false);
-      navigation.navigate('preview-view');
+      // navigation.navigate('preview-view');
     } else {
       Alert.alert('Erreur', "Le processus d'assinger les membres a échoué, veuillez réessayer.");
       setSynchronizing(false);
@@ -195,7 +167,7 @@ export const AttachMemberView = ({ navigation, route }) => {
   const allSelected = selectableMembers.length > 0 && selectedMembers.length === selectableMembers.length;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
@@ -216,23 +188,6 @@ export const AttachMemberView = ({ navigation, route }) => {
         </View>
       </View>
 
-      {/* Loading */}
-      {(isLoading || isFetching) && !error && (
-        <BouncingDots
-          color={Colors.blue}
-          size={10}
-          bounceHeight={5}
-          containerStyle={{
-            position: 'absolute',
-            backgroundColor: 'transparent',
-            zIndex: 999,
-            elevation: 5,
-            bottom: 70,
-            left: '45%'
-          }}
-        />
-      )}
-
       {/* Content */}
       {members.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -244,6 +199,9 @@ export const AttachMemberView = ({ navigation, route }) => {
         </View>
       ) : (
         <>
+          {/* Stepper */}
+          <Stepper currentStep={1} />
+
           {/* Select All Button */}
           <View style={styles.selectAllContainer}>
             <TouchableOpacity
@@ -278,14 +236,6 @@ export const AttachMemberView = ({ navigation, route }) => {
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing || isFetching}
-                onRefresh={onRefresh}
-                colors={[Colors.primary]}
-                tintColor={Colors.primary}
-              />
-            }
           >
             {members.map((member) => (
               <MemberCard
@@ -316,7 +266,7 @@ export const AttachMemberView = ({ navigation, route }) => {
                 selectedMembers.length === 0 && styles.reviewButtonDisabled,
                 synchronizing && styles.reviewButtonDisabled
               ]}
-              onPress={handleReviewOrder}
+              onPress={handleContinueChosePackage}
               disabled={selectedMembers.length === 0 || synchronizing}
             >
               <Text style={[
@@ -359,8 +309,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
     paddingBottom: Spacings.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -454,9 +402,9 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   avatarPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.blue,
     justifyContent: 'center',
     alignItems: 'center',
@@ -542,13 +490,6 @@ const styles = StyleSheet.create({
   selectionIndicator: {
     marginLeft: Spacings.xs,
   },
-  uncheckedCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: Colors.gray,
-  },
 
   // Empty State
   emptyContainer: {
@@ -580,7 +521,8 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingVertical: Spacings.md,
+    paddingTop: Spacings.md,
+    paddingBottom: Spacings.xxl,
     borderTopWidth: 1,
     borderTopColor: Colors.line,
     flexDirection: 'row',

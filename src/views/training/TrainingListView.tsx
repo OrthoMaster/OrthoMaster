@@ -1,8 +1,7 @@
 /**
  * @author Francis
  */
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -17,177 +16,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import Colors from "../../../constants/Colors";
 import Spacings from "../../../constants/Spacings";
-import { Styles } from "../../../constants/Styles";
 
 import { BouncingDots } from '../../component/LoadingDots';
 import { useQuery } from "@tanstack/react-query";
 import { getTrainings } from "../../services/v2/TrainingService";
-
-const DEMO_TRAININGS = [
-  {
-    id: '1',
-    name: 'Formation Podologie Professionnelle',
-    color: '#3B82F6',
-    background_color: '#EFF6FF',
-    packages: [
-      {
-        id: 'pkg-1-1',
-        name: 'Introduction',
-        image: '📚',
-        progress: 100,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-1-2',
-        name: 'Anatomie du pied',
-        image: '🦶',
-        progress: 75,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-1-3',
-        name: 'Pathologies courantes',
-        image: '🏥',
-        progress: 45,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-1-4',
-        name: 'Techniques avancées',
-        image: '⚕️',
-        progress: 0,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-1-5',
-        name: 'Pratique clinique',
-        image: '🔬',
-        progress: null,
-        available_flg: false,
-        modules: []
-
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Orthopédie et Biomécanique',
-    color: '#10B981',
-    background_color: '#ECFDF5',
-    packages: [
-      {
-        id: 'pkg-2-1',
-        name: 'Bases biomécaniques',
-        image: '⚙️',
-        progress: 100,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-2-2',
-        name: 'Analyse de la marche',
-        image: '👣',
-        progress: 60,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-2-3',
-        name: 'Orthèses plantaires',
-        image: '🦿',
-        progress: 30,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-2-4',
-        name: 'Cas pratiques',
-        image: '📋',
-        progress: null,
-        available_flg: false,
-        modules: []
-      },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Dermatologie Podologique',
-    color: '#F59E0B',
-    background_color: '#FEF3C7',
-    packages: [
-      {
-        id: 'pkg-3-1',
-        name: 'Anatomie cutanée',
-        image: '🔍',
-        progress: 85,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-3-2',
-        name: 'Mycoses et infections',
-        image: '🦠',
-        progress: 50,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-3-3',
-        name: 'Traitements locaux',
-        image: '💊',
-        progress: 20,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-3-4',
-        name: 'Prévention',
-        image: '🛡️',
-        progress: null,
-        available_flg: false,
-        modules: []
-
-      },
-      {
-        id: 'pkg-3-5',
-        name: 'Complications diabétiques',
-        image: '⚠️',
-        progress: null,
-        available_flg: false,
-        modules: []
-
-      },
-    ],
-  },
-  {
-    id: '6',
-    name: 'Pédiatrie Podologique',
-    color: '#06B6D4',
-    background_color: '#ECFEFF',
-    packages: [
-      {
-        id: 'pkg-6-1',
-        name: 'Développement du pied',
-        image: '👶',
-        progress: 55,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-6-2',
-        name: 'Déformations infantiles',
-        image: '🍼',
-        progress: 25,
-        available_flg: true,
-      },
-      {
-        id: 'pkg-6-3',
-        name: 'Traitements pédiatriques',
-        image: '🎈',
-        progress: null,
-        available_flg: false,
-        modules: []
-      },
-    ],
-  },
-];
 
 const HEADER_HEIGHT = 120;
 const SCROLL_THRESHOLD = 5;
@@ -396,7 +232,7 @@ export const TrainingListView = ({ navigation, route }) => {
         ]}
       >
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Formation</Text>
+          <Text style={styles.headerTitle}>Mes formations</Text>
           <View style={styles.headerRightIcons}>
             {/* <TouchableOpacity onPress={closeScreen}>
               <MaterialIcons name="emoji-events" size={24} color={Colors.blue} />
@@ -476,6 +312,7 @@ export const TrainingListView = ({ navigation, route }) => {
             onRefresh={refetch}
             colors={[Colors.blue]}
             tintColor={Colors.blue}
+            style={{ zIndex: 9999 }}
           />
         }>
 
@@ -570,10 +407,10 @@ const styles = StyleSheet.create({
 
   scrollView: {
     flex: 1,
-    paddingTop: Spacings.sm,
+    paddingTop: HEADER_HEIGHT - Spacings.xxl,
+    // paddingTop: Spacings.sm,
   },
   scrollContainer: {
-    paddingTop: HEADER_HEIGHT - Spacings.xxl,
     paddingBottom: Spacings.xl,
   },
 

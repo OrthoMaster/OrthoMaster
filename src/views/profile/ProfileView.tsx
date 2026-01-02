@@ -259,7 +259,7 @@ export const ProfileView = ({ navigation, route }) => {
           </View>
 
           {/* Logout Button */}
-          <View style={styles.section}>
+          <View style={[styles.section, { marginBottom: Spacings.xl }]}>
             <TouchableOpacity
               style={styles.logoutButton}
               activeOpacity={0.7}
@@ -272,7 +272,7 @@ export const ProfileView = ({ navigation, route }) => {
                     style: "cancel"
                   },
                   {
-                    text: "Se déconnecter", onPress: async () => {
+                    text: "Se déconnecter", onPress: () => {
                       logout.mutate()
                     }
                   }]
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   proCardText: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Poppins-Light',
     color: Colors.white,
   },
