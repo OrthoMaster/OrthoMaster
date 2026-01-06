@@ -93,10 +93,6 @@ export const PreviewView = ({ navigation, route }) => {
     retryDelay: 1000,
   });
 
-  const [cartItems, setCartItems] = useState<Item[]>();
-  const [refreshing, setRefreshing] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
   // Promo code states
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -115,7 +111,6 @@ export const PreviewView = ({ navigation, route }) => {
 
   useEffect(() => {
     if (cartData) {
-      setCartItems(cartData.items);
       setFinalAmount(appliedPromo ? appliedPromo.finalAmount : cartData.price_total);
       setTvaAmount(appliedPromo ? appliedPromo.tvaAmount : cartData.tva_total);
     }

@@ -11,9 +11,6 @@ import { LessonContent } from '../../views/training/LessonContent';
 import { CartView } from '../../views/training/CartView';
 import { PreviewView } from '../../views/training/PreviewView';
 
-import { ContractView } from '../../views/contract/ContractView';
-
-
 const forZoomFromCenter = ({ current, layouts }) => {
   return {
     cardStyle: {
@@ -119,13 +116,6 @@ export const TrainingStack = () => {
         options={{
           headerShown: false,
           presentation: 'card',
-        }}
-      />
-      <TrainingStackNav.Screen
-        name="contract-view"
-        component={ContractView}
-        options={{
-          headerShown: false,
         }}
       />
 

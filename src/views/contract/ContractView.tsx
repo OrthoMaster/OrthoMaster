@@ -1,4 +1,4 @@
-// ContractView.tsx - Enhanced with API integration and multi-organization support
+// ContractView.tsx - Enhanced with API integration and multi-group support
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -26,7 +26,7 @@ import Spacings from '../../../constants/Spacings';
 import { generateContract, signContract } from '../../services/v2/CartService';
 
 interface ContractData {
-  organization: string;
+  group: string;
   pdfLinks: string[];
 }
 
@@ -48,8 +48,10 @@ export const ContractView = ({ navigation, route }) => {
 
   // Fetch contract data
   const { data: contractData, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['contracts'],
+    queryKey: ['contract'],
     queryFn: () => generateContract(),
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // State management
@@ -73,7 +75,7 @@ export const ContractView = ({ navigation, route }) => {
     return currentOrg?.pdfLinks[selectedPdfIndex] || null;
   };
 
-  // Handle organization tab change
+  // Handle group tab change
   const handleOrgChange = (index: number) => {
     setSelectedOrgIndex(index);
     setSelectedPdfIndex(0); // Reset to first PDF when changing org
@@ -208,6 +210,22 @@ export const ContractView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.headerTitle}>Dossiers</Text>
+            <Text style={styles.headerSubtitle}>Signez les documents</Text>
+          </View>
+        </View>
+      </View>
+
       {/* Organization Tabs */}
       <View style={styles.tabsContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -226,7 +244,7 @@ export const ContractView = ({ navigation, route }) => {
                   selectedOrgIndex === index && styles.tabTextActive,
                 ]}
               >
-                {org.organization}
+                {org.group}
               </Text>
               {org.pdfLinks.length > 1 && (
                 <View style={styles.badge}>
@@ -547,6 +565,34 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: Colors.white,
     fontFamily: 'Poppins-Medium',
+  },
+
+  // Header
+  header: {
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacings.lg,
+    paddingBottom: Spacings.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    marginTop: -4,
   },
 
   // Tabs

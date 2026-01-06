@@ -1,14 +1,16 @@
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axiosInstance, { authEvents, baseUrl } from './axiosInstance';
+
+export { authEvents };
 
 // Constants
 const AUTH_TOKEN_KEY = 'JWT';
 const USER_DATA_KEY = 'user';
 
 // Base URL
-const baseUrl = process.env.EXPO_PUBLIC_API_V2_URL;
-const authUrl = process.env.EXPO_PUBLIC_API_V2_URL + '/auth';
+const authUrl = baseUrl + '/auth';
 
 // Types
 export interface User {
@@ -32,38 +34,11 @@ interface ForgotParam {
     email: string
 }
 
-// Configure axios interceptor to add token
-axios.interceptors.request.use(
-    async (config) => {
-        const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Interceptor to handle 401 (Unauthorized)
-axios.interceptors.response.use(
-    (response) => response,
-    async (error: AxiosError) => {
-        if (error.response?.status === 401) {
-            // Token expired or invalid, clear local data
-            await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-            await AsyncStorage.clear();
-        }
-        return Promise.reject(error);
-    }
-);
-
 /**
  * Login with email & password
  */
 export const login = async ({ email, password }: LoginParams) => {
-    return axios
+    return axiosInstance
         .post(`${authUrl}/login`, { email, password })
         .then((response) => {
             return response.data;
@@ -77,7 +52,7 @@ export const login = async ({ email, password }: LoginParams) => {
  * Login with email & password
  */
 export const forgot = async ({ email }: ForgotParam) => {
-    const result = await axios
+    const result = await axiosInstance
         .post(`${authUrl}/login`, { email })
         .then((response) => {
             return response.data;
@@ -93,7 +68,7 @@ export const forgot = async ({ email }: ForgotParam) => {
  * Logout - Revoke token on server
  */
 export const logout = async () => {
-    return axios
+    return axiosInstance
         .post(`${authUrl}/logout`)
         .then((response) => {
             return response.data;
@@ -112,7 +87,7 @@ export const logout = async () => {
  * Return null if token invalid
  */
 export const me = async () => {
-    return axios
+    return axiosInstance
         .get(`${authUrl}/me`)
         .then((response) => {
             return response.data.data.user;
@@ -126,7 +101,7 @@ export const me = async () => {
  * Get full info of user
  */
 export const getMoreInfo = async () => {
-    return axios
+    return axiosInstance
         .get(`${authUrl}/more`)
         .then((response) => {
             return response.data;
@@ -192,7 +167,7 @@ const clearAuthData = async (): Promise<void> => {
  * Get last notification
  */
 export const getLastestNotification = async () => {
-    return axios
+    return axiosInstance
         .get(`${baseUrl}/notifications/lastest`)
         .then((response) => {
             return response.data;
@@ -210,7 +185,7 @@ export const getLastestNotification = async () => {
  * Get notifications
  */
 export const getNotifications = async () => {
-    return axios
+    return axiosInstance
         .get(`${baseUrl}/notifications`)
         .then((response) => {
             return response.data;
@@ -228,7 +203,7 @@ export const getNotifications = async () => {
  * Mark all notifications as read
  */
 export const markAllAsRead = async () => {
-    return axios
+    return axiosInstance
         .post(`${baseUrl}/notifications/read`)
         .then((response) => {
             return response.data;
@@ -246,7 +221,7 @@ export const markAllAsRead = async () => {
  * Mark all notifications as read
  */
 export const deleteAllNotification = async () => {
-    return axios
+    return axiosInstance
         .delete(`${baseUrl}/notifications`)
         .then((response) => {
             return response.data;
@@ -264,7 +239,7 @@ export const deleteAllNotification = async () => {
  * Mark notification as read
  */
 export const markAsRead = async (notiId: string) => {
-    return axios
+    return axiosInstance
         .put(`${baseUrl}/notifications/${notiId}/read`)
         .then((response) => {
             return response.data;
@@ -282,7 +257,7 @@ export const markAsRead = async (notiId: string) => {
  * Delete a notification
  */
 export const deleteNotification = async (notiId: string) => {
-    return axios
+    return axiosInstance
         .delete(`${baseUrl}/notifications/${notiId}`)
         .then((response) => {
             return response.data;
@@ -300,7 +275,7 @@ export const deleteNotification = async (notiId: string) => {
  * Accept a confirm notification
  */
 export const acceptNotification = async (notiId: string) => {
-    return axios
+    return axiosInstance
         .put(`${baseUrl}/notifications/${notiId}/accept`)
         .then((response) => {
             return response.data;
@@ -318,7 +293,7 @@ export const acceptNotification = async (notiId: string) => {
  * Reject a confirm notification
  */
 export const rejectNotification = async (notiId: string) => {
-    return axios
+    return axiosInstance
         .put(`${baseUrl}/notifications/${notiId}/reject`)
         .then((response) => {
             return response.data;
@@ -336,7 +311,7 @@ export const rejectNotification = async (notiId: string) => {
  * Prepare data before form
  */
 export const getPreFormData = async () => {
-    return axios
+    return axiosInstance
         .get(`${baseUrl}/profile/pre-data`)
         .then((response) => {
             return response.data;
@@ -367,7 +342,7 @@ export const updateProfile = async (data: {
     funding_organization_id: string;
     no_secu: string;
 }) => {
-    return axios
+    return axiosInstance
         .put(`${baseUrl}/profile`, data)
         .then((response) => {
             return response.data;
@@ -385,7 +360,7 @@ export const changePassword = async (data : {
     new_password: string
     new_password_confirmation: string
 }) => {
-    return axios
+    return axiosInstance
         .post(`${baseUrl}/profile/password`, data)
         .then((response) => {
             return response.data;
@@ -398,6 +373,28 @@ export const changePassword = async (data : {
             };
         });
 }
+
+/**
+ * Store FCM Token of device
+ */
+export const registerDevice = async (data: {
+    fcm_token: string;
+    device_id: string;
+    device_type: 'ios' | 'android';
+}) => {
+    return axiosInstance
+        .post(`${authUrl}/device`, data)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((e: AxiosError) => {
+            return {
+                success: false,
+                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
+                statusCode: e.response?.status
+            };
+        });
+};
 
 export const sendEmailVerification = (data : { email: string }) => {
     return

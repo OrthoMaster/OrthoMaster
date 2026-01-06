@@ -63,11 +63,7 @@ const PaymentContent = ({
         const confirmResult = await confirmPayment(invoiceId, paymentIntent.id);
 
         if (confirmResult.success) {
-          Alert.alert(
-            'Succès',
-            'Paiement effectué avec succès!',
-            [{ text: 'OK', onPress: () => onSuccess() }]
-          );
+          onSuccess();
         } else {
           Alert.alert('Erreur', confirmResult.message);
         }

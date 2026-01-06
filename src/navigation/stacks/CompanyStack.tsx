@@ -6,6 +6,10 @@ import { CompanyView } from '../../views/company/CompanyView';
 import { CompanyInfoView } from '../../views/company/CompanyInfoView';
 import { PaymentMethodView } from '../../views/company/PaymentMethodView';
 import { AttachMemberView } from '../../views/company/AttachMemberView';
+import { SelectPackageView } from '../../views/company/SelectPackageView';
+import { PreviewProCartView } from '../../views/company/PreviewProCartView';
+import { ContractView } from '../../views/contract/ContractView';
+
 
 const CompanyStackNav = createStackNavigator();
 export const CompanyStack = () => {
@@ -36,6 +40,26 @@ export const CompanyStack = () => {
         name="attach-member-view"
         component={AttachMemberView}
         options={{ headerShown: false }}
+      />
+
+      <CompanyStackNav.Screen
+        name="select-package-view"
+        component={SelectPackageView}
+        options={{ headerShown: false }}
+      />
+
+      <CompanyStackNav.Screen
+        name="preview-pro-cart-view"
+        component={PreviewProCartView}
+        options={{ headerShown: false }}
+      />
+
+      <CompanyStackNav.Screen
+        name="contract-view"
+        component={ContractView}
+        options={{
+          headerShown: false,
+        }}
       />
 
     </CompanyStackNav.Navigator>

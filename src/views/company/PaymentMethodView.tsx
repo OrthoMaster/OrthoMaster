@@ -115,7 +115,7 @@ const PaymentCard: React.FC<PaymentCardProps> = ({
             <View style={styles.termsHeaderLeft}>
               <Ionicons name="information-circle-outline" size={16} color={isSelected ? Colors.success : Colors.gray} />
               <Text style={[styles.termsHeaderText, { color: isSelected ? Colors.success : Colors.gray }]}>
-                Conditions et documents requis
+                Points importants :
               </Text>
             </View>
             <Ionicons
@@ -202,7 +202,10 @@ export const PaymentMethodView = ({ navigation, route }) => {
     // TODO: Check cartData
 
     // Navigate to next screen
-    navigation.navigate('attach-member-view', { members: cartData.members });
+    navigation.navigate('attach-member-view', {
+      members: cartData.members,
+      paymentMethod: paymentMethods.find(m => m.id === selectedMethod)
+    });
   };
 
   return (

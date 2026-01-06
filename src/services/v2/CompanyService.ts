@@ -1,45 +1,11 @@
-import axios, { AxiosError } from 'axios';
-import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Constants
-const AUTH_TOKEN_KEY = 'JWT';
-
-// Base URL
-const baseUrl = process.env.EXPO_PUBLIC_API_V2_URL;
-
-// Configure axios interceptor to add token
-axios.interceptors.request.use(
-    async (config) => {
-        const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Interceptor to handle 401 (Unauthorized)
-axios.interceptors.response.use(
-    (response) => response,
-    async (error: AxiosError) => {
-        if (error.response?.status === 401) {
-            // Token expired or invalid, clear local data
-            await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-            await AsyncStorage.clear();
-        }
-        return Promise.reject(error);
-    }
-);
+import { AxiosError } from 'axios';
+import axiosInstance, { baseUrl } from './axiosInstance';
 
 /**
  * Get user's company
  */
 export const getCompany = async () => {
-    return axios
+    return axiosInstance
         .get(`${baseUrl}/company`)
         .then((response) => {
             if (response.data?.success == true) {
@@ -68,7 +34,7 @@ export const createCompany = async (companyData: {
     tva?: string;
     siret?: string;
 }) => {
-    return axios
+    return axiosInstance
         .post(`${baseUrl}/company`, companyData)
         .then((response) => {
             return response.data;
@@ -98,7 +64,7 @@ export const updateCompany = async (companyData: {
     tva?: string;
     siret?: string;
 }) => {
-    return axios
+    return axiosInstance
         .put(`${baseUrl}/company/${companyData.id}`, companyData)
         .then((response) => {
             return response.data;
@@ -116,7 +82,7 @@ export const updateCompany = async (companyData: {
  * Quit Company
  */
 export const quitCompany = async () => {
-    return axios
+    return axiosInstance
         .patch(`${baseUrl}/company/quit`)
         .then((response) => {
             return response.data;
@@ -137,7 +103,7 @@ export const quitCompany = async () => {
 export const updateManager = async (data: {
     user_id: string;
 }) => {
-    return axios
+    return axiosInstance
         .patch(`${baseUrl}/company/update-manager`, data)
         .then((response) => {
             return response.data;
@@ -157,7 +123,7 @@ export const updateManager = async (data: {
 export const removeMember = async (data: {
     user_id: string;
 }) => {
-    return axios
+    return axiosInstance
         .patch(`${baseUrl}/company/remove-member`, data)
         .then((response) => {
             return response.data;
@@ -177,7 +143,7 @@ export const removeMember = async (data: {
 export const inviteMember = async (data: {
     email: string;
 }) => {
-    return axios
+    return axiosInstance
         .patch(`${baseUrl}/company/invite-member`, data)
         .then((response) => {
             return response.data;
@@ -195,7 +161,7 @@ export const inviteMember = async (data: {
  * Prepare data before form
  */
 export const getPreFormData = async () => {
-    return axios
+    return axiosInstance
         .get(`${baseUrl}/company/pre-data`)
         .then((response) => {
             return response.data;

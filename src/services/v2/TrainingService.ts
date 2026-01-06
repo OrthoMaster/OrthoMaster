@@ -1,12 +1,5 @@
-import axios, { AxiosError } from 'axios';
-import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Constants
-const AUTH_TOKEN_KEY = 'JWT';
-
-// Base URL
-const baseUrl = process.env.EXPO_PUBLIC_API_V2_URL;
+import { AxiosError } from 'axios';
+import axiosInstance, { baseUrl } from './axiosInstance';
 
 // Types
 export interface CartItem {
@@ -19,38 +12,11 @@ export interface Cart {
   total: number;
 }
 
-// Configure axios interceptor to add token
-axios.interceptors.request.use(
-    async (config) => {
-        const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Interceptor to handle 401 (Unauthorized)
-axios.interceptors.response.use(
-    (response) => response,
-    async (error: AxiosError) => {
-        if (error.response?.status === 401) {
-            // Token expired or invalid, clear local data
-            await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-            await AsyncStorage.clear();
-        }
-        return Promise.reject(error);
-    }
-);
-
 /**
  * Get cart
  */
 export const getTrainings = async () => {
-    return axios
+    return axiosInstance
         .get(`${baseUrl}/trainings`)
         .then((response) => {
             if (response.data?.success == true) {

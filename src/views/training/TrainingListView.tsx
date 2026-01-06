@@ -84,7 +84,8 @@ const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, b
           />
           {/* Progress circle */}
           <Circle
-            stroke={progress == 100 ? accentColor : Colors.warning}
+            // stroke={progress == 100 ? accentColor : Colors.warning}
+            stroke={accentColor || Colors.warning}
             fill="none"
             cx={size / 2}
             cy={size / 2}

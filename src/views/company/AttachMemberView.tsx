@@ -121,7 +121,7 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, isSelected, onToggle, i
 };
 
 export const AttachMemberView = ({ navigation, route }) => {
-  const { memberIds, members } = route.params;
+  const { memberIds, members, paymentMethod } = route.params;
 
   const [selectedMembers, setSelectedMembers] = useState<string[]>(memberIds || []);
   const [synchronizing, setSynchronizing] = useState(false);
@@ -156,7 +156,8 @@ export const AttachMemberView = ({ navigation, route }) => {
     const result = await syncMembers(selectedMembers);
     if (result) {
       setSynchronizing(false);
-      // navigation.navigate('preview-view');
+
+      navigation.navigate('select-package-view', { paymentMethod });
     } else {
       Alert.alert('Erreur', "Le processus d'assinger les membres a échoué, veuillez réessayer.");
       setSynchronizing(false);
@@ -303,7 +304,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacings.lg,
-    paddingTop: Spacings.xs,
+    paddingTop: Spacings.md,
   },
   header: {
     backgroundColor: Colors.white,
@@ -383,10 +384,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.line,
     elevation: 1,
-    shadowColor: Colors.black,
+    shadowColor: Colors.gray,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 4,
   },
   memberCardSelected: {
     borderColor: Colors.success,
@@ -519,7 +520,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.md,
     paddingBottom: Spacings.xxl,
@@ -552,8 +553,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.xs,
-    paddingVertical: Spacings.sm,
-    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.xs,
+    paddingHorizontal: Spacings.md,
     borderRadius: 24,
     elevation: 3,
     shadowColor: Colors.blue,
