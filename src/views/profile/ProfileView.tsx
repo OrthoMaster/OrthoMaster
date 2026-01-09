@@ -212,9 +212,14 @@ export const ProfileView = ({ navigation, route }) => {
               iconName="shield-checkmark-outline"
               title="Sécurité"
               subtitle="Mis à jour votre mot de passe"
-              isLast
               showWarning={user.reset_password_flg}
               onPress={() => (navigation.navigate('change-password'))}
+            />
+            <MenuItem
+              iconName="settings-outline"
+              title="Paramètres généraux"
+              isLast
+              onPress={() => (navigation.navigate('settings-view'))}
             />
           </View>
 

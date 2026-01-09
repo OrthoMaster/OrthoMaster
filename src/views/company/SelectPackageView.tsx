@@ -452,7 +452,7 @@ export const SelectPackageView = ({ navigation, route }) => {
               </Text>
 
               <View style={styles.tooltipNotes}>
-                <Text style={styles.tooltipNotesTitle}>Points importants :</Text>
+                <Text style={styles.tooltipNotesTitle}>Points importants</Text>
 
                 {paymentMethod.terms?.map((term, index) => (
                   <View key={index} style={styles.tooltipNoteItem}>

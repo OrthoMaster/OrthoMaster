@@ -115,7 +115,7 @@ const PaymentCard: React.FC<PaymentCardProps> = ({
             <View style={styles.termsHeaderLeft}>
               <Ionicons name="information-circle-outline" size={16} color={isSelected ? Colors.success : Colors.gray} />
               <Text style={[styles.termsHeaderText, { color: isSelected ? Colors.success : Colors.gray }]}>
-                Points importants :
+                Points importants
               </Text>
             </View>
             <Ionicons

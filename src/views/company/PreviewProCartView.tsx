@@ -214,6 +214,7 @@ export const PreviewProCartView = ({ navigation, route }) => {
     setCreatingInvoice(true);
     try {
       const paymentData = await createPaymentIntent(
+        cartData.id,
         finalAmount,
         !!appliedPromo ? appliedPromo.code : '',
         !!appliedPromo ? appliedPromo.discount : 0,
@@ -245,12 +246,11 @@ export const PreviewProCartView = ({ navigation, route }) => {
   const handlePaymentSuccess = async () => {
     setShowPaymentModal(false);
     setShowCelebration(true);
-    await queryClient.invalidateQueries({ queryKey: ['trainings'] });
-    // navigation.popToTop();
+    await queryClient.invalidateQueries({ queryKey: ['company'] });
   };
 
   const handleSign = () => {
-    navigation.navigate('contract-view');
+    navigation.navigate('contract-view', {cartId: cartData.id});
   };
 
   const handleCelebrationClose = () => {

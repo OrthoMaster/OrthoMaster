@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { useQueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -8,7 +8,7 @@ const prefix = Linking.createURL('/');
 
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
@@ -28,6 +28,24 @@ import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScre
 import Colors from './constants/Colors';
 import Spacings from './constants/Spacings';
 import Toast, { BaseToast } from 'react-native-toast-message';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync('default', {
+    name: 'OrthoMaster',
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#Eb7b07',
+  });
+}
 
 export default function App({ navigation }) {
   const queryClient = useQueryClient();
@@ -85,8 +103,10 @@ export default function App({ navigation }) {
     queryClient.clear();
   };
 
+  const appState = useRef(AppState.currentState);
+  const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
+  const responseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
 
-  const appState = React.useRef(AppState.currentState);
   // Register device when user login and app ready
   useEffect(() => {
     if (user && appIsReady) {
@@ -110,6 +130,7 @@ export default function App({ navigation }) {
     };
   }, [user]);
 
+  // Register device for notification
   const handleRegisterDevice = async () => {
     try {
       // Check permission status
@@ -117,21 +138,20 @@ export default function App({ navigation }) {
       let finalStatus = existingStatus;
 
       // Ask permission if not reject (undetermined)
-      if (existingStatus === 'undetermined') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
+      // if (existingStatus === 'undetermined') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+      // }
 
-      // If no permission -> return
-      if (finalStatus !== 'granted') {
-        return;
-      }
+      // // If no permission -> return
+      // if (finalStatus !== 'granted') {
+      //   return;
+      // }
 
       // Get Expo push token
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: process.env.EXPO_PUBLIC_PROJECT_ID, // eas project id
+        projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
       });
-
       const deviceId = Device.osBuildId || Device.osInternalBuildId || `device-${Date.now()}`;
 
       // Register with backend
@@ -145,6 +165,47 @@ export default function App({ navigation }) {
       console.error('Register device failed:', error);
     }
   };
+
+  // Listener notification
+  useEffect(() => {
+    // Lắng nghe khi nhận notification (app đang mở)
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('📨 Notification nhận được:', notification);
+      // Notification sẽ tự động hiển thị nhờ setNotificationHandler ở trên
+    });
+
+    // Lắng nghe khi user TAP vào notification
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('👆 User tap vào notification:', response);
+
+      // Lấy data từ notification
+      const data = response.notification.request.content.data;
+      console.log('Data từ notification:', data);
+
+      // Xử lý navigation dựa vào data
+      handleNotificationNavigation(data);
+    });
+
+    // Cleanup khi unmount
+    return () => {
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
+    };
+  }, []);
+
+  // Handle navigation when lick to notification
+  const handleNotificationNavigation = (data: any) => {
+    console.log('navigate');
+    if (!user) return;
+
+
+    const path = '/open/profile-info';
+    const url = Linking.createURL(path);
+
+    console.log('🔗 Opening:', url);
+    Linking.openURL(url);
+  };
+
 
   // Link to screen
   const routeNameRef = React.useRef<string | undefined>(null);
@@ -163,6 +224,20 @@ export default function App({ navigation }) {
           screens: {
             'flash-media-home': {
               path: "open/media-preview/:id"
+            }
+          }
+        },
+        'training': {
+          screens: {
+            "training-list": {
+              path: "open/training-list"
+            }
+          }
+        },
+        'profile': {
+          screens: {
+            "profile-info": {
+              path: "open/profile-info"
             }
           }
         }

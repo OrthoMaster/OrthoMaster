@@ -93,6 +93,7 @@ export const clearCart = async () => {
  * Payment
  */
 export const createPaymentIntent = async (
+    id: string,
     amount: number,
     promotionCode: string,
     discountAmount: number,
@@ -102,6 +103,7 @@ export const createPaymentIntent = async (
 ) => {
     return axiosInstance.post(`${baseUrl}/payments/invoices/create-intent`,
         {
+            id: id,
             amount: amount,
             promotionCode: promotionCode,
             discountAmount: discountAmount,
@@ -289,11 +291,8 @@ export const generateContract = async () => {
             return status >= 200 && status < 500;
         }
     }).then((response) => {
-        console.log(response.data);
-
         return response.data?.data;
     }).catch((e: AxiosError) => {
-        console.log(e);
         throw e;
     });
 };

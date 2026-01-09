@@ -206,6 +206,7 @@ export const PreviewView = ({ navigation, route }) => {
     setCreatingInvoice(true);
     try {
       const paymentData = await createPaymentIntent(
+        cartData.id,
         finalAmount,
         !!appliedPromo ? appliedPromo.code : '',
         !!appliedPromo ? appliedPromo.discount : 0,

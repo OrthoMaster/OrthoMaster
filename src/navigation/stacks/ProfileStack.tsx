@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { ProfileView } from '../../views/profile/ProfileView';
 import { ProfileInfoView } from '../../views/profile/ProfileInfoView';
 import { ChangePasswordView } from '../../views/profile/ChangePasswordView';
+import { SettingsView } from '../../views/profile/SettingsView';
 
 import { NewCompanyView } from '../../views/company/NewCompanyView';
 import { NotificationView } from '../../views/notification/NotificationView';
@@ -59,6 +60,16 @@ export const ProfileStack = () => {
           animation: 'slide_from_right',
         }}
       />
+
+      <ProfileStackNav.Screen
+        name="settings-view"
+        component={SettingsView}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+
     </ProfileStackNav.Navigator>
   );
 }

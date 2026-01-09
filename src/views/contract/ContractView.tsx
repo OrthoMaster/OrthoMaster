@@ -17,13 +17,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import SignatureCanvas from 'react-native-signature-canvas';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+import CelebrationContractScreen from '../company/components/CelebrationContractScreen';
 
 import { generateContract, signContract } from '../../services/v2/CartService';
+
 
 interface ContractData {
   group: string;
@@ -46,6 +48,9 @@ export const ContractView = ({ navigation, route }) => {
     };
   }, [navigation]);
 
+  // Get cart Id
+  const { cartId } = route.params;
+
   // Fetch contract data
   const { data: contractData, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['contract'],
@@ -60,7 +65,9 @@ export const ContractView = ({ navigation, route }) => {
   const [signatureBase64, setSignatureBase64] = useState<string>('');
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const queryClient = useQueryClient();
 
   // User info
   const [location, setLocation] = useState('');
@@ -155,15 +162,17 @@ export const ContractView = ({ navigation, route }) => {
 
               // Send to server
               const result = await signContract({
+                cartId: cartId,
                 signature: signatureBase64,
                 location: location.trim(),
                 fullName: fullName.trim(),
               });
 
-              setUploading(false);
+              // Show celebration modal
+              setShowCelebration(true);
+              await queryClient.invalidateQueries({ queryKey: ['company'] });
 
             } catch (error) {
-              console.error('Error uploading:', error);
               Alert.alert('Erreur', 'Échec de l\'envoi : ' + error.message);
             } finally {
               setUploading(false);
@@ -174,12 +183,18 @@ export const ContractView = ({ navigation, route }) => {
     );
   };
 
+  // Handle close celeberation
+  const handleCelebrationClose = () => {
+    setShowCelebration(false);
+    navigation.popToTop();
+  };
+
   // Loading state
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={Colors.info} />
-        <Text style={styles.loadingText}>Chargement des devis...</Text>
+        <Text style={styles.loadingText}>Chargement des devis ...</Text>
       </View>
     );
   }
@@ -524,6 +539,12 @@ export const ContractView = ({ navigation, route }) => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Celebration Screen */}
+      <CelebrationContractScreen
+        visible={showCelebration}
+        onClose={handleCelebrationClose}
+      />
     </SafeAreaView>
   );
 };
@@ -572,8 +593,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
     paddingBottom: Spacings.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
   },
   headerLeft: {
     flexDirection: 'row',

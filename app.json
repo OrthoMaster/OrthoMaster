@@ -26,6 +26,25 @@
     "ios": {
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
+      "useNextNotificationsApi": true,
+      "bundleIdentifier": "com.hugotaieb.OrthoMaster",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Accès à vos photos pour ajouter des images.",
+        "NSMicrophoneUsageDescription": "Utilisé pour enregistrer de l’audio.",
+        "NSFaceIDUsageDescription": "Utilisé pour sécuriser l’accès à l’application.",
+        "NSCameraUsageDescription": "La caméra est utilisée pour scanner des contenus ou ajouter des médias à votre profil.",
+        "NSUserNotificationUsageDescription": "Les notifications sont utilisées pour envoyer des rappels, des mises à jour de contenu et des informations importantes."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/v2_images/logo/adaptive_icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.hugotaieb.OrthoMaster",
+      "autoIncrement": true,
+      "googleServicesFile": "./google-services.json",
       "infoPlist": {
         "UIBackgroundModes": [
           "fetch",
@@ -39,16 +58,6 @@
         ],
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.hugotaieb.OrthoMaster"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/v2_images/logo/adaptive_icon.png",
-        "backgroundColor": "#FFFFFF"
-      },
-      "package": "com.hugotaieb.OrthoMaster",
-      "versionCode": 62,
-      "googleServicesFile": "./google-services.json",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -66,13 +75,9 @@
       "runtimeVersion": {
         "policy": "appVersion"
       },
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
-      "buildToolsVersion": "34.0.0",
       "permissions": [
         "INTERNET"
-      ],
-      "usesCleartextTraffic": false
+      ]
     },
     "extra": {
       "eas": {
@@ -91,13 +96,26 @@
           "supportsPictureInPicture": true
         }
       ],
-      ["react-native-video", { "iosCategory": "playback" }],
-      ["@stripe/stripe-react-native",
+      [
+        "react-native-video",
         {
-          "merchantIdentifier": "merchant.com.orthomaster",
-          "enableGooglePay": true
+          "iosCategory": "playback"
         }
-      ]
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "enableGooglePay": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/v2_images/logo/icon.png",
+          "color": "#FFAF31"
+        }
+      ],
+      "expo-router"
     ],
     "updates": {
       "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"

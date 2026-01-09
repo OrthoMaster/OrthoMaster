@@ -219,19 +219,19 @@ const CelebrationScreen = ({ visible, onClose }) => {
 
           {/* Message */}
           <Text style={styles.message}>
-            Votre formation est maintenant disponible
+            Les formations sont maintenant disponible
           </Text>
 
           {/* Decorative Elements */}
           <View style={styles.decorativeRow}>
             <Ionicons name="trophy" size={32} color={Colors.warning} />
-            <Ionicons name="star" size={28} color="#FFD700" />
+            <Ionicons name="star" size={28} color={Colors.primaryLight} />
             <Ionicons name="ribbon" size={32} color={Colors.info} />
           </View>
 
           {/* Continue Button */}
           <TouchableOpacity style={styles.continueButton} onPress={onClose}>
-            <Text style={styles.continueButtonText}>Commencer l'apprentissage</Text>
+            <Text style={styles.continueButtonText}>Retourner</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>

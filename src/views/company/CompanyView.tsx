@@ -540,7 +540,7 @@ export const CompanyView = ({ navigation, route }) => {
             onPress={() => navigation.navigate('payment-method')}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={18} color={Colors.white} />
+            <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={14} color={Colors.white} />
             <Text style={styles.fabSecondaryText}>Ajouter formations</Text>
           </TouchableOpacity>
         </View>
@@ -1004,7 +1004,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
-    marginLeft: Spacings.xxs
+    marginLeft: Spacings.xs
   },
 
   // Invite member
