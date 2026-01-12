@@ -161,32 +161,6 @@ const SessionExpiredScreen: React.FC<SessionExpiredScreenProps> = ({ visible, on
         backgroundColor={Colors.primary}
       />
       <View style={styles.container}>
-        {/* Floating Icons */}
-        {floatingIcons.map((icon) => (
-          <Animated.View
-            key={icon.id}
-            style={[
-              styles.floatingIcon,
-              {
-                transform: [
-                  { translateX: icon.x },
-                  { translateY: icon.y },
-                  {
-                    rotate: icon.rotate.interpolate({
-                      inputRange: [0, 360],
-                      outputRange: ['0deg', '360deg'],
-                    }),
-                  },
-                  { scale: icon.scale },
-                ],
-                opacity: icon.opacity,
-              },
-            ]}
-          >
-            <Ionicons name="lock-closed" size={24} color={Colors.white} />
-          </Animated.View>
-        ))}
-
         {/* Main Content */}
         <Animated.View
           style={[
@@ -306,7 +280,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'center',
-    fontStyle: 'italic',
   },
 });
 

@@ -183,10 +183,14 @@ export const AttachMemberView = ({ navigation, route }) => {
           <View>
             <Text style={styles.headerTitle}>Assigner les membres</Text>
             <Text style={styles.headerSubtitle}>
-              Sélectionnez les membres pour ces formations
+              Sélectionnez les membres
             </Text>
           </View>
+
         </View>
+        <TouchableOpacity onPress={() => { navigation.popToTop() }}>
+          <Ionicons name="close" size={26} color={Colors.danger} />
+        </TouchableOpacity>
       </View>
 
       {/* Content */}

@@ -250,7 +250,7 @@ export const PreviewProCartView = ({ navigation, route }) => {
   };
 
   const handleSign = () => {
-    navigation.navigate('contract-view', {cartId: cartData.id});
+    navigation.navigate('contract-view', { cartId: cartData.id });
   };
 
   const handleCelebrationClose = () => {
@@ -259,7 +259,7 @@ export const PreviewProCartView = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
@@ -454,7 +454,8 @@ export const PreviewProCartView = ({ navigation, route }) => {
         {/* Confirm Payment Button */}
         {cartData.payment_type == '0'
           ?
-          <View style={styles.confirmContainer}>
+          <View style={[styles.confirmContainer, { paddingBottom: Platform.OS === 'android' ? Spacings.xxxxl : Spacings.xxl }]}>
+
             <View style={styles.confirmInfo}>
               <Text style={styles.confirmLabel}>Total à payer</Text>
               <Text style={styles.confirmAmount}>{finalAmount} €</Text>

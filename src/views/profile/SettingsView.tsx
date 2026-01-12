@@ -8,12 +8,19 @@ import {
   StatusBar,
   Switch,
   Alert,
+  Modal,
+  Linking,
+  Platform
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+
+import { useGetUser } from '../../hooks/auth.hook';
+import { updateSettings } from '../../services/v2/AuthService';
 
 interface SettingItemProps {
   iconName: keyof typeof Ionicons.glyphMap;
@@ -66,29 +73,60 @@ export const SettingsView = ({ navigation }) => {
     };
   }, [navigation]);
 
+  const { data: user, isLoading: isLoadingUser, refetch, isFetching, error } = useGetUser();
+
+
   // Settings state
   const [settings, setSettings] = useState({
     // Notifications
-    pushNotifications: true,
-    emailNotifications: true,
-    newContentNotifications: true,
-    
-    // Preferences
-    autoPlayVideos: true,
-    saveData: false,
-    downloadOverWifiOnly: true,
-    
-    // Privacy
-    showOnlineStatus: true,
-    allowAnalytics: true,
+    notifications: false,
   });
-
   const [hasChanges, setHasChanges] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const handleSettingChange = (key: keyof typeof settings, value: boolean) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    setHasChanges(true);
+  // Set values
+  useEffect(() => {
+    setSettings({
+      notifications: user.settings?.notifications || false
+    });
+    setIsLoading(false);
+  }, [user]);
+
+  const handleSettingChange = async (key: keyof typeof settings, value: boolean) => {
+    if (key == 'notifications' && value == true && !user.settings?.notifications) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      // When not asked yet
+      if (existingStatus !== 'undetermined') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      // When is denied
+      else if (finalStatus !== 'granted') {
+        Alert.alert(
+          'Notifications désactivées',
+          'Vous avez refusé les notifications. Veuillez les activer dans les paramètres de votre appareil.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            {
+              text: 'Ouvrir les paramètres',
+              onPress: () => Linking.openSettings()
+            }
+          ]
+        );
+      }
+
+      if (finalStatus == 'granted') {
+        setSettings(prev => ({ ...prev, [key]: value }));
+        setHasChanges(true);
+      }
+    } else {
+      setSettings(prev => ({ ...prev, [key]: value }));
+      setHasChanges(true);
+    }
   };
 
   const back = () => {
@@ -119,19 +157,18 @@ export const SettingsView = ({ navigation }) => {
 
   const handleSave = async () => {
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // TODO: Call your API to save settings
-      // const result = await updateSettings(settings);
-      
-      Alert.alert('Succès', 'Vos paramètres ont été enregistrés avec succès !');
-      setHasChanges(false);
-      
-      // Optional: Navigate back after successful save
-      // setTimeout(() => navigation.goBack(), 500);
+      const result = await updateSettings(settings);
+
+      if (result == true) {
+        refetch();
+        setShowSuccessModal(true);
+        setHasChanges(false);
+        setTimeout(() => navigation.goBack(), 2500);
+      } else {
+        Alert.alert('Erreur', 'Une erreur est survenue lors de l\'enregistrement');
+      }
     } catch (error) {
       Alert.alert('Erreur', 'Une erreur est survenue lors de l\'enregistrement');
     } finally {
@@ -140,7 +177,8 @@ export const SettingsView = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container}
+      edges={Platform.OS === 'android' ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
@@ -164,8 +202,8 @@ export const SettingsView = ({ navigation }) => {
               iconName="notifications-outline"
               title="Notifications push"
               description="Recevoir des notifications sur votre appareil"
-              value={settings.pushNotifications}
-              onValueChange={(value) => handleSettingChange('pushNotifications', value)}
+              value={settings.notifications}
+              onValueChange={(value) => handleSettingChange('notifications', value)}
               isLast
             />
           </View>
@@ -190,6 +228,31 @@ export const SettingsView = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* Icon */}
+            <View style={styles.modelIconContainer}>
+              <Ionicons name="checkmark-circle" size={50} color={Colors.success} />
+            </View>
+
+            {/* Title */}
+            <Text style={styles.modalTitle}>Succès</Text>
+
+            {/* Message */}
+            <Text style={styles.modalMessage}>
+              Vos paramètres ont été enregistrés avec succès !
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -210,8 +273,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.md,
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   headerTitle: {
     fontSize: 18,
@@ -250,7 +313,6 @@ const styles = StyleSheet.create({
   },
   settingItemLeft: {
     flexDirection: 'row',
-    alignItems: 'center',
     flex: 1,
     marginRight: Spacings.md,
   },
@@ -304,5 +366,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: Spacings.xl,
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: Spacings.lg,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modelIconContainer: {
+    marginBottom: Spacings.sm,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+  },
+  modalMessage: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingTop: Spacings.xxs,
+    marginBottom: Spacings.md,
+    width: '70%',
   },
 });

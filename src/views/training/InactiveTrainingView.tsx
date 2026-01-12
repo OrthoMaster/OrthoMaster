@@ -9,8 +9,10 @@ import {
   Animated,
   Platform,
   Dimensions,
-  Alert
+  Alert,
+  StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,7 +23,6 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 import Colors from "../../../constants/Colors";
 import Spacings from "../../../constants/Spacings";
-import { Styles } from "../../../constants/Styles";
 
 import { getCartDetails, addToCart, removeFromCart } from "../../services/v2/CartService";
 
@@ -249,40 +250,41 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   const flyingCartStyle = {
     opacity: flyingAnimation.interpolate({
       inputRange: [0, 0.3, 1],
-      outputRange: [1, 1, 0], // Mờ dần ở cuối
+      outputRange: [1, 1, 0],
     }),
     transform: [
       {
         translateX: flyingAnimation.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, 200], // Bay sang phải 200px
+          outputRange: [0, 200],
         }),
       },
       {
         translateY: flyingAnimation.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, -400], // Bay lên trên 400px
+          outputRange: [0, -400],
         }),
       },
       {
         scale: flyingAnimation.interpolate({
           inputRange: [0, 1],
-          outputRange: [1, 0.3], // Nhỏ dần xuống 30% kích thước ban đầu
+          outputRange: [1, 0.3],
         }),
       },
     ],
   };
 
   return (
-    <View style={styles.wrapper}>
+    <SafeAreaView style={[styles.wrapper, { backgroundColor: headerColor || Colors.blue }]} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={headerColor || Colors.blue} />
+
       <GestureHandlerRootView style={{ flex: 1 }}>
         {/* Header with colored background and logo */}
         <View style={[styles.headerContainer, { backgroundColor: headerColor }]}>
+          <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+            <Ionicons name="close" size={24} color={Colors.white} />
+          </TouchableOpacity>
           <View style={styles.headerContent}>
-            <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-              <Ionicons name="close" size={24} color={Colors.white} />
-            </TouchableOpacity>
-
             <View style={styles.logoContainer}>
               {pkg.logo ?
                 <Image
@@ -363,7 +365,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
 
             {/* Bottom Buttons */}
             {!pkg.available_flg &&
-              <View style={styles.bottomButtonContainer}>
+              <View style={[styles.bottomButtonContainer, { paddingBottom: Platform.OS == 'ios' ? Spacings.xl : Spacings.xxxl }]}>
                 {!isInCart ? (
                   // Ajouter
                   <TouchableOpacity
@@ -442,7 +444,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
           </BottomSheetScrollView>
         </BottomSheet>
       </GestureHandlerRootView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -453,25 +455,22 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     height: '40%',
-    paddingTop: Platform.OS === 'ios' ? 0 : Spacings.lg,
-    paddingBottom: Spacings.xl,
     paddingHorizontal: Spacings.lg,
-    justifyContent: 'center', // Căn giữa logo
   },
   headerContent: {
+    flex: 1,
+    paddingBottom: Spacings.xl,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButton: {
-    position: 'absolute',
-    right: 0,
-    top: Platform.OS === 'ios' ? -50 : Spacings.lg,
+    alignSelf: 'flex-end',
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
   },
   logoContainer: {
     width: 120, // Tăng kích thước logo
@@ -702,7 +701,6 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     paddingHorizontal: Spacings.lg,
-    paddingBottom: Platform.OS == 'ios' ? Spacings.xl : Spacings.xxxl,
     paddingTop: Spacings.lg
   },
   addToCartButton: {

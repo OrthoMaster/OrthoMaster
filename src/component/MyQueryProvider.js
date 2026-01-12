@@ -107,7 +107,7 @@ export const MyQueryProvider = ({
         <QueryClientProvider client={client} >
             {children}
             {isError ?
-                <SafeAreaView style={styles.errorNotifContainer}>
+                <SafeAreaView style={styles.errorNotifContainer} edges={['bottom']}>
                     <Text style={styles.errorNotifText}>{errorMsg}</Text>
                 </SafeAreaView>
                 : null
@@ -118,14 +118,15 @@ export const MyQueryProvider = ({
 
 const styles = StyleSheet.create({
     errorNotifContainer: {
-        backgroundColor: 'red',
+        backgroundColor: '#E53935',
         alignItems: 'center'
     },
     errorNotifText: {
         color: '#ffffff',
         fontWeight: 'bold',
         textAlign: 'center',
-        marginTop: 5
+        marginTop: 5,
+        fontFamily: 'Poppins-Regular'
     }
 })
 

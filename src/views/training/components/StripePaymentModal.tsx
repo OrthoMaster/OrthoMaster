@@ -156,7 +156,7 @@ export default function StripePaymentModal({
           <View style={styles.overlay} />
         </TouchableWithoutFeedback>
 
-        <View style={styles.modalContent}>
+        <View style={[styles.modalContent, { paddingBottom: Platform.OS === 'android' ? Spacings.xxxl : Spacings.xl }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Paiement sécurisé</Text>
             <TouchableOpacity onPress={onClose}>
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: Spacings.md,
+    paddingBottom: Spacings.xxxl,
     maxHeight: '90%'
   },
   modalHeader: {

@@ -8,6 +8,9 @@ import { login, me } from '../services/v2/AuthService';
 type LoginInput = {
   email: string;
   password: string;
+  fcm_token: string,
+  device_id: string,
+  device_type: string,
 };
 
 type LoginResponse = {
@@ -18,6 +21,10 @@ type ApiError = {
   error?: string;
 };
 
+const isTimeoutError = (error: AxiosError) => {
+  return error.code === 'ECONNABORTED';
+};
+
 export function useLogin() {
   const queryClient = useQueryClient();
 
@@ -26,6 +33,9 @@ export function useLogin() {
       return login({
         email: data.email,
         password: data.password,
+        fcm_token: data.fcm_token,
+        device_id: data.device_id,
+        device_type: data.device_type,
       });
     },
     onSuccess: async (res) => {
@@ -35,6 +45,7 @@ export function useLogin() {
 
       queryClient.setQueryData(['current-user'], res.data.user);
     },
+    onError: (error) => {},
   });
 }
 

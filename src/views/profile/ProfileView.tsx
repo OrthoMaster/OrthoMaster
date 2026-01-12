@@ -18,7 +18,7 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 import { Styles } from '../../../constants/Styles';
 
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useLogout, useGetUser } from '../../hooks/auth.hook';
 import { orthomasterShare } from "../../futils";
 
@@ -218,8 +218,13 @@ export const ProfileView = ({ navigation, route }) => {
             <MenuItem
               iconName="settings-outline"
               title="Paramètres généraux"
-              isLast
               onPress={() => (navigation.navigate('settings-view'))}
+            />
+            <MenuItem
+              iconName="folder-open-outline"
+              title="Devis & Factures"
+              isLast
+              onPress={() => (navigation.navigate('document-view'))}
             />
           </View>
 

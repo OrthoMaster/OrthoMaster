@@ -20,14 +20,9 @@ import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
 import * as Font from 'expo-font';
 import CustomSplashScreen from './src/views/splash/CustomSplashScreen';
 import { useGetUser } from './src/hooks/auth.hook';
-import { useGlobalNotification } from './src/hooks/useGlobalNotification';
-import { authEvents, registerDevice } from './src/services/v2/AuthService';
+import { authEvents, updateSettings } from './src/services/v2/AuthService';
 
 import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScreen';
-
-import Colors from './constants/Colors';
-import Spacings from './constants/Spacings';
-import Toast, { BaseToast } from 'react-native-toast-message';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -38,6 +33,7 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
 if (Platform.OS === 'android') {
   Notifications.setNotificationChannelAsync('default', {
     name: 'OrthoMaster',
@@ -55,6 +51,7 @@ export default function App({ navigation }) {
 
   const { data: user } = useGetUser();
   const [showSessionExpired, setShowSessionExpired] = useState(false);
+  const previousUserRef = useRef(null);
 
   // Font
   useEffect(() => {
@@ -85,17 +82,30 @@ export default function App({ navigation }) {
     prepare();
   }, []);
 
+  // Save user id to know this is the first time login
+  useEffect(() => {
+    // First time
+    if (user && previousUserRef.current !== user?.id) {
+      setShowSessionExpired(false);
+    }
+
+    // Save current user id
+    previousUserRef.current = user?.id || null;
+  }, [user]);
+
   // Force login
   useEffect(() => {
     const handleUnauthorized = () => {
-      setShowSessionExpired(true);
+      if (user) {
+        setShowSessionExpired(true);
+      }
     };
 
     authEvents.on('unauthorized', handleUnauthorized);
     return () => {
       authEvents.off('unauthorized', handleUnauthorized);
     };
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const handleLoginPress = () => {
     setShowSessionExpired(false);
@@ -138,15 +148,15 @@ export default function App({ navigation }) {
       let finalStatus = existingStatus;
 
       // Ask permission if not reject (undetermined)
-      // if (existingStatus === 'undetermined') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-      // }
+      if (existingStatus === 'undetermined') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
 
-      // // If no permission -> return
-      // if (finalStatus !== 'granted') {
-      //   return;
-      // }
+      // If no permission -> return
+      if (finalStatus !== 'granted') {
+        return;
+      }
 
       // Get Expo push token
       const tokenData = await Notifications.getExpoPushTokenAsync({
@@ -155,38 +165,27 @@ export default function App({ navigation }) {
       const deviceId = Device.osBuildId || Device.osInternalBuildId || `device-${Date.now()}`;
 
       // Register with backend
-      await registerDevice({
-        fcm_token: tokenData.data,
-        device_id: deviceId,
-        device_type: Device.osName === 'iOS' ? 'ios' : 'android',
-      });
+      await updateSettings({ notifications: true });
     } catch (error) {
       // TODO: Send api error
-      console.error('Register device failed:', error);
     }
   };
 
   // Listener notification
   useEffect(() => {
-    // Lắng nghe khi nhận notification (app đang mở)
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      console.log('📨 Notification nhận được:', notification);
-      // Notification sẽ tự động hiển thị nhờ setNotificationHandler ở trên
-    });
+    // Listen notification (app openning)
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => { });
 
-    // Lắng nghe khi user TAP vào notification
+    // Listen action tab into notification
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('👆 User tap vào notification:', response);
-
-      // Lấy data từ notification
+      // Get notification
       const data = response.notification.request.content.data;
-      console.log('Data từ notification:', data);
 
-      // Xử lý navigation dựa vào data
+      // Handle navigation
       handleNotificationNavigation(data);
     });
 
-    // Cleanup khi unmount
+    // Cleanup when unmount
     return () => {
       notificationListener.current?.remove();
       responseListener.current?.remove();
@@ -198,11 +197,10 @@ export default function App({ navigation }) {
     console.log('navigate');
     if (!user) return;
 
-
+    // TODO
     const path = '/open/profile-info';
     const url = Linking.createURL(path);
 
-    console.log('🔗 Opening:', url);
     Linking.openURL(url);
   };
 
@@ -245,102 +243,6 @@ export default function App({ navigation }) {
     }
   };
 
-  // Toast - notification
-  const toastConfig = {
-    info: (props: any) => (
-      <BaseToast
-        {...props}
-        style={{
-          borderLeftColor: Colors.info,
-          backgroundColor: Colors.infoBackground,
-          width: 'auto',
-          marginRight: Spacings.md,
-          marginLeft: Spacings.md,
-        }}
-        text1Style={{
-          fontSize: 14,
-          fontFamily: 'Poppins-Medium',
-          color: Colors.info
-        }}
-        text2Style={{
-          fontSize: 11,
-          fontFamily: 'Poppins-Light',
-          color: Colors.text
-        }}
-        text2NumberOfLines={3}
-      />
-    ),
-    success: (props: any) => (
-      <BaseToast
-        {...props}
-        style={{
-          borderLeftColor: Colors.success,
-          backgroundColor: Colors.successBackground,
-          width: 'auto',
-          marginRight: Spacings.md,
-          marginLeft: Spacings.md,
-        }}
-        text1Style={{
-          fontSize: 14,
-          fontFamily: 'Poppins-Medium',
-          color: Colors.success
-        }}
-        text2Style={{
-          fontSize: 11,
-          fontFamily: 'Poppins-Light',
-          color: Colors.text
-        }}
-        text2NumberOfLines={3}
-      />
-    ),
-    warning: (props: any) => (
-      <BaseToast
-        {...props}
-        style={{
-          borderLeftColor: Colors.warning,
-          backgroundColor: Colors.warningBackground,
-          width: 'auto',
-          marginRight: Spacings.md,
-          marginLeft: Spacings.md,
-        }}
-        text1Style={{
-          fontSize: 14,
-          fontFamily: 'Poppins-Medium',
-          color: Colors.warning
-        }}
-        text2Style={{
-          fontSize: 11,
-          fontFamily: 'Poppins-Light',
-          color: Colors.text
-        }}
-        text2NumberOfLines={3}
-      />
-    ),
-    danger: (props: any) => (
-      <BaseToast
-        {...props}
-        style={{
-          borderLeftColor: Colors.danger,
-          backgroundColor: Colors.dangerBackground,
-          width: 'auto',
-          marginRight: Spacings.md,
-          marginLeft: Spacings.md,
-        }}
-        text1Style={{
-          fontSize: 14,
-          fontFamily: 'Poppins-Medium',
-          color: Colors.danger
-        }}
-        text2Style={{
-          fontSize: 11,
-          fontFamily: 'Poppins-Light',
-          color: Colors.text
-        }}
-        text2NumberOfLines={3}
-      />
-    ),
-  };
-
   // Splash - customize
   if (!appIsReady || showSplash) {
     return <CustomSplashScreen onFinish={() => setShowSplash(false)} />;
@@ -349,11 +251,6 @@ export default function App({ navigation }) {
   // if (isLoading) {
   //   return <LoadingContent />
   // }
-
-  const NotificationWatcher = () => {
-    useGlobalNotification(); // hook polling
-    return null;
-  };
 
   return (
     <NavigationContainer linking={linking}
@@ -377,8 +274,6 @@ export default function App({ navigation }) {
                   visible={showSessionExpired}
                   onLoginPress={handleLoginPress}
                 />
-                <NotificationWatcher />
-                <Toast config={toastConfig} />
               </QueryClientProvider>
             </UseCaptureGuard>
             :

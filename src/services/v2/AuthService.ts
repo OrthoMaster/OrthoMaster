@@ -28,6 +28,9 @@ export interface User {
 interface LoginParams {
     email: string;
     password: string;
+    fcm_token: string,
+    device_id: string,
+    device_type: string,
 }
 
 interface ForgotParam {
@@ -37,9 +40,15 @@ interface ForgotParam {
 /**
  * Login with email & password
  */
-export const login = async ({ email, password }: LoginParams) => {
+export const login = async ({ email, password, fcm_token, device_id, device_type }: LoginParams) => {
     return axiosInstance
-        .post(`${authUrl}/login`, { email, password })
+        .post(`${authUrl}/login`, {
+            email,
+            password,
+            fcm_token,
+            device_id,
+            device_type
+        })
         .then((response) => {
             return response.data;
         })
@@ -356,7 +365,24 @@ export const updateProfile = async (data: {
         });
 }
 
-export const changePassword = async (data : {
+/**
+ * Update settings
+ */
+export const updateSettings = async (data: { notifications: boolean }) => {
+    return axiosInstance
+        .put(`${baseUrl}/profile/settings`, { notifications: data.notifications })
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+}
+
+export const changePassword = async (data: {
     new_password: string
     new_password_confirmation: string
 }) => {
@@ -375,30 +401,20 @@ export const changePassword = async (data : {
 }
 
 /**
- * Store FCM Token of device
+ * Documents
  */
-export const registerDevice = async (data: {
-    fcm_token: string;
-    device_id: string;
-    device_type: 'ios' | 'android';
-}) => {
+export const getDocument = async () => {
     return axiosInstance
-        .post(`${authUrl}/device`, data)
+        .get(`${baseUrl}/documents`)
         .then((response) => {
-            return response.data;
+            if (response.data?.success == true) {
+                return response.data?.data;
+            }
+            
+            return false;
         })
         .catch((e: AxiosError) => {
-            return {
-                success: false,
-                message: (e.response?.data as any)?.message || 'Une erreur est survenue',
-                statusCode: e.response?.status
-            };
+            console.log('b');
+            return false;
         });
-};
-
-export const sendEmailVerification = (data : { email: string }) => {
-    return
-}
-export const verifyEmailCode = () => {
-    return;
 }

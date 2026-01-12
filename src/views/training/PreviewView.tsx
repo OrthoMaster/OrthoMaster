@@ -247,7 +247,7 @@ export const PreviewView = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
@@ -1082,9 +1082,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgb(255, 255, 255, 0.9)',
+    backgroundColor: 'rgb(255, 255, 255, 0.85)',
     paddingHorizontal: Spacings.lg,
-    paddingVertical: Spacings.md,
+    paddingVertical: Spacings.lg,
     borderTopWidth: 1,
     borderTopColor: Colors.line,
     elevation: 8,

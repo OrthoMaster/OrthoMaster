@@ -15,6 +15,7 @@ export const authEvents = new EventEmitter();
 // Axios instance
 const axiosInstance = axios.create({
     baseURL: baseUrl,
+    timeout: 20000
 });
 
 // Request interceptor

@@ -290,7 +290,6 @@ export const CartView = ({ navigation }) => {
   };
 
 
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
@@ -374,7 +373,7 @@ export const CartView = ({ navigation }) => {
                 </Text>
                 <TouchableOpacity
                   style={styles.browseButton}
-                  onPress={() => navigation.goBack()}
+                  onPress={() => navigation.popToTop()}
                 >
                   <Text style={styles.browseButtonText}>Parcourir les formations</Text>
                 </TouchableOpacity>
@@ -486,7 +485,6 @@ const styles = StyleSheet.create({
   swipeContainer: {
     position: 'relative',
     marginBottom: Spacings.sm,
-    marginHorizontal: Spacings.lg,
     overflow: 'hidden',
   },
   deleteBackground: {
@@ -498,8 +496,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: DELETE_ZONE_WIDTH,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
   },
   deleteIconContainer: {
     alignItems: 'center',
@@ -515,7 +511,6 @@ const styles = StyleSheet.create({
   // Item Card
   courseCard: {
     backgroundColor: Colors.white,
-    borderRadius: 15,
     overflow: 'hidden',
     elevation: 2,
     shadowColor: Colors.black,
@@ -529,7 +524,8 @@ const styles = StyleSheet.create({
   },
   courseContent: {
     flexDirection: 'row',
-    padding: Spacings.xs,
+    paddingVertical: Spacings.md,
+    paddingHorizontal: Spacings.lg,
   },
   imageContainer: {
     position: 'relative',

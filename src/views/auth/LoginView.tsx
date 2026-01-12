@@ -12,6 +12,9 @@ import {
   ActivityIndicator
 } from 'react-native';
 
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+
 import { useLogin } from '../../hooks/auth.hook';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -43,6 +46,7 @@ export const LoginView = ({ navigation, route }) => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
+
   });
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -103,7 +107,7 @@ export const LoginView = ({ navigation, route }) => {
   }, [login.isError, login.error]);
 
   // Handle login action
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // Dismiss keyboard
     Keyboard.dismiss();
 
@@ -112,8 +116,20 @@ export const LoginView = ({ navigation, route }) => {
       return;
     }
 
+    // Get Expo push token
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+    });
+    const deviceId = Device.osBuildId || Device.osInternalBuildId || `device-${Date.now()}`;
+
     // Login
-    login.mutate({ email: formData.email.trim(), password: formData.password });
+    login.mutate({
+      email: formData.email.trim(),
+      password: formData.password,
+      fcm_token: tokenData.data,
+      device_id: deviceId,
+      device_type: Device.osName === 'iOS' ? 'ios' : 'android',
+    });
   };
 
   return (

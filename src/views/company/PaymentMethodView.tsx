@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
@@ -209,7 +210,8 @@ export const PaymentMethodView = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container}
+      edges={Platform.OS === 'android' ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
@@ -217,7 +219,7 @@ export const PaymentMethodView = ({ navigation, route }) => {
         <View style={styles.headerLeft}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.popToTop()}
           >
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>

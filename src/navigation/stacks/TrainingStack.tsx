@@ -50,7 +50,22 @@ export const TrainingStack = () => {
         component={InactiveTrainingView}
         options={{
           headerShown: false,
-          presentation: 'modal',
+          cardStyleInterpolator: forZoomFromCenter,
+          transitionSpec: {
+            open: {
+              animation: 'spring',
+              config: {
+                stiffness: 150,
+                damping: 30,
+              },
+            },
+            close: {
+              animation: 'timing',
+              config: {
+                duration: 350,
+              },
+            },
+          },
         }}
       />
       <TrainingStackNav.Screen
@@ -109,7 +124,7 @@ export const TrainingStack = () => {
           presentation: 'card',
         }}
       />
-      
+
       <TrainingStackNav.Screen
         name="preview-view"
         component={PreviewView}

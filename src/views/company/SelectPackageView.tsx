@@ -246,6 +246,9 @@ export const SelectPackageView = ({ navigation, route }) => {
             </Text>
           </View>
         </View>
+        <TouchableOpacity onPress={() => { navigation.popToTop() }}>
+          <Ionicons name="close" size={26} color={Colors.danger} />
+        </TouchableOpacity>
       </View>
 
       {/* Stepper */}

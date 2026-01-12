@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { BouncingDots } from '../../component/LoadingDots';
 import Colors from '../../../constants/Colors';
@@ -30,8 +30,8 @@ import {
 } from '../../services/v2/AuthService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SWIPE_THRESHOLD = -80; // Giảm ngưỡng để dễ trigger hơn
-const DELETE_ZONE_WIDTH = 100; // Độ rộng vùng xóa
+const SWIPE_THRESHOLD = -80;
+const DELETE_ZONE_WIDTH = 100;
 
 interface Notification {
   id: string;
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
   },
