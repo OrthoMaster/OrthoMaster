@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -56,22 +56,6 @@ export const CompanyView = ({ navigation, route }) => {
     retry: 1,
     retryDelay: 1000,
   });
-
-  // Demo courses data
-  const demoCoursesData = [
-    { id: 1, name: 'Formation 1' },
-    { id: 2, name: 'Formation 2' },
-    { id: 3, name: 'Formation 3' },
-    { id: 4, name: 'Formation 4' },
-    { id: 5, name: 'Formation 5' },
-    { id: 6, name: 'Formation 6' },
-    { id: 7, name: 'Formation 7' },
-    { id: 8, name: 'Formation 8' },
-    { id: 9, name: 'Formation 9' },
-    { id: 10, name: 'Formation 10' },
-    { id: 11, name: 'Formation 11' },
-    { id: 12, name: 'Formation 12' },
-  ];
 
   // Expanded members state
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
@@ -1087,8 +1071,6 @@ const styles = StyleSheet.create({
   },
   courseCircle: {
     backgroundColor: Colors.blueBackground,
-    borderWidth: 1,
-    borderColor: Colors.blue,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacings.xxs,

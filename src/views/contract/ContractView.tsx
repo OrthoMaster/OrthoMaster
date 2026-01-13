@@ -188,6 +188,10 @@ export const ContractView = ({ navigation, route }) => {
     setShowCelebration(false);
     navigation.popToTop();
   };
+  const handleViewContracts = () => {
+    setShowCelebration(false);
+    navigation.navigate('profile', { screen: 'document-view' });
+  };
 
   // Loading state
   if (isLoading) {
@@ -414,64 +418,6 @@ export const ContractView = ({ navigation, route }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Signature Modal */}
-      <Modal visible={showSignatureModal} animationType="slide" transparent={false}>
-        <View style={styles.signatureModalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setShowSignatureModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>✕ Annuler</Text>
-            </TouchableOpacity>
-            <Text style={styles.signatureTitle}>Signez ici</Text>
-            <View style={{ width: 60 }} />
-          </View>
-
-          <SignatureCanvas
-            onOK={handleSignature}
-            onEmpty={() => {
-              Alert.alert('Erreur', 'La signature ne peut pas être vide');
-            }}
-            descriptionText="Dessinez votre signature ci-dessous"
-            clearText="Effacer"
-            confirmText="✓ Confirmer"
-            webStyle={`
-              .m-signature-pad {
-                box-shadow: none;
-                border: none;
-                margin: 0;
-              }
-              .m-signature-pad--body {
-                border: 2px dashed #E0E0E0;
-                border-radius: 10px;
-                margin: 20px;
-              }
-              .m-signature-pad--footer {
-                display: flex;
-                justify-content: space-between;
-                padding: 20px;
-              }
-              .m-signature-pad--footer .button {
-                background-color: #2196F3;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 12px;
-                font-weight: bold;
-                cursor: pointer;
-              }
-              .m-signature-pad--footer .button.clear {
-                background-color: #E53935;
-              }
-              .m-signature-pad--footer .button.save {
-                background-color: #43A047;
-              }
-            `}
-          />
-        </View>
-      </Modal>
-
       {/* User Info Modal */}
       <Modal
         visible={showInfoModal}
@@ -517,7 +463,7 @@ export const ContractView = ({ navigation, route }) => {
                   style={styles.input}
                   value={fullName}
                   onChangeText={setFullName}
-                  placeholder="Ex: OrthoMater"
+                  placeholder="Ex: OrthoMaster"
                   placeholderTextColor={Colors.gray}
                   autoCapitalize="words"
                   maxLength={100}
@@ -543,8 +489,82 @@ export const ContractView = ({ navigation, route }) => {
       {/* Celebration Screen */}
       <CelebrationContractScreen
         visible={showCelebration}
+        onViewDevis={handleViewContracts}
         onClose={handleCelebrationClose}
       />
+
+      {/* Signature Modal */}
+      <Modal visible={showSignatureModal} animationType="slide" transparent={false}>
+        <View style={styles.signatureModalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.signatureTitle}>Signez ici</Text>
+            <TouchableOpacity
+              onPress={() => setShowSignatureModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>✕ Annuler</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ flex: 1 }}>
+            <SignatureCanvas
+              style={{
+                width: '100%',
+                height: 300,
+              }}
+              onOK={handleSignature}
+              onEmpty={() => {
+                Alert.alert('Erreur', 'La signature ne peut pas être vide');
+              }}
+              descriptionText="Votre signature"
+              clearText="Effacer"
+              confirmText="Confirmer"
+              webviewProps={{
+                cacheEnabled: true,
+                androidLayerType: "hardware",
+              }}
+              webStyle={`
+                body {
+                  margin: 0;
+                  padding: 0;
+                }
+                .m-signature-pad {
+                  width: 100%;
+                  height: 60%;
+                  box-shadow: none;
+                  border: none;
+                  margin: 0;
+                  padding: 0;
+                }
+                .m-signature-pad--body {
+                  border: 2px dashed #E0E0E0;
+                  border-radius: 10px;
+                  margin: 10px;
+                  width: calc(100% - 20px);
+                }
+                .m-signature-pad--footer {
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 20px;
+                }
+                .m-signature-pad--footer .button {
+                  background-color: #2196F3;
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  font-size: 12px;
+                  font-weight: bold;
+                  cursor: pointer;
+                }
+                .m-signature-pad--footer .button.clear {
+                  background-color: #E53935;
+                }
+                .m-signature-pad--footer .button.save {
+                  background-color: #43A047;
+                }
+              `}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -753,8 +773,11 @@ const styles = StyleSheet.create({
   // Info Section
   infoSection: {
     backgroundColor: '#FFF',
-    paddingLeft: Spacings.xs,
-    marginBottom: Spacings.sm
+    paddingHorizontal: Spacings.xs,
+    marginBottom: Spacings.xs,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    gap: Spacings.md
   },
   infoLabel: {
     fontSize: 10,
@@ -820,10 +843,11 @@ const styles = StyleSheet.create({
   // Signature Modal
   signatureModalContainer: {
     flex: 1,
-    marginTop: Spacings.xxxl,
+
     backgroundColor: Colors.white,
   },
   modalHeader: {
+    marginTop: Spacings.xxxl,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -833,11 +857,10 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.line,
   },
   signatureTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Bold',
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
     color: Colors.text,
   },
-  cancelButton: {},
   cancelButtonText: {
     color: Colors.danger,
     fontSize: 14,

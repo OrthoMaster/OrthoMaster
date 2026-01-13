@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from "@tanstack/react-query";
 import * as Sharing from 'expo-sharing';
 
@@ -27,22 +27,33 @@ interface DocumentItemProps {
   document: string;
   updated_at: string;
   onDownload: (document: string) => void;
+  organization?: string;
+  type?: string;
 }
 
 const DocumentItem: React.FC<DocumentItemProps> = ({
   no,
   document,
   updated_at,
-  onDownload
+  onDownload,
+  organization,
+  type
 }) => (
   <View style={styles.settingItem}>
     <View style={styles.settingItemLeft}>
       <View style={styles.iconContainer}>
-        <MaterialCommunityIcons name={'invoice-text-outline'} size={20} color={Colors.gray} />
+        {type == 'contract'
+          ? <FontAwesome6 name="signature" size={18} color={Colors.success} />
+          : <MaterialCommunityIcons name={'invoice-text-outline'} size={20} color={Colors.blue} />
+        }
+
       </View>
       <View style={styles.settingItemText}>
         <Text style={styles.settingItemTitle}>{no}</Text>
         <Text style={styles.settingItemDescription}>{updated_at}</Text>
+        {organization && type == 'contract' &&
+          <Text style={styles.settingItemDescription}>{organization}</Text>
+        }
       </View>
     </View>
     {document &&
@@ -77,7 +88,10 @@ export const DocumentView = ({ navigation }) => {
   });
 
   const back = () => {
-    navigation.popToTop();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'profile-view' }],
+    });
   };
 
   const downloadFile = async (document: string) => {
@@ -96,8 +110,6 @@ export const DocumentView = ({ navigation }) => {
       }
 
       const finalFile = await File.downloadFileAsync(url, destination);
-      Alert.alert('Succès', 'Téléchargement terminé');
-
       await Sharing.shareAsync(finalFile.uri, {
         UTI: 'com.adobe.pdf',
         mimeType: 'application/pdf',
@@ -163,7 +175,7 @@ export const DocumentView = ({ navigation }) => {
           {/* Factures Section */}
           {data.invoices?.length > 0 &&
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Factures {data.invoices?.length || 0}</Text>
+              <Text style={styles.sectionTitle}>Factures ({data.invoices?.length || 0})</Text>
               <View style={styles.sectionContent}>
                 {data.invoices.map(inv => (
                   <DocumentItem
@@ -172,6 +184,26 @@ export const DocumentView = ({ navigation }) => {
                     updated_at={inv.updated_at}
                     document={inv.document}
                     onDownload={downloadFile}
+                  />
+                ))}
+              </View>
+            </View>
+          }
+
+          {/* Contract Section */}
+          {data.contracts?.length > 0 &&
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Devis ({data.contracts?.length || 0})</Text>
+              <View style={styles.sectionContent}>
+                {data.contracts.map(cont => (
+                  <DocumentItem
+                    key={'cont' + cont.id}
+                    no={cont.no}
+                    updated_at={cont.updated_at}
+                    document={cont.document}
+                    onDownload={downloadFile}
+                    organization={cont.organization}
+                    type='contract'
                   />
                 ))}
               </View>
@@ -195,6 +227,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.sm,
     paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
@@ -243,8 +276,8 @@ const styles = StyleSheet.create({
     marginRight: Spacings.md,
   },
   iconContainer: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     borderRadius: 8,
     backgroundColor: Colors.grayLight,
     justifyContent: 'center',

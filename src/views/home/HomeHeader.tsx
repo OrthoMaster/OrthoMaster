@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getUserNextLesson } from '../../services/ContentService';
 import { useGetUser } from '../../hooks/auth.hook';
 
-import Feather from '@expo/vector-icons/Feather';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
@@ -52,11 +52,9 @@ export const HomeHeader = ({ navigation }) => {
         </View>
         <View style={styles.headerButtonGroup}>
           <TouchableOpacity
-            onPress={() => {
-              navigation.navigate('home-search')
-            }}
+            onPress={() => { navigation.navigate('notification-list') }}
           >
-            <Feather name="search" size={24} color={Colors.gray} />
+            <Ionicons name="notifications" size={24} color={Colors.gray} />
           </TouchableOpacity>
         </View>
       </View>

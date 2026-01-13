@@ -20,6 +20,7 @@ import { BouncingDots } from '../../component/LoadingDots';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useGetUser } from '../../hooks/auth.hook';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -74,7 +75,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
   }, [navigation]);
 
   const queryClient = useQueryClient();
-  const { profile } = route.params || {};
+  const { data: profile } = useGetUser();
 
   const [professions, setProfessions] = useState([]);
   const [organizations, setOrganizaions] = useState([]);
@@ -227,12 +228,6 @@ export const ProfileInfoView = ({ navigation, route }) => {
 
   const back = () => {
     navigation.goBack();
-  };
-
-  // Handle email modification
-  const handleModifyEmail = () => {
-    setIsModifyingEmail(true);
-    setNewEmail(formData.email);
   };
 
   const handleCancelEmailModification = () => {
@@ -1062,6 +1057,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.sm,
     paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,

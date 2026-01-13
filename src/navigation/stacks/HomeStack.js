@@ -16,6 +16,8 @@ const HomeStackNav = createStackNavigator();
 
 import VideoFairPlayNoAuth from '../../component/TestVideoPlayer';
 
+import { NotificationView } from '../../views/notification/NotificationView';
+
 export const HomeStack = (user) => {
 
   return (
@@ -37,6 +39,7 @@ export const HomeStack = (user) => {
           headerShown: false
         }}
       />
+
       <HomeStackNav.Screen
         name="home-content"
         component={ContentDisplayer}
@@ -46,7 +49,7 @@ export const HomeStack = (user) => {
           headerBackButtonDisplayMode: "minimal",
           headerTintColor: '#000',
           headerTransparent: true,
-          headerBackImage: ()=>(<ReturnButtonIcon />)
+          headerBackImage: () => (<ReturnButtonIcon />)
         }}
       />
       <HomeStackNav.Screen
@@ -65,6 +68,16 @@ export const HomeStack = (user) => {
             fontSize: 22
           },
           headerBackTitleVisible: false,
+        }}
+      />
+
+
+      <HomeStackNav.Screen
+        name="notification-list"
+        component={NotificationView}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
         }}
       />
     </HomeStackNav.Navigator>

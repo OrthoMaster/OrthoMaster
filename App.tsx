@@ -190,17 +190,30 @@ export default function App({ navigation }) {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, []);
+  }, [user]);
 
   // Handle navigation when lick to notification
   const handleNotificationNavigation = (data: any) => {
-    console.log('navigate');
     if (!user) return;
 
-    // TODO
-    const path = '/open/profile-info';
+    const action = data.action || 'notification';
+    let path = 'open/profile-view/notification-list';
+    switch (action) {
+      case 'training':
+        path = 'open/training-list';
+        break;
+      case 'document':
+        path = 'open/documents';
+        break;
+      case 'company':
+        path = 'open/company';
+        break;
+      default:
+        path = 'open/profile-view/notification-list';
+        break;
+    }
+    
     const url = Linking.createURL(path);
-
     Linking.openURL(url);
   };
 
@@ -232,12 +245,25 @@ export default function App({ navigation }) {
             }
           }
         },
-        'profile': {
+        'company': {
           screens: {
-            "profile-info": {
-              path: "open/profile-info"
+            "company-view": {
+              path: "open/company"
             }
           }
+        },
+        'profile': {
+          screens: {
+            "profile-view": {
+              path: "open/profile-view/:screen"
+            },
+            "notification-list": {
+              path: "open/notifications"
+            },
+            "document-view": {
+              path: "open/documents"
+            }
+          },
         }
       }
     }

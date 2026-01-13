@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   StatusBar,
   Alert,
   Linking,
-  RefreshControl
+  RefreshControl,
+  Animated
 } from 'react-native';
 import { Divider, Dialog, Portal, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +27,6 @@ import { BouncingDots } from '../../component/LoadingDots';
 
 import { getMoreInfo } from '../../services/v2/AuthService';
 import { quitCompany } from '../../services/v2/CompanyService';
-
 
 interface MenuItemProps {
   iconName: keyof typeof Ionicons.glyphMap;
@@ -65,6 +65,26 @@ const MenuItem: React.FC<MenuItemProps> = ({ iconName, title, subtitle, disableL
 );
 
 export const ProfileView = ({ navigation, route }) => {
+  // Change screen
+  const screen = route.params?.screen;
+  useEffect(() => {
+    if (screen) {
+      const timer = setTimeout(() => {
+        navigation.navigate(screen);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [screen, navigation]);
+
+  // View bottom bar
+  useEffect(() => {
+    navigation.getParent()?.setOptions({
+      tabBarStyle: { display: 'flex' }
+    });
+  }, [navigation]);
+
+  // Get data
   const { data: user, isLoading: isLoadingUser, refetch: refetchUser, isFetching: isFetchingUser, error: errorUser } = useGetUser();
   const logout = useLogout();
 
@@ -118,6 +138,74 @@ export const ProfileView = ({ navigation, route }) => {
     navigation.navigate('company-new');
   }
 
+  // Animation cho notification icon
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (more && more?.data?.hasNotifications) {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(scaleAnim, {
+              toValue: 1.2,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.sequence([
+              Animated.timing(shakeAnim, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(shakeAnim, {
+                toValue: -1,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(shakeAnim, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(shakeAnim, {
+                toValue: -1,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(shakeAnim, {
+                toValue: 0,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+          Animated.delay(1500),
+          Animated.parallel([
+            Animated.timing(scaleAnim, {
+              toValue: 1,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      );
+
+      animation.start();
+
+      return () => {
+        animation.stop();
+      };
+    } else {
+      scaleAnim.setValue(1);
+      shakeAnim.setValue(0);
+    }
+  }, [more?.data?.hasNotifications]);
+
+  const rotateInterpolate = shakeAnim.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ['-15deg', '15deg'],
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -127,9 +215,20 @@ export const ProfileView = ({ navigation, route }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profil</Text>
         <TouchableOpacity style={styles.notificationButton} onPress={nofi}>
-          <Ionicons name="notifications-outline" size={20} color={Colors.text} />
-          {more && more?.data?.hasNotifications &&
-            <View style={styles.notificationDot} />
+
+          {(more && more?.data?.hasNotifications) ?
+            <Animated.View
+              style={{
+                transform: [
+                  { scale: scaleAnim },
+                  { rotate: rotateInterpolate },
+                ],
+              }}
+            >
+              <Ionicons name="notifications" size={22} color={Colors.primary} />
+            </Animated.View>
+            :
+            <Ionicons name="notifications" size={22} color={Colors.gray} />
           }
         </TouchableOpacity>
       </View>
@@ -206,7 +305,7 @@ export const ProfileView = ({ navigation, route }) => {
             <MenuItem
               iconName="person-outline"
               title="Informations personnelles"
-              onPress={() => (navigation.navigate('profile-info', { profile: user }))}
+              onPress={() => (navigation.navigate('profile-info'))}
             />
             <MenuItem
               iconName="shield-checkmark-outline"
@@ -352,6 +451,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
     paddingBottom: Spacings.md,
+    paddingTop: Spacings.sm,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
     flexDirection: 'row',
@@ -528,17 +628,6 @@ const styles = StyleSheet.create({
   // Noti
   notificationButton: {
     position: 'relative',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 0,
-    right: 1,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
   },
   iconContainer: {
     position: 'relative',

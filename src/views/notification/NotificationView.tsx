@@ -28,6 +28,7 @@ import {
   deleteNotification, deleteAllNotification,
   acceptNotification, rejectNotification
 } from '../../services/v2/AuthService';
+import { useGetUser } from '../../hooks/auth.hook';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = -80;
@@ -74,21 +75,17 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Chỉ bắt đầu pan khi vuốt ngang đủ mạnh
         return Math.abs(gestureState.dx) > 5 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
       },
       onPanResponderMove: (_, gestureState) => {
-        // Chỉ cho phép vuốt sang trái
         if (gestureState.dx < 0) {
           const clampedDx = Math.max(gestureState.dx, -DELETE_ZONE_WIDTH);
           translateX.setValue(clampedDx);
 
-          // Tính toán opacity và scale cho delete icon
           const progress = Math.min(Math.abs(clampedDx) / DELETE_ZONE_WIDTH, 1);
           deleteOpacity.setValue(progress);
           deleteScale.setValue(0.8 + (progress * 0.2)); // Scale từ 0.8 đến 1.0
 
-          // Check if reached threshold
           const reachedThreshold = gestureState.dx < SWIPE_THRESHOLD;
           if (reachedThreshold && !hasVibratedRef.current) {
             // Haptic feedback khi đạt ngưỡng
@@ -251,7 +248,8 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
   );
 };
 
-export const NotificationView = ({ navigation }) => {
+export const NotificationView = ({ navigation, route }) => {
+  const { data: user } = useGetUser();
   const { data: initNotifications, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => getNotifications(),
@@ -289,7 +287,23 @@ export const NotificationView = ({ navigation }) => {
     return;
   };
 
-  const handleAccept = async (id: string) => {
+  const handleAccept = async (id: string, type: string) => {
+    if (type == 'CompanyJoinRequest') {
+      if (user && !user.funding_organization_id) {
+        Alert.alert('Action impossible', 'Veuillez définir une organisme de formation avant de pouvoir rejoindre une équipe.', [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Définir',
+            onPress: () => {
+              navigation.navigate('profile');
+            },
+          },
+        ]);
+
+        return false;
+      }
+    }
+
     await acceptNotification(id);
     refetch();
   };
@@ -348,12 +362,7 @@ export const NotificationView = ({ navigation }) => {
         <View style={styles.headerLeft}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'profile-view' }],
-              });
-            }}
+            onPress={() => { navigation.goBack() }}
           >
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
@@ -419,7 +428,7 @@ export const NotificationView = ({ navigation }) => {
                   notification={notification}
                   onDelete={handleDelete}
                   onMarkAsRead={handleMarkAsRead}
-                  onAccept={handleAccept}
+                  onAccept={() => handleAccept(notification.id, notification.entity_type)}
                   onRefuse={handleRefuse}
                 />
               ))}
@@ -453,6 +462,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.sm,
     paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
@@ -571,18 +581,18 @@ const styles = StyleSheet.create({
   },
   labelAccept: {
     fontSize: 8,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.white,
-    backgroundColor: Colors.success,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.success,
+    backgroundColor: Colors.successBackground,
     paddingVertical: Spacings.xxs,
     paddingHorizontal: Spacings.xs,
     borderRadius: 16,
   },
   labelReject: {
-    fontSize: 8,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.white,
-    backgroundColor: Colors.danger,
+    fontSize: 9,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.danger,
+    backgroundColor: Colors.dangerBackground,
     paddingVertical: Spacings.xxxs,
     paddingHorizontal: Spacings.xs,
     borderRadius: 16,

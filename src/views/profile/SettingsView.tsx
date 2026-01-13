@@ -186,7 +186,7 @@ export const SettingsView = ({ navigation }) => {
         <TouchableOpacity onPress={back}>
           <Ionicons name="arrow-back-outline" size={20} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Paramètres généraux</Text>
+        <Text style={styles.headerTitle}>Paramètres</Text>
       </View>
 
       <ScrollView
@@ -269,6 +269,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.sm,
     paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
