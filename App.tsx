@@ -6,7 +6,6 @@ import { useQueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from "expo-linking"
 const prefix = Linking.createURL('/');
 
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { AppState, Platform } from 'react-native';
 
@@ -20,13 +19,12 @@ import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
 import * as Font from 'expo-font';
 import CustomSplashScreen from './src/views/splash/CustomSplashScreen';
 import { useGetUser } from './src/hooks/auth.hook';
-import { authEvents, updateSettings } from './src/services/v2/AuthService';
+import { authEvents, updateNotiPermission } from './src/services/v2/AuthService';
 
 import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScreen';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowBanner: true,
@@ -158,14 +156,13 @@ export default function App({ navigation }) {
         return;
       }
 
-      // Get Expo push token
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-      });
-      const deviceId = Device.osBuildId || Device.osInternalBuildId || `device-${Date.now()}`;
+      if (!user) {
+        return;
+      }
 
-      // Register with backend
-      await updateSettings({ notifications: true });
+      if (user.settings.notifications === null) {
+        await updateNotiPermission({ notifications: true });
+      }
     } catch (error) {
       // TODO: Send api error
     }

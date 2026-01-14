@@ -317,6 +317,7 @@ export const ProfileView = ({ navigation, route }) => {
             <MenuItem
               iconName="settings-outline"
               title="Paramètres généraux"
+              subtitle="Centres d'intérêt, notifications"
               onPress={() => (navigation.navigate('settings-view'))}
             />
             <MenuItem

@@ -19,6 +19,8 @@ export default {
 
   yellow: '#FFC107',
   white: '#ffffff',
+  purple: '#6366f1',
+  purpleLight: '#8b5cf6',
   gray: '#979797',
   grayLight: '#F6F6F6',
 

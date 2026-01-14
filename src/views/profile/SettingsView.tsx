@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
   Alert,
   Modal,
   Linking,
-  Platform
+  Platform,
+  TextInput,
+  ActivityIndicator
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,8 +21,15 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
+import { useQuery } from '@tanstack/react-query';
 import { useGetUser } from '../../hooks/auth.hook';
-import { updateSettings } from '../../services/v2/AuthService';
+import { getPreFormData, updateSettings } from '../../services/v2/AuthService';
+
+interface Topic {
+  id: string;
+  name: string;
+  description?: string;
+}
 
 interface SettingItemProps {
   iconName: keyof typeof Ionicons.glyphMap;
@@ -30,6 +39,140 @@ interface SettingItemProps {
   onValueChange: (value: boolean) => void;
   isLast?: boolean;
 }
+
+interface TopicPillProps {
+  topic: Topic;
+  onRemove: (topicId: string) => void;
+}
+
+const TopicPill: React.FC<TopicPillProps> = ({ topic, onRemove }) => (
+  <View style={styles.topicPill}>
+    <Text style={styles.topicPillText}>{topic.name}</Text>
+    <TouchableOpacity
+      onPress={() => onRemove(topic.id)}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <Ionicons name="close-circle" size={18} color={Colors.primary} />
+    </TouchableOpacity>
+  </View>
+);
+
+interface TopicSelectionModalProps {
+  visible: boolean;
+  onClose: () => void;
+  topics: Topic[];
+  selectedTopicIds: string[];
+  onToggleTopic: (topicId: string) => void;
+  isLoading: boolean;
+}
+
+const TopicSelectionModal: React.FC<TopicSelectionModalProps> = ({
+  visible,
+  onClose,
+  topics,
+  selectedTopicIds,
+  onToggleTopic,
+  isLoading
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredTopics = topics.filter(topic =>
+    topic.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.topicModalContent}>
+          {/* Header */}
+          <View style={styles.topicModalHeader}>
+            <Text style={styles.topicModalTitle} numberOfLines={2}>Personnalisez votre expérience</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={24} color={Colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Search */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search-outline" size={20} color={Colors.gray} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Rechercher ..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor={Colors.gray}
+            />
+          </View>
+
+          {/* Topics List */}
+          <ScrollView style={styles.topicsList} showsVerticalScrollIndicator={false}>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+              </View>
+            ) : filteredTopics.length > 0 ? (
+              filteredTopics.map((topic, index) => {
+                const isSelected = selectedTopicIds.includes(topic.id);
+                return (
+                  <TouchableOpacity
+                    key={topic.id}
+                    style={[
+                      styles.topicItem,
+                      index !== filteredTopics.length - 1 && styles.topicItemBorder
+                    ]}
+                    onPress={() => onToggleTopic(topic.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.topicItemLeft}>
+                      <View style={[
+                        styles.checkbox,
+                        isSelected && styles.checkboxSelected
+                      ]}>
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={16} color={Colors.white} />
+                        )}
+                      </View>
+                      <View style={styles.topicItemText}>
+                        <Text style={styles.topicItemTitle}>{topic.name}</Text>
+                        {topic.description && (
+                          <Text style={styles.topicItemDescription}>
+                            {topic.description}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="search-outline" size={58} color={Colors.gray} />
+                <Text style={styles.emptyText}>Aucun centre d’intérêt trouvé</Text>
+              </View>
+            )}
+            <View style={{ height: 100 }}></View>
+          </ScrollView>
+
+          {/* Footer */}
+          <View style={styles.topicModalFooter}>
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={onClose}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.doneButtonText}>Terminer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const SettingItem: React.FC<SettingItemProps> = ({
   iconName,
@@ -73,39 +216,62 @@ export const SettingsView = ({ navigation }) => {
     };
   }, [navigation]);
 
+  const { data: preData, isLoading: isLoadingTopics } = useQuery({
+    queryKey: ['pre-form-data-profile'],
+    queryFn: () => getPreFormData(),
+  });
   const { data: user, isLoading: isLoadingUser, refetch, isFetching, error } = useGetUser();
-
 
   // Settings state
   const [settings, setSettings] = useState({
-    // Notifications
     notifications: false,
+    favoriteTopicIds: [] as string[],
   });
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Set values
+  // Topics state
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [showTopicModal, setShowTopicModal] = useState(false);
+
+  // Load topics from database
+  useEffect(() => {
+    if (preData?.data?.topics) {
+      setTopics(preData?.data?.topics);
+    }
+  }, [preData]);
+
+  // Set values from user data
   useEffect(() => {
     setSettings({
-      notifications: user.settings?.notifications || false
+      notifications: user.settings?.notifications || false,
+      favoriteTopicIds: user.settings?.topics ?? [],
     });
     setIsLoading(false);
   }, [user]);
 
+  // Get selected topics
+  const selectedTopics = useMemo(() => {
+    if (!Array.isArray(topics) || !Array.isArray(settings.favoriteTopicIds)) {
+      return [];
+    }
+    return topics.filter(topic =>
+      settings.favoriteTopicIds.includes(topic.id)
+    );
+  }, [topics, settings.favoriteTopicIds]);
+
+  // Handle change any settings
   const handleSettingChange = async (key: keyof typeof settings, value: boolean) => {
     if (key == 'notifications' && value == true && !user.settings?.notifications) {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      // When not asked yet
       if (existingStatus !== 'undetermined') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
-      }
-
-      // When is denied
-      else if (finalStatus !== 'granted') {
+      } else if (finalStatus !== 'granted') {
         Alert.alert(
           'Notifications désactivées',
           'Vous avez refusé les notifications. Veuillez les activer dans les paramètres de votre appareil.',
@@ -127,6 +293,26 @@ export const SettingsView = ({ navigation }) => {
       setSettings(prev => ({ ...prev, [key]: value }));
       setHasChanges(true);
     }
+  };
+
+  const handleToggleTopic = (topicId: string) => {
+    setSettings(prev => {
+      const isCurrentlySelected = prev.favoriteTopicIds.includes(topicId);
+      const newTopicIds = isCurrentlySelected
+        ? prev.favoriteTopicIds.filter(id => id !== topicId)
+        : [...prev.favoriteTopicIds, topicId];
+
+      return { ...prev, favoriteTopicIds: newTopicIds };
+    });
+    setHasChanges(true);
+  };
+
+  const handleRemoveTopic = (topicId: string) => {
+    setSettings(prev => ({
+      ...prev,
+      favoriteTopicIds: prev.favoriteTopicIds.filter(id => id !== topicId)
+    }));
+    setHasChanges(true);
   };
 
   const back = () => {
@@ -156,8 +342,7 @@ export const SettingsView = ({ navigation }) => {
   };
 
   const handleSave = async () => {
-    setIsLoading(true);
-
+    setIsSubmitting(true);
     try {
       const result = await updateSettings(settings);
 
@@ -172,7 +357,7 @@ export const SettingsView = ({ navigation }) => {
     } catch (error) {
       Alert.alert('Erreur', 'Une erreur est survenue lors de l\'enregistrement');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -194,6 +379,43 @@ export const SettingsView = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: hasChanges ? 120 : Spacings.md }}
       >
+        {/* Favorite Topics Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Centres d’intérêt</Text>
+          <View style={styles.sectionContent}>
+            <View style={styles.topicSection}>
+              {/* Selected Topics Pills */}
+              {selectedTopics.length > 0 ? (
+                <View style={styles.topicPillsContainer}>
+                  {selectedTopics.map(topic => (
+                    <TopicPill
+                      key={topic.id}
+                      topic={topic}
+                      onRemove={handleRemoveTopic}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.noTopicsText}>
+                  Sélectionnez vos centres d’intérêt pour personnaliser votre expérience
+                </Text>
+              )}
+
+              {/* Add Topic Button */}
+              <TouchableOpacity
+                style={styles.addTopicButton}
+                onPress={() => setShowTopicModal(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
+                <Text style={styles.addTopicButtonText}>
+                  {selectedTopics.length > 0 ? 'Modifier mes centres d’intérêt' : "Ajouter des centres d’intérêt"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
         {/* Notifications Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notifications</Text>
@@ -216,18 +438,28 @@ export const SettingsView = ({ navigation }) => {
           <TouchableOpacity
             style={[
               styles.saveButton,
-              isLoading && styles.saveButtonDisabled
+              isSubmitting && styles.saveButtonDisabled
             ]}
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
             activeOpacity={0.8}
             onPress={handleSave}
           >
             <Text style={styles.saveButtonText}>
-              {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              {isSubmitting ? 'Enregistrement...' : 'Enregistrer les modifications'}
             </Text>
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Topic Selection Modal */}
+      <TopicSelectionModal
+        visible={showTopicModal}
+        onClose={() => setShowTopicModal(false)}
+        topics={topics}
+        selectedTopicIds={settings.favoriteTopicIds}
+        onToggleTopic={handleToggleTopic}
+        isLoading={isLoadingTopics}
+      />
 
       {/* Success Modal */}
       <Modal
@@ -238,15 +470,10 @@ export const SettingsView = ({ navigation }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {/* Icon */}
             <View style={styles.modelIconContainer}>
               <Ionicons name="checkmark-circle" size={50} color={Colors.success} />
             </View>
-
-            {/* Title */}
             <Text style={styles.modalTitle}>Succès</Text>
-
-            {/* Message */}
             <Text style={styles.modalMessage}>
               Vos paramètres ont été enregistrés avec succès !
             </Text>
@@ -341,6 +568,182 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     lineHeight: 16,
   },
+
+  // Topic Section Styles
+  topicSection: {
+    paddingVertical: Spacings.md,
+    paddingHorizontal: Spacings.lg,
+  },
+  topicPillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacings.sm,
+    marginBottom: Spacings.md,
+  },
+  topicPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryLightBackground,
+    paddingVertical: Spacings.xs,
+    paddingLeft: Spacings.md,
+    paddingRight: Spacings.sm,
+    borderRadius: 20,
+    gap: Spacings.xs,
+  },
+  topicPillText: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.primary,
+  },
+  noTopicsText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.subtext,
+    marginBottom: Spacings.md,
+    fontStyle: 'italic',
+  },
+  addTopicButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacings.xs,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderStyle: 'dashed',
+    gap: Spacings.xs,
+    marginTop: Spacings.sm
+  },
+  addTopicButtonText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.primary,
+  },
+
+  // Topic Modal Styles
+  topicModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    height: '80%',
+    width: '100%',
+  },
+  topicModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+  },
+  topicModalTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+    width: '70%'
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    marginHorizontal: Spacings.lg,
+    marginVertical: Spacings.md,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 12,
+    gap: Spacings.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    paddingVertical: Spacings.sm,
+  },
+  topicsList: {
+    flex: 1,
+  },
+  topicItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacings.md,
+    paddingHorizontal: Spacings.lg,
+  },
+  topicItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+  },
+  topicItemLeft: {
+    flexDirection: 'row',
+    flex: 1,
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.line,
+    marginRight: Spacings.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  topicItemText: {
+    flex: 1,
+  },
+  topicItemTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+  },
+  topicItemDescription: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    marginTop: 2,
+  },
+  loadingContainer: {
+    paddingVertical: Spacings.xxl,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: Spacings.xxl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    marginTop: Spacings.md,
+    textAlign: 'center',
+  },
+  topicModalFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.lg,
+  },
+  doneButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacings.sm,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  doneButtonText: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+  },
+
+  // Bottom Section
   bottomSection: {
     position: 'absolute',
     bottom: 0,
@@ -369,7 +772,7 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
 
-  // Modal Styles
+  // Success Modal Styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',

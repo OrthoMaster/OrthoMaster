@@ -366,11 +366,17 @@ export const updateProfile = async (data: {
 }
 
 /**
- * Update settings
+ * Update notification permission
  */
-export const updateSettings = async (data: { notifications: boolean }) => {
+export const updateNotiPermission = async (
+    data: {
+        notifications: boolean,
+    }) => {
+
     return axiosInstance
-        .put(`${baseUrl}/profile/settings`, { notifications: data.notifications })
+        .put(`${baseUrl}/profile/notifications`, {
+            notifications: data.notifications,
+        })
         .then((response) => {
             if (response.data?.success == true) {
                 return true;
@@ -382,6 +388,52 @@ export const updateSettings = async (data: { notifications: boolean }) => {
         });
 }
 
+/**
+ * Update settings
+ */
+export const updateSettings = async (
+    data: {
+        notifications: boolean,
+        favoriteTopicIds: string[],
+    }) => {
+
+    return axiosInstance
+        .put(`${baseUrl}/profile/settings`, {
+            notifications: data.notifications,
+            topicIds: data.favoriteTopicIds
+        })
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+}
+
+/**
+ * Add 1 topic
+ */
+export const addTopic = async (topicId: string) => {
+
+    return axiosInstance
+        .put(`${baseUrl}/profile/topics/add`, { topicId })
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+}
+
+/**
+ * Change password
+ */
 export const changePassword = async (data: {
     new_password: string
     new_password_confirmation: string
@@ -410,11 +462,10 @@ export const getDocument = async () => {
             if (response.data?.success == true) {
                 return response.data?.data;
             }
-            
+
             return false;
         })
         .catch((e: AxiosError) => {
-            console.log('b');
             return false;
         });
 }

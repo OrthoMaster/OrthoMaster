@@ -40,6 +40,7 @@ interface Notification {
   content: string;
   type: string;
   action: string;
+  entity_type: string;
   read_flg: boolean;
   created_at: string;
   actor?: {

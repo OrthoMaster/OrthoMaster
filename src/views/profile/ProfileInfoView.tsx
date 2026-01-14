@@ -86,6 +86,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
       queryKey: ['pre-form-data-profile'],
       queryFn: () => getPreFormData(),
     });
+  
   useEffect(() => {
     if (preData?.data?.professions) {
       setProfessions(preData?.data?.professions);

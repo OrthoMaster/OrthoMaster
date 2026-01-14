@@ -115,7 +115,6 @@ export const DocumentView = ({ navigation }) => {
         mimeType: 'application/pdf',
       });
     } catch (error) {
-      console.log(error);
       Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
     }
   }
