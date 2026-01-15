@@ -27,7 +27,9 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import { DailyQuestionModal } from './components/DailyQuestionModal';
-import { getDailyQuestion } from '../../services/v2/ContentService';
+import { getDailyAction } from '../../services/v2/ContentService';
+
+import { PodcastPlayerModal } from './components/PodcastPlayerModal';
 
 
 export const HomeView = ({ navigation, route }) => {
@@ -46,7 +48,7 @@ export const HomeView = ({ navigation, route }) => {
   });
 
   const handleNavigation = (card: IContent) => {
-    navigation.navigate('Médias', {
+    navigation.navigate('media', {
       screen: 'flash-media-preview',
       params: {
         media: card,
@@ -56,18 +58,23 @@ export const HomeView = ({ navigation, route }) => {
   const isFlashLoading = isLoading || isFetching;
   const reload = () => { refetch(); };
 
+  /** Daily question */
   const [showDailyQuestion, setShowDailyQuestion] = useState(false);
-
-  const { data: dailyQuestionData, isLoading: isDailyQuestionLoading, refetch: refetchDailyQuestion } = useQuery({
-    queryKey: ['daily-question'],
-    queryFn: () => getDailyQuestion()
+  const { data: dailyContentData, refetch: refetchDailyContent } = useQuery({
+    queryKey: ['daily-action'],
+    queryFn: () => getDailyAction()
   });
 
-  const hasDailyQuestion = dailyQuestionData && dailyQuestionData !== false;
+  const hasDailyQuestion = dailyContentData && dailyContentData.question;
+  const hasDailyPodcast = dailyContentData && dailyContentData.podcast;
 
+  /** Podcast */
+  const [showPodcast, setShowPodcast] = useState(false);
+
+  /** Animation */
   // Animation for Quizz icon (shake)
   const shakeAnim = useRef(new Animated.Value(0)).current;
-  
+
   // Animation for Podcast icon (scale)
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -124,58 +131,59 @@ export const HomeView = ({ navigation, route }) => {
       <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}>
         <HomeHeader navigation={navigation} />
 
-        {hasDailyQuestion && (
-          <View style={styles.carouselHeader}>
-            <Text style={styles.actionlHeaderTitle}>Actions du jour</Text>
-          </View>
-        )}
-        
-        {hasDailyQuestion && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.bannerScrollContent}
-            style={styles.bannerScrollView}
-          >
-            {/* Quizz Banner */}
-            <TouchableOpacity
-              style={[styles.dailyQuestionBanner, styles.quizzBanner]}
-              onPress={() => setShowDailyQuestion(true)}
+        {(hasDailyQuestion || hasDailyPodcast) && (
+          <>
+            <View style={styles.carouselHeader}>
+              <Text style={styles.actionlHeaderTitle}>Actions du jour</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.bannerScrollContent}
+              style={styles.bannerScrollView}
             >
-              <View style={styles.dailyQuestionIconContainer}>
-                <Animated.View style={{ transform: [{ rotate: shakeRotation }] }}>
-                  <Ionicons name="bulb" size={28} color={Colors.blue} />
-                </Animated.View>
-              </View>
-              <View style={styles.dailyQuestionContent}>
-                <Text style={styles.dailyQuestionTitle}>Quizz</Text>
-                <Text style={styles.dailyQuestionSubtitle} numberOfLines={1}>
-                  {dailyQuestionData.question?.topic?.name}
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Podcast Banner */}
-            <TouchableOpacity
-              style={[styles.dailyQuestionBanner, styles.podcastBanner]}
-              onPress={() => {
-                // Navigate to Podcast screen
-                navigation.navigate('Podcast');
-              }}
-            >
-              <View style={[styles.dailyQuestionIconContainer, styles.podcastIconContainer]}>
-                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-                  <Ionicons name="mic" size={28} color={Colors.purple || '#8B5CF6'} />
-                </Animated.View>
-              </View>
-              <View style={styles.dailyQuestionContent}>
-                <Text style={styles.dailyQuestionTitle}>Podcast</Text>
-                <Text style={styles.dailyQuestionSubtitle} numberOfLines={1}>
-                  Écouter maintenant
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </ScrollView>
+              {/* Quizz Banner */}
+              {hasDailyQuestion &&
+                <TouchableOpacity
+                  style={[styles.dailyQuestionBanner, styles.quizzBanner]}
+                  onPress={() => setShowDailyQuestion(true)}
+                >
+                  <View style={styles.dailyQuestionIconContainer}>
+                    <Animated.View style={{ transform: [{ rotate: shakeRotation }] }}>
+                      <Ionicons name="bulb" size={28} color={Colors.blue} />
+                    </Animated.View>
+                  </View>
+                  <View style={styles.dailyQuestionContent}>
+                    <Text style={styles.dailyQuestionTitle}>Quizz</Text>
+                    <Text style={styles.dailyQuestionSubtitle} numberOfLines={1} ellipsizeMode='tail'>
+                      {dailyContentData.question?.topic?.name}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              }
+              {/* Podcast Banner */}
+              {hasDailyPodcast &&
+                <TouchableOpacity
+                  style={[styles.dailyQuestionBanner, styles.podcastBanner]}
+                  onPress={() => {
+                    setShowPodcast(true);
+                  }}
+                >
+                  <View style={[styles.dailyQuestionIconContainer, styles.podcastIconContainer]}>
+                    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                      <Ionicons name="mic" size={28} color={Colors.purple} />
+                    </Animated.View>
+                  </View>
+                  <View style={styles.dailyQuestionContent}>
+                    <Text style={styles.dailyQuestionTitle}>Podcast</Text>
+                    <Text style={styles.dailyQuestionSubtitle} numberOfLines={1} ellipsizeMode='tail'>
+                      {dailyContentData.podcast.title}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              }
+            </ScrollView>
+          </>
         )}
 
         <View style={styles.carouselContainer}>
@@ -190,7 +198,7 @@ export const HomeView = ({ navigation, route }) => {
                 <Text style={styles.carouselHeaderViewMoreButton}>Recharger</Text>
               </Pressable>
             ) : (
-              <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('Médias')}>
+              <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('media')}>
                 <Text style={styles.carouselHeaderViewMoreButton}>Voir tous</Text>
               </Pressable>
             )}
@@ -209,14 +217,28 @@ export const HomeView = ({ navigation, route }) => {
       {hasDailyQuestion && (
         <DailyQuestionModal
           visible={showDailyQuestion}
-          data={dailyQuestionData}
+          data={dailyContentData}
           onClose={() => {
-            if (!dailyQuestionData.has_answered) {
-              refetchDailyQuestion();
+            if (!dailyContentData.has_answered) {
+              refetchDailyContent();
             }
             setShowDailyQuestion(false);
           }}
         />
+      )}
+
+      {/* Podcast */}
+      {hasDailyPodcast && (
+      <PodcastPlayerModal
+        visible={showPodcast}
+        onClose={() => setShowPodcast(false)}
+        audioUrl={dailyContentData.podcast.link}
+        thumbnailUrl={dailyContentData.podcast.image}
+        title={dailyContentData.podcast.title}
+        subtitle={dailyContentData.podcast.author}
+        topic={dailyContentData.podcast.topic}
+        isSubcribed={dailyContentData.has_topic_podcast}
+      />
       )}
     </SafeAreaView >
   );
@@ -291,7 +313,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.blue,
   },
   podcastBanner: {
-    backgroundColor: Colors.purple ,
+    backgroundColor: Colors.purple,
     shadowColor: Colors.purple,
   },
   dailyQuestionIconContainer: {

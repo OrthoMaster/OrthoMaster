@@ -33,9 +33,13 @@ export default {
   info: '#0288D1',
   infoBackground: '#DBEAFE',
 
+  blackBackground: '#0a0a0a',
+  
 
   text: '#32343E',
   subtext: '#A0A5BA',
+  subtext2:  '#999',
+
   black: '#32343E',
   border: '#e2e8f0',
   disabledBackground: '#CDCDCF',

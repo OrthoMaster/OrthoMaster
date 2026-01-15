@@ -166,7 +166,7 @@ export const DailyQuestionModal: React.FC<DailyQuestionModalProps> = ({
       await answerDailyQuestion(data.question.id, selectedAnswer);
       setIsLoading(false);
     } else {
-      if (data.has_topic) {
+      if (data.has_topic_question) {
         onClose();
       } else {
         handleSubscribeTopic();
@@ -179,7 +179,7 @@ export const DailyQuestionModal: React.FC<DailyQuestionModalProps> = ({
 
     await addTopic(data.question.topic.id);
     await queryClient.invalidateQueries({ queryKey: ['current-user'] });
-    await queryClient.invalidateQueries({ queryKey: ['daily-question'] });
+    await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
     setIsLoading(false);
     onClose();
   };
@@ -207,7 +207,7 @@ export const DailyQuestionModal: React.FC<DailyQuestionModalProps> = ({
     if (!showResults) {
       return 'Valider';
     }
-    if (data.has_topic) {
+    if (data.has_topic_question) {
       return 'Fermer';
     }
     return `Suivre le sujet ${data.question.topic.name}`;
@@ -242,7 +242,7 @@ export const DailyQuestionModal: React.FC<DailyQuestionModalProps> = ({
           ]}
         >
           <LinearGradient
-            colors={[Colors.purple, Colors.purpleLight]}
+            colors={[Colors.blue, Colors.purple]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.header}
@@ -367,7 +367,7 @@ export const DailyQuestionModal: React.FC<DailyQuestionModalProps> = ({
                   <ActivityIndicator size="small" color={Colors.white} />
                   :
                   <Ionicons
-                    name={data.has_topic ? "close" : "notifications"}
+                    name={data.has_topic_question ? "close" : "notifications"}
                     size={20}
                     color={Colors.white}
                   />
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
   },
   selectedAnswer: {
     backgroundColor: Colors.blueBackground,
-    borderColor: Colors.purple,
+    borderColor: Colors.blue,
   },
   correctAnswer: {
     backgroundColor: Colors.successBackground,
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacings.md,
   },
   validateButton: {
-    backgroundColor: Colors.purple,
+    backgroundColor: Colors.blue,
     paddingVertical: Spacings.md,
     borderRadius: 16,
     alignItems: 'center',

@@ -1,48 +1,33 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  Image,
-  Text,
-  StyleSheet,
-  Linking,
-  TouchableOpacity
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { HomeHeaderButton } from './components/HomeHeaderButton';
-
-import { useQuery } from "@tanstack/react-query";
-import { getUserNextLesson } from '../../services/ContentService';
-import { useGetUser } from '../../hooks/auth.hook';
-
-import { Ionicons, Feather } from '@expo/vector-icons';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
+const { width, height } = Dimensions.get('window');
+const CARD_SIZE = (width - (Spacings.lg * 4)) / 3;
 
-export const HomeHeader = ({ navigation }) => {
-  const nextLesson = useQuery({
-    queryKey: ['Home', 'GET', 'userNextLesson'],
-    queryFn: () => getUserNextLesson(),
-    refetchOnWindowFocus: false,
-    enabled: false
-  })
-  const { data: user } = useGetUser();
+interface HomeHeaderProps {
+  userName?: string;
+  onNotificationPress?: () => void;
+  onSearchPress?: () => void;
+  onToolPress?: () => void;
+  onQuestionPress?: () => void;
+  hasNotification?: boolean;
+}
 
-  useEffect(() => {
-    if (!nextLesson.isLoading && !nextLesson.error && nextLesson.data) {
-      navigation.navigate('Formation', {
-        screen: 'formation-content',
-        initial: false,
-        params: { content: nextLesson.data }
-      });
-    }
-  }, [nextLesson])
-
-  let username = user ? user.name : '';
-
+export const HomeHeader: React.FC<HomeHeaderProps> = ({
+  userName = 'Francis',
+  onNotificationPress,
+  onSearchPress,
+  onToolPress,
+  onQuestionPress,
+  hasNotification = false,
+}) => {
   return (
-    <SafeAreaView>
-      <View style={styles.containerHeader}>
+    <View style={styles.container}>
+      {/* Top Row: Logo and Notifications */}
+      <View style={styles.topRow}>
         <View style={styles.logoContainer}>
           <Image
             style={styles.logo}
@@ -50,76 +35,92 @@ export const HomeHeader = ({ navigation }) => {
           />
           <Text style={styles.logoText}>OrthoMaster</Text>
         </View>
-        <View style={styles.headerButtonGroup}>
-          <TouchableOpacity
-            onPress={() => { navigation.navigate('notification-list') }}
-          >
-            <Ionicons name="notifications" size={24} color={Colors.gray} />
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={onNotificationPress}
+        >
+          <Ionicons name="notifications-outline" size={28} color={Colors.primary} />
+          {hasNotification && <View style={styles.notificationDot} />}
+        </TouchableOpacity>
+      </View>
+
+      {/* Greeting Section */}
+      <View style={styles.greetingSection}>
+        <Text style={styles.greetingText}>Bonjour</Text>
+        <Text style={styles.userNameText}>{userName}</Text>
+      </View>
+
+      {/* Square Cards in V Formation */}
+      <View style={styles.cardsContainer}>
+        {/* Left Card - Question */}
+        <View style={styles.cardWrapper}>
+          <View style={[styles.card3DWrapper, styles.question3DWrapper]}>
+            <TouchableOpacity
+              style={[styles.squareCard, styles.questionCard]}
+              onPress={onQuestionPress}
+              activeOpacity={0.8}
+            >
+              <Image
+                style={[styles.icons, { width: 60, height: 60 }]}
+                source={require('../../../assets/v2_images/icon/home/question_icon.png')}
+              />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.cardText, {color: Colors.primary}]}>Questions</Text>
+        </View>
+
+        {/* Center Card (Bottom) - Outils */}
+        <View style={[styles.cardWrapper, styles.centerCardWrapper]}>
+          <View style={[styles.card3DWrapper, styles.outil3DWrapper]}>
+            <TouchableOpacity
+              style={[styles.squareCard, styles.outilCard]}
+              onPress={onToolPress}
+              activeOpacity={0.8}
+            >
+              <Image
+                style={styles.icons}
+                source={require('../../../assets/v2_images/icon/home/outil_icon.png')}
+              />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.cardText, {color: Colors.blue}]}>Outils</Text>
+        </View>
+
+        {/* Right Card - Search */}
+        <View style={styles.cardWrapper}>
+          <View style={[styles.card3DWrapper, styles.search3DWrapper]}>
+            <TouchableOpacity
+              style={[styles.squareCard, styles.searchCard]}
+              onPress={onSearchPress}
+              activeOpacity={0.8}
+            >
+              <Image
+                style={[styles.icons, { width: 60, height: 60 }]}
+                source={require('../../../assets/v2_images/icon/home/search_icon.png')}
+              />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.cardText, {color: Colors.green}]}>Rechercher</Text>
         </View>
       </View>
+    </View>
+  );
+};
 
-      <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ fontFamily: 'Poppins-Regular', color: Colors.gray, fontSize: 16 }}>
-          Bonjour
-        </Text>
-        <Text style={{ fontFamily: 'Roboto', color: Colors.primary, fontSize: 22, fontWeight: '500' }}>
-          {username}
-        </Text>
-      </View>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
-          flex: 1,
-          display: 'flex',
-          marginTop: Spacings.xl
-        }}>
-        <HomeHeaderButton
-          value='Poser une question'
-          color='#ff9500'
-          icon={require('../../../assets/navigation/question-icon.png')}
-          style={styles.secondaryButton}
-          onPress={() => {
-            Linking.openURL('mailto:question@orthomaster.fr')
-          }}
-        />
-        <HomeHeaderButton
-          value='Outils'
-          color='#0070c0'
-          style={styles.primaryButton}
-          icon={require('../../../assets/navigation/outils-icon.png')}
-          onPress={() => {
-            navigation.navigate('Outils')
-          }}
-        />
-        <HomeHeaderButton
-          value='Rechercher          de contenu'
-          color='#85b238'
-          icon={require('../../../assets/navigation/rechercher-icon.png')}
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate('home-search')}
-        />
-      </View>
-    </SafeAreaView>
-  )
-}
 
-var styles = StyleSheet.create({
-  secondaryButton: {
-    marginTop: Spacings.md
+const styles = StyleSheet.create({
+  container: {
+    paddingLeft: Spacings.lg,
+    paddingTop: Spacings.md,
+    paddingBottom: Spacings.lg,
+    backgroundColor: Colors.white,
   },
-  primaryButton: {
-    marginHorizontal: Spacings.md
-  },
-  containerHeader: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginHorizontal: Spacings.lg,
-    marginBottom: Spacings.xl,
-    paddingTop: Spacings.md,
+    marginBottom: Spacings.md,
   },
   logoContainer: {
     flexDirection: 'row',
@@ -128,8 +129,8 @@ var styles = StyleSheet.create({
   },
   logo: {
     resizeMode: 'contain',
-    width: 25,
-    height: 25,
+    width: 20,
+    height: 20,
     marginRight: Spacings.xs
   },
   logoText: {
@@ -137,8 +138,102 @@ var styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     color: Colors.primary,
   },
-  headerButtonGroup: {
-    alignItems: 'flex-end',
-    flex: 1,
+
+  notificationButton: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    marginRight: Spacings.md,
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#EF4444',
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  greetingSection: {
+    marginBottom: Spacings.sm,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  greetingText: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    marginBottom: -4,
+  },
+  userNameText: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.primary,
+  },
+  cardsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginTop: Spacings.xs,
+  },
+  cardWrapper: {
+    alignItems: 'center',
+    marginRight: Spacings.md,
+  },
+  centerCardWrapper: {
+    marginTop: Spacings.xl,
+  },
+  
+  // 3D Wrapper for cards
+  card3DWrapper: {
+    borderRadius: 20,
+    paddingBottom: 8, // This creates the 3D depth
+  },
+  question3DWrapper: {
+    backgroundColor: '#C96506',
+  },
+  outil3DWrapper: {
+    backgroundColor: '#4579B8',
+  },
+  search3DWrapper: {
+    backgroundColor: '#3A9BA5',
+  },
+  
+  squareCard: {
+    width: CARD_SIZE,
+    height: CARD_SIZE,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  searchCard: {
+    backgroundColor: Colors.green,
+  },
+  outilCard: {
+    backgroundColor: Colors.blue,
+  },
+  questionCard: {
+    backgroundColor: Colors.primary,
+  },
+  cardText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+    marginTop: Spacings.sm,
+    textAlign: 'center',
+  },
+  icons: {
+    resizeMode: 'contain',
+    width: 50,
+    height: 50,
   }
-})
+});

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
@@ -41,6 +40,11 @@ if (Platform.OS === 'android') {
   });
 }
 
+// Constants for app reset logic
+const LAST_ACTIVE_KEY = '@app_last_active_time';
+const LAST_DATE_KEY = '@app_last_date';
+const INACTIVE_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+
 export default function App({ navigation }) {
   const queryClient = useQueryClient();
 
@@ -51,7 +55,79 @@ export default function App({ navigation }) {
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const previousUserRef = useRef(null);
 
-  // Font
+  // Check if app should reset based on inactivity or new day
+  const checkIfShouldResetApp = async () => {
+    try {
+      const lastActive = await AsyncStorage.getItem(LAST_ACTIVE_KEY);
+      const lastDate = await AsyncStorage.getItem(LAST_DATE_KEY);
+      const now = Date.now();
+      const today = new Date().toDateString();
+
+      let shouldReset = false;
+
+      // Check 1: Different day
+      if (lastDate && lastDate !== today) {
+        console.log('Nouveau jour détecté - réinitialisation de l\'application');
+        shouldReset = true;
+      }
+
+      // Check 2: Inactive for more than 2 hours
+      if (lastActive && !shouldReset) {
+        const timeDiff = now - parseInt(lastActive);
+        if (timeDiff > INACTIVE_DURATION) {
+          console.log('Inactivité prolongée détectée - réinitialisation de l\'application');
+          shouldReset = true;
+        }
+      }
+
+      if (shouldReset) {
+        await resetAppData();
+      } else {
+        // Update last active time and date
+        await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+        await AsyncStorage.setItem(LAST_DATE_KEY, today);
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de la vérification de réinitialisation:', error);
+    }
+  };
+
+  // Reset app data and navigation
+  const resetAppData = async () => {
+    try {
+      console.log('Réinitialisation des données de l\'application...');
+
+      // Show splash
+      setShowSplash(true);
+
+      // Reload data
+      await queryClient.invalidateQueries({ queryKey: ['current-user'] });
+      await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
+
+
+      // Update timestamps
+      const now = Date.now();
+      const today = new Date().toDateString();
+      await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+      await AsyncStorage.setItem(LAST_DATE_KEY, today);
+
+      // Navigate to home using deep link
+      const homeUrl = Linking.createURL('open/home'); // hoặc path nào đó về home
+      await Linking.openURL(homeUrl);
+
+      // Wait for data to load
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setShowSplash(false);
+
+      console.log('Application réinitialisée avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la réinitialisation:', error);
+      setShowSplash(false);
+    }
+  };
+
+  // Font loading and initialization
   useEffect(() => {
     async function prepare() {
       try {
@@ -70,8 +146,11 @@ export default function App({ navigation }) {
         } else {
           queryClient.setQueryData(['current-user'], JSON.parse(savedUser));
         }
+
+        // Check if app should reset on startup
+        await checkIfShouldResetApp();
       } catch (error) {
-        // TODO: Send api emergency
+        console.error('Erreur lors de la préparation de l\'application:', error);
       } finally {
         setAppIsReady(true);
       }
@@ -91,7 +170,7 @@ export default function App({ navigation }) {
     previousUserRef.current = user?.id || null;
   }, [user]);
 
-  // Force login
+  // Force login on unauthorized
   useEffect(() => {
     const handleUnauthorized = () => {
       if (user) {
@@ -122,14 +201,27 @@ export default function App({ navigation }) {
     }
   }, [user, appIsReady]);
 
-  // Listen app state changes - re-register when app active
+  // Listen app state changes - handle reset and re-register
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      // When app goes to background
+      if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+        // Save timestamp when app goes inactive
+        const now = Date.now();
+        await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+      }
+
+      // When app comes to foreground
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // Check if should reset app
+        await checkIfShouldResetApp();
+
+        // Re-register device for notifications if user exists
         if (user) {
           handleRegisterDevice();
         }
       }
+
       appState.current = nextAppState;
     });
 
@@ -164,7 +256,7 @@ export default function App({ navigation }) {
         await updateNotiPermission({ notifications: true });
       }
     } catch (error) {
-      // TODO: Send api error
+      console.error('Erreur lors de l\'enregistrement de l\'appareil:', error);
     }
   };
 
@@ -189,7 +281,7 @@ export default function App({ navigation }) {
     };
   }, [user]);
 
-  // Handle navigation when lick to notification
+  // Handle navigation when click to notification
   const handleNotificationNavigation = (data: any) => {
     if (!user) return;
 
@@ -209,11 +301,10 @@ export default function App({ navigation }) {
         path = 'open/profile-view/notification-list';
         break;
     }
-    
+
     const url = Linking.createURL(path);
     Linking.openURL(url);
   };
-
 
   // Link to screen
   const routeNameRef = React.useRef<string | undefined>(null);
@@ -221,12 +312,14 @@ export default function App({ navigation }) {
     prefixes: [prefix],
     config: {
       screens: {
-        'Accueil': {
+        'home': {
+          path: 'open/home',
           screens: {
             "home-home": {
-              path: "open/content/:id"
+              path: "open/content/:id",
             }
-          }
+          },
+          
         },
         'Médias': {
           screens: {
@@ -266,17 +359,14 @@ export default function App({ navigation }) {
     }
   };
 
-  // Splash - customize
+  // Splash screen
   if (!appIsReady || showSplash) {
     return <CustomSplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  // if (isLoading) {
-  //   return <LoadingContent />
-  // }
-
   return (
-    <NavigationContainer linking={linking}
+    <NavigationContainer
+      linking={linking}
       ref={navigationRef}
       onReady={() => {
         routeNameRef.current = navigationRef.current.getCurrentRoute().name;
