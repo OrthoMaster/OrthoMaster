@@ -54,3 +54,102 @@ export const countTimesPodcast = async (podcastId: string) => {
             return false;
         });
 }
+
+/**
+ * Get search histories and trending keywords
+ */
+export const getPreSearch = async () => {
+    return axiosInstance
+        .get(`${baseUrl}/content/pre-search`)
+        .then((response) => {
+            if (response.data?.success == true) {
+                return response.data?.data;
+            }
+
+            return null;
+        })
+        .catch((e: AxiosError) => {
+            return null;
+        });
+}
+
+/**
+ * Search content
+ */
+export const search = async (
+    keyword: string,
+    category: string,
+    lessonsPage: number = 1,
+    videosPage: number = 1
+) => {
+    return axiosInstance
+        .post(`${baseUrl}/content/search`, {
+            keyword: keyword,
+            category: category,
+            lessons_page: lessonsPage,
+            videos_page: videosPage
+        })
+        .then((response) => {
+            if (response.data?.success == true) {
+                return response.data?.data;
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+}
+
+/**
+ * Delete 1 keyword from search history
+ */
+export const deleteKeyword = async (id: string) => {
+    return axiosInstance
+        .delete(`${baseUrl}/content/search/history/${id}`)
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+}
+
+/**
+ * Clear all search history
+ */
+export const clearSearchHistory = async () => {
+    return axiosInstance
+        .delete(`${baseUrl}/content/search/histories`)
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+}
+
+
+
+export const checkOpenableLesson = async ( lessonId: string ) => {
+    return axiosInstance
+        .post(`${baseUrl}/content/search/lesson-openable`, { lessonId })
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+}

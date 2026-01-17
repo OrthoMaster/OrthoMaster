@@ -40,15 +40,24 @@ interface Block {
   tunes?: any;
 }
 
-interface RouteParams {
-  lessonTitle: string;
-  formationName: string;
-}
-
 type ScrollDirection = 'up' | 'down' | null;
 
 export const LessonContent = ({ navigation, route }) => {
-  const { lessonTitle, formationName, newLessonId } = route.params;
+  // Hide bottom nav
+  useEffect(() => {
+    navigation.getParent()?.setOptions({
+      tabBarStyle: { display: 'none' }
+    });
+
+    return () => {
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'flex' }
+      });
+    };
+  }, [navigation]);
+
+
+  const { lessonId, lessonTitle, trainingName } = route.params;
 
   // State management for pagination
   const [allBlocks, setAllBlocks] = useState<Block[]>([]);
@@ -122,7 +131,6 @@ export const LessonContent = ({ navigation, route }) => {
   };
 
   // Get first data
-  const lessonId = newLessonId;
   const { data, isLoading, error } = useQuery({
     queryKey: ['lessonContent', lessonId, 1],
     queryFn: () => getLessonContent({
@@ -319,7 +327,7 @@ export const LessonContent = ({ navigation, route }) => {
           </TouchableOpacity>
           <View>
             <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerSubTitle}>
-              {formationName}
+              {trainingName}
             </Text>
             <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerTitle}>
               {lessonTitle}
@@ -546,7 +554,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.lg,
     paddingVertical: Spacings.md,
     borderLeftWidth: 2,
-    borderLeftColor: Colors.danger, 
+    borderLeftColor: Colors.danger,
   },
-  
+
 });

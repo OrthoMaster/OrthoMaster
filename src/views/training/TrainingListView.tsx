@@ -108,12 +108,39 @@ const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, b
 
 export const TrainingListView = ({ navigation, route }) => {
 
+  const initPackageId = route.params.initPackageId || null;
+
   const { data: trainings, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['trainings'],
     queryFn: () => getTrainings(),
     retry: 1,
     retryDelay: 1000,
   });
+
+  // Handle open package screen
+  useEffect(() => {
+    if (!isLoading && !error) {
+      let foundTraining = null;
+      let foundPackage = null;
+
+      for (const training of trainings) {
+        const pkg = training.packages?.find(p => p.id === initPackageId);
+        if (pkg) {
+          foundTraining = training;
+          foundPackage = pkg;
+          break;
+        }
+      }
+
+      if (foundTraining && foundPackage) {
+        const timeout = setTimeout(() => {
+          handlePackagePress(foundTraining, foundPackage)
+        }, 1000);
+
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [initPackageId, trainings, isLoading, error]);
 
   // Handle scrolls
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -195,11 +222,6 @@ export const TrainingListView = ({ navigation, route }) => {
     }
   );
 
-  // Handle close modal
-  const closeScreen = (): void => {
-    navigation.goBack();
-  };
-
   const handlePackagePress = (training, pkg) => {
     if (pkg.available_flg) {
       navigation.navigate('training-view', {
@@ -242,9 +264,6 @@ export const TrainingListView = ({ navigation, route }) => {
               <Image
                 source={require("../../../assets/v2_images/icon/bag_icon.png")} style={{ height: 25, width: 25 }} resizeMode={'contain'} />
             </TouchableOpacity>
-            {/* <TouchableOpacity onPress={closeScreen}>
-              <MaterialIcons name="search" size={24} color={Colors.blue} />
-            </TouchableOpacity> */}
           </View>
         </View>
 

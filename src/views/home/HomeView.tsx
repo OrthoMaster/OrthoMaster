@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Animated,
-  Platform
+  Platform,
+  Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,8 @@ import MediaSkeleton from '../../views/media/components/MediaSkeleton';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+
+import { useGetUser } from '../../hooks/auth.hook';
 
 import { DailyQuestionModal } from './components/DailyQuestionModal';
 import { getDailyAction } from '../../services/v2/ContentService';
@@ -57,6 +60,9 @@ export const HomeView = ({ navigation, route }) => {
   }
   const isFlashLoading = isLoading || isFetching;
   const reload = () => { refetch(); };
+
+  /** Get user */
+  const { data: user } = useGetUser();
 
   /** Daily question */
   const [showDailyQuestion, setShowDailyQuestion] = useState(false);
@@ -129,7 +135,12 @@ export const HomeView = ({ navigation, route }) => {
       <StatusBar barStyle="dark-content" animated={true} backgroundColor={Colors.white} />
 
       <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}>
-        <HomeHeader navigation={navigation} />
+        <HomeHeader userName={user.name}
+          onNotificationPress={() => navigation.navigate('notification-list')}
+          hasNotification={user.settings?.notifications ?? false}
+          onSearchPress={() => navigation.navigate('home-search')}
+          onToolPress={() => navigation.navigate('tools')}
+        />
 
         {(hasDailyQuestion || hasDailyPodcast) && (
           <>
@@ -229,16 +240,16 @@ export const HomeView = ({ navigation, route }) => {
 
       {/* Podcast */}
       {hasDailyPodcast && (
-      <PodcastPlayerModal
-        visible={showPodcast}
-        onClose={() => setShowPodcast(false)}
-        audioUrl={dailyContentData.podcast.link}
-        thumbnailUrl={dailyContentData.podcast.image}
-        title={dailyContentData.podcast.title}
-        subtitle={dailyContentData.podcast.author}
-        topic={dailyContentData.podcast.topic}
-        isSubcribed={dailyContentData.has_topic_podcast}
-      />
+        <PodcastPlayerModal
+          visible={showPodcast}
+          onClose={() => setShowPodcast(false)}
+          audioUrl={dailyContentData.podcast.link}
+          thumbnailUrl={dailyContentData.podcast.image}
+          title={dailyContentData.podcast.title}
+          subtitle={dailyContentData.podcast.author}
+          topic={dailyContentData.podcast.topic}
+          isSubcribed={dailyContentData.has_topic_podcast}
+        />
       )}
     </SafeAreaView >
   );

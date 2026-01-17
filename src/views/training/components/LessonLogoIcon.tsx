@@ -22,8 +22,21 @@ const LessonLogoIcon = ({
     return `rgb(${Math.floor(r * 0.9)}, ${Math.floor(g * 0.9)}, ${Math.floor(b * 0.9)})`;
   };
 
+  // Get darker color for 3D effect (bottom border)
+  const get3DColor = (hex) => {
+    if (!hex || hex === Colors.gray) {
+      return '#666666';
+    }
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    // Darker by 30% (multiply by 0.7)
+    return `rgb(${Math.floor(r * 0.9)}, ${Math.floor(g * 0.9)}, ${Math.floor(b * 0.9)})`;
+  };
+
   const borderColor = getBorderColor(color);
   const borderWidth = size * 0.08;
+  const depth3D = size * 0.08; // 3D depth - same as paddingBottom in HomeHeader
 
   useEffect(() => {
     if (selected) {
@@ -119,61 +132,72 @@ const LessonLogoIcon = ({
         </>
       )}
 
-      {/* Coin */}
+      {/* 3D Wrapper - creates the bottom shadow effect */}
       <Animated.View
         style={[
-          styles.coin,
+          styles.wrapper3D,
           {
             width: size,
-            height: size,
             borderRadius: size / 2,
-            backgroundColor: passed ? color : Colors.gray,
-            borderWidth: borderWidth,
-            borderColor: passed ? borderColor : getBorderColor(Colors.gray),
+            backgroundColor: passed ? get3DColor(color) : get3DColor(Colors.gray),
+            paddingBottom: depth3D, // This creates the 3D depth at bottom
             transform: [{ translateY: bounceAnim }],
           },
         ]}
       >
-        {image ? (
-          <Image
-            source={typeof image === 'string' ? { uri: process.env.EXPO_PUBLIC_S3_URL + image } : image}
-            style={[
-              styles.image,
-              {
-                width: size * 0.5,
-                height: size * 0.5,
-                borderRadius: (size * 0.5) / 2,
-              },
-            ]}
-            resizeMode="cover"
-          />
-        ) : (
-          <>
-            {type == 'lesson' && (<MaterialCommunityIcons
-              name="book-open-page-variant-outline"
-              size={size * 0.5}
-              color={passed ? Colors.white : Colors.grayLight}
-              style={{
-                textShadowColor: 'rgba(0, 0, 0, 0.3)',
-                textShadowOffset: { width: 0, height: 2 },
-                textShadowRadius: 3,
-              }}
+        {/* Coin */}
+        <View
+          style={[
+            styles.coin,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              backgroundColor: passed ? color : Colors.gray,
+            },
+          ]}
+        >
+          {image ? (
+            <Image
+              source={typeof image === 'string' ? { uri: process.env.EXPO_PUBLIC_S3_URL + image } : image}
+              style={[
+                styles.image,
+                {
+                  width: size * 0.5,
+                  height: size * 0.5,
+                  borderRadius: (size * 0.5) / 2,
+                },
+              ]}
+              resizeMode="cover"
             />
-            )}
+          ) : (
+            <>
+              {type == 'lesson' && (<MaterialCommunityIcons
+                name="book-open-page-variant-outline"
+                size={size * 0.5}
+                color={passed ? Colors.white : Colors.grayLight}
+                style={{
+                  textShadowColor: 'rgba(0, 0, 0, 0.3)',
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 3,
+                }}
+              />
+              )}
 
-            {type == 'test' && (<MaterialCommunityIcons
-              name="sticker-check"
-              size={size * 0.5}
-              color={passed ? Colors.white : Colors.grayLight}
-              style={{
-                textShadowColor: 'rgba(0, 0, 0, 0.3)',
-                textShadowOffset: { width: 0, height: 2 },
-                textShadowRadius: 3,
-              }}
-            />
-            )}
-          </>
-        )}
+              {type == 'test' && (<MaterialCommunityIcons
+                name="sticker-check"
+                size={size * 0.5}
+                color={passed ? Colors.white : Colors.grayLight}
+                style={{
+                  textShadowColor: 'rgba(0, 0, 0, 0.3)',
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 3,
+                }}
+              />
+              )}
+            </>
+          )}
+        </View>
       </Animated.View>
     </View>
   );
@@ -193,10 +217,13 @@ const styles = StyleSheet.create({
     zIndex: 0,
     backgroundColor: 'transparent',
   },
+  wrapper3D: {
+    zIndex: 1,
+    // paddingBottom will be added dynamically to create 3D depth
+  },
   coin: {
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

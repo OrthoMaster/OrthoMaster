@@ -100,6 +100,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
               <Image
                 source={{ uri: process.env.EXPO_PUBLIC_S3_URL + image }}
                 style={styles.sectionImage}
+                resizeMode='contain'
               />
               :
               <MaterialCommunityIcons name="bookshelf" size={30} color={Colors.gray} />
@@ -163,8 +164,8 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   const handleShowLesson = useCallback((title: string) => {
     navigation.navigate('lesson-content', {
       lessonTitle: 'Title A',
-      formationName: 'Module A',
-      newLessonId: '1',
+      trainingName: 'Module A',
+      lessonId: '1',
     })
   }, []);
 

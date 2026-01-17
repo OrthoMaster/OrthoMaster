@@ -1,29 +1,96 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Linking, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 const { width, height } = Dimensions.get('window');
-const CARD_SIZE = (width - (Spacings.lg * 4)) / 3;
+const CARD_SIZE = (width - (Spacings.xl * 2) - (Spacings.md * 2)) / 3;
 
 interface HomeHeaderProps {
   userName?: string;
   onNotificationPress?: () => void;
   onSearchPress?: () => void;
   onToolPress?: () => void;
-  onQuestionPress?: () => void;
   hasNotification?: boolean;
 }
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
-  userName = 'Francis',
+  userName,
   onNotificationPress,
   onSearchPress,
   onToolPress,
-  onQuestionPress,
   hasNotification = false,
 }) => {
+  // Animation cho notification icon
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (hasNotification) {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(scaleAnim, {
+              toValue: 1.2,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.sequence([
+              Animated.timing(shakeAnim, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(shakeAnim, {
+                toValue: -1,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(shakeAnim, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(shakeAnim, {
+                toValue: -1,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(shakeAnim, {
+                toValue: 0,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+          Animated.delay(1500),
+          Animated.parallel([
+            Animated.timing(scaleAnim, {
+              toValue: 1,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      );
+
+      animation.start();
+
+      return () => {
+        animation.stop();
+      };
+    } else {
+      scaleAnim.setValue(1);
+      shakeAnim.setValue(0);
+    }
+  }, [hasNotification]);
+
+  const rotateInterpolate = shakeAnim.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ['-15deg', '15deg'],
+  });
+
   return (
     <View style={styles.container}>
       {/* Top Row: Logo and Notifications */}
@@ -39,8 +106,20 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           style={styles.notificationButton}
           onPress={onNotificationPress}
         >
-          <Ionicons name="notifications-outline" size={28} color={Colors.primary} />
-          {hasNotification && <View style={styles.notificationDot} />}
+          {hasNotification ? (
+            <Animated.View
+              style={{
+                transform: [
+                  { scale: scaleAnim },
+                  { rotate: rotateInterpolate },
+                ],
+              }}
+            >
+              <Ionicons name="notifications" size={28} color={Colors.primary} />
+            </Animated.View>
+          ) : (
+            <Ionicons name="notifications" size={28} color={Colors.gray} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -57,7 +136,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           <View style={[styles.card3DWrapper, styles.question3DWrapper]}>
             <TouchableOpacity
               style={[styles.squareCard, styles.questionCard]}
-              onPress={onQuestionPress}
+              onPress={() => Linking.openURL('mailto:question@orthomaster.fr')}
               activeOpacity={0.8}
             >
               <Image
@@ -111,7 +190,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingLeft: Spacings.lg,
+    paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.md,
     paddingBottom: Spacings.lg,
     backgroundColor: Colors.white,
@@ -145,18 +224,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    marginRight: Spacings.md,
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#EF4444',
-    borderWidth: 2,
-    borderColor: Colors.white,
   },
   greetingSection: {
     marginBottom: Spacings.sm,
@@ -178,11 +245,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginTop: Spacings.xs,
+    marginTop: Spacings.xxs,
+    gap: Spacings.md,
   },
   cardWrapper: {
     alignItems: 'center',
-    marginRight: Spacings.md,
   },
   centerCardWrapper: {
     marginTop: Spacings.xl,
@@ -191,7 +258,7 @@ const styles = StyleSheet.create({
   // 3D Wrapper for cards
   card3DWrapper: {
     borderRadius: 20,
-    paddingBottom: 8, // This creates the 3D depth
+    paddingBottom: 6,
   },
   question3DWrapper: {
     backgroundColor: '#C96506',
@@ -209,7 +276,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: Colors.gray,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

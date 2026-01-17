@@ -1,5 +1,4 @@
 import React from 'react'
-
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { HomeView } from '../../views/home/HomeView';
@@ -11,17 +10,34 @@ import { LessonEndingView } from '../../views/content/LessonEndingView';
 
 import ReturnButtonIcon from '../components/ReturnButton';
 
-const HomeStackNav = createStackNavigator();
-
-
-import VideoFairPlayNoAuth from '../../component/TestVideoPlayer';
-
 import { NotificationView } from '../../views/notification/NotificationView';
+import { LessonContent } from '../../views/training/LessonContent';
+import { HomeSearchView } from '../../views/home/HomeSearchView';
 
-export const HomeStack = (user) => {
+const forZoomFromCenter = ({ current, layouts }) => {
+  return {
+    cardStyle: {
+      transform: [
+        {
+          scale: current.progress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.7, 1],
+          }),
+        },
+      ],
+      opacity: current.progress.interpolate({
+        inputRange: [0, 0.5, 1],
+        outputRange: [0, 0.5, 1],
+      }),
+    },
+  };
+};
 
+const HomeStackNav = createStackNavigator();
+export const HomeStack = () => {
   return (
     <HomeStackNav.Navigator
+      id={"home-stack" as undefined}
       initialRouteName='home-home'
     >
       <HomeStackNav.Screen
@@ -33,7 +49,7 @@ export const HomeStack = (user) => {
       />
 
       <HomeStackNav.Screen
-        name="home-search"
+        name="home-search-1"
         component={SearchView}
         options={{
           headerShown: false
@@ -67,7 +83,6 @@ export const HomeStack = (user) => {
           headerTitleStyle: {
             fontSize: 22
           },
-          headerBackTitleVisible: false,
         }}
       />
 
@@ -78,6 +93,38 @@ export const HomeStack = (user) => {
         options={{
           headerShown: false,
           animation: 'slide_from_right',
+        }}
+      />
+      <HomeStackNav.Screen
+        name="home-search"
+        component={HomeSearchView}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+
+      <HomeStackNav.Screen
+        name="lesson-content"
+        component={LessonContent}
+        options={{
+          headerShown: false,
+          cardStyleInterpolator: forZoomFromCenter,
+          transitionSpec: {
+            open: {
+              animation: 'spring',
+              config: {
+                stiffness: 150,
+                damping: 30,
+              },
+            },
+            close: {
+              animation: 'timing',
+              config: {
+                duration: 350,
+              },
+            },
+          },
         }}
       />
     </HomeStackNav.Navigator>

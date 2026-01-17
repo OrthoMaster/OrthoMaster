@@ -396,9 +396,9 @@ export const TrainingView = ({ navigation, route }) => {
     if (!lesson.active_flg) return;
 
     navigation.navigate('lesson-content', {
+      lessonId: lesson.id.toString(),
       lessonTitle: lesson.title,
-      formationName: trainingName,
-      newLessonId: lesson.id.toString(),
+      trainingName: trainingName,
     });
   }, [navigation, trainingName]);
 
