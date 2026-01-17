@@ -23,6 +23,7 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import { getCartDetails, removeFromCart, clearCart } from '../../services/v2/CartService';
+import { sendError } from '../../services/v2/AuthService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = -80; // Ngưỡng để trigger xóa (giảm xuống để dễ trigger hơn)
@@ -215,6 +216,8 @@ export const CartView = ({ navigation }) => {
   const { data: cartData, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['cart'],
     queryFn: () => getCartDetails(),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     retry: 1,
     retryDelay: 1000,
   });
@@ -276,7 +279,7 @@ export const CartView = ({ navigation }) => {
     try {
       await refetch();
     } catch (error) {
-      // TODO: Handle error
+      sendError('refresh-cart', error);
     } finally {
       setRefreshing(false);
     }

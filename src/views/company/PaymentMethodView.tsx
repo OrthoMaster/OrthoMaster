@@ -200,8 +200,6 @@ export const PaymentMethodView = ({ navigation, route }) => {
 
     const cartData = await getProCartDetails(selectedMethod);
 
-    // TODO: Check cartData
-
     // Navigate to next screen
     navigation.navigate('attach-member-view', {
       members: cartData.members,

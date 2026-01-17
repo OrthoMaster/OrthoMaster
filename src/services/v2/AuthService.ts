@@ -58,22 +58,6 @@ export const login = async ({ email, password, fcm_token, device_id, device_type
 };
 
 /**
- * Login with email & password
- */
-export const forgot = async ({ email }: ForgotParam) => {
-    const result = await axiosInstance
-        .post(`${authUrl}/login`, { email })
-        .then((response) => {
-            return response.data;
-        })
-        .catch((e: AxiosError) => {
-            throw e;
-        });
-
-    throw new Error(result.message || 'Send email failed');
-};
-
-/**
  * Logout - Revoke token on server
  */
 export const logout = async () => {
@@ -468,4 +452,12 @@ export const getDocument = async () => {
         .catch((e: AxiosError) => {
             return false;
         });
+}
+
+/**
+ * Send error to server
+ */
+export const sendError = async (code: string, error: any) => {
+    return axiosInstance
+        .post(`${baseUrl}/tracking/error`, {code, error});
 }

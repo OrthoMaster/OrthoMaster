@@ -18,7 +18,7 @@ import { UseCaptureGuard } from './src/component/captureGuard/useCaptureGuard';
 import * as Font from 'expo-font';
 import CustomSplashScreen from './src/views/splash/CustomSplashScreen';
 import { useGetUser } from './src/hooks/auth.hook';
-import { authEvents, updateNotiPermission } from './src/services/v2/AuthService';
+import { authEvents, updateNotiPermission, sendError } from './src/services/v2/AuthService';
 
 import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScreen';
 
@@ -67,7 +67,6 @@ export default function App({ navigation }) {
 
       // Check 1: Different day
       if (lastDate && lastDate !== today) {
-        console.log('Nouveau jour détecté - réinitialisation de l\'application');
         shouldReset = true;
       }
 
@@ -75,7 +74,6 @@ export default function App({ navigation }) {
       if (lastActive && !shouldReset) {
         const timeDiff = now - parseInt(lastActive);
         if (timeDiff > INACTIVE_DURATION) {
-          console.log('Inactivité prolongée détectée - réinitialisation de l\'application');
           shouldReset = true;
         }
       }
@@ -89,22 +87,19 @@ export default function App({ navigation }) {
       }
 
     } catch (error) {
-      console.error('Erreur lors de la vérification de réinitialisation:', error);
+      sendError('reset-app', error);
     }
   };
 
   // Reset app data and navigation
   const resetAppData = async () => {
     try {
-      console.log('Réinitialisation des données de l\'application...');
-
       // Show splash
       setShowSplash(true);
 
       // Reload data
       await queryClient.invalidateQueries({ queryKey: ['current-user'] });
       await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
-
 
       // Update timestamps
       const now = Date.now();
@@ -119,10 +114,8 @@ export default function App({ navigation }) {
       // Wait for data to load
       await new Promise(resolve => setTimeout(resolve, 800));
       setShowSplash(false);
-
-      console.log('Application réinitialisée avec succès');
     } catch (error) {
-      console.error('Erreur lors de la réinitialisation:', error);
+      sendError('reset-app', error);
       setShowSplash(false);
     }
   };
@@ -150,7 +143,7 @@ export default function App({ navigation }) {
         // Check if app should reset on startup
         await checkIfShouldResetApp();
       } catch (error) {
-        console.error('Erreur lors de la préparation de l\'application:', error);
+        sendError('prepare-app', error);
       } finally {
         setAppIsReady(true);
       }
@@ -319,7 +312,7 @@ export default function App({ navigation }) {
               path: "open/content/:id",
             }
           },
-          
+
         },
         'Médias': {
           screens: {

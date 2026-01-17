@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Dimensions,
   Vibration
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from "@tanstack/react-query";
@@ -250,10 +251,31 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
 };
 
 export const NotificationView = ({ navigation, route }) => {
+  // Hide bottom nav
+  useFocusEffect(
+    useCallback(() => {
+      // Hide
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'none' }
+      });
+
+      // Re-Show when unmount
+      return () => {
+        navigation.getParent()?.setOptions({
+          tabBarStyle: { display: 'flex' }
+        });
+      };
+    }, [navigation])
+  );
+
   const { data: user } = useGetUser();
   const { data: initNotifications, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => getNotifications(),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    retry: 2,
+    retryDelay: 2000
   });
 
   // Initialize with empty array to avoid undefined errors
