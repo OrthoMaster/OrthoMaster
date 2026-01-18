@@ -13,17 +13,6 @@ interface FairPlayVideoPlayerProps {
   style?: any;
 }
 
-interface VideoStatus {
-  isLoaded: boolean;
-  isPlaying: boolean;
-  positionMillis: number;
-  durationMillis: number;
-  volume: number;
-  rate: number;
-  isBuffering: boolean;
-  error?: string;
-}
-
 const { width: screenWidth } = Dimensions.get('window');
 const youtubeVideoHeight = screenWidth * 9 / 16;
 

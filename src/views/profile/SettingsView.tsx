@@ -371,7 +371,7 @@ export const SettingsView = ({ navigation }) => {
         <TouchableOpacity onPress={back}>
           <Ionicons name="arrow-back-outline" size={20} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Paramètres</Text>
+        <Text style={styles.headerTitle}>Centrès d'intérêt</Text>
       </View>
 
       <ScrollView

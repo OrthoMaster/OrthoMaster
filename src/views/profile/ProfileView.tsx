@@ -315,9 +315,8 @@ export const ProfileView = ({ navigation, route }) => {
               onPress={() => (navigation.navigate('change-password'))}
             />
             <MenuItem
-              iconName="settings-outline"
-              title="Paramètres généraux"
-              subtitle="Centres d'intérêt, notifications"
+              iconName="heart-outline"
+              title="Centres d'intérêt"
               onPress={() => (navigation.navigate('settings-view'))}
             />
             <MenuItem

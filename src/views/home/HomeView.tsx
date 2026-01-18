@@ -48,6 +48,8 @@ export const HomeView = ({ navigation, route }) => {
       fetchMedias({
         limit: 6,
       }),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const handleNavigation = (card: IContent) => {

@@ -44,6 +44,7 @@ interface Video {
   type?: string;
   author?: string;
   aws_object_path?: string;
+  s3_path?: string;
 }
 
 interface Category {
@@ -198,6 +199,20 @@ export const HomeSearchView = ({ navigation }) => {
     setIsLoadingMoreVideos(false);
   };
 
+  // Encoding video version 1: s3_path -> aws_url
+  const encodeURLPath = (path) => {
+    const parts = path.split('/');
+
+    const encodedParts = parts.map(part => {
+      const normalized = part.normalize('NFD');
+
+      // Encode URI component and change %20 to +
+      return encodeURIComponent(normalized).replace(/%20/g, '+');
+    });
+
+    return encodedParts.join('/');
+  };
+
   // Handle search text change
   const handleTextChange = (text: string) => {
     setSearchQuery(text);
@@ -275,7 +290,7 @@ export const HomeSearchView = ({ navigation }) => {
         screen: 'training-list',
         initial: false,
         params: {
-          initPackageId: selectedLockedLesson.module.package.id
+          initPackageId: selectedLockedLesson.module?.package?.id || null
         }
       });
     }
@@ -334,9 +349,9 @@ export const HomeSearchView = ({ navigation }) => {
       }}
     >
       <View style={styles.thumbnailContainer}>
-        {item.aws_object_path ?
+        {(item.aws_object_path || item.s3_path) ?
           <Image
-            source={{ uri: (S3_OBJECT_ROOT + item.aws_object_path + 'logo.png') }}
+            source={{ uri: (S3_OBJECT_ROOT + (item.aws_object_path ?? encodeURLPath(item.s3_path + '/' + item.title + '/' )) + 'logo.png') }}
             style={styles.thumbnail}
             resizeMode="cover"
           />
@@ -354,17 +369,6 @@ export const HomeSearchView = ({ navigation }) => {
       </View>
     </TouchableOpacity >
   );
-
-  // Render footer loading
-  const renderFooterLoading = (isLoadingMore: boolean) => {
-    if (!isLoadingMore) return null;
-
-    return (
-      <View style={styles.footerLoading}>
-        <ActivityIndicator size="small" color={Colors.primary} />
-      </View>
-    );
-  };
 
   // Render "Load More" button
   const renderLoadMoreButton = (hasMore: boolean, isLoading: boolean, onPress: () => void) => {

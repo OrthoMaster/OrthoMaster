@@ -108,7 +108,7 @@ const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, b
 
 export const TrainingListView = ({ navigation, route }) => {
 
-  const initPackageId = route.params.initPackageId || null;
+  const initPackageId = route.params?.initPackageId ?? null;
 
   const { data: trainings, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['trainings'],
