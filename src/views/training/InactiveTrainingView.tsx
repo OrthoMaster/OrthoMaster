@@ -26,6 +26,8 @@ import Spacings from "../../../constants/Spacings";
 
 import { getCartDetails, addToCart, removeFromCart } from "../../services/v2/CartService";
 
+import LessonLogoIcon from './components/LessonLogoIcon';
+
 type Tab = 'detail' | 'course';
 
 const { width } = Dimensions.get('window');
@@ -54,7 +56,6 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   const queryClient = useQueryClient();
   const { pkg, headerColor = Colors.blue } = route.params || {};
 
-  // Query cart để check xem package có trong giỏ hàng không
   const { data: cartData } = useQuery({
     queryKey: ['cart'],
     queryFn: getCartDetails,
@@ -62,7 +63,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
     retryDelay: 1000,
   });
 
-  // Check xem package hiện tại có trong cart không
+  // Check the package is in cart or not
   const isInCart = useMemo(() => {
     if (!cartData || !cartData.items) return false;
     return cartData.items.some(item => item.package_id === pkg.id);
@@ -70,36 +71,31 @@ export const InactiveTrainingView = ({ navigation, route }) => {
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [currentLessons, setCurrentLessons] = useState([]);
-  const [currentTab, setCurrentTab] = useState<Tab>('detail');
+  const [currentTab, setCurrentTab] = useState<Tab>('course');
   const [sheetData, setSheetData] = useState<string>('');
   const snapPoints = useMemo(() => ['15%', '50%', '90%'], []);
 
-  // Change tab if available
-  useEffect(() => {
-    if (pkg.available_flg) {
-      setCurrentTab('course');
-    }
-  }, [pkg]);
-
   // Section
-  const Section = ({ title, index, image, lessons, isLastInRow }: {
+  const Section = ({ title, index, image, lessons, color, isLastInRow }: {
     title: string;
     index: number;
     image: string;
     lessons: any;
+    color?: string;
     isLastInRow?: boolean;
   }) => {
     return (
       <TouchableOpacity
+        key={'module-' + index}
         onPress={() => handleLessonSheet(title, lessons)}
         style={[styles.sectionContainer, isLastInRow && { marginRight: 0 }]}
       >
         <View style={styles.sectionImageWrapper}>
-          <View style={styles.sectionImagePlaceholder}>
+          <View style={[styles.sectionImagePlaceholder, { borderColor: color ?? Colors.blue }]}>
             {image ?
               <Image
                 source={{ uri: process.env.EXPO_PUBLIC_S3_URL + image }}
-                style={styles.sectionImage}
+                style={[styles.sectionImage, {tintColor: color ?? Colors.blue}]}
                 resizeMode='contain'
               />
               :
@@ -119,37 +115,48 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   };
 
   // Lesson
-  const Lesson = ({ lesson, status }: {
+  const Lesson = ({ lesson, isDemo, headerColor }: {
     lesson: any;
-    status: string
+    isDemo: boolean;
+    headerColor: string;
   }) => (
     <TouchableOpacity
-      style={[
-        styles.lessonContainer,
-        status === 'done' && styles.lessonDone,
-        status === 'locked' && styles.lessonLocked
-      ]}
-      disabled={status === 'locked'}
+      style={styles.lessonContainer}
+      disabled={!isDemo}
       onPress={() => handleShowLesson(lesson.title)}
     >
+      {/* Icon Circle */}
+      <LessonLogoIcon
+        color={headerColor}
+        size={40}
+        image={lesson.image}
+        blocked={false}
+        passed={true}
+        type={lesson.type || 'lesson'}
+        key={lesson.id}
+      />
+
+      {/* Lesson Info */}
       <View style={styles.lessonContent}>
-        <Text style={[
-          styles.lessonTitle,
-          status === 'done' && styles.lessonTitleDone,
-          status === 'locked' && styles.lessonTitleLocked
-        ]}>{lesson.title}</Text>
-        {status === 'locked' &&
-          <Text style={styles.lessonNotice}>Débloqué au delà 60% de progression</Text>
-        }
+        <Text
+          style={[
+            styles.lessonTitle,
+            !isDemo && styles.lessonTitleLocked
+          ]}
+          numberOfLines={2}
+          ellipsizeMode='tail'
+        >
+          {lesson.title}
+        </Text>
+        <Text style={styles.lessonDuration}>
+          {lesson.duration_text || '---'}
+        </Text>
       </View>
-      <View>
-        {status === 'locked' &&
-          <Ionicons name="lock-closed" size={20} color={Colors.gray} />
-        }
-        {status === 'done' &&
-          <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
-        }
-      </View>
+
+      {/* Lock Icon */}
+      {!isDemo && (
+        <Ionicons name="lock-closed" size={20} color={Colors.gray} />
+      )}
     </TouchableOpacity>
   );
 
@@ -287,10 +294,11 @@ export const InactiveTrainingView = ({ navigation, route }) => {
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <View style={styles.logoContainer}>
-              {pkg.logo ?
+              {pkg.image ?
                 <Image
-                  source={{ uri: process.env.EXPO_PUBLIC_S3_URL + pkg.logo }}
-                  style={styles.logo}
+                  source={{ uri: process.env.EXPO_PUBLIC_S3_URL + pkg.image }}
+                  style={[styles.logo, { tintColor: headerColor }]}
+                  resizeMode="contain"
                 />
                 :
                 <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={40} color={Colors.gray} />
@@ -356,6 +364,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
                       title={module.name}
                       image={module.image}
                       lessons={module.lessons}
+                      color={headerColor}
                       index={index}
                       isLastInRow={(index + 1) % 3 === 0}
                     />
@@ -437,9 +446,10 @@ export const InactiveTrainingView = ({ navigation, route }) => {
           >
             {currentLessons.map((lesson, index) => (
               <Lesson
+                key={'lesson-' + index}
                 lesson={lesson}
-                status="done"
-                key={index}
+                isDemo={lesson.isDemo || false}
+                headerColor={headerColor}
               />
             ))}
           </BottomSheetScrollView>
@@ -455,7 +465,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   headerContainer: {
-    height: '40%',
+    height: '30%',
     paddingHorizontal: Spacings.lg,
   },
   headerContent: {
@@ -484,15 +494,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
+    padding: Spacings.xs
   },
   logo: {
-    width: 110,
-    height: 110,
+    width: '100%',
+    height: '100%',
     borderRadius: 60,
   },
   contentWrapper: {
     flex: 1,
-    marginTop: -40,
+    marginTop: -20,
   },
   contentContainer: {
     flex: 1,
@@ -507,12 +518,11 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '600',
-    fontFamily: 'Roboto',
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
     color: Colors.text,
     marginBottom: Spacings.xs,
-    marginTop: Spacings.md
+    marginTop: Spacings.xs
   },
   infoContainer: {
     flexDirection: 'row',
@@ -524,8 +534,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metaInfo: {
-    marginLeft: Spacings.xs,
-    fontSize: 14,
+    marginLeft: Spacings.xxs,
+    fontSize: 12,
     fontFamily: 'Roboto',
     fontWeight: '400',
     color: Colors.gray,
@@ -543,7 +553,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.grayLight,
     borderRadius: 40,
     padding: Spacings.xxs,
-    marginBottom: Spacings.lg,
   },
   tab: {
     flex: 1,
@@ -568,6 +577,7 @@ const styles = StyleSheet.create({
   },
 
   descriptionContainer: {
+    marginTop: Spacings.md,
     marginBottom: 100,
   },
   descriptionTitle: {
@@ -591,6 +601,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
+    marginTop: Spacings.lg,
     marginBottom: 100,
   },
   sectionContainer: {
@@ -606,14 +617,16 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.grayLight,
+    backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    borderWidth: 2,
   },
   sectionImage: {
-    width: '100%',
-    height: '100%',
+    width: 65,
+    height: 65,
+    borderRadius: 60
   },
   sectionTitle: {
     fontSize: 11,
@@ -634,8 +647,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 16,
-    fontFamily: 'Roboto',
-    fontWeight: '700',
+    fontFamily: 'Poppins-Bold',
     lineHeight: 20,
     color: Colors.text,
     textAlign: 'center',
@@ -650,48 +662,30 @@ const styles = StyleSheet.create({
   // Lesson
   lessonContainer: {
     flexDirection: 'row',
-    verticalAlign: 'middle',
     alignItems: 'center',
     paddingVertical: Spacings.sm,
-    paddingHorizontal: Spacings.md,
-    borderWidth: 1,
-    borderColor: Colors.gray,
-    marginTop: Spacings.md,
-    height: 60,
-    borderRadius: 30,
+    paddingHorizontal: Spacings.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.grayLight,
   },
-  lessonDone: {
-    borderColor: Colors.success,
-    backgroundColor: Colors.successBackground
-  },
-  lessonLocked: {
-    backgroundColor: Colors.grayLight,
-    borderColor: Colors.grayLight
-  },
+
   lessonContent: {
     flex: 1,
     marginLeft: Spacings.md,
+    marginRight: Spacings.sm,
   },
   lessonTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'Roboto',
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
     color: Colors.text,
-    lineHeight: 20,
-  },
-  lessonTitleDone: {
-    color: Colors.success,
   },
   lessonTitleLocked: {
     color: Colors.gray,
   },
-  lessonNotice: {
+  lessonDuration: {
     fontSize: 12,
-    fontFamily: 'Roboto',
-    fontWeight: '400',
-    lineHeight: 15,
-    marginTop: 0,
-    color: Colors.subtext
+    fontFamily: 'Poppins-Regular',
+    color: Colors.subtext,
   },
 
   // Bottom button
@@ -700,7 +694,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'transparent',
     paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.lg
   },

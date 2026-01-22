@@ -6,7 +6,8 @@ import { TrainingListView } from "../../views/training/TrainingListView";
 import { InactiveTrainingView } from '../../views/training/InactiveTrainingView';
 import { TrainingView } from '../../views/training/TrainingView';
 
-import { LessonContent } from '../../views/training/LessonContent';
+import { LessonContentWithBlock } from '../../views/training/LessonContentWithBlock';
+import { LessonContentWithXML } from "../../views/training/LessonContentWithXML";
 
 import { CartView } from '../../views/training/CartView';
 import { PreviewView } from '../../views/training/PreviewView';
@@ -92,9 +93,29 @@ export const TrainingStack = () => {
         }}
       />
 
+      
+
       <TrainingStackNav.Screen
-        name="lesson-content"
-        component={LessonContent}
+        name="cart-view"
+        component={CartView}
+        options={{
+          headerShown: false,
+          presentation: 'card',
+        }}
+      />
+
+      <TrainingStackNav.Screen
+        name="preview-view"
+        component={PreviewView}
+        options={{
+          headerShown: false,
+          presentation: 'card',
+        }}
+      />
+
+      <TrainingStackNav.Screen
+        name="lesson-content-block"
+        component={LessonContentWithBlock}
         options={{
           headerShown: false,
           cardStyleInterpolator: forZoomFromCenter,
@@ -117,23 +138,28 @@ export const TrainingStack = () => {
       />
 
       <TrainingStackNav.Screen
-        name="cart-view"
-        component={CartView}
+        name="lesson-content-xml"
+        component={LessonContentWithXML}
         options={{
           headerShown: false,
-          presentation: 'card',
+          cardStyleInterpolator: forZoomFromCenter,
+          transitionSpec: {
+            open: {
+              animation: 'spring',
+              config: {
+                stiffness: 150,
+                damping: 30,
+              },
+            },
+            close: {
+              animation: 'timing',
+              config: {
+                duration: 350,
+              },
+            },
+          },
         }}
       />
-
-      <TrainingStackNav.Screen
-        name="preview-view"
-        component={PreviewView}
-        options={{
-          headerShown: false,
-          presentation: 'card',
-        }}
-      />
-
     </TrainingStackNav.Navigator>
   );
 }

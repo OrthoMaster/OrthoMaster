@@ -9,7 +9,8 @@ import {
   RefreshControl,
   Alert,
   Modal,
-  Dimensions
+  Dimensions,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -239,7 +240,18 @@ export const CompanyView = ({ navigation, route }) => {
             borderRadius: circleSize / 2,
             backgroundColor: course.training?.background_color || Colors.blueBackground,
           }]}>
-            <Text style={styles.courseIcon}>📚</Text>
+            {course.image
+              ? <Image
+                source={{ uri: process.env.EXPO_PUBLIC_S3_URL + course.image }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 100,
+                  tintColor: course.training?.color
+                }}
+                resizeMode="contain"
+              />
+              : <Text style={styles.courseIcon}>📚</Text>}
           </View>
 
           {/* Progress border using SVG */}
@@ -274,14 +286,13 @@ export const CompanyView = ({ navigation, route }) => {
             />
           </Svg>
         </View>
-
-        <Text style={styles.courseName} numberOfLines={1} ellipsizeMode='tail'>
-          {course.name}
-        </Text>
         <Text style={[styles.courseProgress, { color: course.training?.color || Colors.blue }]}>
           {progress}%
         </Text>
-      </View>
+        <Text style={styles.courseName} numberOfLines={2} ellipsizeMode='tail'>
+          {course.short_name ?? course.name}
+        </Text>
+      </View >
     );
   };
 
@@ -504,7 +515,7 @@ export const CompanyView = ({ navigation, route }) => {
       </ScrollView>
 
       {/* Floating Action Buttons - Only show on Membres tab */}
-      {activeTab === 'membres' && (
+      {activeTab === 'membres' && !error && (
         <View style={styles.fabContainer}>
           <TouchableOpacity
             style={styles.fabPrimary}
@@ -517,7 +528,7 @@ export const CompanyView = ({ navigation, route }) => {
       )}
 
       {/* Floating Action Buttons - Only show on Membres tab */}
-      {activeTab === 'formations' && (
+      {activeTab === 'formations' && !error && (
         <View style={styles.fabContainer}>
           <TouchableOpacity
             style={styles.fabSecondary}
@@ -1074,6 +1085,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacings.xxs,
+    padding: Spacings.xxs
   },
   moreCircle: {
     backgroundColor: Colors.grayLight,
@@ -1093,11 +1105,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   courseName: {
-    fontSize: 8,
+    fontSize: 7,
     fontFamily: 'Poppins-Light',
     color: Colors.text,
     textAlign: 'center',
-    marginBottom: -2
   },
   courseProgress: {
     fontSize: 9,

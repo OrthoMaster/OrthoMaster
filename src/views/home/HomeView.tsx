@@ -10,7 +10,8 @@ import {
   TouchableOpacity,
   Animated,
   Platform,
-  Linking
+  Linking,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +24,7 @@ import { HomeHeader } from './HomeHeader';
 import { IContent } from '../../utils/interfaces';
 
 import MediaSkeleton from '../../views/media/components/MediaSkeleton';
+import { BouncingDots } from '../../component/LoadingDots';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -36,13 +38,13 @@ import { PodcastPlayerModal } from './components/PodcastPlayerModal';
 
 
 export const HomeView = ({ navigation, route }) => {
-  const {
-    data: flashData,
-    isLoading,
-    isFetching,
-    isError,
-    refetch
-  } = useQuery({
+  const actionChangeScreen = route.parame?.action ?? null;
+
+  /** Get user */
+  const { data: user } = useGetUser();
+
+  /** Videos */
+  const { data: videoData, isLoading: isLoadingVideo, isFetching: isFetchingVideo, isError: isErrorVideo, refetch: refetchVideos } = useQuery({
     queryKey: ['flash-preview'],
     queryFn: () =>
       fetchMedias({
@@ -52,6 +54,8 @@ export const HomeView = ({ navigation, route }) => {
     refetchOnWindowFocus: true,
   });
 
+  const isVideoLoading = isLoadingVideo || isFetchingVideo;
+  const reloadVideos = () => { refetchVideos(); };
   const handleNavigation = (card: IContent) => {
     navigation.navigate('media', {
       screen: 'flash-media-preview',
@@ -60,24 +64,54 @@ export const HomeView = ({ navigation, route }) => {
       },
     });
   }
-  const isFlashLoading = isLoading || isFetching;
-  const reload = () => { refetch(); };
 
-  /** Get user */
-  const { data: user } = useGetUser();
-
-  /** Daily question */
-  const [showDailyQuestion, setShowDailyQuestion] = useState(false);
-  const { data: dailyContentData, refetch: refetchDailyContent } = useQuery({
+  /** Daily content */
+  const { data: dailyContentData, isLoading: isLoadingDailyContent, isFetching: isFetchingDailyContent, error: errorDailyContent, refetch: refetchDailyContent } = useQuery({
     queryKey: ['daily-action'],
-    queryFn: () => getDailyAction()
+    queryFn: () => getDailyAction(),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    retry: 2,
+    retryDelay: 2000
   });
 
   const hasDailyQuestion = dailyContentData && dailyContentData.question;
   const hasDailyPodcast = dailyContentData && dailyContentData.podcast;
 
-  /** Podcast */
+  // Daily question
+  const [showDailyQuestion, setShowDailyQuestion] = useState(false);
+  // Podcast
   const [showPodcast, setShowPodcast] = useState(false);
+
+  // Handle open modal from pushing notification
+  useEffect(() => {
+    // Daily question
+    if (actionChangeScreen == 'daily-question' && hasDailyQuestion) {
+      const timeout = setTimeout(() => {
+        setShowDailyQuestion(true);
+      }, 1000);
+
+      return () => clearTimeout(timeout);
+    }
+
+    // Podcast
+    if (actionChangeScreen == 'podcast' && hasDailyPodcast) {
+      const timeout = setTimeout(() => {
+        setShowPodcast(true);
+      }, 1000);
+
+      return () => clearTimeout(timeout);
+    }
+
+    return;
+  }, [actionChangeScreen, hasDailyQuestion, hasDailyPodcast]);
+
+
+  /** Handle reload screen */
+  const reload = () => {
+    refetchDailyContent();
+    refetchVideos();
+  }
 
   /** Animation */
   // Animation for Quizz icon (shake)
@@ -87,32 +121,31 @@ export const HomeView = ({ navigation, route }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Quizz shake animation: lắc 2s, nghỉ 2s
+    // Quizz shake animation
     const shakeAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(shakeAnim, {
           toValue: 1,
-          duration: 2000,
+          duration: 3000,
           useNativeDriver: true,
         }),
-        Animated.delay(2000),
+        Animated.delay(1000),
       ])
     );
 
-    // Podcast scale animation: to ra nhỏ lại 3s, dừng 1s
+    // Podcast scale animation
     const scaleAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(scaleAnim, {
-          toValue: 1.2,
-          duration: 1500,
+          toValue: 1.1,
+          duration: 2000,
           useNativeDriver: true,
         }),
         Animated.timing(scaleAnim, {
           toValue: 1,
-          duration: 1500,
+          duration: 2000,
           useNativeDriver: true,
         }),
-        Animated.delay(1000),
       ])
     );
 
@@ -136,10 +169,19 @@ export const HomeView = ({ navigation, route }) => {
       edges={Platform.OS === 'android' ? ['top', 'left', 'right'] : ['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" animated={true} backgroundColor={Colors.white} />
 
-      <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}>
+      <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={(isFetchingDailyContent && !!errorDailyContent)}
+            onRefresh={reload}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }>
         <HomeHeader userName={user.name}
           onNotificationPress={() => navigation.navigate('notification-list')}
-          hasNotification={user.settings?.notifications ?? false}
+          hasNotification={user.settings?.notifications.length > 0 || false}
           onSearchPress={() => navigation.navigate('home-search')}
           onToolPress={() => navigation.navigate('tools')}
         />
@@ -165,6 +207,12 @@ export const HomeView = ({ navigation, route }) => {
                     <Animated.View style={{ transform: [{ rotate: shakeRotation }] }}>
                       <Ionicons name="bulb" size={28} color={Colors.blue} />
                     </Animated.View>
+
+                    {dailyContentData.has_answered && (
+                      <View style={styles.answeredBadge}>
+                        <Ionicons name="checkmark-sharp" size={14} color={Colors.blue} />
+                      </View>
+                    )}
                   </View>
                   <View style={styles.dailyQuestionContent}>
                     <Text style={styles.dailyQuestionTitle}>Quizz</Text>
@@ -202,12 +250,12 @@ export const HomeView = ({ navigation, route }) => {
         <View style={styles.carouselContainer}>
           <View style={styles.carouselHeader}>
             <Text style={styles.carouselHeaderTitle}>Nos derniers contenus</Text>
-            {isFlashLoading ? (
+            {isVideoLoading ? (
               <View style={[styles.carouselHeaderButton, { marginRight: Spacings.lg }]}>
                 <ActivityIndicator size="small" color={Colors.gray} />
               </View>
-            ) : isError ? (
-              <Pressable style={styles.carouselHeaderButton} onPress={reload}>
+            ) : isErrorVideo ? (
+              <Pressable style={styles.carouselHeaderButton} onPress={reloadVideos}>
                 <Text style={styles.carouselHeaderViewMoreButton}>Recharger</Text>
               </Pressable>
             ) : (
@@ -216,11 +264,11 @@ export const HomeView = ({ navigation, route }) => {
               </Pressable>
             )}
           </View>
-          {isFlashLoading && (
+          {isVideoLoading && (
             <MediaSkeleton numberOfObjects={3} />
           )}
-          {!isFlashLoading && !isError && (
-            <OrthoCarousel entries={flashData} onSelect={handleNavigation} />
+          {!isVideoLoading && !isErrorVideo && (
+            <OrthoCarousel entries={videoData} onSelect={handleNavigation} />
           )}
         </View>
       </ScrollView >
@@ -305,10 +353,12 @@ const styles = StyleSheet.create({
   },
   bannerScrollView: {
     marginBottom: Spacings.sm,
+    backgroundColor: Colors.white,
   },
   bannerScrollContent: {
     paddingHorizontal: Spacings.lg,
     gap: Spacings.sm,
+    backgroundColor: Colors.white,
   },
   dailyQuestionBanner: {
     flexDirection: 'row',
@@ -338,6 +388,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: Spacings.md,
   },
+  answeredBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.blueBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.white,
+    shadowColor: Colors.blue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
   podcastIconContainer: {
     backgroundColor: Colors.white,
   },

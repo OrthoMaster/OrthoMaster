@@ -269,7 +269,7 @@ const CelebrationContractScreen = ({
               style={styles.secondaryButton}
               onPress={handleBackToTeam}
             >
-              <Ionicons name="arrow-back-outline" size={20} color={Colors.white} />
+              <Ionicons name="arrow-back" size={20} color={Colors.white} />
               <Text style={styles.secondaryButtonText}>Mon Équipe</Text>
             </TouchableOpacity>
           </View>

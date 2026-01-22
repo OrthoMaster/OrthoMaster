@@ -4,8 +4,7 @@ import Hyperlink from 'react-native-hyperlink'
 import navigateToContent from '../navigation/NavigationFactory'
 
 export const LinkFactory = ({ config }) => {
-
-    var textColor = '#2980b9'
+    var textColor = '#0288D1'
     var textSize = 15
     var textAlign = "left"
     var textAlignSelf = "flex-start"
@@ -27,11 +26,10 @@ export const LinkFactory = ({ config }) => {
             color: textColor,
             fontSize: textSize,
         }}
-        
         onPress={(url, text) => navigateToContent(url)}
     >
-        <Text style={{ fontSize: 15, alignSelf: textAlignSelf, textAlign: textAlign }}>
-            {config.attributes['href']}
+        <Text style={{ fontFamily: 'Poppips-Medium', fontSize: 15, alignSelf: textAlignSelf, textAlign: textAlign }}>
+            {config.attributes['text'] ?? config.attributes['href']}
         </Text>
     </Hyperlink>
 }

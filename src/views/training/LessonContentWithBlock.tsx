@@ -42,7 +42,7 @@ interface Block {
 
 type ScrollDirection = 'up' | 'down' | null;
 
-export const LessonContent = ({ navigation, route }) => {
+export const LessonContentWithBlock = ({ navigation, route }) => {
   // Hide bottom nav
   useEffect(() => {
     navigation.getParent()?.setOptions({

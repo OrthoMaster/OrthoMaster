@@ -22,7 +22,7 @@ import { useQuery } from "@tanstack/react-query"
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-import { getPreSearch, search, deleteKeyword, clearSearchHistory, checkOpenableLesson } from '../../services/v2/ContentService';
+import { getPreSearch, search, deleteKeyword, clearSearchHistory } from '../../services/v2/ContentService';
 
 const S3_OBJECT_ROOT = "https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/";
 
@@ -33,6 +33,7 @@ interface Lesson {
   description: string;
   duration?: string;
   module?: any;
+  image?: string;
 }
 
 interface Video {
@@ -45,6 +46,7 @@ interface Video {
   author?: string;
   aws_object_path?: string;
   s3_path?: string;
+  thumbnail?: string;
 }
 
 interface Category {
@@ -81,7 +83,7 @@ export const HomeSearchView = ({ navigation }) => {
   });
 
   // State management
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -119,7 +121,7 @@ export const HomeSearchView = ({ navigation }) => {
 
   // Handle submit
   const handleSubmit = () => {
-    handleSearch(searchQuery, '');
+    handleSearch(searchQuery, selectedCategory);
   }
 
   // Handle search - only triggered by keyboard submit or suggestion click
@@ -199,20 +201,6 @@ export const HomeSearchView = ({ navigation }) => {
     setIsLoadingMoreVideos(false);
   };
 
-  // Encoding video version 1: s3_path -> aws_url
-  const encodeURLPath = (path) => {
-    const parts = path.split('/');
-
-    const encodedParts = parts.map(part => {
-      const normalized = part.normalize('NFD');
-
-      // Encode URI component and change %20 to +
-      return encodeURIComponent(normalized).replace(/%20/g, '+');
-    });
-
-    return encodedParts.join('/');
-  };
-
   // Handle search text change
   const handleTextChange = (text: string) => {
     setSearchQuery(text);
@@ -269,7 +257,7 @@ export const HomeSearchView = ({ navigation }) => {
   // Handle open lesson
   const handleOpenLesson = async (item: Lesson, isActive: boolean) => {
     if (isActive) {
-      navigation.navigate('lesson-content', {
+      navigation.navigate('lesson-content-xml', {
         lessonId: item.id,
         lessonTitle: item.title,
         trainingName: item.module.package.training.name,
@@ -309,12 +297,14 @@ export const HomeSearchView = ({ navigation }) => {
       {
         backgroundColor: item.module?.package?.training?.color || Colors.blueBackground,
       }]}>
-        {item.module?.image
-          ? <Image
-            source={{ uri: process.env.EXPO_PUBLIC_S3_URL + item.module.image }}
-            style={styles.courseImage}
-            resizeMode='contain'
-          />
+        {item.image
+          ? <View style={{ padding: Spacings.sm, width: '100%', height: '100%' }}>
+            <Image
+              source={{ uri: process.env.EXPO_PUBLIC_S3_URL + item.image }}
+              style={styles.courseImage}
+              resizeMode='contain'
+            />
+          </View>
           : <Text style={styles.courseIcon}>📚</Text>
         }
 
@@ -328,7 +318,7 @@ export const HomeSearchView = ({ navigation }) => {
       <View style={styles.courseContainer}>
         <Text style={styles.courseTraining} numberOfLines={1} ellipsizeMode='tail'>{item.module?.package?.training?.name}</Text>
         <Text style={[styles.coursePackage, { color: item.module?.package?.training?.color || Colors.blue }]}
-          numberOfLines={1} ellipsizeMode='tail'>{item.module?.package.name}</Text>
+          numberOfLines={1} ellipsizeMode='tail'>{item.module?.package.short_name}</Text>
         <Text style={styles.courseName} numberOfLines={2} ellipsizeMode='tail'>{item.title}</Text>
       </View>
     </TouchableOpacity>
@@ -349,9 +339,9 @@ export const HomeSearchView = ({ navigation }) => {
       }}
     >
       <View style={styles.thumbnailContainer}>
-        {(item.aws_object_path || item.s3_path) ?
+        {(item.s3_path) ?
           <Image
-            source={{ uri: (S3_OBJECT_ROOT + (item.aws_object_path ?? encodeURLPath(item.s3_path + '/' + item.title + '/' )) + 'logo.png') }}
+            source={{ uri: item.thumbnail }}
             style={styles.thumbnail}
             resizeMode="cover"
           />
@@ -458,7 +448,7 @@ export const HomeSearchView = ({ navigation }) => {
           <Text style={styles.modalTitle}>Contenu verrouillé</Text>
 
           <Text style={styles.modalMessage}>
-            Cette leçon fait partie du package{' '}
+            Cette leçon fait partie de la formation {' '}
             <Text style={styles.modalPackageName}>
               {selectedLockedLesson?.module?.package?.name}
             </Text>
@@ -466,7 +456,7 @@ export const HomeSearchView = ({ navigation }) => {
           </Text>
 
           <Text style={styles.modalQuestion}>
-            Souhaitez-vous consulter les informations sur ce package ?
+            Souhaitez-vous consulter les informations sur cette formation ?
           </Text>
 
           <View style={styles.modalButtons}>
@@ -500,8 +490,8 @@ export const HomeSearchView = ({ navigation }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-outline" size={20} color={Colors.text} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: Spacings.xs }}>
+          <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
 
         {/* Search Bar */}
@@ -523,7 +513,7 @@ export const HomeSearchView = ({ navigation }) => {
         {/* Clear button */}
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={handleClearSearch}>
-            <Ionicons name="close" size={24} color={Colors.text} />
+            <Ionicons name="close" size={24} color={Colors.gray} />
           </TouchableOpacity>
         )}
       </View>
@@ -545,6 +535,7 @@ export const HomeSearchView = ({ navigation }) => {
                 ]}
                 onPress={() => handleCategorySelect(category.id)}
                 activeOpacity={0.7}
+                disabled={isSearching}
               >
                 <Text
                   style={[
@@ -636,7 +627,7 @@ export const HomeSearchView = ({ navigation }) => {
                   <View style={styles.resultSection}>
                     <View style={styles.sectionHeader}>
                       <Text style={styles.resultSectionTitle}>
-                        Formations ({lessons.length})
+                        Formations
                       </Text>
                     </View>
                     <FlatList
@@ -703,7 +694,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.line,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.md,
+    gap: Spacings.xxs,
   },
   searchBarContainer: {
     flex: 1,
@@ -893,7 +884,8 @@ const styles = StyleSheet.create({
   },
   courseImage: {
     width: '100%',
-    height: '100%'
+    height: '100%',
+    borderRadius: 100,
   },
   courseIcon: {
     fontSize: 45,
@@ -907,14 +899,14 @@ const styles = StyleSheet.create({
   },
   courseTraining: {
     fontSize: 10,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'Roboto',
     color: Colors.subtext,
-    marginBottom: Spacings.xxs,
   },
   coursePackage: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Bold',
+    fontSize: 10,
+    fontFamily: 'Poppins-Regular',
     color: Colors.primary,
+    marginBottom: Spacings.xxs
   },
   courseName: {
     fontSize: 12,

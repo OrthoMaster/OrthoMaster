@@ -24,7 +24,7 @@ import Spacings from '../../../constants/Spacings';
 import { Styles } from '../../../constants/Styles';
 
 import StripePaymentModal from './components/StripePaymentModal';
-import CelebrationScreen from './components/CelebrationScreen';
+import CelebrationScreen from './components/CelebrationActivePackageScreen';
 
 import {
   getCartDetails,
@@ -58,8 +58,9 @@ const CourseItem = ({ course }: { course: Item }) => {
       <View style={styles.courseImageWrapper}>
         {course.package.image ?
           <Image
-            source={{ uri: process.env.EXPO_EXPO_PUBLIC_S3_URL + course.package.image }}
-            style={styles.courseImage}
+            source={{ uri: process.env.EXPO_PUBLIC_S3_URL + course.package.image }}
+            style={[styles.courseImage, { tintColor: Colors.blue }]}
+            resizeMode="contain"
           />
           :
           <MaterialCommunityIcons name={'book-open-page-variant-outline'}
@@ -882,23 +883,24 @@ const styles = StyleSheet.create({
   courseImageWrapper: {
     width: 40,
     height: 40,
-    borderRadius: 8,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.blueBackground,
     marginRight: Spacings.sm,
+    padding: Spacings.xxs
   },
   courseImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: '100%',
+    height: '100%',
+    borderRadius: 100,
   },
   courseItemInfo: {
     flex: 1,
     justifyContent: 'center',
   },
   courseItemTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
   },

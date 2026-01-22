@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   Dimensions,
   TextInput,
   Alert,
-  Modal
+  Modal,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -31,6 +32,8 @@ const COURSE_SIZE = (SCREEN_WIDTH - (CONTAINER_PADDING * 2) - (CARD_SPACING * (C
 interface Package {
   id: string;
   name: string;
+  short_name: string;
+  image?: string;
   color: string;
   duration: number;
   duration_text: string;
@@ -75,17 +78,29 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
         isDisabled && styles.courseCircleDisabled
       ]}>
         {/* Icon */}
-        <Text style={[
-          styles.courseIcon,
-          isDisabled && styles.courseIconDisabled
-        ]}>
-          📚
-        </Text>
+        {pkg.image
+          ? <Image
+            source={{ uri: process.env.EXPO_PUBLIC_S3_URL + pkg.image }}
+            style={[{
+              width: '100%',
+              height: '100%',
+              tintColor: color,
+              borderRadius: 100,
+            }, isDisabled && styles.courseIconDisabled]}
+            resizeMode="contain"
+          />
+          : <Text style={[
+            styles.courseIcon,
+            isDisabled && styles.courseIconDisabled
+          ]}>
+            📚
+          </Text>
+        }
 
         {/* Checkmark Overlay for Selected */}
         {isSelected && !isDisabled && (
           <View style={styles.checkmarkOverlay}>
-            <Ionicons name="checkmark-circle" size={24} color={Colors.success} />
+            <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
           </View>
         )}
 
@@ -127,7 +142,7 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
         numberOfLines={2}
         ellipsizeMode="tail"
       >
-        {pkg.name}
+        {pkg.short_name ?? pkg.name}
       </Text>
     </TouchableOpacity>
   );
@@ -566,7 +581,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   groupBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Poppins-Medium',
     color: Colors.blue,
   },
@@ -593,6 +608,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
     marginBottom: Spacings.xs,
+    padding: Spacings.xxs
   },
   courseCircleSelected: {
     borderColor: Colors.success,
@@ -609,8 +625,8 @@ const styles = StyleSheet.create({
   },
   checkmarkOverlay: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -2,
+    right: -1,
     backgroundColor: Colors.successBackground,
     borderRadius: 12,
   },
@@ -621,7 +637,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   courseName: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: 'Poppins-Regular',
     color: Colors.text,
     textAlign: 'center',

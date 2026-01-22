@@ -11,7 +11,7 @@ import { LessonEndingView } from '../../views/content/LessonEndingView';
 import ReturnButtonIcon from '../components/ReturnButton';
 
 import { NotificationView } from '../../views/notification/NotificationView';
-import { LessonContent } from '../../views/training/LessonContent';
+import { LessonContentWithXML } from '../../views/training/LessonContentWithXML';
 import { HomeSearchView } from '../../views/home/HomeSearchView';
 
 const forZoomFromCenter = ({ current, layouts }) => {
@@ -105,8 +105,8 @@ export const HomeStack = () => {
       />
 
       <HomeStackNav.Screen
-        name="lesson-content"
-        component={LessonContent}
+        name="lesson-content-xml"
+        component={LessonContentWithXML}
         options={{
           headerShown: false,
           cardStyleInterpolator: forZoomFromCenter,

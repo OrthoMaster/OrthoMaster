@@ -164,7 +164,6 @@ const SwipeableItem: React.FC<SwipeableItemProps> = ({
           {
             transform: [{ translateX }],
           },
-          // Thêm highlight khi đạt ngưỡng
           hasReachedThreshold && styles.courseCardThreshold
         ]}
         {...panResponder.panHandlers}
@@ -177,8 +176,9 @@ const SwipeableItem: React.FC<SwipeableItemProps> = ({
           <View style={[styles.imageContainer]}>
             {course.package.image ?
               <Image
-                source={{ uri: process.env.EXPO_EXPO_PUBLIC_S3_URL + course.package.image }}
-                style={styles.courseImage}
+                source={{ uri: process.env.EXPO_PUBLIC_S3_URL + course.package.image }}
+                style={[styles.courseImage, { tintColor: Colors.blue }]}
+                resizeMode="contain"
               />
               :
               <MaterialCommunityIcons name={'book-open-page-variant-outline'}
@@ -534,18 +534,18 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     marginRight: Spacings.md,
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.blueBackground,
-    borderRadius: 16,
+    borderRadius: 45,
+    padding: Spacings.xs
   },
   courseImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 16,
-    backgroundColor: Colors.blueBackground,
+    width: '100%',
+    height: '100%',
+    borderRadius: 100
   },
   discountBadge: {
     position: 'absolute',
@@ -566,9 +566,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   courseTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
+    marginBottom: 0,
+    marginTop: 2
   },
   metaContainer: {
     gap: Spacings.xxs,
@@ -579,19 +581,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   metaText: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
   },
   priceContainer: {
-    marginTop: Spacings.sm,
+    marginTop: Spacings.xxs,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.xs,
-
   },
   price: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Poppins-Bold',
     color: Colors.blue,
   },

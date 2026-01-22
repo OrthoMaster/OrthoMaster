@@ -4,23 +4,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Colors from "../../../../constants/Colors";
 
 const LessonLogoIcon = ({
-  color = Colors.primaryLight,
+  color = Colors.blue,
+  secondaryColor = Colors.white,
   size = 100,
   image = null,
   type = 'lesson',
   selected = false,
-  passed = true
+  passed = true,
+  blocked = false
 }) => {
-  const bounceAnim = useRef(new Animated.Value(0)).current;
-  const wave1 = useRef(new Animated.Value(0)).current;
-  const wave2 = useRef(new Animated.Value(0)).current;
-
-  const getBorderColor = (hex) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgb(${Math.floor(r * 0.9)}, ${Math.floor(g * 0.9)}, ${Math.floor(b * 0.9)})`;
-  };
+  const wave = useRef(new Animated.Value(0)).current;
 
   // Get darker color for 3D effect (bottom border)
   const get3DColor = (hex) => {
@@ -31,65 +24,42 @@ const LessonLogoIcon = ({
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     // Darker by 30% (multiply by 0.7)
-    return `rgb(${Math.floor(r * 0.9)}, ${Math.floor(g * 0.9)}, ${Math.floor(b * 0.9)})`;
+    return `rgb(${Math.floor(r * 0.7)}, ${Math.floor(g * 0.7)}, ${Math.floor(b * 0.7)})`;
   };
 
-  const borderColor = getBorderColor(color);
-  const borderWidth = size * 0.08;
-  const depth3D = size * 0.08; // 3D depth - same as paddingBottom in HomeHeader
+  const depth3D = size * 0.12; // 3D depth - same as paddingBottom in HomeHeader
 
   useEffect(() => {
     if (selected) {
+      // Wave animatio
       Animated.loop(
         Animated.sequence([
-          Animated.timing(bounceAnim, {
-            toValue: -8,
-            duration: 700,
+          Animated.timing(wave, {
+            toValue: 1,
+            duration: 1500,
             useNativeDriver: true,
           }),
-          Animated.timing(bounceAnim, {
+          Animated.timing(wave, {
             toValue: 0,
-            duration: 700,
+            duration: 1500,
             useNativeDriver: true,
           }),
         ])
       ).start();
-
-      // Wave 1
-      Animated.loop(
-        Animated.timing(wave1, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        })
-      ).start();
-
-      // Wave 2
-      setTimeout(() => {
-        Animated.loop(
-          Animated.timing(wave2, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          })
-        ).start();
-      }, 600);
     } else {
-      bounceAnim.setValue(0);
-      wave1.setValue(0);
-      wave2.setValue(0);
+      wave.setValue(0);
     }
   }, [selected]);
 
-  const getWaveStyle = (waveAnim) => {
-    const scale = waveAnim.interpolate({
+  const getWaveStyle = () => {
+    const scale = wave.interpolate({
       inputRange: [0, 1],
-      outputRange: [0.9, 1.3],
+      outputRange: [1, 1.3],
     });
 
-    const opacity = waveAnim.interpolate({
-      inputRange: [0, 0.3, 1],
-      outputRange: [0.7, 0.4, 0],
+    const opacity = wave.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 0.8],
     });
 
     return {
@@ -102,46 +72,30 @@ const LessonLogoIcon = ({
     <View style={styles.container}>
       {/* Wave border */}
       {selected && (
-        <>
-          <Animated.View
-            style={[
-              styles.waveRing,
-              {
-                width: size * 1.1,
-                height: size * 1.1,
-                borderRadius: (size * 1.1) / 2,
-                borderColor: color,
-                borderWidth: 3,
-              },
-              getWaveStyle(wave1),
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.waveRing,
-              {
-                width: size * 1.1,
-                height: size * 1.1,
-                borderRadius: (size * 1.1) / 2,
-                borderColor: color,
-                borderWidth: 3,
-              },
-              getWaveStyle(wave2),
-            ]}
-          />
-        </>
+        <Animated.View
+          style={[
+            styles.waveRing,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              borderColor: secondaryColor,
+              borderWidth: 5,
+            },
+            getWaveStyle(),
+          ]}
+        />
       )}
 
       {/* 3D Wrapper - creates the bottom shadow effect */}
-      <Animated.View
+      <View
         style={[
           styles.wrapper3D,
           {
             width: size,
             borderRadius: size / 2,
-            backgroundColor: passed ? get3DColor(color) : get3DColor(Colors.gray),
+            backgroundColor: blocked ? get3DColor(color) : (passed ? get3DColor(color) : get3DColor(secondaryColor)),
             paddingBottom: depth3D, // This creates the 3D depth at bottom
-            transform: [{ translateY: bounceAnim }],
           },
         ]}
       >
@@ -151,9 +105,9 @@ const LessonLogoIcon = ({
             styles.coin,
             {
               width: size,
-              height: size,
+              height: size * 0.96,
               borderRadius: size / 2,
-              backgroundColor: passed ? color : Colors.gray,
+              backgroundColor: blocked ? Colors.grayLight : color,
             },
           ]}
         >
@@ -163,33 +117,22 @@ const LessonLogoIcon = ({
               style={[
                 styles.image,
                 {
-                  width: size * 0.5,
-                  height: size * 0.5,
-                  borderRadius: (size * 0.5) / 2,
+                  width: size * 0.8,
+                  height: size * 0.8,
+                  tintColor: blocked ? Colors.white : (passed ? Colors.white : secondaryColor),
+                  borderRadius: 100,
                 },
               ]}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           ) : (
             <>
               {type == 'lesson' && (<MaterialCommunityIcons
                 name="book-open-page-variant-outline"
                 size={size * 0.5}
-                color={passed ? Colors.white : Colors.grayLight}
+                color={blocked ? Colors.white : (passed ? Colors.white : secondaryColor)}
                 style={{
-                  textShadowColor: 'rgba(0, 0, 0, 0.3)',
-                  textShadowOffset: { width: 0, height: 2 },
-                  textShadowRadius: 3,
-                }}
-              />
-              )}
-
-              {type == 'test' && (<MaterialCommunityIcons
-                name="sticker-check"
-                size={size * 0.5}
-                color={passed ? Colors.white : Colors.grayLight}
-                style={{
-                  textShadowColor: 'rgba(0, 0, 0, 0.3)',
+                  textShadowColor: 'rgba(0, 0, 0, 0.2)',
                   textShadowOffset: { width: 0, height: 2 },
                   textShadowRadius: 3,
                 }}
@@ -198,7 +141,7 @@ const LessonLogoIcon = ({
             </>
           )}
         </View>
-      </Animated.View>
+      </View>
     </View>
   );
 };
@@ -219,11 +162,6 @@ const styles = StyleSheet.create({
   },
   wrapper3D: {
     zIndex: 1,
-    // paddingBottom will be added dynamically to create 3D depth
-  },
-  coin: {
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -232,6 +170,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+  coin: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   image: {
     overflow: 'hidden',

@@ -8,7 +8,7 @@ import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, Entypo } from '@expo/vector-icons';
 
 import { HomeStack } from './stacks/HomeStack';
 
@@ -189,7 +189,7 @@ export const AppTab = ({ }) => {
             />
           ),
           tabBarIcon: ({ focused }) => (
-            <MaterialCommunityIcons name={'home'}
+            <Entypo name={'home'}
               size={focused ? 26 : 20}
               color={focused ? Colors.primary : Colors.primaryDisabled} />
           )

@@ -132,8 +132,8 @@ export const DailyQuestionModal: React.FC<DailyQuestionModalProps> = ({
 
       const explanationAnimation = Animated.timing(explanationOpacity, {
         toValue: 1,
-        duration: 400,
-        delay: 400,
+        duration: 200,
+        delay: 100,
         useNativeDriver: true,
       });
 

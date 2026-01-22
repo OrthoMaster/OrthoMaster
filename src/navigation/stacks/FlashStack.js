@@ -71,12 +71,7 @@ export const FlashStack = ({}) => {
         name="flash-media-preview"
         component={PreviewMediaView}
         options={{
-          headerShown: true,
-          headerTitle: "",
-          headerBackButtonDisplayMode: "minimal",
-          headerTintColor: '#000',
-          headerTransparent: true,
-          headerBackImage: ()=>(<ReturnButtonIcon />)
+          headerShown: false,
         }}
       />
 

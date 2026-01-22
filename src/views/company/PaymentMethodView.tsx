@@ -179,8 +179,6 @@ export const PaymentMethodView = ({ navigation, route }) => {
     setExpandedMethods(paymentMethods.filter(m => m.terms && m.terms.length > 0).map(m => m.id));
   }, [data]);
 
-
-
   const handleSelectMethod = (id: string) => {
     setSelectedMethod(id);
   };
@@ -229,8 +227,8 @@ export const PaymentMethodView = ({ navigation, route }) => {
           </View>
         </View>
       </View>
-              {/* Stepper */}
-        <Stepper currentStep={0} />
+      {/* Stepper */}
+      <Stepper currentStep={0} />
 
       {/* Payment Methods List */}
       <ScrollView

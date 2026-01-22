@@ -17,9 +17,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useGetUser } from "../../hooks/useGetUser.hook";
 import { getS3Image } from "../../services/S3Service";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import Feather from "@expo/vector-icons/Feather";
 import { IContent } from "../../utils/interfaces";
+import { Ionicons, Feather, FontAwesome } from '@expo/vector-icons';
 
 import { LinearGradient } from "expo-linear-gradient";
 import { fetchSearchList } from "../../services/SearchService";
@@ -207,7 +206,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <ScrollView>
+      <ScrollView style={{ flex: 1 }}>
         <View
           style={[
             styles.mediaSection,
@@ -238,7 +237,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
               <Image
                 source={{ uri: imageUrl.data }}
                 style={{
-                  resizeMode: "cover",
+                  resizeMode: "contain",
                   width: "100%",
                   height: "100%",
                   opacity: 0.9,
@@ -308,18 +307,6 @@ export const PreviewMediaView = ({ navigation, route }) => {
           </View>
 
           <View style={styles.mediaInteractionContainer}>
-            {/* <TouchableOpacity style={styles.interactionButton}>
-                        <AntDesign name="plus" size={18} color="black" />
-                        <Text>
-                            Ma liste
-                        </Text>
-                    </TouchableOpacity> */}
-            {/* <TouchableOpacity style={styles.interactionButton}>
-                        <AntDesign name="star" size={18} color="black" />
-                        <Text>
-                            Évaluer
-                        </Text>
-                    </TouchableOpacity> */}
             <TouchableOpacity
               style={styles.interactionButton}
               onPress={() => {
@@ -383,6 +370,11 @@ export const PreviewMediaView = ({ navigation, route }) => {
           }}
         />
       )}
+
+      {/* Back button */}
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="chevron-back" size={24} color={'#000'} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -425,4 +417,21 @@ const styles = StyleSheet.create({
     width: "90%",
     alignSelf: "center",
   },
+
+  // Back button
+  backButton: {
+    position: 'absolute',
+    borderRadius: 5,
+    left: 10,
+    top: 80,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 3,
+    shadowOpacity: 0.5,
+    width: 30,
+    height: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999
+  }
 });

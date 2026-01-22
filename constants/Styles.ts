@@ -5,7 +5,7 @@ import { StyleSheet } from "react-native";
 export const Styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.darkBackground,
     fontFamily: 'Roboto',
   },
   errorMessageContainer: {
@@ -33,7 +33,8 @@ export const Styles = StyleSheet.create({
   textInputContent: {
     fontSize: 16,
     fontFamily: 'Roboto',
-    overflow: "hidden"
+    overflow: "hidden",
+    color: Colors.text
   },
   textInputOutline: {
     borderColor: Colors.border,

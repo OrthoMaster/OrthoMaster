@@ -290,6 +290,12 @@ export default function App({ navigation }) {
       case 'company':
         path = 'open/company';
         break;
+      case 'daily-question':
+        path = 'open/daily-content/daily-question';
+        break;
+      case 'podcast':
+        path = 'open/daily-content/podcast';
+        break;
       default:
         path = 'open/profile-view/notification-list';
         break;
@@ -309,12 +315,12 @@ export default function App({ navigation }) {
           path: 'open/home',
           screens: {
             "home-home": {
-              path: "open/content/:id",
+              path: "open/daily-content/:action",
             }
           },
 
         },
-        'Médias': {
+        'media': {
           screens: {
             'flash-media-home': {
               path: "open/media-preview/:id"

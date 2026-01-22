@@ -137,19 +137,20 @@ export const clearSearchHistory = async () => {
         });
 }
 
-
-
-export const checkOpenableLesson = async ( lessonId: string ) => {
+/**
+ * Get S3 Url
+ */
+export const getS3Url = async (content: string) => {
     return axiosInstance
-        .post(`${baseUrl}/content/search/lesson-openable`, { lessonId })
+        .post(`${baseUrl}/content/s3-url`, { content })
         .then((response) => {
             if (response.data?.success == true) {
-                return true
+                return response.data?.url;
             }
 
-            return false;
+            return null;
         })
         .catch((e: AxiosError) => {
-            return false;
+            return null;
         });
 }

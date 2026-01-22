@@ -34,6 +34,7 @@ export default {
   infoBackground: '#DBEAFE',
 
   blackBackground: '#0a0a0a',
+  darkBackground: '#303030',
   
 
   text: '#32343E',

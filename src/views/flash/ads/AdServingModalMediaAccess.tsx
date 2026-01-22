@@ -1,15 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Text, TouchableOpacity, View, StyleSheet, Dimensions, ActivityIndicator, Image, TouchableWithoutFeedback } from "react-native";
+import {
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+  Image,
+  TouchableWithoutFeedback
+} from "react-native";
 import Animated, { useSharedValue, withSpring } from "react-native-reanimated";
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEventListener } from "expo";
-import AntDesign from '@expo/vector-icons/AntDesign';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
+
 import { hmsToMilliseconds } from "../../../futils";
 import { IVASTObject } from "../../../utils/interfaces";
 import { constructVASTObjectWithUrlFromAdButler, saveVastEvent, sendInterestToAdvertiser } from "../../../utils/vastTools";
 import { useMutation } from "@tanstack/react-query";
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useGetUser } from "../../../hooks/useGetUser.hook";
+
+import Colors from "../../../../constants/Colors";
+import Spacings from "../../../../constants/Spacings";
 
 const { width: screenWidth, height } = Dimensions.get("screen")
 
@@ -55,67 +69,58 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
   }, [isSent])
 
 
-  return <Modal animationType="slide"
+  return <Modal
+    animationType="slide"
     transparent={true}
     visible={visible}>
-    <TouchableWithoutFeedback onPress={() => {
-      setIsError(false)
-      setIsSent(false)
-      onClose()
-    }}>
+    <TouchableWithoutFeedback
+      onPress={() => {
+        setIsError(false)
+        setIsSent(false)
+        onClose()
+      }}>
       <View style={{ backgroundColor: "rgba(0,0,0,0.9)", position: 'absolute', width: '100%', height: "100%" }} />
     </TouchableWithoutFeedback>
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <View style={{ width: "90%", backgroundColor: "white", borderRadius: 10, padding: 20, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>Merci pour votre intérêt.</Text>
-        <Text style={{ fontSize: 12 }}>Afin d'être contacté par l'annonceur, nous lui communiquerons les informations suivantes relatives à votre compte :</Text>
-        <Text style={{
-          fontWeight: 'bold',
-          alignSelf: 'center',
-          fontSize: 12,
-          marginVertical: 20
-        }}>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: Spacings.md }}>
+      <View style={{ backgroundColor: Colors.white, borderRadius: 16, padding: Spacings.lg, justifyContent: 'center' }}>
+        <Text style={{ fontFamily: 'Poppins-Bold', fontSize: 16, color: Colors.text }}>Merci pour votre intérêt !</Text>
+        <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: Colors.subtext, marginTop: Spacings.sm }}>Afin d'être contacté par l'annonceur, nous lui communiquerons les informations suivantes relatives à votre compte :</Text>
+        <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: Colors.text, marginTop: Spacings.sm, paddingLeft: Spacings.lg }}>
           • Nom Prénom{'\n'}
           • Email{'\n'}
           • Fonction professionnelle
         </Text>
 
-        <View style={{
-          display: 'flex', flexDirection: 'row',
-          width: '100%',
-          marginTop: 5
-        }}>
-          <TouchableOpacity style={{
-            flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5
-          }} onPress={send}>
-            {
-              sendInterest.isPending ?
-                <ActivityIndicator />
-                :
-                <Text style={{
-                  color: '#fff',
-                  backgroundColor: '#ffaf31',
-                  width: '100%', paddingVertical: 15,
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                  borderRadius: 5,
-                  fontSize: 12
-                }}>
-                  Je confirme{'\n'} mon intérêt
-                </Text>
+        <View style={{ flexDirection: 'row', marginTop: Spacings.lg, width: '100%', gap: Spacings.md }}>
+          <TouchableOpacity
+            style={{
+              flex: 1, alignItems: 'center', justifyContent: 'center',
+              paddingVertical: Spacings.xs, borderRadius: 6, backgroundColor: Colors.primary
+            }}
+            onPress={send}>
+            {sendInterest.isPending
+              ? <ActivityIndicator />
+              : <Text style={{
+                color: Colors.white,
+                textAlign: 'center',
+                fontFamily: 'Poppins-Medium',
+                fontSize: 12
+              }}>
+                Je confirme
+              </Text>
             }
           </TouchableOpacity>
-          <TouchableOpacity style={{
-            flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5
-          }}
+          <TouchableOpacity
+            style={{
+              flex: 1, alignItems: 'center', justifyContent: 'center',
+              paddingVertical: Spacings.xs, borderRadius: 6, borderWidth: 2, borderColor: Colors.primary
+            }}
             onPress={onClose}
           >
             <Text style={{
-              color: '#fff',
-              backgroundColor: '#8E8E8E',
-              width: '100%', paddingVertical: 15,
+              color: Colors.primary,
               textAlign: 'center',
-              borderRadius: 5,
+              fontFamily: 'Poppins-Medium',
               fontSize: 12
             }}>Annuler</Text>
           </TouchableOpacity>
@@ -171,7 +176,6 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
 }
 
 const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ vast, onAccess }) => {
-
   const player = useVideoPlayer(vast?.linearMedia?.mediaFiles[0], player => {
     player.loop = false;
     player.currentTime = 0;
@@ -193,7 +197,6 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
-
 
   const onSkip = () => {
     setSavedEvents([...savedEvents, "skip"])
@@ -265,210 +268,193 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
     setShowSkipBtn(false)
   });
 
-  return <Modal animationType="slide"
-    transparent={true}
-    visible={vast !== null}
-  >
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.9)" }}>
-      <View style={{ width: '90%' }}>
-        <Text style={{ fontSize: 15, fontWeight: "bold", color: '#fff' }}>{vast?.adAdviser}</Text>
-        <Text style={{ fontSize: 12, marginBottom: 10, color: '#fff' }}>{vast?.adTitle}</Text>
-      </View>
-      <Animated.View style={{
-        width,
-        height,
-      }}>
-        <VideoView
-          style={{
-            width: "100%",
-            height: "100%",
-          }}
-          contentFit="contain"
-          player={player}
-          
-          allowsPictureInPicture={false}
-          allowsVideoFrameAnalysis={false}
-          nativeControls={false}
-        />
-        <View style={{
-          backgroundColor: "rgba(0,0,0,0.4)",
-          position: 'absolute',
-          right: 0,
-          bottom: 0,
-          padding: 5,
-
-        }}>
-          <Text style={{
-            color: "#fff",
-            fontWeight: 'bold',
-            fontSize: 12,
-          }}>{formatTime(currentTime)} / {formatTime(duration)}</Text>
-        </View>
-        {
-          showSkipBtn &&
-          <TouchableOpacity style={{
-            backgroundColor: "rgba(0,0,0,0.7)",
+  return (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={vast !== null}
+    >
+      <View style={{ flex: 1, justifyContent: "center", padding: Spacings.md, backgroundColor: "rgba(0,0,0,0.95)" }}>
+        <Text style={{ fontSize: 14, color: Colors.white, fontFamily: 'Poppins-Bold' }}>{vast?.adAdviser}</Text>
+        <Text style={{ fontSize: 10, color: Colors.white, fontFamily: 'Roboto', marginBottom: Spacings.sm }}>{vast?.adTitle}</Text>
+        <Animated.View style={{ width, height }}>
+          <VideoView
+            style={{
+              width: screenWidth - 2 * Spacings.md,
+              height: (screenWidth - 2 * Spacings.md) * 9 / 16,
+            }}
+            contentFit="contain"
+            player={player}
+            allowsPictureInPicture={false}
+            allowsVideoFrameAnalysis={false}
+            nativeControls={false}
+          />
+          <View style={{
+            backgroundColor: "rgba(0,0,0,0.4)",
             position: 'absolute',
             right: 0,
-            bottom: 50,
-            paddingHorizontal: 15, paddingVertical: 5,
-            flexDirection: 'row',
-            alignItems: 'center', justifyContent: 'center'
-          }} onPress={onSkip}>
-            <Text style={{ color: "#fff" }}>Passer</Text>
-            <AntDesign style={{ marginLeft: 10 }} name="step-forward" size={15} color="#fff" />
-          </TouchableOpacity>
-        }
-      </Animated.View>
-      <TouchableOpacity style={{
-        alignSelf: 'center',
-        borderRadius: 10,
-        marginTop: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 15, paddingHorizontal: 30,
-        borderWidth: 0.5,
-        borderColor: "#fff"
-      }} onPress={() => openInterestModal(true)}>
-        <Image
-          source={require('../../../../assets/ads/interest.png')}
-          style={{
-            width: 30, height: 30,
-            objectFit: 'contain',
-            marginBottom: 5
-          }}
-        />
-        <Text style={{ fontSize: 10, color: "#fff", fontWeight: 'bold', textAlign: 'center' }}>Ça m'intéresse</Text>
-        <Text style={{ fontSize: 10, color: "#fff", fontWeight: 'bold', textAlign: 'center' }}>contactez-moi</Text>
-      </TouchableOpacity>
-      {
-        isComplete &&
+            bottom: 0,
+            padding: Spacings.xs,
+          }}>
+            <Text style={{
+              color: Colors.white,
+              fontSize: 12,
+              fontFamily: 'Poppins-Medium'
+            }}>{formatTime(currentTime)} / {formatTime(duration)}</Text>
+          </View>
+          {
+            showSkipBtn &&
+            <TouchableOpacity style={{
+              backgroundColor: "rgba(0,0,0,0.7)",
+              position: 'absolute',
+              right: 0,
+              bottom: 50,
+              paddingHorizontal: 15, paddingVertical: 5,
+              flexDirection: 'row',
+              alignItems: 'center', justifyContent: 'center'
+            }} onPress={onSkip}>
+              <Text style={{ color: Colors.white, fontFamily: 'Poppins-Medium', fontSize: 12 }}>Passer</Text>
+              <Ionicons style={{ marginLeft: Spacings.xs }} name="play-skip-forward" size={15} color={Colors.white} />
+            </TouchableOpacity>
+          }
+        </Animated.View>
         <TouchableOpacity style={{
-          padding: 10,
-          borderWidth: 2,
-          borderColor: "#fff",
-          borderRadius: 10,
-          display: 'flex',
-          flexDirection: 'row',
+          alignSelf: 'center',
+          borderRadius: 6,
+          marginTop: Spacings.lg,
           alignItems: 'center',
           justifyContent: 'center',
-          position: 'absolute',
-          bottom: 100
-        }}
-          onPress={onAccess}
-        >
-          <Text style={{
-            color: "#fff",
-            fontWeight: "bold",
-            fontSize: 10
-          }}>Accéder au contenu</Text>
-          <AntDesign style={{ marginLeft: 15 }} name="arrow-right" size={15} color="#fff" />
+          paddingVertical: Spacings.sm,
+          paddingHorizontal: Spacings.lg,
+          borderWidth: 2,
+          borderColor: Colors.white,
+          flexDirection: 'row',
+          gap: Spacings.xs,
+        }} onPress={() => openInterestModal(true)}>
+          <Ionicons name="heart" size={30} color={Colors.primary} />
+          <View>
+            <Text style={{ fontSize: 10, color: Colors.white, fontFamily: 'Poppins-Medium' }}>Ça m'intéresse</Text>
+            <Text style={{ fontSize: 10, color: Colors.primary, fontFamily: 'Poppins-Bold' }}>Contactez-moi !</Text>
+          </View>
         </TouchableOpacity>
-      }
-    </View>
-    <InterestModal visible={showInterestModal} onClose={() => {
-      if (!isComplete)
-        player.play()
-      openInterestModal(false)
-    }} vast={vast} />
-  </Modal>
+        {
+          isComplete &&
+          <TouchableOpacity style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+            bottom: 120,
+            right: Spacings.lg,
+          }}
+            onPress={onAccess}
+          >
+            <Text style={{
+              color: Colors.white,
+              fontFamily: 'Poppins-Medium',
+              fontSize: 12
+            }}>Accéder au contenu</Text>
+            <Ionicons style={{ marginLeft: Spacings.xxs }} name="arrow-forward" size={20} color={Colors.white} />
+          </TouchableOpacity>
+        }
+      </View>
+      <InterestModal visible={showInterestModal} onClose={() => {
+        if (!isComplete)
+          player.play()
+        openInterestModal(false)
+      }} vast={vast} />
+    </Modal>
+  )
 }
 
 const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
   const [image, setImage] = useState(null);
-
   const generateThumbnail = async () => {
     try {
       const { uri } = await VideoThumbnails.getThumbnailAsync(
-        vastObj.linearMedia.mediaFiles[0],
-        {
-          time: 0,
-        }
+        vastObj.linearMedia.mediaFiles[0], { time: 0, }
       );
       setImage(uri);
-    } catch (e) {
-      console.warn(e);
-    }
+    } catch (e) { }
   };
   useEffect(() => {
     generateThumbnail()
   }, [])
 
-
-  return <TouchableOpacity style={{
-    backgroundColor: "#fff",
-    width: screenWidth / 2.5,
-    margin: 5,
-    padding: 5,
-    borderRadius: 5,
-    shadowOffset: {
-      width: 0, height: 4
-    },
-    shadowRadius: 2,
-    shadowOpacity: 0.1
-  }}
+  return <TouchableOpacity
+    style={{
+      backgroundColor: Colors.white,
+      width: (screenWidth - (5 * Spacings.md)) / 2,
+      borderRadius: 6,
+      shadowOffset: {
+        width: 0, height: 4
+      },
+      shadowRadius: 2,
+      shadowOpacity: 0.1,
+      shadowColor: Colors.text
+    }}
     onPress={() => {
       onSelect(vastObj)
     }}
   >
-    <View style={{
-      width: "100%",
-      height: (screenWidth / 2.5) * 9 / 16,
-    }}>
-      <Image
-        source={{ uri: image }}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: 'contain'
-        }}
-      />
-    </View>
-    <Text style={{ color: "#000", fontSize: 10, fontWeight: 'bold' }}>{vastObj.adAdviser}</Text>
-    <Text style={{ fontSize: 10, color: '#494949' }}>{vastObj.adTitle?.trim()}</Text>
+    <Image
+      source={{ uri: image }}
+      resizeMode="cover"
+      style={{
+        width: "100%",
+        height: (screenWidth / 2.5) * 9 / 16,
+        objectFit: 'cover',
+        borderTopRightRadius: 6,
+        borderTopLeftRadius: 6,
+      }}
+    />
+    <Text style={styles.adsTitle} numberOfLines={1} ellipsizeMode="tail">{vastObj.adAdviser}</Text>
+    <Text style={styles.adsDescription} numberOfLines={2} ellipsizeMode="tail">{vastObj.adTitle?.trim()}</Text>
   </TouchableOpacity>
 }
 
 export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps> = ({ enabled, onClose, grantAccess, closable = true }) => {
-
   const { data: user, ...userQuery } = useGetUser()
 
-  const [vastArray, setvastArray] = useState<IVASTObject[]>([])
+  const [vastArray, setVastArray] = useState<IVASTObject[]>([])
   const [selectedVAST, setSelectedVAST] = useState<IVASTObject>(null)
 
   const vastsArrayUrl: string[] = [
     "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
     "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
     "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
+    "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,
   ]
 
   const initVastArray = async (urlArray: string[]): Promise<IVASTObject[]> => {
-    let vastObjArray: IVASTObject[] = []
+    let vastObjArray: IVASTObject[] = [];
     for await (const vasturl of urlArray) {
-      let vastObj = await constructVASTObjectWithUrlFromAdButler(vasturl)
+      let vastObj = await constructVASTObjectWithUrlFromAdButler(vasturl);
 
       if (vastObjArray.findIndex(v => v.adTitle === vastObj.adTitle) !== -1) { //VAST OBJ ALREADY EXISTS
         var i = 0;
         while (i < 5) { // 3 try
           i++;
-          vastObj = await constructVASTObjectWithUrlFromAdButler(vasturl)
+          vastObj = await constructVASTObjectWithUrlFromAdButler(vasturl);
           if (vastObjArray.findIndex(v => v.adTitle === vastObj.adTitle) === -1) { //VAST OBJ NOT EXISTS
             break;
           }
         }
       }
       if (!vastObj) { // OBJ Not created
-        continue
+        continue;
       }
-      setvastArray(prev => [...prev, vastObj])
-      vastObjArray.push(vastObj)
+      if (vastArray.length < 4) {
+        setVastArray(prev => [...prev, vastObj]);
+      }
+      vastObjArray.push(vastObj);
     }
-    return vastObjArray
+    return vastObjArray;
   }
 
   useEffect(() => {
     if (enabled) {
-
       initVastArray(vastsArrayUrl).then((vasts) => {
         if (vasts.length === 0)
           grantAccess()
@@ -484,49 +470,32 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
         transparent={true}
         visible={true}
         onRequestClose={() => { closable && onClose() }}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <View style={{ width: "90%", backgroundColor: "#DFDFDF", borderRadius: 10, paddingBottom: 20 }}>
-            <View style={{ paddingTop: 20, display: "flex", flexDirection: 'column', alignItems: 'center' }}>
-              <Text style={{ fontSize: 14, marginBottom: 20, width: '90%', textAlign: 'center' }}>Pour accéder à ce contenu, choisissez une communication de l'un de nos partenaires.</Text>
-            </View>
-            <View style={{
-              display: "flex",
-              flexDirection: "row",
-              flexWrap: "wrap",
-              justifyContent: 'center',
-              width: '100%',
-            }}>
-              {
-                vastArray.map((value, index) => {
+        {!selectedVAST &&
+          <View style={styles.overlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.headerText}>Pour accéder à ce contenu, choisissez une communication de l'un de nos partenaires.</Text>
+              <View style={styles.body}>
+                {vastArray.map((value, index) => {
                   if (value.linearMedia)
                     return <AdCard
                       key={index + "ad-card"}
                       vastObj={value}
                       onSelect={(vastObj) => {
-                        setSelectedVAST(vastObj)
+                        setSelectedVAST(vastObj);
                       }}
                     />
-                })
+                })}
+              </View>
 
+              {closable &&
+                <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                  <Text style={styles.cancelButtonText}>Fermer</Text>
+                </TouchableOpacity>
               }
             </View>
-
-            {closable &&
-              <TouchableOpacity style={{
-                alignSelf: 'center',
-                paddingVertical: 5, paddingHorizontal: 15,
-                borderRadius: 5,
-                marginTop: 20,
-                borderWidth: 2,
-                borderColor: "#FFAF31"
-              }} onPress={onClose}>
-                <Text style={{ fontSize: 16, color: "#ffaf31", fontWeight: 'bold' }}>Annuler</Text>
-              </TouchableOpacity>
-            }
           </View>
-        </View>
-        {
-          selectedVAST &&
+        }
+        {selectedVAST &&
           <DisplayAdModal
             vast={selectedVAST}
             onAccess={() => {
@@ -541,5 +510,64 @@ export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps>
 
   return null;
 }
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.8)",
+    padding: Spacings.md,
+  },
+  modalContainer: {
+    backgroundColor: Colors.grayLight,
+    borderRadius: 16,
+    padding: Spacings.md
+  },
+  body: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: 'center',
+    width: '100%',
+    gap: Spacings.md
+  },
+  headerText: {
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text
+  },
+  adsTitle: {
+    fontSize: 11,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.primary,
+    paddingHorizontal: Spacings.xs,
+    marginTop: Spacings.xs,
+  },
+  adsDescription: {
+    fontSize: 9,
+    fontFamily: 'Roboto',
+    color: Colors.subtext2,
+    paddingHorizontal: Spacings.xs,
+    marginBottom: Spacings.xs,
+  },
 
+  cancelButton: {
+    alignSelf: 'center',
+    paddingVertical: Spacings.xxs,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 6,
+    marginTop: Spacings.lg,
+    borderWidth: 2,
+    borderColor: Colors.primary
+  },
+  cancelButtonText: {
+    color: Colors.primary,
+    textAlign: 'center',
+    borderRadius: 6,
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+  }
 
+});

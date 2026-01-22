@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import { Dimensions, Modal, StyleSheet, StatusBar, Image, TouchableOpacity } from "react-native"
 import ImageZoom from "react-native-image-pan-zoom"
 
-export const ImageViewer = ({ url, visible, title, onClose }) => {
+export const ImageViewer = ({ url, visible, onClose }) => {
     const screenWidth = Dimensions.get("window").width
     const screenHeight = Dimensions.get("window").height
     const [imageSize, setImageSize] = useState({ width: screenWidth, height: screenWidth })

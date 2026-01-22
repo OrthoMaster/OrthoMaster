@@ -14,6 +14,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -29,9 +30,10 @@ const HEADER_HEIGHT = 120;
 const SCROLL_THRESHOLD = 5;
 
 type ScrollDirection = 'up' | 'down' | null;
+const strokeColor = '#48F97A';
 
 // Circular progress component
-const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, backgroundColor, image }) => {
+const CircularProgress = ({ size = 70, strokeWidth = 6, progress, accentColor, backgroundColor, image }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -41,7 +43,7 @@ const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, b
       return {
         borderColor: accentColor,
         backgroundColor: backgroundColor,
-        opacity: 0.8,
+        opacity: 0.7,
         borderWidth: 1
       };
     }
@@ -54,18 +56,10 @@ const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, b
       };
     }
 
-    if (progress > 0) {
-      return {
-        borderColor: backgroundColor,
-        backgroundColor: accentColor,
-        opacity: 1,
-      };
-    }
-
     return {
-      borderColor: accentColor,
-      backgroundColor: Colors.white,
-      opacity: 1,
+      borderColor: backgroundColor,
+      backgroundColor: accentColor,
+      opacity: 0.9,
     };
   };
 
@@ -84,8 +78,8 @@ const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, b
           />
           {/* Progress circle */}
           <Circle
-            // stroke={progress == 100 ? accentColor : Colors.warning}
-            stroke={accentColor || Colors.warning}
+            // stroke={accentColor || Colors.warning}
+            stroke={strokeColor}
             fill="none"
             cx={size / 2}
             cy={size / 2}
@@ -99,8 +93,19 @@ const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, b
           />
         </Svg>
       )}
-      <View style={[styles.imageContainer, getStatusStyle(), { width: size - strokeWidth * 2, height: size - strokeWidth * 2, borderRadius: (size - strokeWidth * 2) / 2 }]}>
-        <Text style={[styles.imageText, progress == 100 && { color: Colors.white }]}>{image}</Text>
+      <View style={[styles.imageContainer, getStatusStyle(),
+      {
+        width: size - strokeWidth * 2,
+        height: size - strokeWidth * 2,
+        borderRadius: (size - strokeWidth * 2) / 2
+      }]}>
+        {image
+          ? <Image
+            source={{ uri: process.env.EXPO_PUBLIC_S3_URL + image }}
+            style={{ width: '100%', height: '100%', borderRadius: 60, tintColor: progress == null ? accentColor : Colors.white }}
+            resizeMode="contain"
+          />
+          : <Text style={styles.imageText}>📚</Text>}
       </View>
     </View>
   );
@@ -109,6 +114,9 @@ const CircularProgress = ({ size = 70, strokeWidth = 4, progress, accentColor, b
 export const TrainingListView = ({ navigation, route }) => {
 
   const initPackageId = route.params?.initPackageId ?? null;
+
+  const screenWidth = Dimensions.get('window').width;
+  const itemSize = (screenWidth - (2 * Spacings.lg) - (2 * Spacings.md)) / 3;
 
   const { data: trainings, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['trainings'],
@@ -225,8 +233,11 @@ export const TrainingListView = ({ navigation, route }) => {
   const handlePackagePress = (training, pkg) => {
     if (pkg.available_flg) {
       navigation.navigate('training-view', {
-        // training: training.id,
-        // pkg
+        pkgId: pkg.id,
+        trainingName: training.name,
+        packageName: pkg.name,
+        backgroundColor: training.color,
+        lightColor: training.background_color,
       });
     } else {
       navigation.navigate('inactive-training-view', {
@@ -239,7 +250,7 @@ export const TrainingListView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.blue} />
 
       {/* Enhanced Animated Header */}
       <Animated.View
@@ -262,7 +273,8 @@ export const TrainingListView = ({ navigation, route }) => {
             </TouchableOpacity> */}
             <TouchableOpacity onPress={() => { navigation.navigate('cart-view') }}>
               <Image
-                source={require("../../../assets/v2_images/icon/bag_icon.png")} style={{ height: 25, width: 25 }} resizeMode={'contain'} />
+                source={require("../../../assets/v2_images/icon/bag_icon.png")}
+                style={{ height: 30, width: 30 }} resizeMode={'contain'} />
             </TouchableOpacity>
           </View>
         </View>
@@ -336,7 +348,7 @@ export const TrainingListView = ({ navigation, route }) => {
           />
         }>
 
-        {/* Training cards with horizontal pkg scroll */}
+        {/* Training cards with grid pkg layout */}
         {!error && trainings && trainings.map((training) => (
           <View key={training.id} style={styles.trainingCard}>
             <View style={styles.trainingHeaderNew}>
@@ -345,32 +357,29 @@ export const TrainingListView = ({ navigation, route }) => {
               </Text>
             </View>
 
-            {/* Horizontal pkg scroll */}
+            {/* Grid pkg layout - 3 cột */}
             <View style={styles.packagesContainer}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.packagesScrollContent}
-              >
+              <View style={styles.packagesGridContent}>
                 {training.packages.map((pkg) => (
                   <TouchableOpacity
                     key={pkg.id}
-                    style={styles.pkgItem}
+                    style={[styles.pkgItem, { width: itemSize }]}
                     onPress={() => handlePackagePress(training, pkg)}
                   >
                     <CircularProgress
-                      size={70}
+                      size={itemSize}
                       strokeWidth={4}
                       progress={pkg.available_flg ? pkg.progress : null}
                       accentColor={training.color}
                       backgroundColor={training.background_color}
-                      image={pkg.image || '📚'}
+                      image={pkg.image}
                     />
                     <Text numberOfLines={2} ellipsizeMode='tail'
-                      style={[styles.pkgTitle, pkg.available_flg && { color: training.color }]}>{pkg.name}</Text>
+                      style={[styles.pkgTitle,
+                      pkg.available_flg && { color: training.color, fontFamily: 'Poppins-Bold' }]}>{pkg.short_name}</Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </View>
           </View>
         ))}
@@ -382,7 +391,7 @@ export const TrainingListView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.darkBackground,
   },
   header: {
     position: 'absolute',
@@ -391,7 +400,7 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 1000,
     height: HEADER_HEIGHT,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.blue,
   },
   headerContent: {
     flex: 1,
@@ -402,7 +411,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacings.xxxl,
     paddingBottom: Spacings.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border
+    borderBottomColor: Colors.blue
   },
   headerRightIcons: {
     flexDirection: 'row',
@@ -414,11 +423,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Poppins-Medium',
     textAlign: 'right',
-    color: Colors.black,
+    color: Colors.white,
   },
   headerBorder: {
     height: 1,
-    backgroundColor: Colors.grayLight,
+    backgroundColor: Colors.blue,
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -428,7 +437,6 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingTop: HEADER_HEIGHT - Spacings.xxl,
-    // paddingTop: Spacings.sm,
   },
   scrollContainer: {
     paddingBottom: Spacings.xl,
@@ -445,7 +453,7 @@ const styles = StyleSheet.create({
   trainingTitleNew: {
     fontFamily: 'Poppins-Medium',
     fontSize: 18,
-    color: Colors.black,
+    color: Colors.white,
   },
   trainingMetaNew: {
     flexDirection: 'row',
@@ -475,25 +483,28 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
 
-  // Lessons container
+  // Packages grid container
   packagesContainer: {
     paddingBottom: Spacings.sm
   },
-  packagesScrollContent: {
+  packagesGridContent: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: Spacings.lg,
     marginTop: Spacings.md,
-    paddingLeft: Spacings.lg,
-    gap: Spacings.sm,
+    gap: Spacings.md,
   },
   pkgItem: {
     alignItems: 'center',
     position: 'relative',
+    marginBottom: Spacings.sm,
   },
   pkgTitle: {
     fontFamily: 'Poppins-Medium',
     fontSize: 10,
-    color: Colors.gray,
+    color: Colors.subtext2,
     marginTop: Spacings.sm,
-    width: 70,
+    width: '100%',
     textAlign: 'center',
   },
 
@@ -502,6 +513,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: Colors.grayLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 2,
   },
   progressSvg: {
     position: 'absolute',
@@ -510,6 +526,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
+    padding: 4
   },
   imageText: {
     fontSize: 28,

@@ -369,7 +369,7 @@ export const SettingsView = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={back}>
-          <Ionicons name="arrow-back-outline" size={20} color={Colors.text} />
+          <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Centrès d'intérêt</Text>
       </View>
