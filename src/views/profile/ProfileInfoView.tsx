@@ -202,7 +202,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
     }
 
     // Validate date of birth
-    if ((formData.organization == '1' || formData.organization == '2') && !formData.dateOfBirth.trim()) {
+    if (formData.organization == '1' && !formData.dateOfBirth.trim()) {
       errors.dateOfBirth = "Veuillez saisir votre date de naissance !";
     }
 
@@ -948,6 +948,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
                     </Text>
                   </View>
               ))}
+              <View style={{ height: Spacings.xxxxl }}></View>
             </ScrollView>
           </View>
         </View>
@@ -982,18 +983,24 @@ export const ProfileInfoView = ({ navigation, route }) => {
                   onPress={() => handleSelectOrganization(organization.id)}
                   activeOpacity={0.7}
                 >
-                  <Text style={formData.organization === organization.id ? styles.selectedOptionText : styles.optionText}>
-                    {organization.name}
-                  </Text>
+                  <View style={{ width: '85%' }}>
+                    <Text style={formData.organization === organization.id ? styles.selectedOptionText : styles.optionText}>
+                      {organization.name}
+                    </Text>
+                    {organization.description &&
+                      <Text style={styles.selectedOptionSubtext}>{organization.description}</Text>
+                    }
+                  </View>
                   {formData.organization === organization.id && (
                     <Ionicons
-                      name="checkmark-outline"
+                      name="checkmark"
                       size={24}
                       color={Colors.primary}
                     />
                   )}
                 </TouchableOpacity>
               ))}
+              <View style={{ height: Spacings.xxxxl }}></View>
             </ScrollView>
           </View>
         </View>
@@ -1259,9 +1266,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
   },
-  optionsList: {
-    marginBottom: Spacings.xxxl,
-  },
+  optionsList: {},
   optionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1286,9 +1291,15 @@ const styles = StyleSheet.create({
     paddingLeft: Spacings.md
   },
   selectedOptionText: {
-    fontSize: 16,
+    fontSize: 17,
     color: Colors.primary,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'Poppins-Bold',
+    paddingLeft: Spacings.md
+  },
+  selectedOptionSubtext: {
+    fontSize: 14,
+    color: Colors.subtext2,
+    fontFamily: 'Reboto',
     paddingLeft: Spacings.md
   },
 

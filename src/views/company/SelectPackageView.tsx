@@ -280,8 +280,7 @@ export const SelectPackageView = ({ navigation, route }) => {
       {!isLoading && !error && trainings &&
         (<>
           <View style={styles.titleBodyContainer}>
-            <Text style={styles.bodyTitle}>Vous pouvez sélectionner plusieurs modules de formation.</Text>
-            <Text style={styles.bodyTitle}>Votre dossier sera adapté en fonction de vos choix.</Text>
+            <Text style={styles.bodyTitle}>Vous pouvez sélectionner plusieurs modules de formation. Votre dossier sera adapté en fonction de vos choix.</Text>
             <Text style={styles.headerSubtitle}>
               NB: selon la durée totale, plusieurs dossiers peuvent être créés automatiquement
             </Text>
@@ -483,7 +482,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   headerSubtitle: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Roboto',
     color: Colors.gray,
     marginTop: 4,
@@ -493,7 +492,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.md,
   },
   bodyTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Poppins-Regular',
     color: Colors.text,
   },

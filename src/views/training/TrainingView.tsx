@@ -277,7 +277,7 @@ export const TrainingView = ({ navigation, route }) => {
         // Delay to ensure smooth animation after mount
         setTimeout(() => {
           scrollViewRef.current?.scrollTo({
-            y: Math.max(0, lessonPos.y + 20),
+            y: Math.max(0, lessonPos.y + 5),
             animated: true
           });
 

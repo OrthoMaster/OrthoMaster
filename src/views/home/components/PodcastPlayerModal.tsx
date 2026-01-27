@@ -281,6 +281,7 @@ export const PodcastPlayerModal: React.FC<PodcastPlayerModalProps> = ({
       animationType="fade"
       onRequestClose={handleClose}
       transparent={true}
+      statusBarTranslucent={true}
     >
       <Animated.View
         style={[
@@ -300,7 +301,11 @@ export const PodcastPlayerModal: React.FC<PodcastPlayerModalProps> = ({
           ]}
         >
           <View style={styles.safeArea} >
-            <StatusBar barStyle="light-content" />
+            <StatusBar
+              barStyle="light-content"
+              backgroundColor="transparent"
+              translucent={true} 
+            />
 
             <View style={styles.container}>
               {/* Toast Notification */}
@@ -371,7 +376,7 @@ export const PodcastPlayerModal: React.FC<PodcastPlayerModalProps> = ({
               )}
 
 
-              {/* Topic Badge - Tinh tế */}
+              {/* Topic Badge */}
               {topic && (
                 <View style={styles.topicContainer}>
                   <View style={styles.topicBadge}>

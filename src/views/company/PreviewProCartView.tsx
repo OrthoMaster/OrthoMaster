@@ -93,7 +93,7 @@ const CourseItem = ({ course }: { course: Item }) => {
   );
 };
 
-const MemberItem = ({ member, organizationName }: { member: Member, organizationName: string }) => {
+const MemberItem = ({ member, organizationName }: { member: Member, organizationName?: string }) => {
   return (
     <View style={styles.memberItem}>
       <View style={styles.memberAvatar}>
@@ -107,9 +107,11 @@ const MemberItem = ({ member, organizationName }: { member: Member, organization
           {member.email}
         </Text>
       </View>
-      <View style={styles.memberRoleBadge}>
-        <Text style={styles.memberRoleText}>{organizationName}</Text>
-      </View>
+      {organizationName &&
+        <View style={styles.memberRoleBadge}>
+          <Text style={styles.memberRoleText}>{organizationName}</Text>
+        </View>
+      }
     </View>
   );
 };
@@ -336,14 +338,22 @@ export const PreviewProCartView = ({ navigation, route }) => {
                 </Text>
               </View>
 
-              {cartData.members_grouped.map((org) => (
-                <View key={org.funding_organization_id} style={[styles.sectionContent, { marginBottom: Spacings.md }]}>
+              {cartData.payment_type == '0'
+                ? <View style={[styles.sectionContent, { marginBottom: Spacings.md }]}>
                   {cartData.members.map((mem: Member) => (
-                    <MemberItem key={mem.id} member={mem} organizationName={org.funding_organization_name} />
+                    <MemberItem key={mem.id} member={mem} />
                   ))}
                 </View>
-              ))}
-
+                : <>
+                  {cartData.members_grouped.map((org) => (
+                    <View key={org.funding_organization_id} style={[styles.sectionContent, { marginBottom: Spacings.md }]}>
+                      {cartData.members.map((mem: Member) => (
+                        <MemberItem key={mem.id} member={mem} organizationName={org.funding_organization_name} />
+                      ))}
+                    </View>
+                  ))}
+                </>
+              }
             </View>
 
             {/* Offre Section */}
