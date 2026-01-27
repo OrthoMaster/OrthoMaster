@@ -11,9 +11,9 @@ import {
   PanResponder,
   RefreshControl,
   Dimensions,
-  Image,
   Vibration
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -58,6 +58,28 @@ const SwipeableItem: React.FC<SwipeableItemProps> = ({
   const [hasReachedThreshold, setHasReachedThreshold] = useState(false);
   const hasVibratedRef = useRef(false);
 
+  const handleDeletePress = () => {
+    // Vibrate feedback
+    Vibration.vibrate(10);
+
+    // Animate to fully off screen
+    Animated.parallel([
+      Animated.timing(translateX, {
+        toValue: -SCREEN_WIDTH,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsDeleting(true);
+      setTimeout(() => onDelete(course.id), 50);
+    });
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -91,22 +113,7 @@ const SwipeableItem: React.FC<SwipeableItemProps> = ({
         setHasReachedThreshold(false);
 
         if (gestureState.dx < SWIPE_THRESHOLD) {
-          // Animate to fully off screen
-          Animated.parallel([
-            Animated.timing(translateX, {
-              toValue: -SCREEN_WIDTH,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(deleteOpacity, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            })
-          ]).start(() => {
-            setIsDeleting(true);
-            setTimeout(() => onDelete(course.id), 50);
-          });
+          handleDeletePress();
         } else {
           Animated.parallel([
             Animated.spring(translateX, {
@@ -139,22 +146,28 @@ const SwipeableItem: React.FC<SwipeableItemProps> = ({
   return (
     <View style={styles.swipeContainer}>
       <View style={styles.deleteBackground}>
-        <Animated.View
-          style={[
-            styles.deleteIconContainer,
-            {
-              opacity: deleteOpacity,
-              transform: [{ scale: deleteScale }]
-            }
-          ]}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={handleDeletePress}
+          style={styles.deleteButton}
         >
-          <Ionicons
-            name="trash-bin"
-            size={28}
-            color={Colors.white}
-          />
-          <Text style={styles.deleteText}>Supprimer</Text>
-        </Animated.View>
+          <Animated.View
+            style={[
+              styles.deleteIconContainer,
+              {
+                opacity: deleteOpacity,
+                transform: [{ scale: deleteScale }]
+              }
+            ]}
+          >
+            <Ionicons
+              name="trash-bin"
+              size={28}
+              color={Colors.white}
+            />
+            <Text style={styles.deleteText}>Supprimer</Text>
+          </Animated.View>
+        </TouchableOpacity>
       </View>
 
       {/* Item Card */}
@@ -177,8 +190,8 @@ const SwipeableItem: React.FC<SwipeableItemProps> = ({
             {course.package.image ?
               <Image
                 source={{ uri: process.env.EXPO_PUBLIC_S3_URL + course.package.image }}
-                style={[styles.courseImage, { tintColor: Colors.blue }]}
-                resizeMode="contain"
+                style={styles.courseImage}
+                contentFit="contain"
               />
               :
               <MaterialCommunityIcons name={'book-open-page-variant-outline'}
@@ -366,10 +379,6 @@ export const CartView = ({ navigation }) => {
           <>
             {(!cartItems || cartItems.length === 0) ? (
               <View style={styles.emptyContainer}>
-                <Image
-                  source={require("../../../assets/v2_images/icon/bag_icon.png")}
-                  style={{ height: 50, width: 50, opacity: 0.4 }}
-                  resizeMode={'contain'} />
                 <Text style={styles.emptyTitle}>Votre cartable est vide</Text>
                 <Text style={styles.emptySubtitle}>
                   Explorez nos formations et ajoutez des cours à votre cartable
@@ -459,10 +468,10 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
   },
   backButton: {
     padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 16,
@@ -501,6 +510,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: DELETE_ZONE_WIDTH,
   },
+  deleteButton: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   deleteIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -538,7 +553,7 @@ const styles = StyleSheet.create({
     height: 90,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.blueBackground,
+    backgroundColor: Colors.blue,
     borderRadius: 45,
     padding: Spacings.xs
   },
@@ -611,9 +626,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.xl,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Poppins-Medium',
-    color: Colors.text,
+    color: Colors.gray,
     marginTop: Spacings.lg,
   },
   emptySubtitle: {

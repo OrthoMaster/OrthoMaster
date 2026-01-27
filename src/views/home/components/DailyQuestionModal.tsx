@@ -242,7 +242,7 @@ export const DailyQuestionModal: React.FC<DailyQuestionModalProps> = ({
           ]}
         >
           <LinearGradient
-            colors={[Colors.blue, Colors.purple]}
+            colors={[Colors.purple, Colors.purpleDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.header}

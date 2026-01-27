@@ -207,7 +207,7 @@ export const PaymentMethodView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}
-      edges={Platform.OS === 'android' ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}>
+      edges={Platform.OS === 'ios' ? ['top', 'left', 'right'] : ['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
@@ -220,15 +220,19 @@ export const PaymentMethodView = ({ navigation, route }) => {
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}>Méthode de paiement</Text>
-            <Text style={styles.headerSubtitle}>
-              Choisissez votre mode de financement
-            </Text>
+            <Text style={styles.headerTitle}>Parcours de prise en charge</Text>
           </View>
         </View>
       </View>
       {/* Stepper */}
       <Stepper currentStep={0} />
+
+      <View style={styles.titleBodyContainer}>
+        <Text style={styles.headerTitle}>Qui paie ?</Text>
+        <Text style={styles.headerSubtitle}>
+          Choisissez votre mode de financement
+        </Text>
+      </View>
 
       {/* Payment Methods List */}
       <ScrollView
@@ -278,7 +282,7 @@ export const PaymentMethodView = ({ navigation, route }) => {
           <Ionicons
             name="arrow-forward"
             size={20}
-            color={!selectedMethod ? Colors.gray : Colors.white}
+            color={Colors.white}
           />
         </TouchableOpacity>
       </View>
@@ -290,6 +294,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.white,
+  },
+  titleBodyContainer: {
+    marginBottom: Spacings.md,
+    paddingHorizontal: Spacings.lg
   },
   scrollView: {
     flex: 1,
@@ -310,11 +318,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
     flex: 1,
   },
   backButton: {
     padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 16,
@@ -322,10 +330,10 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   headerSubtitle: {
-    fontSize: 10,
+    fontSize: 13,
     fontFamily: 'Poppins-Regular',
     color: Colors.subtext,
-    marginTop: -4,
+    marginTop: 0,
   },
 
   // Payment Card
@@ -443,7 +451,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: Spacings.lg,
-    paddingBottom: Spacings.xxl,
+    paddingBottom: Spacings.xxxl,
   },
   continueButton: {
     backgroundColor: Colors.blue,
@@ -460,7 +468,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   continueButtonDisabled: {
-    backgroundColor: Colors.grayLight,
+    backgroundColor: Colors.gray,
     elevation: 0,
   },
   continueButtonText: {
@@ -469,6 +477,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   continueButtonTextDisabled: {
-    color: Colors.gray,
+    color: Colors.grayLight,
   },
 });

@@ -133,53 +133,53 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       <View style={styles.cardsContainer}>
         {/* Left Card - Question */}
         <View style={styles.cardWrapper}>
-          <View style={[styles.card3DWrapper, styles.question3DWrapper]}>
+          <View style={[styles.card3DWrapper]}>
             <TouchableOpacity
-              style={[styles.squareCard, styles.questionCard]}
+              style={[styles.squareCard]}
               onPress={() => Linking.openURL('mailto:question@orthomaster.fr')}
               activeOpacity={0.8}
             >
               <Image
-                style={[styles.icons, { width: 60, height: 60 }]}
-                source={require('../../../assets/v2_images/icon/home/question_icon.png')}
+                style={[styles.icons]}
+                source={require('../../../assets/v2_images/icon/home/question.gif')}
               />
             </TouchableOpacity>
           </View>
-          <Text style={[styles.cardText, {color: Colors.primary}]}>Questions</Text>
+          <Text style={[styles.cardText]}>Poser une{'\n'}Question</Text>
         </View>
 
         {/* Center Card (Bottom) - Outils */}
-        <View style={[styles.cardWrapper, styles.centerCardWrapper]}>
-          <View style={[styles.card3DWrapper, styles.outil3DWrapper]}>
+        <View style={[styles.cardWrapper]}>
+          <View style={[styles.card3DWrapper]}>
             <TouchableOpacity
-              style={[styles.squareCard, styles.outilCard]}
+              style={[styles.squareCard]}
               onPress={onToolPress}
               activeOpacity={0.8}
             >
               <Image
-                style={styles.icons}
-                source={require('../../../assets/v2_images/icon/home/outil_icon.png')}
+                style={[styles.icons, {width: CARD_SIZE - 5, height: CARD_SIZE - 5, borderRadius: 16}]}
+                source={require('../../../assets/v2_images/icon/home/tool.gif')}
               />
             </TouchableOpacity>
           </View>
-          <Text style={[styles.cardText, {color: Colors.blue}]}>Outils</Text>
+          <Text style={[styles.cardText]}>Prise en{'\n'}Charge</Text>
         </View>
 
         {/* Right Card - Search */}
         <View style={styles.cardWrapper}>
-          <View style={[styles.card3DWrapper, styles.search3DWrapper]}>
+          <View style={[styles.card3DWrapper]}>
             <TouchableOpacity
-              style={[styles.squareCard, styles.searchCard]}
+              style={[styles.squareCard]}
               onPress={onSearchPress}
               activeOpacity={0.8}
             >
               <Image
-                style={[styles.icons, { width: 60, height: 60 }]}
-                source={require('../../../assets/v2_images/icon/home/search_icon.png')}
+                style={[styles.icons]}
+                source={require('../../../assets/v2_images/icon/home/search.gif')}
               />
             </TouchableOpacity>
           </View>
-          <Text style={[styles.cardText, {color: Colors.green}]}>Rechercher</Text>
+          <Text style={[styles.cardText]}>Chercher un{'\n'}Contenu</Text>
         </View>
       </View>
     </View>
@@ -208,12 +208,12 @@ const styles = StyleSheet.create({
   },
   logo: {
     resizeMode: 'contain',
-    width: 20,
-    height: 20,
+    width: 25,
+    height: 25,
     marginRight: Spacings.xs
   },
   logoText: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Poppins-Medium',
     color: Colors.primary,
   },
@@ -258,38 +258,40 @@ const styles = StyleSheet.create({
   // 3D Wrapper for cards
   card3DWrapper: {
     borderRadius: 20,
-    paddingBottom: 6,
+    paddingBottom: 4,
+    backgroundColor: Colors.grayLight,
   },
   question3DWrapper: {
-    backgroundColor: '#C96506',
+    backgroundColor: Colors.greenDark,
   },
   outil3DWrapper: {
-    backgroundColor: '#4579B8',
+    backgroundColor: Colors.lblueDark,
   },
   search3DWrapper: {
-    backgroundColor: '#3A9BA5',
+    backgroundColor: Colors.primary,
   },
   
   squareCard: {
     width: CARD_SIZE,
-    height: CARD_SIZE,
+    height: CARD_SIZE + Spacings.xs,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: Colors.gray,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.8,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
+    backgroundColor: Colors.white,
   },
   searchCard: {
-    backgroundColor: Colors.green,
+    backgroundColor: Colors.primaryLight,
   },
   outilCard: {
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.lblue,
   },
   questionCard: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.green,
   },
   cardText: {
     fontSize: 12,
@@ -300,7 +302,7 @@ const styles = StyleSheet.create({
   },
   icons: {
     resizeMode: 'contain',
-    width: 50,
-    height: 50,
+    width: 70,
+    height: 70,
   }
 });

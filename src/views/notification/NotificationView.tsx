@@ -496,10 +496,10 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
   },
   backButton: {
     padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 18,

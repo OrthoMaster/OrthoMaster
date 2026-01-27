@@ -40,7 +40,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/v2_images/logo/adaptive_icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#FF9600"
       },
       "package": "com.hugotaieb.OrthoMaster",
       "autoIncrement": true,
@@ -105,7 +105,7 @@
       [
         "@stripe/stripe-react-native",
         {
-          "enableGooglePay": false
+          "enableGooglePay": true
         }
       ],
       [

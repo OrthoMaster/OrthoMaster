@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { useQueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from "expo-linking"
 const prefix = Linking.createURL('/');
 
 import * as Notifications from 'expo-notifications';
-import { AppState, Platform } from 'react-native';
+import { AppState, Platform, View, Animated } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
@@ -50,9 +50,12 @@ export default function App({ navigation }) {
 
   const [showSplash, setShowSplash] = useState(true);
   const [appIsReady, setAppIsReady] = useState(false);
+  // Animation overlay
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const [showOverlay, setShowOverlay] = useState(false);
 
   const { data: user } = useGetUser();
-  const [showSessionExpired, setShowSessionExpired] = useState(false);
+  const [showSessionExpired, setShowSessionExpired] = useState(true);
   const previousUserRef = useRef(null);
 
   // Check if app should reset based on inactivity or new day
@@ -358,41 +361,84 @@ export default function App({ navigation }) {
     }
   };
 
-  // Splash screen
-  if (!appIsReady || showSplash) {
-    return <CustomSplashScreen onFinish={() => setShowSplash(false)} />;
-  }
-
   return (
-    <NavigationContainer
-      linking={linking}
-      ref={navigationRef}
-      onReady={() => {
-        routeNameRef.current = navigationRef.current.getCurrentRoute().name;
-      }}
-      onStateChange={async () => {
-        const currentRouteName = navigationRef.current.getCurrentRoute().name;
-        // Save the current route name for later comparison
-        routeNameRef.current = currentRouteName;
-      }}
-    >
-      <GlobalProvider>
-        <Provider>
-          {user ?
-            <UseCaptureGuard>
-              <QueryClientProvider client={queryClient}>
-                <AppTab />
-                <SessionExpiredScreen
-                  visible={showSessionExpired}
-                  onLoginPress={handleLoginPress}
-                />
-              </QueryClientProvider>
-            </UseCaptureGuard>
-            :
-            <AuthStack />
-          }
-        </Provider>
-      </GlobalProvider>
-    </NavigationContainer>
+    <>
+      {/* CustomSplash - z-index: 9999 */}
+      {(!appIsReady || showSplash) && (
+        <CustomSplashScreen
+          onFinish={() => {
+            setShowOverlay(true);
+
+            Animated.timing(overlayOpacity, {
+              toValue: 1,
+              duration: 1000,
+              useNativeDriver: true,
+            }).start(() => {
+              setShowSplash(false);
+
+              setTimeout(() => {
+                Animated.timing(overlayOpacity, {
+                  toValue: 0,
+                  duration: 400,
+                  useNativeDriver: true,
+                }).start();
+              }, 100);
+            });
+          }}
+        />
+      )}
+
+      {/* NavigationContainer - z-index: 0 */}
+      {appIsReady && !showSplash && (
+        <NavigationContainer
+          linking={linking}
+          ref={navigationRef}
+          onReady={() => {
+            routeNameRef.current = navigationRef.current.getCurrentRoute().name;
+          }}
+          onStateChange={async () => {
+            const currentRouteName = navigationRef.current.getCurrentRoute().name;
+            // Save the current route name for later comparison
+            routeNameRef.current = currentRouteName;
+          }}
+        >
+          <GlobalProvider>
+            <Provider>
+              {user ?
+                <UseCaptureGuard>
+                  <QueryClientProvider client={queryClient}>
+                    <AppTab />
+                    <SessionExpiredScreen
+                      visible={showSessionExpired}
+                      onLoginPress={handleLoginPress}
+                    />
+                  </QueryClientProvider>
+                </UseCaptureGuard>
+                :
+                <AuthStack />
+              }
+            </Provider>
+          </GlobalProvider>
+        </NavigationContainer>
+      )}
+
+      {/* Animated overlay */}
+      {showOverlay && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#000',
+            opacity: overlayOpacity,
+            zIndex: 10000,
+          }}
+          pointerEvents="none"
+        />
+      )}
+    </>
   );
+
 }

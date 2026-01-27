@@ -1,7 +1,7 @@
 /**
  * @author Francis
  */
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,13 @@ import {
   StyleSheet,
   StatusBar,
   TouchableOpacity,
-  Image,
   NativeSyntheticEvent,
   NativeScrollEvent,
   RefreshControl,
   Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
@@ -30,10 +31,10 @@ const HEADER_HEIGHT = 120;
 const SCROLL_THRESHOLD = 5;
 
 type ScrollDirection = 'up' | 'down' | null;
-const strokeColor = '#48F97A';
+const strokeColor = '#58CC02';
 
 // Circular progress component
-const CircularProgress = ({ size = 70, strokeWidth = 6, progress, accentColor, backgroundColor, image }) => {
+const CircularProgress = ({ size = 70, strokeWidth = 8, progress, accentColor, backgroundColor, image }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -43,7 +44,7 @@ const CircularProgress = ({ size = 70, strokeWidth = 6, progress, accentColor, b
       return {
         borderColor: accentColor,
         backgroundColor: backgroundColor,
-        opacity: 0.7,
+        opacity: 1,
         borderWidth: 1
       };
     }
@@ -59,7 +60,7 @@ const CircularProgress = ({ size = 70, strokeWidth = 6, progress, accentColor, b
     return {
       borderColor: backgroundColor,
       backgroundColor: accentColor,
-      opacity: 0.9,
+      opacity: 1,
     };
   };
 
@@ -102,8 +103,7 @@ const CircularProgress = ({ size = 70, strokeWidth = 6, progress, accentColor, b
         {image
           ? <Image
             source={{ uri: process.env.EXPO_PUBLIC_S3_URL + image }}
-            style={{ width: '100%', height: '100%', borderRadius: 60, tintColor: progress == null ? accentColor : Colors.white }}
-            resizeMode="contain"
+            style={{ width: '100%', height: '100%', borderRadius: 60 }}
           />
           : <Text style={styles.imageText}>📚</Text>}
       </View>
@@ -112,9 +112,17 @@ const CircularProgress = ({ size = 70, strokeWidth = 6, progress, accentColor, b
 };
 
 export const TrainingListView = ({ navigation, route }) => {
+  // Show bottom nav when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'flex' }
+      });
+    }, [navigation])
+  );
+
 
   const initPackageId = route.params?.initPackageId ?? null;
-
   const screenWidth = Dimensions.get('window').width;
   const itemSize = (screenWidth - (2 * Spacings.lg) - (2 * Spacings.md)) / 3;
 
@@ -243,6 +251,7 @@ export const TrainingListView = ({ navigation, route }) => {
       navigation.navigate('inactive-training-view', {
         training: training.id,
         headerColor: training.color,
+        secondaryColor: training.background_color,
         pkg
       });
     }
@@ -250,7 +259,7 @@ export const TrainingListView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.blue} />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.lgreen} />
 
       {/* Enhanced Animated Header */}
       <Animated.View
@@ -273,8 +282,8 @@ export const TrainingListView = ({ navigation, route }) => {
             </TouchableOpacity> */}
             <TouchableOpacity onPress={() => { navigation.navigate('cart-view') }}>
               <Image
-                source={require("../../../assets/v2_images/icon/bag_icon.png")}
-                style={{ height: 30, width: 30 }} resizeMode={'contain'} />
+                source={require("../../../assets/v2_images/icon/bag_icon_color.png")}
+                style={{ height: 30, width: 30 }} contentFit="contain" />
             </TouchableOpacity>
           </View>
         </View>
@@ -352,7 +361,7 @@ export const TrainingListView = ({ navigation, route }) => {
         {!error && trainings && trainings.map((training) => (
           <View key={training.id} style={styles.trainingCard}>
             <View style={styles.trainingHeaderNew}>
-              <Text style={styles.trainingTitleNew} numberOfLines={2} ellipsizeMode='tail'>
+              <Text style={[styles.trainingTitleNew,  { backgroundColor: training.color }]} numberOfLines={2} ellipsizeMode='tail'>
                 {training.name}
               </Text>
             </View>
@@ -400,7 +409,7 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 1000,
     height: HEADER_HEIGHT,
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.lgreen,
   },
   headerContent: {
     flex: 1,
@@ -410,8 +419,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.xxxl,
     paddingBottom: Spacings.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.blue
   },
   headerRightIcons: {
     flexDirection: 'row',
@@ -447,13 +454,19 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   trainingHeaderNew: {
-    padding: Spacings.lg,
-    paddingBottom: 0,
+    paddingTop: Spacings.md,
+    paddingBottom: Spacings.sm,
   },
   trainingTitleNew: {
     fontFamily: 'Poppins-Medium',
     fontSize: 18,
     color: Colors.white,
+    alignSelf: 'flex-start',
+    paddingLeft: Spacings.lg,
+    paddingRight: Spacings.sm,
+    paddingVertical: Spacings.xxs,
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
   },
   trainingMetaNew: {
     flexDirection: 'row',
@@ -501,7 +514,7 @@ const styles = StyleSheet.create({
   },
   pkgTitle: {
     fontFamily: 'Poppins-Medium',
-    fontSize: 10,
+    fontSize: 14,
     color: Colors.subtext2,
     marginTop: Spacings.sm,
     width: '100%',

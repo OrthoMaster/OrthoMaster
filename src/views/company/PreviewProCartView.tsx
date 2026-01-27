@@ -66,7 +66,7 @@ const CourseItem = ({ course }: { course: Item }) => {
         {course.package.image ?
           <Image
             source={{ uri: process.env.EXPO_PUBLIC_S3_URL + course.package.image }}
-            style={[styles.courseImage, { tintColor: Colors.blue }]}
+            style={styles.courseImage}
             resizeMode="contain"
           />
           :
@@ -93,7 +93,29 @@ const CourseItem = ({ course }: { course: Item }) => {
   );
 };
 
+const MemberItem = ({ member, organizationName }: { member: Member, organizationName: string }) => {
+  return (
+    <View style={styles.memberItem}>
+      <View style={styles.memberAvatar}>
+        <Text style={styles.memberAvatarText}>
+          {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+        </Text>
+      </View>
+      <View style={styles.memberItemInfo}>
+        <Text style={styles.memberItemName}>{member.name}</Text>
+        <Text style={styles.memberItemEmail} numberOfLines={1}>
+          {member.email}
+        </Text>
+      </View>
+      <View style={styles.memberRoleBadge}>
+        <Text style={styles.memberRoleText}>{organizationName}</Text>
+      </View>
+    </View>
+  );
+};
+
 export const PreviewProCartView = ({ navigation, route }) => {
+  const queryClient = useQueryClient();
   const { data: cartData, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['pro-cart'],
     queryFn: () => previewProCart(),
@@ -117,28 +139,7 @@ export const PreviewProCartView = ({ navigation, route }) => {
       setFinalAmount(appliedPromo ? appliedPromo.finalAmount : cartData.price_total);
       setTvaAmount(appliedPromo ? appliedPromo.tvaAmount : cartData.tva_total);
     }
-  }, [cartData]);
-
-  const MemberItem = ({ member, organizationName }: { member: Member, organizationName: string }) => {
-    return (
-      <View style={styles.memberItem}>
-        <View style={styles.memberAvatar}>
-          <Text style={styles.memberAvatarText}>
-            {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-          </Text>
-        </View>
-        <View style={styles.memberItemInfo}>
-          <Text style={styles.memberItemName}>{member.name}</Text>
-          <Text style={styles.memberItemEmail} numberOfLines={1}>
-            {member.email}
-          </Text>
-        </View>
-        <View style={styles.memberRoleBadge}>
-          <Text style={styles.memberRoleText}>{organizationName}</Text>
-        </View>
-      </View>
-    );
-  };
+  }, [cartData, appliedPromo]);
 
   const handleCheckPromoCode = async () => {
     if (!promoCodeInput.trim()) {
@@ -209,7 +210,6 @@ export const PreviewProCartView = ({ navigation, route }) => {
   const [currentInvoiceId, setCurrentInvoiceId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
-  const queryClient = useQueryClient();
 
   const handleConfirmPayment = async () => {
     setCreatingInvoice(true);
@@ -630,10 +630,10 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
   },
   backButton: {
     padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 16,
@@ -915,7 +915,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.blueBackground,
+    backgroundColor: Colors.blue,
     marginRight: Spacings.sm,
     padding: Spacings.xxs
   },
@@ -1117,7 +1117,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.md,
-    paddingBottom: Spacings.xxl,
+    paddingBottom: Spacings.xxxl,
     borderTopWidth: 1,
     borderTopColor: Colors.line,
     elevation: 8,

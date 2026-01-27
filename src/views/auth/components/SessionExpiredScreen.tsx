@@ -8,7 +8,8 @@ import {
   Dimensions,
   TouchableOpacity,
   StatusBar,
-  Modal
+  Modal,
+  Image
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Colors from '../../../../constants/Colors';
@@ -34,119 +35,88 @@ const SessionExpiredScreen: React.FC<SessionExpiredScreenProps> = ({ visible, on
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const [floatingIcons, setFloatingIcons] = useState<FloatingIcon[]>([]);
-  const iconIdCounter = useRef(0);
-
-  // Function to create floating icon
-  const createFloatingIcon = (): FloatingIcon => {
-    const id = iconIdCounter.current++;
-    return {
-      id,
-      x: new Animated.Value(Math.random() * width),
-      y: new Animated.Value(height + 50),
-      rotate: new Animated.Value(0),
-      scale: new Animated.Value(Math.random() * 0.3 + 0.3),
-      opacity: new Animated.Value(0.3),
-    };
-  };
-
-  // Function to animate floating icon
-  const animateFloatingIcon = (icon: FloatingIcon) => {
-    const riseDuration = 8000 + Math.random() * 4000;
-
-    Animated.parallel([
-      // Float up
-      Animated.timing(icon.y, {
-        toValue: -100,
-        duration: riseDuration,
-        useNativeDriver: true,
-      }),
-      // Gentle rotation
-      Animated.loop(
-        Animated.timing(icon.rotate, {
-          toValue: 360,
-          duration: 3000 + Math.random() * 2000,
-          useNativeDriver: true,
-        })
-      ),
-      // Gentle swing
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(icon.x, {
-            toValue: icon.x._value + (Math.random() * 60 - 30),
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(icon.x, {
-            toValue: icon.x._value,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ])
-      ),
-    ]).start(() => {
-      setFloatingIcons((prev) => prev.filter((i) => i.id !== icon.id));
-    });
-  };
+  
+  // Animation cho icon giống thần đèn
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const swingAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
-      // Reset animations
-      scaleAnim.setValue(0);
-      fadeAnim.setValue(0);
-      pulseAnim.setValue(1);
-      iconIdCounter.current = 0;
-
-      // Create initial floating icons
-      const initialIcons = Array.from({ length: 8 }, () => createFloatingIcon());
-      setFloatingIcons(initialIcons);
-      initialIcons.forEach((icon) => animateFloatingIcon(icon));
-
-      // Animate main content
+      // Animation hiển thị màn hình
       Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 500,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
           useNativeDriver: true,
         }),
       ]).start();
 
-      // Pulse animation for icon
+      // Animation lắc qua lắc lại (swing)
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 1000,
+          Animated.timing(swingAnim, {
+            toValue: 1,
+            duration: 1500,
             useNativeDriver: true,
           }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
+          Animated.timing(swingAnim, {
+            toValue: -1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(swingAnim, {
+            toValue: 0,
+            duration: 1500,
             useNativeDriver: true,
           }),
         ])
       ).start();
 
-      // Create new floating icons periodically
-      const interval = setInterval(() => {
-        const newIcon = createFloatingIcon();
-        setFloatingIcons((prev) => [...prev, newIcon]);
-        animateFloatingIcon(newIcon);
-      }, 1500);
+      // Animation bay lên xuống (floating)
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(floatAnim, {
+            toValue: -15,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(floatAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
 
-      return () => clearInterval(interval);
-    } else {
-      setFloatingIcons([]);
+      // Animation pulse nhẹ
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     }
   }, [visible]);
 
-  if (!visible) return null;
+  // Chuyển đổi giá trị swing thành góc xoay
+  const rotateInterpolate = swingAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-15deg', '0deg', '15deg'],
+  });
 
   return (
     <Modal
@@ -171,18 +141,24 @@ const SessionExpiredScreen: React.FC<SessionExpiredScreenProps> = ({ visible, on
             },
           ]}
         >
-          {/* Icon */}
+          {/* Icon với animation thần đèn */}
           <Animated.View
             style={[
               styles.iconContainer,
               {
-                transform: [{ scale: pulseAnim }],
+                transform: [
+                  { translateY: floatAnim },
+                  { rotate: rotateInterpolate },
+                  { scale: pulseAnim },
+                ],
               },
             ]}
           >
-            <View style={styles.iconCircle}>
-              <MaterialCommunityIcons name="shield-account-outline" size={70} color={Colors.white} />
-            </View>
+            <Image
+              style={styles.iconCircle}
+              resizeMode="contain"
+              source={require('../../../../assets/v2_images/icon/exp_session.png')}
+            />
           </Animated.View>
 
           {/* Title */}
@@ -229,14 +205,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.xl,
   },
   iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: Colors.white,
+    width: 180,
+    height: 180,
   },
   title: {
     fontSize: 28,
@@ -253,7 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.sm,
     lineHeight: 24,
   },
-  
+
   loginButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -278,8 +248,9 @@ const styles = StyleSheet.create({
   footerNote: {
     fontSize: 12,
     fontFamily: 'Poppins-Regular',
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
+    width: '70%'
   },
 });
 

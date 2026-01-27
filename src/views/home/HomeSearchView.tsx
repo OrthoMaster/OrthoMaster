@@ -372,11 +372,11 @@ export const HomeSearchView = ({ navigation }) => {
         activeOpacity={0.7}
       >
         {isLoading ? (
-          <ActivityIndicator size="small" color={Colors.primary} />
+          <ActivityIndicator size="small" color={Colors.greenDark} />
         ) : (
           <>
             <Text style={styles.loadMoreText}>Voir plus</Text>
-            <Ionicons name="chevron-down" size={20} color={Colors.primary} />
+            <Ionicons name="chevron-down" size={20} color={Colors.greenDark} />
           </>
         )}
       </TouchableOpacity>
@@ -442,7 +442,7 @@ export const HomeSearchView = ({ navigation }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalIconContainer}>
-            <MaterialCommunityIcons name="lock" size={50} color={Colors.primary} />
+            <MaterialCommunityIcons name="lock" size={50} color={Colors.greenDark} />
           </View>
 
           <Text style={styles.modalTitle}>Contenu verrouillé</Text>
@@ -486,36 +486,50 @@ export const HomeSearchView = ({ navigation }) => {
       style={styles.container}
       edges={Platform.OS === 'android' ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-
+      <StatusBar barStyle="light-content" backgroundColor={Colors.greenDark} />
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: Spacings.xs }}>
-          <Ionicons name="arrow-back" size={20} color={Colors.text} />
-        </TouchableOpacity>
-
-        {/* Search Bar */}
-        <View style={styles.searchBarContainer}>
-          <Ionicons name="search-outline" size={20} color={Colors.gray} />
-          <TextInput
-            autoCapitalize="none"
-            style={styles.searchInput}
-            placeholder="Rechercher des contenus ..."
-            value={searchQuery}
-            onChangeText={handleTextChange}
-            onSubmitEditing={handleSubmit}
-            placeholderTextColor={Colors.gray}
-            returnKeyType="search"
-            maxLength={100}
-          />
-        </View>
-
-        {/* Clear button */}
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={handleClearSearch}>
-            <Ionicons name="close" size={24} color={Colors.gray} />
+        <View style={styles.headerTop}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={Colors.white} />
           </TouchableOpacity>
-        )}
+
+          <Image
+            style={styles.searchIcon}
+            source={require('../../../assets/v2_images/icon/home/search.gif')}
+          />
+
+          <View style={{ width: Spacings.xxl }}></View>
+        </View>
+        <View style={styles.headerCenter}>
+          <Text style={styles.searchTitle}>Recherchez le sujet</Text>
+          <Text style={styles.searchSubTitle}>par mot clé, nom de l'expert ou du congrès ...</Text>
+        </View>
+        <View style={styles.headerBottom}>
+          {/* Search Bar */}
+          <View style={styles.searchBarContainer}>
+            <Ionicons name="search-outline" size={20} color={Colors.gray} />
+            <TextInput
+              autoCapitalize="none"
+              style={styles.searchInput}
+              placeholder="Rechercher des contenus ..."
+              value={searchQuery}
+              onChangeText={handleTextChange}
+              onSubmitEditing={handleSubmit}
+              placeholderTextColor={Colors.gray}
+              returnKeyType="search"
+              maxLength={20}
+            />
+            {/* Clear button */}
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={handleClearSearch} style={styles.clearIconButton}>
+                <Ionicons name="close" size={24} color={Colors.gray} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
 
       {/* Categories - Only show after search */}
@@ -614,7 +628,7 @@ export const HomeSearchView = ({ navigation }) => {
           <>
             {isSearching ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.primary} />
+                <ActivityIndicator size="large" color={Colors.greenDark} />
                 <Text style={styles.loadingText}>Recherche en cours...</Text>
               </View>
             ) : (
@@ -683,28 +697,64 @@ export const HomeSearchView = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.greenDark,
   },
   header: {
     backgroundColor: Colors.white,
-    paddingHorizontal: Spacings.lg,
+  },
+  headerTop: {
+    backgroundColor: Colors.greenDark,
     paddingTop: Spacings.sm,
     paddingBottom: Spacings.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  headerCenter: {
+    backgroundColor: Colors.greenDark,
+    paddingHorizontal: Spacings.lg,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: Spacings.md
+  },
+  headerBottom: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: Spacings.xxs,
+    backgroundColor: Colors.greenDark,
+    paddingBottom: Spacings.lg,
+    borderBottomEndRadius: 24,
+    borderBottomStartRadius: 24,
+    paddingHorizontal: Spacings.lg,
+  },
+  backButton: {
+    padding: 4,
+    paddingRight: Spacings.md,
+    paddingLeft: Spacings.lg
+  },
+  searchIcon: {
+    width: 60,
+    height: 60,
   },
   searchBarContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.grayLight,
-    paddingHorizontal: Spacings.md,
+    backgroundColor: Colors.white,
+    paddingLeft: Spacings.md,
     paddingVertical: Spacings.sm,
     borderRadius: 12,
     gap: Spacings.sm,
+  },
+  searchTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.white,
+  },
+  searchSubTitle: {
+    fontSize: 12,
+    fontFamily: 'Roboto',
+    color: Colors.white,
   },
   searchInput: {
     flex: 1,
@@ -712,6 +762,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: Colors.text,
     paddingVertical: 0,
+  },
+  clearIconButton: {
+    paddingRight: Spacings.md,
   },
 
   // Categories
@@ -734,8 +787,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.line,
   },
   categoryChipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.greenDark,
+    borderColor: Colors.greenDark,
   },
   categoryChipText: {
     fontSize: 13,
@@ -756,7 +809,7 @@ const styles = StyleSheet.create({
   suggestionsContainer: {
     flex: 1,
     backgroundColor: Colors.white,
-    paddingBottom: 120
+    paddingBottom: Spacings.xxxl,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -777,7 +830,7 @@ const styles = StyleSheet.create({
   clearButton: {
     fontSize: 13,
     fontFamily: 'Poppins-Medium',
-    color: Colors.primary,
+    color: Colors.red,
   },
   suggestionItem: {
     flexDirection: 'row',
@@ -805,7 +858,7 @@ const styles = StyleSheet.create({
   resultSectionTitle: {
     fontSize: 16,
     fontFamily: 'Poppins-Bold',
-    color: Colors.primary,
+    color: Colors.greenDark,
     paddingVertical: Spacings.sm,
   },
   videoItem: {
@@ -905,7 +958,7 @@ const styles = StyleSheet.create({
   coursePackage: {
     fontSize: 10,
     fontFamily: 'Poppins-Regular',
-    color: Colors.primary,
+    color: Colors.greenDark,
     marginBottom: Spacings.xxs
   },
   courseName: {
@@ -933,13 +986,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: Colors.greenDark,
     gap: Spacings.xs,
   },
   loadMoreText: {
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
-    color: Colors.primary,
+    color: Colors.greenDark,
   },
 
   // Loading State
@@ -1034,7 +1087,7 @@ const styles = StyleSheet.create({
   },
   modalPackageName: {
     fontFamily: 'Poppins-Bold',
-    color: Colors.primary,
+    color: Colors.greenDark,
   },
   modalQuestion: {
     fontSize: 14,
@@ -1056,13 +1109,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalButtonPrimary: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.greenDark,
     flex: 2,
   },
   modalButtonSecondary: {
     backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: Colors.greenDark,
   },
   modalButtonPrimaryText: {
     fontSize: 14,
@@ -1072,6 +1125,6 @@ const styles = StyleSheet.create({
   modalButtonSecondaryText: {
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
-    color: Colors.primary,
+    color: Colors.greenDark,
   },
 });

@@ -38,7 +38,7 @@ export const GuidePatientButton: React.FC<{ onPress: () => any }> = ({ onPress }
         marginBottom: 10
       }}
     />
-    <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Guide patient</Text>
+    <Text style={{ fontSize: 20, color: '#fff', fontFamily: 'Poppins-Medium' }}>Guide patient</Text>
   </TouchableOpacity>)
 }
 

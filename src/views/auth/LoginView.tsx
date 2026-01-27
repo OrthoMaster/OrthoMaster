@@ -46,7 +46,6 @@ export const LoginView = ({ navigation, route }) => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
-
   });
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});

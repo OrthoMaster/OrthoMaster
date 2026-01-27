@@ -34,11 +34,12 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
     ]).start();
 
     const timer = setTimeout(() => {
+      onFinish();
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 500,
         useNativeDriver: true,
-      }).start(onFinish);
+      }).start();
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -79,9 +80,10 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 9999
   },
   content: {
     alignItems: 'center',

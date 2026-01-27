@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useFocusEffect } from '@react-navigation/native';
 
 import Colors from "../../../constants/Colors";
 import Spacings from "../../../constants/Spacings";
@@ -27,18 +28,15 @@ import { BouncingDots } from '../../component/LoadingDots';
 import { SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
 
 export const TrainingView = ({ navigation, route }) => {
-  // Hide bottom nav
-  useEffect(() => {
-    navigation.getParent()?.setOptions({
-      tabBarStyle: { display: 'none' }
-    });
-
-    return () => {
+  // Hide bottom nav when screen is focused, show when blur
+  useFocusEffect(
+    useCallback(() => {
+      // Hide tabbar when this screen is focused
       navigation.getParent()?.setOptions({
-        tabBarStyle: { display: 'flex' }
+        tabBarStyle: { display: 'none' }
       });
-    };
-  }, [navigation]);
+    }, [navigation])
+  );
 
   // Get params from route
   const {
@@ -65,6 +63,7 @@ export const TrainingView = ({ navigation, route }) => {
   const [hasScrolledToSelected, setHasScrolledToSelected] = useState(false);
   const modulePositions = useRef<{ moduleIndex: number, startY: number, endY: number }[]>([]);
   const lessonPositions = useRef<{ lessonId: number, y: number }[]>([]);
+  const isInitialMount = useRef(true);
 
   // Animation values for message box
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -74,7 +73,7 @@ export const TrainingView = ({ navigation, route }) => {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Colors for modules
-  const moduleColors = [Colors.green, Colors.blue, Colors.purple, Colors.success, Colors.primaryLight, Colors.info];
+  const moduleColors = [Colors.primaryLight, Colors.lgreen, Colors.lblue, Colors.red, Colors.yellow, Colors.purple, Colors.green];
 
   // Filter out backgroundColor from moduleColors if it matches the first color
   const filteredModuleColors = useMemo(() => {
@@ -83,6 +82,24 @@ export const TrainingView = ({ navigation, route }) => {
     }
     return moduleColors;
   }, [backgroundColor]);
+
+  // Refetch when screen is focused (goBack from other screen)
+  useFocusEffect(
+    useCallback(() => {
+      // Skip refetch on initial mount
+      if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
+      }
+      
+      // Refetch data khi goBack để lấy selected_flg mới nhất
+      refetch().then(() => {
+        // Reset scroll state để trigger auto-scroll lại
+        setHasScrolledToSelected(false);
+        setSelectedLessonId(null);
+      });
+    }, [refetch])
+  );
 
   // Helper function to lighten a hex color (mix with white)
   const lightenColor = (color: string, amount: number = 0.75) => {
@@ -122,23 +139,22 @@ export const TrainingView = ({ navigation, route }) => {
     // If lesson is active, return original behavior
     if (lesson.completed_flg) {
       return {
-        backgroundColor: moduleColor,
-        iconColor: Colors.white // Use default from LessonLogoIcon
+        primaryColor: moduleColor,
+        secondaryColor: Colors.white // Use default from LessonLogoIcon
       };
     }
 
     // If lesson is inactive
     if (moduleIndex === 0) {
-      // Module 0, inactive: background = lightColor, icon = backgroundColor
       return {
-        backgroundColor: lightColor,
-        iconColor: backgroundColor
+        primaryColor: lightColor,
+        secondaryColor: backgroundColor
       };
     } else {
       // Module > 0, inactive: background = lightened module color, icon = module color
       return {
-        backgroundColor: lightenColor(moduleColor, 0.75), // 75% lighter (closer to white)
-        iconColor: moduleColor
+        primaryColor: lightenColor(moduleColor, 0.40), // 40% lighter
+        secondaryColor: moduleColor
       };
     }
   };
@@ -261,7 +277,7 @@ export const TrainingView = ({ navigation, route }) => {
         // Delay to ensure smooth animation after mount
         setTimeout(() => {
           scrollViewRef.current?.scrollTo({
-            y: Math.max(0, lessonPos.y - 200), // Offset to center it better, ensure not negative
+            y: Math.max(0, lessonPos.y + 20),
             animated: true
           });
 
@@ -427,7 +443,7 @@ export const TrainingView = ({ navigation, route }) => {
     const pattern = useMemo(() => generatePattern(totalLessonsInModule), [totalLessonsInModule]);
     const indentPercentage = pattern[index] || 40;
 
-    const { backgroundColor: lessonBgColor, iconColor } = getLessonColors(moduleIndex, lesson);
+    const { primaryColor: lessonBgColor, secondaryColor } = getLessonColors(moduleIndex, lesson);
     const isSelected = lesson.selected_flg || selectedLessonId === lesson.id;
 
     return (
@@ -461,7 +477,7 @@ export const TrainingView = ({ navigation, route }) => {
         >
           <LessonLogoIcon
             color={lessonBgColor}
-            secondaryColor={iconColor}
+            secondaryColor={secondaryColor}
             size={90}
             image={lesson.image}
             passed={lesson.completed_flg}
@@ -565,7 +581,7 @@ export const TrainingView = ({ navigation, route }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={backgroundColor} />
 
-      <GestureHandlerRootView style={[Styles.container, backgroundColor]}>
+      <GestureHandlerRootView style={[styles.moduleNameContainer, backgroundColor]}>
         {/* New Header */}
         <View style={[styles.header, { backgroundColor }]}>
           <TouchableOpacity style={styles.backButton} onPress={closeModal}>
@@ -703,6 +719,11 @@ const styles = StyleSheet.create({
   },
 
   // Module Message Box
+  moduleNameContainer: {
+    flex: 1,
+    backgroundColor: Colors.darkBackground,
+    fontFamily: 'Roboto',
+  },
   moduleMessageBox: {
     marginHorizontal: Spacings.lg,
     marginTop: Spacings.sm,

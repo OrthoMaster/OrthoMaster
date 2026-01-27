@@ -97,7 +97,8 @@ const PaymentContent = ({
           cardStyle={{
             backgroundColor: Colors.grayLight,
             borderRadius: 8,
-            textColor: '#32343E'
+            textColor: '#32343E',
+            placeholderColor: Colors.gray,
           }}
           style={styles.cardField}
         />

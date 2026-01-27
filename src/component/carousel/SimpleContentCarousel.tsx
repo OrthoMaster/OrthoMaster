@@ -106,7 +106,8 @@ const styles = StyleSheet.create({
     textAlign: "left",
     marginTop: 5,
     width: "100%",
-    paddingHorizontal: 5
+    paddingHorizontal: 5,
+    fontFamily: 'Roboto'
   },
 });
 

@@ -26,6 +26,8 @@ import { PreviewMediaParams } from './PreviewMediaView';
 import SearchModalComponent from '../../component/SearchModalComponent';
 import { getCdnContentAccessUrl } from '../../services/ContentService';
 
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
 
 const LIMIT_LAST_RELEASE = 5
 const CAROUSEL_SIZE = 180
@@ -168,6 +170,7 @@ export const FlashMediaView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <StatusBar barStyle="light-content" />
       <ScrollView
         scrollEnabled={!isSearching}
         nestedScrollEnabled={true}
@@ -321,26 +324,19 @@ export const FlashMediaView = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#303030',
+    backgroundColor: Colors.darkBackground,
   },
   sectionContainer: {
-    // marginTop: 5,
     paddingVertical: 5,
-    // backgroundColor: '#fff'
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginVertical: 5
   },
   categoryTitle: {
-    fontSize: 20,
+    fontSize: 18,
     marginVertical: 5,
     paddingLeft: 10,
     paddingRight: 20,
     paddingVertical: 3,
-    fontWeight: "bold",
-    backgroundColor: "#ffaf31",
+    fontFamily: 'Poppins-Medium',
+    backgroundColor: Colors.red,
     color: '#fff',
     alignSelf: 'flex-start',
     borderTopEndRadius: 7,
@@ -349,6 +345,7 @@ const styles = StyleSheet.create({
   categorySubTitle: {
     fontSize: 15,
     marginLeft: 10,
-    color: '#fff'
+    color: '#fff',
+    fontFamily: 'Poppins-Regular'
   }
 })

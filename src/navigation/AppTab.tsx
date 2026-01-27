@@ -1,7 +1,8 @@
 import React from 'react'
 import {
   Image,
-  Text
+  Text,
+  StyleSheet
 } from 'react-native';
 
 import 'react-native-gesture-handler';
@@ -185,13 +186,15 @@ export const AppTab = ({ }) => {
               title="Accueil"
               focused={focused}
               activeColor={Colors.primary}
-              disabledColor={Colors.primaryDisabled}
+              disabledColor={Colors.orange2}
             />
           ),
           tabBarIcon: ({ focused }) => (
-            <Entypo name={'home'}
-              size={focused ? 26 : 20}
-              color={focused ? Colors.primary : Colors.primaryDisabled} />
+            <Image
+              style={focused ? styles.activeIcon : [styles.inactiveIcon, {width: 15}]}
+              resizeMode="contain"
+              source={require('../../assets/v2_images/icon/nav/home.png')}
+            />
           )
         }}
       />
@@ -204,14 +207,16 @@ export const AppTab = ({ }) => {
             <CustomTabBarLabel
               title="Formations"
               focused={focused}
-              activeColor={Colors.blue}
-              disabledColor={Colors.blueDisabled}
+              activeColor={Colors.lgreen}
+              disabledColor={Colors.lgreen2}
             />
           ),
           tabBarIcon: ({ focused }) => (
-            <MaterialCommunityIcons name={'book-open-page-variant-outline'}
-              size={focused ? 24 : 18}
-              color={focused ? Colors.blue : Colors.blueDisabled} />
+            <Image
+              style={focused ? [styles.activeIcon, {width: 40}] : [styles.inactiveIcon, {width: 20}]}
+              resizeMode="contain"
+              source={require('../../assets/v2_images/icon/nav/training.png')}
+            />
           )
         }}
       />
@@ -222,16 +227,18 @@ export const AppTab = ({ }) => {
           headerShown: false,
           tabBarLabel: ({ focused }) => (
             <CustomTabBarLabel
-              title="Média"
+              title="Médias"
               focused={focused}
-              activeColor={Colors.primaryLight}
-              disabledColor={Colors.primaryLightDisabled}
+              activeColor={Colors.red}
+              disabledColor={Colors.red2}
             />
           ),
           tabBarIcon: ({ focused }) => (
-            <MaterialCommunityIcons name={'motion-play-outline'}
-              size={focused ? 24 : 18}
-              color={focused ? Colors.primaryLight : Colors.primaryLightDisabled} />
+            <Image
+              style={focused ? [styles.activeIcon, {width: 30}] : styles.inactiveIcon}
+              resizeMode="contain"
+              source={require('../../assets/v2_images/icon/nav/media.png')}
+            />
           )
         }}
       />
@@ -244,14 +251,16 @@ export const AppTab = ({ }) => {
             <CustomTabBarLabel
               title="Outils"
               focused={focused}
-              activeColor={Colors.green}
-              disabledColor={Colors.greenDisabled}
+              activeColor={Colors.blue}
+              disabledColor={Colors.blue2}
             />
           ),
           tabBarIcon: ({ focused }) => (
-            <Ionicons name={'construct'}
-              size={focused ? 24 : 18}
-              color={focused ? Colors.green : Colors.greenDisabled} />
+            <Image
+              style={focused ? styles.activeIcon : styles.inactiveIcon}
+              resizeMode="contain"
+              source={require('../../assets/v2_images/icon/nav/tool.png')}
+            />
           )
         }}
       />
@@ -265,14 +274,16 @@ export const AppTab = ({ }) => {
               <CustomTabBarLabel
                 title="Équipe"
                 focused={focused}
-                activeColor={Colors.blue}
-                disabledColor={Colors.blueDisabled}
+                activeColor={Colors.purple}
+                disabledColor={Colors.purple2}
               />
             ),
             tabBarIcon: ({ focused }) => (
-              <MaterialCommunityIcons name={'account-group-outline'}
-                size={focused ? 26 : 18}
-                color={focused ? Colors.blue : Colors.blueDisabled} />
+              <Image
+              style={focused ? styles.activeIcon : styles.inactiveIcon}
+              resizeMode="contain"
+              source={require('../../assets/v2_images/icon/nav/company.png')}
+            />
             )
           }}
         />
@@ -286,19 +297,32 @@ export const AppTab = ({ }) => {
             <CustomTabBarLabel
               title="Profil"
               focused={focused}
-              activeColor={Colors.primary}
-              disabledColor={Colors.primaryDisabled}
+              activeColor={Colors.purple}
+              disabledColor={Colors.purple2}
             />
           ),
           tabBarIcon: ({ focused }) => (
-            <Ionicons name={'person-circle-outline'}
-              size={focused ? 26 : 18}
-              color={focused ? Colors.primary : Colors.primaryDisabled} />
+            <Image
+              style={focused ? [styles.activeIcon, {width: 20}] : styles.inactiveIcon}
+              resizeMode="contain"
+              source={require('../../assets/v2_images/icon/nav/profile.png')}
+            />
           )
         }}
       />
-
     </Tab.Navigator>
   )
+}
 
-} 
+const styles = StyleSheet.create({
+  activeIcon: {
+    width: 25,
+    height: 40,
+    marginBottom: 2,
+  },
+  inactiveIcon: {
+    width: 15,
+    height: 30,
+    opacity: 0.4,
+  }
+});

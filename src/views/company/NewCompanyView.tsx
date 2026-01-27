@@ -198,7 +198,7 @@ export const NewCompanyView = ({ navigation, route }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={back}>
+        <TouchableOpacity style={styles.backButton} onPress={back}>
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Créer Espace Pro</Text>
@@ -640,6 +640,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center'
   },
+  backButton: {
+    padding: 4,
+    paddingRight: Spacings.md
+  },
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Poppins-Medium',
@@ -700,7 +704,7 @@ const styles = StyleSheet.create({
   },
   optionsList: {
     paddingHorizontal: Spacings.lg,
-    paddingBottom: Spacings.lg
+    paddingBottom: Spacings.xxxl
   },
   optionItem: {
     flexDirection: 'row',

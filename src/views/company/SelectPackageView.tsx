@@ -62,7 +62,7 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
 
   return (
     <TouchableOpacity
-      activeOpacity={isDisabled ? 1 : 0.7}
+      activeOpacity={isDisabled ? 1 : 0.95}
       onPress={() => !isDisabled && onToggle(pkg.id)}
       style={[
         styles.courseCard,
@@ -73,7 +73,7 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
       {/* Circle Container */}
       <View style={[
         styles.courseCircle,
-        { backgroundColor: isDisabled ? Colors.grayLight : backgroundColor },
+        { backgroundColor: isDisabled ? backgroundColor : color },
         isSelected && styles.courseCircleSelected,
         isDisabled && styles.courseCircleDisabled
       ]}>
@@ -84,7 +84,6 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
             style={[{
               width: '100%',
               height: '100%',
-              tintColor: color,
               borderRadius: 100,
             }, isDisabled && styles.courseIconDisabled]}
             resizeMode="contain"
@@ -115,7 +114,7 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
       {/* Duration Badge */}
       <View style={[
         styles.durationBadge,
-        isDisabled && [styles.durationBadgeDisabled, { backgroundColor: backgroundColor || Colors.successBackground }]
+        isDisabled && [styles.durationBadgeDisabled, { backgroundColor: Colors.lgreen3 }]
       ]}>
         {!isDisabled &&
           <Ionicons
@@ -126,7 +125,7 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
         }
         <Text style={[
           styles.durationText,
-          isDisabled && [styles.durationTextDisabled, { color: color || Colors.success }]
+          isDisabled && [styles.durationTextDisabled, { color: Colors.lgreenDark }]
         ]}>
           {isDisabled ? 'Activé' : pkg.duration_text}
         </Text>
@@ -160,32 +159,10 @@ export const SelectPackageView = ({ navigation, route }) => {
   });
 
   const [selectedPackages, setSelectedPackages] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [creatable, setCreatable] = useState(false);
   const [cntContract, setCntContract] = useState('-');
   const [showTooltip, setShowTooltip] = useState(false);
-
-  // Filter courses based on search
-  const filteredGroups = useMemo(() => {
-    if (!trainings || !Array.isArray(trainings)) {
-      return [];
-    }
-
-    if (!searchQuery.trim()) {
-      return trainings;
-    }
-
-    const query = searchQuery.toLowerCase();
-    return trainings
-      .map(training => ({
-        ...training,
-        packages: training.packages.filter(pkg =>
-          pkg.name.toLowerCase().includes(query)
-        )
-      }))
-      .filter(training => training.packages.length > 0);
-  }, [searchQuery, trainings]);
 
   // Calculate total hours
   const totalHours = useMemo(() => {
@@ -228,10 +205,6 @@ export const SelectPackageView = ({ navigation, route }) => {
     setConfirming(false);
   };
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-  };
-
   const handleConfirm = async () => {
     if (selectedPackages.length === 0) return;
 
@@ -255,10 +228,7 @@ export const SelectPackageView = ({ navigation, route }) => {
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}>Choisir les formations</Text>
-            <Text style={styles.headerSubtitle}>
-              Sélectionnez les cours pour vos membres
-            </Text>
+            <Text style={styles.headerTitle}>Sélectionnez les modules</Text>
           </View>
         </View>
         <TouchableOpacity onPress={() => { navigation.popToTop() }}>
@@ -309,25 +279,12 @@ export const SelectPackageView = ({ navigation, route }) => {
 
       {!isLoading && !error && trainings &&
         (<>
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <View style={styles.searchInputContainer}>
-              <Ionicons name="search" size={20} color={Colors.gray} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Rechercher une formation..."
-                placeholderTextColor={Colors.gray}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={handleClearSearch}>
-                  <Ionicons name="close-circle" size={20} color={Colors.gray} />
-                </TouchableOpacity>
-              )}
-            </View>
+          <View style={styles.titleBodyContainer}>
+            <Text style={styles.bodyTitle}>Vous pouvez sélectionner plusieurs modules de formation.</Text>
+            <Text style={styles.bodyTitle}>Votre dossier sera adapté en fonction de vos choix.</Text>
+            <Text style={styles.headerSubtitle}>
+              NB: selon la durée totale, plusieurs dossiers peuvent être créés automatiquement
+            </Text>
           </View>
 
           {/* Package Groups */}
@@ -337,7 +294,7 @@ export const SelectPackageView = ({ navigation, route }) => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {filteredGroups.length === 0 ? (
+            {trainings.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Ionicons name="search-outline" size={80} color={Colors.gray} />
                 <Text style={styles.emptyTitle}>Aucun résultat</Text>
@@ -346,7 +303,7 @@ export const SelectPackageView = ({ navigation, route }) => {
                 </Text>
               </View>
             ) : (
-              filteredGroups.map((training) => (
+              trainings.map((training) => (
                 <View key={training.id} style={styles.groupContainer}>
                   {/* Group Title */}
                   <View style={styles.groupHeader}>
@@ -466,7 +423,7 @@ export const SelectPackageView = ({ navigation, route }) => {
 
             <View style={styles.tooltipContent}>
               <Text style={styles.tooltipDescription}>
-                Les dossiers représentent le nombre de contrats des formations sélectionnées.
+                Le nombre de dossiers est créé automatiquement selon le temps total des formations sélectionnées.
               </Text>
 
               <View style={styles.tooltipNotes}>
@@ -514,11 +471,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
     flex: 1,
   },
   backButton: {
     padding: 4,
+    paddingRight: Spacings.md,
   },
   headerTitle: {
     fontSize: 16,
@@ -526,10 +483,19 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   headerSubtitle: {
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular',
+    fontSize: 10,
+    fontFamily: 'Roboto',
     color: Colors.gray,
-    marginTop: -4,
+    marginTop: 4,
+  },
+  titleBodyContainer: {
+    marginBottom: Spacings.md,
+    paddingHorizontal: Spacings.md,
+  },
+  bodyTitle: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
   },
 
   // Search Bar
@@ -610,18 +576,15 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.xs,
     padding: Spacings.xxs
   },
-  courseCircleSelected: {
-    borderColor: Colors.success,
-    borderWidth: 2,
-  },
+  courseCircleSelected: {},
   courseCircleDisabled: {
-    opacity: 0.5,
+    opacity: 1,
   },
   courseIcon: {
     fontSize: 24,
   },
   courseIconDisabled: {
-    opacity: 0.5,
+    opacity: 1,
   },
   checkmarkOverlay: {
     position: 'absolute',
@@ -632,8 +595,8 @@ const styles = StyleSheet.create({
   },
   lockOverlay: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
+    bottom: 0,
+    right: -7,
     padding: 2,
   },
   courseName: {
@@ -705,7 +668,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.md,
-    paddingBottom: Spacings.xxl,
+    paddingBottom: Spacings.xxxl,
     borderTopWidth: 1,
     borderTopColor: Colors.line,
     flexDirection: 'row',

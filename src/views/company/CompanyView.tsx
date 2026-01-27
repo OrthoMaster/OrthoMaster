@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,15 @@ import {
   StatusBar,
   RefreshControl,
   Alert,
-  Modal,
+  Pressable,
   Dimensions,
+  Modal,
   Image
 } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Svg, Circle } from 'react-native-svg';
 import { TextInput } from 'react-native-paper';
 
 import Colors from '../../../constants/Colors';
@@ -40,16 +42,25 @@ interface Member {
 }
 
 export const CompanyView = ({ navigation, route }) => {
-  // Tab State
-  const [activeTab, setActiveTab] = useState<'membres' | 'formations'>('membres');
+  // Show bottom nav when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'flex' }
+      });
+    }, [navigation])
+  );
 
-  // Calculate dynamic circle width
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'membres' | 'formations'>('formations');
+
+  // Calculate dynamic circle width - 4 items per row
   const screenWidth = Dimensions.get('window').width;
   const containerPadding = Spacings.lg * 2;
-  const numberOfCircles = 6;
+  const numberOfCircles = 4; // Changed from 6 to 4
   const gapWidth = Spacings.sm * (numberOfCircles - 1);
   const circleWidth = (screenWidth - containerPadding - gapWidth) / numberOfCircles;
-  const circleSize = circleWidth - 10; // Reduce slightly for padding
+  const circleSize = circleWidth - 10;
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['company'],
@@ -57,9 +68,6 @@ export const CompanyView = ({ navigation, route }) => {
     retry: 1,
     retryDelay: 1000,
   });
-
-  // Expanded members state
-  const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
 
   const renderMemberItem = ({ item, isAdmin = false }: { item: Member; isAdmin?: boolean }) => (
     <TouchableOpacity
@@ -220,7 +228,7 @@ export const CompanyView = ({ navigation, route }) => {
     });
   }
 
-  // User trainings - STA
+  /** User trainings - STA  */
   // Render course circle
   const renderCourseCircle = (course) => {
     const progress = course.pivot?.progress || 0;
@@ -238,7 +246,7 @@ export const CompanyView = ({ navigation, route }) => {
             width: circleSize,
             height: circleSize,
             borderRadius: circleSize / 2,
-            backgroundColor: course.training?.background_color || Colors.blueBackground,
+            backgroundColor: course.training?.color,
           }]}>
             {course.image
               ? <Image
@@ -247,7 +255,6 @@ export const CompanyView = ({ navigation, route }) => {
                   width: '100%',
                   height: '100%',
                   borderRadius: 100,
-                  tintColor: course.training?.color
                 }}
                 resizeMode="contain"
               />
@@ -260,22 +267,19 @@ export const CompanyView = ({ navigation, route }) => {
             height={circleSize}
             style={{ position: 'absolute', top: 0, left: 0 }}
           >
-            {/* Background circle (gray/light border) */}
             <Circle
               cx={circleSize / 2}
               cy={circleSize / 2}
               r={radius}
-              stroke={course.training?.background_color || Colors.blueBackground}
+              stroke={Colors.grayLight}
               strokeWidth={strokeWidth}
               fill="none"
             />
-
-            {/* Progress circle */}
             <Circle
               cx={circleSize / 2}
               cy={circleSize / 2}
               r={radius}
-              stroke={course.training?.color || Colors.blue}
+              stroke={Colors.lgreen}
               strokeWidth={strokeWidth}
               fill="none"
               strokeDasharray={circumference}
@@ -289,7 +293,7 @@ export const CompanyView = ({ navigation, route }) => {
         <Text style={[styles.courseProgress, { color: course.training?.color || Colors.blue }]}>
           {progress}%
         </Text>
-        <Text style={styles.courseName} numberOfLines={2} ellipsizeMode='tail'>
+        <Text style={styles.courseName} numberOfLines={1} ellipsizeMode='tail'>
           {course.short_name ?? course.name}
         </Text>
       </View >
@@ -298,65 +302,31 @@ export const CompanyView = ({ navigation, route }) => {
 
   // Render member formation item
   const renderMemberFormationItem = (member) => {
-    const isExpanded = expandedMembers.has(member.id);
-
-    const sliceNumber = member.packages.length <= 6 ? 6 : 5
-    const displayCourses = isExpanded ? member.packages : member.packages.slice(0, sliceNumber);
-    const remainingCount = member.packages.length - sliceNumber;
-
-    const toggleExpand = () => {
-      const newExpanded = new Set(expandedMembers);
-      if (isExpanded) {
-        newExpanded.delete(member.id);
-      } else {
-        newExpanded.add(member.id);
-      }
-      setExpandedMembers(newExpanded);
-    };
+    const hasFormations = member.packages.length > 0;
 
     return (
       <View key={member.id} style={styles.formationMemberCard}>
         <View style={styles.formationMemberHeader}>
           <View style={styles.formationMemberInfo}>
-            <Text style={styles.formationMemberName}>
+            <Text style={styles.formationMemberName} numberOfLines={1} ellipsizeMode='tail'>
               {member.name + ' ' + member.first_name}
             </Text>
-            <Text style={styles.formationMemberEmail}>{member.email}</Text>
+            <Text style={styles.formationMemberEmail} numberOfLines={1} ellipsizeMode='tail'>{member.email}</Text>
           </View>
-          {member.packages.length > sliceNumber && (
-            <TouchableOpacity onPress={toggleExpand} activeOpacity={0.7}>
-              <Ionicons
-                name={isExpanded ? "chevron-up" : "chevron-down"}
-                size={20}
-                color={Colors.blue}
-              />
-            </TouchableOpacity>
-          )}
         </View>
 
         <View style={styles.coursesContainer}>
-          {member.packages.length == 0 && (
+          {!hasFormations && (
             <View style={styles.coursesGrid}>
               <Text style={styles.coursesEmptyText}>Aucune formation pour le moment</Text>
             </View>
           )}
 
-          <View style={styles.coursesGrid}>
-            {displayCourses.map(course => renderCourseCircle(course))}
-            {!isExpanded && remainingCount > 0 && (
-              <TouchableOpacity
-                key="more"
-                style={[styles.courseItem, { width: circleWidth }]}
-                onPress={toggleExpand}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.courseCircle, styles.moreCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2 }]}>
-                  <Text style={styles.moreText}>+{remainingCount}</Text>
-                </View>
-                <Text style={styles.textViewMore}>Voir plus</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          {hasFormations && (
+            <View style={styles.coursesGrid}>
+              {member.packages.map(course => renderCourseCircle(course))}
+            </View>
+          )}
         </View>
       </View>
     );
@@ -374,9 +344,16 @@ export const CompanyView = ({ navigation, route }) => {
               <Text style={styles.companyName}>{data.company.name}</Text>
               <Text style={styles.companyData}>{data.company.postal_code + ' ' + data.company.city + ' ' + data.company.country}</Text>
             </View>
-            <View style={styles.companyIconWrapper}>
-              <Ionicons name={'medical-sharp'} size={30} color={Colors.blue} />
-            </View>
+            {data.company.establishment?.image
+              ? <Image
+                source={{ uri: process.env.EXPO_PUBLIC_S3_URL + data.company.establishment?.image }}
+                style={styles.companyEstabImage}
+                resizeMode='contain'
+              />
+              : <View style={styles.companyIconWrapper}>
+                <Ionicons name={'medical-sharp'} size={30} color={Colors.purple2} />
+              </View>
+            }
           </TouchableOpacity>
 
           {/* Manager Section */}
@@ -417,12 +394,19 @@ export const CompanyView = ({ navigation, route }) => {
       </View>
     );
   };
+  /** User trainings - END */
 
-  // User trainings - END
+  /** Add Package - STA */
+  const [showAddPkgInfoModal, setShowAddPkgInfoModal] = useState(false);
+  const moveToAddPkg = () => {
+    setShowAddPkgInfoModal(false);
+    navigation.navigate('payment-method')
+  }
+  /** Add Package - END */
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.blue} />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.purple} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -512,6 +496,8 @@ export const CompanyView = ({ navigation, route }) => {
       >
         {activeTab === 'membres' && renderMembresContent()}
         {activeTab === 'formations' && renderFormationsContent()}
+
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* Floating Action Buttons - Only show on Membres tab */}
@@ -522,7 +508,7 @@ export const CompanyView = ({ navigation, route }) => {
             onPress={() => setShowAddMemberModal(true)}
             activeOpacity={0.8}
           >
-            <Ionicons name="add-sharp" size={26} color={Colors.white} />
+            <Ionicons name="add-sharp" size={36} color={Colors.white} />
           </TouchableOpacity>
         </View>
       )}
@@ -532,11 +518,15 @@ export const CompanyView = ({ navigation, route }) => {
         <View style={styles.fabContainer}>
           <TouchableOpacity
             style={styles.fabSecondary}
-            onPress={() => navigation.navigate('payment-method')}
+            onPress={() => setShowAddPkgInfoModal(true)}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={14} color={Colors.white} />
-            <Text style={styles.fabSecondaryText}>Ajouter formations</Text>
+            <Image
+              style={{ width: 45, height: 35 }}
+              resizeMode="contain"
+              source={require('../../../assets/v2_images/icon/add-package.png')}
+            />
+            <Text style={styles.fabSecondaryText}>Ajouter{'\n'}formations</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -672,6 +662,103 @@ export const CompanyView = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Confirm Add Package */}
+      <Modal
+        visible={showAddPkgInfoModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowAddPkgInfoModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.addPkgInfoModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowAddPkgInfoModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.addPkgInfoModalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <View style={styles.addPkgInfoHeader}>
+              <View style={styles.addPkgInfoIconWrapper}>
+                <Ionicons name="information-circle" size={24} color={Colors.blue} />
+              </View>
+              <Text style={styles.addPkgInfoTitle}>IMPORTANT</Text>
+              <TouchableOpacity
+                onPress={() => setShowAddPkgInfoModal(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.addPkgInfoCloseButton}
+              >
+                <Ionicons name="close" size={24} color={Colors.gray} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content */}
+            <View style={styles.addPkgInfoBody}>
+              <View style={[styles.addPkgInfoNote, { backgroundColor: Colors.blue3 }]}>
+                <Text style={[styles.addPkgInfoDescription, { color: Colors.blueDark, marginBottom: 0 }]}>
+                  Si vous souhaitez un financement par
+                  un <Text style={[styles.textBold, { color: Colors.red }]}>organisme de compétence</Text> (OPCO, FIFPL, ...)
+                </Text>
+              </View>
+
+              <Text style={styles.addPkgInfoDescription}>
+                En raison des différences de prise en charge, vous ne pouvez créer
+                de <Text style={styles.textBold}>demande de formations</Text> qu'<Text style={styles.textBold}>
+                  un organisme de financement à la fois.</Text>
+              </Text>
+
+              <View style={styles.addPkgInfoSection}>
+                <Text style={styles.addPkgInfoSectionTitle}>Voici comment faire :</Text>
+                <View style={styles.addPkgInfoListContainer}>
+                  <View style={styles.addPkgInfoBulletNumber}><Text style={styles.addPkgInfoBullet}>1.</Text></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.addPkgInfoBullet}>Sélectionnez l’<Text style={styles.textBold}>organisme</Text></Text>
+                  </View>
+                </View>
+                <View style={styles.addPkgInfoListContainer}>
+                  <View style={styles.addPkgInfoBulletNumber}><Text style={styles.addPkgInfoBullet}>2.</Text></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.addPkgInfoBullet}>Indiquez les <Text style={styles.textBold}>membres</Text> de votre équipe qui en bénéficient</Text>
+                  </View>
+                </View>
+                <View style={styles.addPkgInfoListContainer}>
+                  <View style={styles.addPkgInfoBulletNumber}><Text style={styles.addPkgInfoBullet}>3.</Text></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.addPkgInfoBullet}>Choisissez les <Text style={styles.textBold}>modules de formation</Text> à attribuer</Text>
+                  </View>
+                </View>
+                <View style={styles.addPkgInfoListContainer}>
+                  <View style={styles.addPkgInfoBulletNumber}><Text style={styles.addPkgInfoBullet}>4.</Text></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.addPkgInfoBullet}>Signez en ligne les <Text style={styles.textBold}>documents</Text> (vous recevrez les informations complémentaires par mail)</Text>
+                  </View>
+                </View>
+              </View>
+
+
+              <View style={styles.addPkgInfoNote}>
+                <Ionicons name="refresh" size={20} color={Colors.gray} />
+                <Text style={styles.addPkgInfoNoteText}>
+                  Répétez l'opération avec un autre organisme (selon vos besoins)
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.sendInviteButton}
+                onPress={moveToAddPkg}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.sendInviteButtonText}>Continuer</Text>
+                <Ionicons name="arrow-forward" size={18} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
+
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -679,14 +766,14 @@ export const CompanyView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.purple,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: Colors.grayLight
+    backgroundColor: Colors.grayLight,
   },
   header: {
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.purple,
     paddingHorizontal: Spacings.lg,
     paddingBottom: Spacings.md,
     flexDirection: 'row',
@@ -710,7 +797,7 @@ const styles = StyleSheet.create({
   // Tab Bar
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.purple,
     paddingHorizontal: Spacings.lg,
   },
   tab: {
@@ -719,6 +806,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
+    backgroundColor: Colors.purple2,
   },
   activeTab: {
     backgroundColor: Colors.grayLight,
@@ -726,11 +814,11 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   activeTabText: {
     fontFamily: 'Poppins-Bold',
-    color: Colors.blue,
+    color: Colors.purple,
   },
 
   content: {
@@ -742,6 +830,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.white,
+    gap: Spacings.xxs,
     borderRadius: 16,
     padding: Spacings.lg,
     marginBottom: Spacings.lg,
@@ -752,7 +841,12 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 3,
     borderWidth: 1,
-    borderColor: Colors.blue
+    borderColor: Colors.purple
+  },
+  companyEstabImage: {
+    width: 50,
+    height: 60,
+    flexShrink: 0,
   },
   companyIconWrapper: {
     width: 30,
@@ -761,22 +855,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   companyMetadata: {
-    paddingRight: Spacings.md
+    flex: 1,
+    flexShrink: 1,
+    marginRight: Spacings.xs,
   },
   companyType: {
-    fontSize: 10,
-    marginBottom: -3,
+    fontSize: 12,
     paddingLeft: 1,
     fontFamily: 'Poppins-Medium',
     color: Colors.gray,
+    marginBottom: Spacings.xxs,
   },
   companyName: {
-    fontSize: 17,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.blue,
+    fontSize: 18,
+    lineHeight: 20,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.purple,
   },
   companyData: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins-Light',
     color: Colors.text,
   },
@@ -965,40 +1062,44 @@ const styles = StyleSheet.create({
     right: Spacings.lg,
     bottom: Spacings.xl,
     alignItems: 'center',
-    gap: Spacings.sm,
+    justifyContent: 'center',
   },
   fabPrimary: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.blue,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.purpleDark,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowColor: Colors.purpleDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 2,
+    opacity: 0.7
   },
   fabSecondary: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 40,
-    paddingHorizontal: Spacings.md,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.lg,
     borderRadius: 16,
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.white,
     opacity: 0.8,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowColor: Colors.purpleDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 2,
+    borderWidth: 2,
+    borderColor: Colors.purple,
   },
   fabSecondaryText: {
-    fontSize: 12,
+    fontSize: 14,
+    lineHeight: 18,
     fontFamily: 'Poppins-Medium',
-    color: Colors.white,
+    color: Colors.purple,
     marginLeft: Spacings.xs
   },
 
@@ -1051,14 +1152,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   formationMemberName: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Roboto',
     fontWeight: '400',
     color: Colors.text,
     marginBottom: -2,
   },
   formationMemberEmail: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Poppins-Light',
     color: Colors.gray,
   },
@@ -1066,11 +1167,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   coursesEmptyText: {
-    fontSize: 8,
-    fontFamily: 'Poppins-Light',
+    fontSize: 10,
+    fontFamily: 'Roboto',
     color: Colors.subtext,
     textAlign: 'center',
-    marginTop: -8,
+    marginTop: -4,
   },
   coursesGrid: {
     flexDirection: 'row',
@@ -1081,40 +1182,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   courseCircle: {
-    backgroundColor: Colors.blueBackground,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacings.xxs,
     padding: Spacings.xxs
   },
-  moreCircle: {
-    backgroundColor: Colors.grayLight,
-  },
-  moreText: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.blue,
-  },
-  textViewMore: {
-    fontSize: 8,
-    fontFamily: 'Roboto',
-    color: Colors.blue,
-  },
-
   courseIcon: {
     fontSize: 14,
   },
   courseName: {
-    fontSize: 7,
+    fontSize: 9,
     fontFamily: 'Poppins-Light',
     color: Colors.text,
     textAlign: 'center',
   },
   courseProgress: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Poppins-Medium',
-    color: Colors.subtext,
     textAlign: 'center',
+    letterSpacing: 1,
   },
 
   // Empty state (for Formations tab)
@@ -1174,5 +1260,106 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
+  },
+
+  // Add Package Info Modal Styles
+  addPkgInfoModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingHorizontal: Spacings.lg,
+  },
+  addPkgInfoModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    width: '100%',
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  addPkgInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.lg,
+    paddingBottom: Spacings.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+  },
+  addPkgInfoIconWrapper: {
+    marginRight: Spacings.sm,
+  },
+  addPkgInfoTitle: {
+    flex: 1,
+    fontSize: 24,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.blue,
+  },
+  addPkgInfoCloseButton: {
+    padding: Spacings.xxs,
+  },
+  addPkgInfoBody: {
+    padding: Spacings.lg,
+  },
+  addPkgInfoDescription: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    lineHeight: 20,
+    marginBottom: Spacings.md,
+  },
+  addPkgInfoSection: {
+    marginBottom: Spacings.md,
+  },
+  addPkgInfoSectionTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.gray,
+    marginBottom: Spacings.md,
+  },
+  addPkgInfoListContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: Spacings.sm,
+  },
+  addPkgInfoBullet: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    lineHeight: 16,
+    marginLeft: Spacings.xs,
+    flexWrap: 'wrap',
+  },
+  addPkgInfoBulletNumber: {
+    width: 25,
+    alignItems: 'flex-end'
+  },
+  addPkgInfoText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    lineHeight: 18,
+  },
+  addPkgInfoNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    padding: Spacings.sm,
+    borderRadius: 8,
+    marginBottom: Spacings.md,
+  },
+  addPkgInfoNoteText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    marginLeft: Spacings.xs,
+  },
+  textBold: {
+    fontFamily: 'Poppins-Bold',
   },
 });

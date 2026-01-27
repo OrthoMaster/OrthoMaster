@@ -38,7 +38,7 @@ export const QueChoisirButton: React.FC<{ onPress: () => any }> = ({ onPress }) 
                 marginBottom: 10
             }}
         />
-        <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Que Choisir ?</Text>
+        <Text style={{ fontSize: 20, color: '#fff', fontFamily: 'Poppins-Medium' }}>Que Choisir ?</Text>
     </TouchableOpacity>)
 }
 

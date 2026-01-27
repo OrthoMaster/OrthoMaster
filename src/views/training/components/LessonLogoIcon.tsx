@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Image } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
+import { Image } from 'expo-image';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Colors from "../../../../constants/Colors";
 
@@ -79,7 +80,8 @@ const LessonLogoIcon = ({
               width: size,
               height: size,
               borderRadius: size / 2,
-              borderColor: secondaryColor,
+              // borderColor: secondaryColor,
+              borderColor: Colors.yellowDark,
               borderWidth: 5,
             },
             getWaveStyle(),
@@ -94,8 +96,9 @@ const LessonLogoIcon = ({
           {
             width: size,
             borderRadius: size / 2,
-            backgroundColor: blocked ? get3DColor(color) : (passed ? get3DColor(color) : get3DColor(secondaryColor)),
+            backgroundColor: passed ? get3DColor(color) : get3DColor(secondaryColor),
             paddingBottom: depth3D, // This creates the 3D depth at bottom
+            opacity: passed ? 1 : 0.5,
           },
         ]}
       >
@@ -107,7 +110,9 @@ const LessonLogoIcon = ({
               width: size,
               height: size * 0.96,
               borderRadius: size / 2,
-              backgroundColor: blocked ? Colors.grayLight : color,
+              backgroundColor: passed ? color : Colors.darkBackground,
+              opacity: passed ? 1 : 0.6,
+              borderColor: color
             },
           ]}
         >
@@ -119,11 +124,10 @@ const LessonLogoIcon = ({
                 {
                   width: size * 0.8,
                   height: size * 0.8,
-                  tintColor: blocked ? Colors.white : (passed ? Colors.white : secondaryColor),
                   borderRadius: 100,
                 },
               ]}
-              resizeMode="contain"
+              contentFit="contain"
             />
           ) : (
             <>
@@ -174,6 +178,7 @@ const styles = StyleSheet.create({
   coin: {
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2
   },
   image: {
     overflow: 'hidden',

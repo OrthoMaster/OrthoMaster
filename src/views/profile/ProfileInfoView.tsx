@@ -86,7 +86,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
       queryKey: ['pre-form-data-profile'],
       queryFn: () => getPreFormData(),
     });
-  
+
   useEffect(() => {
     if (preData?.data?.professions) {
       setProfessions(preData?.data?.professions);
@@ -158,6 +158,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showNirInfoModal, setShowNirInfoModal] = useState(false);
 
   const handleInputChange = useCallback((field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -206,8 +207,8 @@ export const ProfileInfoView = ({ navigation, route }) => {
     }
 
     // Validate date of birth
-    if ((formData.organization == '1' || formData.organization == '2') && !formData.no_secu.trim()) {
-      errors.no_secu = "Veuillez saisir le numéro SECU !";
+    if (formData.organization == '1' && !formData.no_secu.trim()) {
+      errors.no_secu = "Veuillez saisir le code NIR !";
     }
 
     // Validate phone
@@ -330,7 +331,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={back}>
+        <TouchableOpacity style={styles.backButton} onPress={back}>
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profil</Text>
@@ -833,34 +834,49 @@ export const ProfileInfoView = ({ navigation, route }) => {
             </TouchableOpacity>
           </View>
 
-          {/* SECU */}
-          <View style={[Styles.inputContainer, { paddingBottom: Spacings.xl }]}>
-            <TextInput
-              multiline={false}
-              scrollEnabled={false}
-              numberOfLines={1}
-              maxLength={50}
-              mode="outlined"
-              label="Numéro SECU"
-              value={formData.no_secu}
-              onChangeText={(value) => handleInputChange('no_secu', value)}
-              disabled={isModifyingEmail}
-              returnKeyType="done"
-              style={Styles.textInput}
-              contentStyle={Styles.textInputContent}
-              outlineStyle={Styles.textInputOutline}
-              theme={{
-                colors: {
-                  primary: Colors.primary,
-                  error: Colors.danger,
+          {/* NIR / SECU */}
+          {formData.organization == '1' &&
+            <View style={Styles.inputContainer}>
+              <TextInput
+                multiline={false}
+                scrollEnabled={false}
+                numberOfLines={1}
+                maxLength={18}
+                keyboardType="number-pad"
+                mode="outlined"
+                label="Code NIR"
+                value={formData.no_secu}
+                onChangeText={(value) => handleInputChange('no_secu', value)}
+                disabled={isModifyingEmail}
+                returnKeyType="done"
+                right={
+                  <TextInput.Icon
+                    icon={() => (
+                      <Ionicons
+                        name="information-circle-outline"
+                        size={22}
+                        color={Colors.blue}
+                      />
+                    )}
+                    onPress={() => setShowNirInfoModal(true)}
+                  />
                 }
-              }}
-            />
-            {formErrors.no_secu && (
-              <Text style={Styles.fieldErrorText}>{formErrors.no_secu}</Text>
-            )}
-          </View>
-
+                style={Styles.textInput}
+                contentStyle={Styles.textInputContent}
+                outlineStyle={Styles.textInputOutline}
+                theme={{
+                  colors: {
+                    primary: Colors.primary,
+                    error: Colors.danger,
+                  }
+                }}
+              />
+              {formErrors.no_secu && (
+                <Text style={Styles.fieldErrorText}>{formErrors.no_secu}</Text>
+              )}
+            </View>
+          }
+          <View style={{ height: Spacings.xl }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -1041,6 +1057,63 @@ export const ProfileInfoView = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
+
+      {/* NIR Info Modal */}
+      <Modal
+        visible={showNirInfoModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowNirInfoModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.nirInfoModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowNirInfoModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.nirInfoModalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <View style={styles.nirInfoHeader}>
+              <View style={styles.nirInfoIconWrapper}>
+                <Ionicons name="information-circle" size={24} color={Colors.blue} />
+              </View>
+              <Text style={styles.nirInfoTitle}>Code NIR</Text>
+              <TouchableOpacity
+                onPress={() => setShowNirInfoModal(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.nirInfoCloseButton}
+              >
+                <Ionicons name="close" size={24} color={Colors.gray} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content */}
+            <View style={styles.nirInfoBody}>
+              <Text style={styles.nirInfoDescription}>
+                Le code NIR est votre numéro de sécurité sociale sans les deux derniers chiffres de la clé.
+                Il est demandé par l’OPCO-EP pour valider votre formation continue.
+              </Text>
+
+              <View style={styles.nirInfoSection}>
+                <Text style={styles.nirInfoSectionTitle}>Format :</Text>
+                <Text style={styles.nirInfoText}>13 chiffres + 2 chiffres clé</Text>
+                <Text style={styles.nirInfoExample}>SECU : 1 89 00 40 888 123 80</Text>
+                <Text style={styles.nirInfoExample}>NIR     : 1 89 00 40 888 123</Text>
+              </View>
+
+              <View style={styles.nirInfoNote}>
+                <Ionicons name="lock-closed-outline" size={20} color={Colors.primary} />
+                <Text style={styles.nirInfoNoteText}>
+                  Nous le demandons uniquement à cette fin, dans le respect du RGPD.
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1065,6 +1138,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center'
+  },
+  backButton: {
+    padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 18,
@@ -1183,7 +1260,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   optionsList: {
-    marginBottom: Spacings.lg,
+    marginBottom: Spacings.xxxl,
   },
   optionItem: {
     flexDirection: 'row',
@@ -1286,5 +1363,105 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingTop: Spacings.xxs,
     marginBottom: Spacings.lg,
+  },
+
+  // NIR Info Modal Styles
+  nirInfoModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingHorizontal: Spacings.lg,
+  },
+  nirInfoModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 380,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  nirInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.lg,
+    paddingBottom: Spacings.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+  },
+  nirInfoIconWrapper: {
+    marginRight: Spacings.sm,
+  },
+  nirInfoTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+  },
+  nirInfoCloseButton: {
+    padding: Spacings.xxs,
+  },
+  nirInfoBody: {
+    padding: Spacings.lg,
+  },
+  nirInfoDescription: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    lineHeight: 20,
+    marginBottom: Spacings.md,
+  },
+  nirInfoSection: {
+    marginBottom: Spacings.md,
+  },
+  nirInfoSectionTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+    marginBottom: Spacings.xxs,
+  },
+  nirInfoText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    lineHeight: 18,
+  },
+  nirInfoExample: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.gray,
+    marginTop: Spacings.xxs,
+    backgroundColor: Colors.grayLight,
+    paddingHorizontal: Spacings.sm,
+    paddingVertical: Spacings.xxs,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  nirInfoBullet: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.gray,
+    lineHeight: 20,
+    marginLeft: Spacings.xs,
+  },
+  nirInfoNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.yellow3,
+    padding: Spacings.sm,
+    borderRadius: 8,
+    marginTop: Spacings.xs,
+  },
+  nirInfoNoteText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.primary,
+    marginLeft: Spacings.xs,
+    lineHeight: 16,
   },
 });

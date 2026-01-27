@@ -2,14 +2,10 @@ const tintColorLight = '#FB6D3A';
 const tintColorDark = '#fff';
 
 export default {
-  primary: '#Eb7b07',
-  primaryLight: '#ffaf31',
-  blue: '#5696df',
-  green: '#4BB6BE',
-  blueDark: '#1D3470',
-
-  blueBackground: '#E3F2FD',
-  greenBackground: '#E8F5E9',
+  primary: '#FF9600',
+  primaryLight: '#ffaf32',
+  orange2: '#FFC76E',
+  orange3: '#FFECCC',
   primaryLightBackground: '#FFF3E0',
 
   primaryDisabled: '#E5AF61',
@@ -17,12 +13,48 @@ export default {
   blueDisabled: '#8BB7E8',
   greenDisabled: '#7ECED3',
 
-  yellow: '#FFC107',
+  blue: '#5696df',
+  blue1: '#5696df',
+  blueDark2: '#1D3470',
+  blueBackground: '#E3F2FD',
+  blueDark: '#2D55AF',
+  blue2: '#BCD1FF',
+  blue3: '#F0F5FF',
+
+  green: '#4BB6BE',
+  greenDark: '#3F8CA1',
+  green1: '#9ECED3',
+  green2: '#D8E9EB',
+
+  lgreen: '#58CC02',
+  lgreenDark: '#58A700',
+  lgreen2: '#A5ED6E',
+  lgreen3: '#D7FFB8',
+
+  lblue: '#1CB0F6',
+  lblueDark: '#1899D6',
+  lblue2: '#84D8FF',
+  lblue3: '#DDF4FF',
+
+  red: '#FF4B4B',
+  redDark: '#EA2B2B',
+  red2: '#FFB2B2',
+  red3: '#FFDFE0',
+
+  yellow: '#FFC800',
+  yellowDark: '#E7A601',
+  yellow2: '#FBE56D',
+  yellow3: '#FFF5D3',
+
+
+  purple: '#9B7Fb7',
+  purpleDark: '#6240BF',
+  purple2: '#C5BAD5',
+  purple3: '#EAE5EF',
+
   white: '#ffffff',
-  purple: '#6366f1',
-  purpleLight: '#8b5cf6',
   gray: '#979797',
-  grayLight: '#F6F6F6',
+  grayLight: '#F7F7F7',
 
   danger: '#E53935',
   dangerBackground: '#FDECEA',
@@ -35,11 +67,11 @@ export default {
 
   blackBackground: '#0a0a0a',
   darkBackground: '#303030',
-  
+
 
   text: '#32343E',
   subtext: '#A0A5BA',
-  subtext2:  '#999',
+  subtext2: '#999',
 
   black: '#32343E',
   border: '#e2e8f0',

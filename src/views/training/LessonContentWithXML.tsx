@@ -55,12 +55,6 @@ export const LessonContentWithXML = ({ navigation, route }) => {
     navigation.getParent()?.setOptions({
       tabBarStyle: { display: 'none' }
     });
-
-    return () => {
-      navigation.getParent()?.setOptions({
-        tabBarStyle: { display: 'flex' }
-      });
-    };
   }, [navigation]);
 
   const { data: user } = useGetUser();

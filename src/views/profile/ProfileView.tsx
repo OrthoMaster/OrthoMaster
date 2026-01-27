@@ -9,11 +9,12 @@ import {
   Alert,
   Linking,
   RefreshControl,
-  Animated
+  Animated,
+  Image
 } from 'react-native';
 import { Divider, Dialog, Portal, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -213,9 +214,19 @@ export const ProfileView = ({ navigation, route }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profil</Text>
+        <View>
+          <Text style={styles.headerTitle}>Profil</Text>
+          <Text style={styles.userName}>{user.name + ' ' + user.first_name}</Text>
+          <Text style={styles.userProf}>{user.student_flg == true ? 'Étudiant' : user.profession}</Text>
+          
+          {
+            user && user.student_flg == true && user.expires_at !== null &&
+            <Text style={styles.userExpiresAt}>Expire le <Text
+              style={{ fontFamily: 'Poppins-Bold', color: Colors.red }}>{user.expires_at}</Text>
+            </Text>
+          }
+        </View>
         <TouchableOpacity style={styles.notificationButton} onPress={nofi}>
-
           {(more && more?.data?.hasNotifications) ?
             <Animated.View
               style={{
@@ -244,7 +255,6 @@ export const ProfileView = ({ navigation, route }) => {
             tintColor={Colors.primary}
           />
         }>
-
         {(errorUser || errorMore) && (
           <View style={[Styles.errorMessageContainer, { marginTop: Spacings.md }]}>
             <Text style={Styles.errorText}>Erreur de chargement des données, veuillez réessayer !</Text>
@@ -253,46 +263,71 @@ export const ProfileView = ({ navigation, route }) => {
 
         <View style={styles.content}>
           {/* User Info Card */}
-          <View style={styles.userCard}>
-            <View style={styles.userInfo}>
-              <View>
-                <Text style={styles.userName}>{user.name + ' ' + user.first_name}</Text>
-                <Text style={styles.userEmail}>{user.email}</Text>
-                {
-                  user && user.student_flg == true && user.expires_at !== null &&
-                  <View style={styles.studentWrapper}>
-                    <Text style={styles.studentLabel}>Étudiant</Text>
-                    <Text style={styles.userExpiresAt}>Expire le <Text
-                      style={{ fontFamily: 'Poppins-Bold', color: Colors.primary }}>{user.expires_at}</Text>
-                    </Text>
+          {more && more?.data?.companiesIsMember?.length > 0 &&
+            <View style={styles.userCard}>
+              <Text style={styles.teamTitle}>Équipe dont je fais partie :</Text>
+              <Divider />
+              {more?.data?.companiesIsMember.map((company, index) => (
+                <View key={'company-' + index} style={styles.companyWrapper}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.companyType}>{company.establishment?.name}</Text>
+                    <Text style={styles.companyName} numberOfLines={2} ellipsizeMode='tail'>{company.name}</Text>
+                    {/* <Text style={styles.companyData}>
+                    {(more?.data?.companyIsMember.postal_code || '') + ' ' + (more?.data.companyIsMember.city || '') + ' ' + (more?.data.companyIsMember.country || '')}
+                  </Text> */}
                   </View>
-                }
-              </View>
-            </View>
-            {more && more?.data?.companyIsMember && (
-              <>
-                <Divider style={{ marginVertical: Spacings.sm }} />
-                <View style={styles.companyWrapper}>
-                  <View>
-                    <Text style={styles.companyType}>{more?.data?.companyIsMember.establishment?.name}</Text>
-                    <Text style={styles.companyName}>{more?.data?.companyIsMember.name}</Text>
-                    <Text style={styles.companyData}>{(more?.data?.companyIsMember.postal_code || '') + ' ' + (more?.data.companyIsMember.city || '') + ' ' + (more?.data.companyIsMember.country || '')}</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => setVisibleConfirmExit(true)}>
+                  <TouchableOpacity onPress={() => setVisibleConfirmExit(true)} style={styles.quitButton}>
                     <Ionicons name='exit-outline' size={20} color={Colors.danger} />
                   </TouchableOpacity>
                 </View>
-              </>
-            )}
+              ))}
+            </View>
+          }
+
+          <View style={styles.cusButtonsContainer}>
+            <TouchableOpacity style={styles.shareButton}
+              activeOpacity={0.8}
+              onPress={() => {
+                orthomasterShare({
+                  message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
+                    user.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
+                    "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.\n\nhttps://auth.orthomaster.fr",
+                  url: "https://orthomaster.fr"
+                }, 'app invite', null)
+              }}
+            >
+              <Image
+                source={require('../../../assets/v2_images/icon/des-billets.png')}
+                style={styles.shareButtonIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.shareButtonText}>Inviter à rejoindre OrthoMaster</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.favoriteButton}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('settings-view')}
+            >
+              <Image
+                source={require('../../../assets/v2_images/icon/coeur.png')}
+                style={styles.favoriteButtonIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.favoriteButtonText}>Mes sujets préférés</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Espace Pro Card */}
           {!user.has_company && !user.student_flg &&
-            <TouchableOpacity style={styles.proCard} onPress={openCompanyInfo}>
-              <MaterialCommunityIcons name='account-group-outline' size={40} color={Colors.white} />
-              <View style={styles.proCardMetadata}>
+            <TouchableOpacity style={styles.proButton} onPress={openCompanyInfo}>
+              <Image
+                source={require('../../../assets/v2_images/icon/equipe.png')}
+                style={styles.proButtonIcon}
+                resizeMode="contain"
+              />
+              <View style={styles.proTextContainer}>
                 <Text style={styles.proCardTitle}>Créer votre Espace Pro</Text>
-                <Text style={styles.proCardText}>Devenir responsable pédagogique et explorer avec votre équipe.</Text>
+                <Text style={styles.proCardText}>pour utiliser OrthoMaster en équipe.</Text>
               </View>
             </TouchableOpacity>
           }
@@ -310,14 +345,9 @@ export const ProfileView = ({ navigation, route }) => {
             <MenuItem
               iconName="shield-checkmark-outline"
               title="Sécurité"
-              subtitle="Mis à jour votre mot de passe"
+              subtitle="Changer votre mot de passe"
               showWarning={user.reset_password_flg}
               onPress={() => (navigation.navigate('change-password'))}
-            />
-            <MenuItem
-              iconName="heart-outline"
-              title="Centres d'intérêt"
-              onPress={() => (navigation.navigate('settings-view'))}
             />
             <MenuItem
               iconName="folder-open-outline"
@@ -349,21 +379,6 @@ export const ProfileView = ({ navigation, route }) => {
               title="Politique de confidentialité"
               disableLeftIcon
               onPress={() => (Linking.openURL('https://www.orthomaster.fr/politique-de-confidentialit%C3%A9'))}
-            />
-            <MenuItem
-              iconName="share-social-outline"
-              title="Partager"
-              subtitle="Inviter à rejoindre OrthoMaster"
-              disableLeftIcon
-              isLast
-              onPress={() => {
-                orthomasterShare({
-                  message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
-                    user.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
-                    "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.\n\nhttps://espace.orthomaster.fr/inscription",
-                  url: "https://orthomaster.fr"
-                }, 'app invite', null)
-              }}
             />
           </View>
 
@@ -451,15 +466,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
     paddingBottom: Spacings.md,
-    paddingTop: Spacings.sm,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'flex-start'
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
   },
@@ -470,7 +484,8 @@ const styles = StyleSheet.create({
   userCard: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 24,
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.sm,
     marginBottom: 24,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
@@ -478,23 +493,25 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  userInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  teamTitle: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.purple,
+    marginBottom: Spacings.xs
   },
   userName: {
-    fontSize: 20,
-    lineHeight: 24,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 17,
+    fontWeight: '500',
+    fontFamily: 'Roboto',
     color: Colors.primary,
-    marginBottom: -4,
+    marginBottom: -2,
   },
-  userEmail: {
-    fontSize: 12,
+  userProf: {
+    fontSize: 11,
     fontFamily: 'Poppins-Regular',
-    color: Colors.text,
-    paddingLeft: Spacings.xxxs
+    color: Colors.subtext2,
+    marginBottom: -2,
+    marginLeft: Spacings.xxxs,
   },
   studentWrapper: {
     marginTop: Spacings.xs,
@@ -511,63 +528,54 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   userExpiresAt: {
-    fontSize: 8,
+    fontSize: 9,
     fontFamily: 'Poppins-Light',
     color: Colors.gray,
-    marginLeft: Spacings.xxxs
+    marginLeft: Spacings.xxxs,
+    marginTop: Spacings.xxxs
   },
 
   companyWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: Spacings.sm,
+    flex: 1,
+    marginTop: Spacings.sm,
   },
   companyType: {
-    fontSize: 9,
-    marginBottom: -3,
+    fontSize: 11,
+    marginBottom: Spacings.xxxs,
     paddingLeft: 1,
     fontFamily: 'Poppins-Medium',
     color: Colors.gray,
   },
   companyName: {
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 18,
     fontFamily: 'Poppins-Medium',
     color: Colors.blue,
-    marginBottom: -3,
+    marginBottom: Spacings.xxxs,
   },
   companyData: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Poppins-Light',
-    color: Colors.text,
+    color: Colors.subtext,
+  },
+  quitButton: {
+    paddingLeft: Spacings.md,
   },
 
-  proCard: {
-    backgroundColor: Colors.blue,
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.md,
-  },
-  proCardMetadata: {
-    flex: 1,
-    paddingRight: Spacings.xl
-  },
   proCardTitle: {
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
   },
   proCardText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Poppins-Light',
     color: Colors.white,
+    marginTop: -2
   },
 
   section: {
@@ -627,6 +635,8 @@ const styles = StyleSheet.create({
 
   // Noti
   notificationButton: {
+    paddingTop: Spacings.md,
+    paddingLeft: Spacings.md,
     position: 'relative',
   },
   iconContainer: {
@@ -637,4 +647,81 @@ const styles = StyleSheet.create({
     top: -2,
     right: -8,
   },
+
+  // Buttons
+  cusButtonsContainer: {
+    marginTop: Spacings.md,
+  },
+  shareButton: {
+    flex: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: Spacings.xl,
+  },
+  shareButtonIcon: {
+    width: 70,
+    height: 70,
+    position: 'absolute',
+    left: 10,
+    top: -14,
+    zIndex: 100,
+  },
+  shareButtonText: {
+    width: '100%',
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+    backgroundColor: '#FF4B4B',
+    paddingVertical: Spacings.sm,
+    paddingLeft: 100,
+    borderRadius: 40,
+  },
+  favoriteButton: {
+    flex: 2,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: Spacings.xl,
+  },
+  favoriteButtonIcon: {
+    width: 60,
+    height: 60,
+    position: 'absolute',
+    right: 20,
+    top: -10,
+    zIndex: 100,
+  },
+  favoriteButtonText: {
+    width: '100%',
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+    backgroundColor: Colors.primaryLight,
+    paddingVertical: Spacings.sm,
+    paddingLeft: 100,
+    borderRadius: 40,
+  },
+
+  proButton: {
+    flex: 1,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: Spacings.xl,
+    backgroundColor: Colors.purple,
+    paddingVertical: Spacings.sm,
+  },
+  proButtonIcon: {
+    width: 80,
+    height: 80,
+    position: 'absolute',
+    left: 10,
+    bottom: 0,
+    zIndex: 100,
+  },
+  proTextContainer: {
+    width: '100%',
+    paddingLeft: 100,
+  }
 });

@@ -17,7 +17,6 @@ export const ToolsView = ({ navigation }) => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-
       <View style={{
         width: "100%",
         flex: 1,
@@ -25,17 +24,16 @@ export const ToolsView = ({ navigation }) => {
         padding: 30,
       }}>
 
+        <LearningSupportButton onPress={() => { setShowLearningSupportMenu(true) }} />
+        <View style={{ height: 10 }} />
         <QueChoisirButton
           onPress={() => {
             setShowQueChoisirMenu(true)
           }} />
         <View style={{ height: 10 }} />
         <GuidePatientButton onPress={() => { setShowGuidePatientMenu(true) }} />
-        <View style={{ height: 10 }} />
-        <LearningSupportButton onPress={() => { setShowLearningSupportMenu(true) }} />
       </View>
-
-
+      
       <Modal
         isVisible={showQueChoisirMenu}
       >

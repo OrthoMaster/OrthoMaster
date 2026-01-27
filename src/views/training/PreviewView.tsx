@@ -59,7 +59,7 @@ const CourseItem = ({ course }: { course: Item }) => {
         {course.package.image ?
           <Image
             source={{ uri: process.env.EXPO_PUBLIC_S3_URL + course.package.image }}
-            style={[styles.courseImage, { tintColor: Colors.blue }]}
+            style={styles.courseImage}
             resizeMode="contain"
           />
           :
@@ -601,10 +601,10 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
   },
   backButton: {
     padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 16,
@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.blueBackground,
+    backgroundColor: Colors.blue,
     marginRight: Spacings.sm,
     padding: Spacings.xxs
   },

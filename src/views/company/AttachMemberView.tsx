@@ -180,12 +180,7 @@ export const AttachMemberView = ({ navigation, route }) => {
           >
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Assigner les membres</Text>
-            <Text style={styles.headerSubtitle}>
-              Sélectionnez les membres
-            </Text>
-          </View>
+          <Text style={styles.headerTitle}>Sélectionez les bénéficiaires</Text>
 
         </View>
         <TouchableOpacity onPress={() => { navigation.popToTop() }}>
@@ -322,22 +317,16 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
     flex: 1,
   },
   backButton: {
     padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 16,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.gray,
-    marginTop: -4,
   },
 
   // Select All Section
@@ -345,8 +334,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
     paddingVertical: Spacings.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -528,7 +515,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.md,
-    paddingBottom: Spacings.xxl,
+    paddingBottom: Spacings.xxxl,
     borderTopWidth: 1,
     borderTopColor: Colors.line,
     flexDirection: 'row',

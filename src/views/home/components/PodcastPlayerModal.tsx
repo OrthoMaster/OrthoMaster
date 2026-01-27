@@ -330,8 +330,8 @@ export const PodcastPlayerModal: React.FC<PodcastPlayerModalProps> = ({
 
                 <TouchableOpacity onPress={handleSubscribeTopic} style={styles.moreButton}>
                   {subscribed
-                    ? <Ionicons name="notifications" size={24} color={Colors.primary} />
-                    : <Ionicons name="notifications-outline" size={24} color={Colors.white} />
+                    ? <Ionicons name="heart" size={24} color={Colors.primary} />
+                    : <Ionicons name="heart-outline" size={24} color={Colors.white} />
                   }
                 </TouchableOpacity>
               </View>

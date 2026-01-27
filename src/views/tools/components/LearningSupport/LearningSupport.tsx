@@ -29,7 +29,7 @@ export const LearningSupportButton: React.FC<{ onPress: () => any }> = ({ onPres
                 marginBottom: 10
             }}
         />
-        <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>Supports pédagogiques</Text>
+        <Text style={{ fontSize: 20, color: '#fff', fontFamily: 'Poppins-Medium' }}>Supports pédagogiques</Text>
     </TouchableOpacity>)
 }
 

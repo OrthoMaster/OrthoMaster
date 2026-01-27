@@ -38,7 +38,7 @@ import { PodcastPlayerModal } from './components/PodcastPlayerModal';
 
 
 export const HomeView = ({ navigation, route }) => {
-  const actionChangeScreen = route.parame?.action ?? null;
+  const actionChangeScreen = route.params?.action ?? null;
 
   /** Get user */
   const { data: user } = useGetUser();
@@ -75,28 +75,33 @@ export const HomeView = ({ navigation, route }) => {
     retryDelay: 2000
   });
 
-  const hasDailyQuestion = dailyContentData && dailyContentData.question;
-  const hasDailyPodcast = dailyContentData && dailyContentData.podcast;
+  const hasDailyQuestions = dailyContentData?.questions && dailyContentData.questions.length > 0;
+  const hasDailyPodcasts = dailyContentData?.podcasts && dailyContentData.podcasts.length > 0;
 
-  // Daily question
+  // Daily question - lưu question được chọn
   const [showDailyQuestion, setShowDailyQuestion] = useState(false);
-  // Podcast
+  const [selectedQuestionData, setSelectedQuestionData] = useState(null);
+  
+  // Podcast - lưu podcast được chọn
   const [showPodcast, setShowPodcast] = useState(false);
+  const [selectedPodcastData, setSelectedPodcastData] = useState(null);
 
   // Handle open modal from pushing notification
   useEffect(() => {
-    // Daily question
-    if (actionChangeScreen == 'daily-question' && hasDailyQuestion) {
+    // Daily question - mở question đầu tiên
+    if (actionChangeScreen == 'daily-question' && hasDailyQuestions) {
       const timeout = setTimeout(() => {
+        setSelectedQuestionData(dailyContentData.questions[0]);
         setShowDailyQuestion(true);
       }, 1000);
 
       return () => clearTimeout(timeout);
     }
 
-    // Podcast
-    if (actionChangeScreen == 'podcast' && hasDailyPodcast) {
+    // Podcast - mở podcast đầu tiên
+    if (actionChangeScreen == 'podcast' && hasDailyPodcasts) {
       const timeout = setTimeout(() => {
+        setSelectedPodcastData(dailyContentData.podcasts[0]);
         setShowPodcast(true);
       }, 1000);
 
@@ -104,7 +109,7 @@ export const HomeView = ({ navigation, route }) => {
     }
 
     return;
-  }, [actionChangeScreen, hasDailyQuestion, hasDailyPodcast]);
+  }, [actionChangeScreen, hasDailyQuestions, hasDailyPodcasts]);
 
 
   /** Handle reload screen */
@@ -164,10 +169,22 @@ export const HomeView = ({ navigation, route }) => {
     outputRange: ['0deg', '-10deg', '0deg', '10deg', '0deg'],
   });
 
+  // Handle open question modal
+  const handleOpenQuestion = (questionData) => {
+    setSelectedQuestionData(questionData);
+    setShowDailyQuestion(true);
+  };
+
+  // Handle open podcast modal
+  const handleOpenPodcast = (podcastData) => {
+    setSelectedPodcastData(podcastData);
+    setShowPodcast(true);
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }}
       edges={Platform.OS === 'android' ? ['top', 'left', 'right'] : ['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" animated={true} backgroundColor={Colors.white} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}
         showsVerticalScrollIndicator={false}
@@ -186,7 +203,7 @@ export const HomeView = ({ navigation, route }) => {
           onToolPress={() => navigation.navigate('tools')}
         />
 
-        {(hasDailyQuestion || hasDailyPodcast) && (
+        {(hasDailyQuestions || hasDailyPodcasts) && (
           <>
             <View style={styles.carouselHeader}>
               <Text style={styles.actionlHeaderTitle}>Actions du jour</Text>
@@ -197,18 +214,19 @@ export const HomeView = ({ navigation, route }) => {
               contentContainerStyle={styles.bannerScrollContent}
               style={styles.bannerScrollView}
             >
-              {/* Quizz Banner */}
-              {hasDailyQuestion &&
+              {/* Quizz Banners - map qua tất cả questions */}
+              {hasDailyQuestions && dailyContentData.questions.map((questionData, index) => (
                 <TouchableOpacity
+                  key={`question-${index}`}
                   style={[styles.dailyQuestionBanner, styles.quizzBanner]}
-                  onPress={() => setShowDailyQuestion(true)}
+                  onPress={() => handleOpenQuestion(questionData)}
                 >
                   <View style={styles.dailyQuestionIconContainer}>
                     <Animated.View style={{ transform: [{ rotate: shakeRotation }] }}>
                       <Ionicons name="bulb" size={28} color={Colors.blue} />
                     </Animated.View>
 
-                    {dailyContentData.has_answered && (
+                    {questionData.has_answered && (
                       <View style={styles.answeredBadge}>
                         <Ionicons name="checkmark-sharp" size={14} color={Colors.blue} />
                       </View>
@@ -217,18 +235,18 @@ export const HomeView = ({ navigation, route }) => {
                   <View style={styles.dailyQuestionContent}>
                     <Text style={styles.dailyQuestionTitle}>Quizz</Text>
                     <Text style={styles.dailyQuestionSubtitle} numberOfLines={1} ellipsizeMode='tail'>
-                      {dailyContentData.question?.topic?.name}
+                      {questionData.question?.topic?.name}
                     </Text>
                   </View>
                 </TouchableOpacity>
-              }
-              {/* Podcast Banner */}
-              {hasDailyPodcast &&
+              ))}
+
+              {/* Podcast Banners - map qua tất cả podcasts */}
+              {hasDailyPodcasts && dailyContentData.podcasts.map((podcastData, index) => (
                 <TouchableOpacity
+                  key={`podcast-${index}`}
                   style={[styles.dailyQuestionBanner, styles.podcastBanner]}
-                  onPress={() => {
-                    setShowPodcast(true);
-                  }}
+                  onPress={() => handleOpenPodcast(podcastData)}
                 >
                   <View style={[styles.dailyQuestionIconContainer, styles.podcastIconContainer]}>
                     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -237,12 +255,13 @@ export const HomeView = ({ navigation, route }) => {
                   </View>
                   <View style={styles.dailyQuestionContent}>
                     <Text style={styles.dailyQuestionTitle}>Podcast</Text>
-                    <Text style={styles.dailyQuestionSubtitle} numberOfLines={1} ellipsizeMode='tail'>
-                      {dailyContentData.podcast.title}
+                    <Text style={styles.dailyPodcastSubtitle} numberOfLines={1} ellipsizeMode='tail'>
+                      {podcastData.podcast.title}
                     </Text>
+                    <Text style={styles.dailyPodcastDuration}>{podcastData.podcast.duration}</Text>
                   </View>
                 </TouchableOpacity>
-              }
+              ))}
             </ScrollView>
           </>
         )}
@@ -254,13 +273,9 @@ export const HomeView = ({ navigation, route }) => {
               <View style={[styles.carouselHeaderButton, { marginRight: Spacings.lg }]}>
                 <ActivityIndicator size="small" color={Colors.gray} />
               </View>
-            ) : isErrorVideo ? (
+            ) : isErrorVideo && (
               <Pressable style={styles.carouselHeaderButton} onPress={reloadVideos}>
                 <Text style={styles.carouselHeaderViewMoreButton}>Recharger</Text>
-              </Pressable>
-            ) : (
-              <Pressable style={styles.carouselHeaderButton} onPress={() => navigation.navigate('media')}>
-                <Text style={styles.carouselHeaderViewMoreButton}>Voir tous</Text>
               </Pressable>
             )}
           </View>
@@ -274,31 +289,40 @@ export const HomeView = ({ navigation, route }) => {
       </ScrollView >
 
 
-      {/* Daily question */}
-      {hasDailyQuestion && (
+      {/* Daily question modal */}
+      {selectedQuestionData && (
         <DailyQuestionModal
           visible={showDailyQuestion}
-          data={dailyContentData}
+          data={{
+            question: selectedQuestionData.question,
+            user_answer_id: selectedQuestionData.user_answer_id,
+            has_answered: selectedQuestionData.has_answered,
+            has_topic_question: selectedQuestionData.has_topic,
+          }}
           onClose={() => {
-            if (!dailyContentData.has_answered) {
+            if (!selectedQuestionData.has_answered) {
               refetchDailyContent();
             }
             setShowDailyQuestion(false);
+            setSelectedQuestionData(null);
           }}
         />
       )}
 
-      {/* Podcast */}
-      {hasDailyPodcast && (
+      {/* Podcast modal */}
+      {selectedPodcastData && (
         <PodcastPlayerModal
           visible={showPodcast}
-          onClose={() => setShowPodcast(false)}
-          audioUrl={dailyContentData.podcast.link}
-          thumbnailUrl={dailyContentData.podcast.image}
-          title={dailyContentData.podcast.title}
-          subtitle={dailyContentData.podcast.author}
-          topic={dailyContentData.podcast.topic}
-          isSubcribed={dailyContentData.has_topic_podcast}
+          onClose={() => {
+            setShowPodcast(false);
+            setSelectedPodcastData(null);
+          }}
+          audioUrl={selectedPodcastData.podcast.link}
+          thumbnailUrl={selectedPodcastData.podcast.image}
+          title={selectedPodcastData.podcast.title}
+          subtitle={selectedPodcastData.podcast.author}
+          topic={selectedPodcastData.podcast.topic}
+          isSubcribed={selectedPodcastData.has_topic}
         />
       )}
     </SafeAreaView >
@@ -414,14 +438,24 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   dailyQuestionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.white,
     fontFamily: 'Poppins-Medium',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   dailyQuestionSubtitle: {
     fontSize: 13,
     color: Colors.white,
     fontFamily: 'Poppins-Regular',
   },
+  dailyPodcastSubtitle: {
+    fontSize: 11,
+    color: Colors.white,
+    fontFamily: 'Poppins-Regular',
+  },
+  dailyPodcastDuration: {
+    fontSize: 10,
+    color: Colors.grayLight,
+    fontFamily: 'Poppins-Regular',
+  }
 })

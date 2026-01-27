@@ -46,12 +46,16 @@ export const FlashStack = ({}) => {
           title: 'Médias',
           headerTintColor: '#fff',
           headerStyle: {
-            backgroundColor: "#ffaf31"
+            backgroundColor: "#FF4B4B",
+            height: 120,
           },
           headerTitleStyle: {
             fontSize: 20,
-            fontWeight: 'bold'
-          }
+            fontFamily: 'Poppins-Medium',
+            marginLeft: 8,
+            marginBottom: 8,
+          },
+          headerTitleAlign: 'left'
         }}
       />
 

@@ -13,7 +13,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { TextInput } from 'react-native-paper';
 
 import Colors from '../../../constants/Colors';
@@ -151,7 +151,7 @@ export const ChangePasswordView = ({ navigation }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={back}>
+        <TouchableOpacity style={styles.backButton} onPress={back}>
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Sécurité</Text>
@@ -189,8 +189,8 @@ export const ChangePasswordView = ({ navigation }) => {
               right={
                 <TextInput.Icon
                   icon={() => (
-                    <Ionicons
-                      name={showNewPassword ? "eye-off-outline" : "eye-outline"}
+                    <Feather
+                      name={showNewPassword ? 'eye-off' : 'eye'}
                       size={20}
                       color={Colors.gray}
                     />
@@ -233,8 +233,8 @@ export const ChangePasswordView = ({ navigation }) => {
               right={
                 <TextInput.Icon
                   icon={() => (
-                    <Ionicons
-                      name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                    <Feather
+                      name={showNewPassword ? 'eye-off' : 'eye'}
                       size={20}
                       color={Colors.gray}
                     />
@@ -283,7 +283,7 @@ export const ChangePasswordView = ({ navigation }) => {
                 styles.requirementText,
                 formData.newPassword === formData.confirmPassword && formData.confirmPassword !== '' && styles.requirementTextValid
               ]}>
-                Les mots de passe correspondent
+                Les deux mots de passe doivent correspondre
               </Text>
             </View>
           </View>
@@ -389,6 +389,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center'
+  },
+  backButton: {
+    padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 18,

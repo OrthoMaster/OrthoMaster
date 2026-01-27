@@ -207,11 +207,11 @@ export const CompanyInfoView = ({ navigation, route }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={back}>
+        <TouchableOpacity style={styles.backButton} onPress={back}>
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          { mode == 'create' ? 'Créer Espace Pro' : 'Établissement'}
+          {mode == 'create' ? 'Créer Espace Pro' : 'Établissement'}
         </Text>
       </View>
       <KeyboardAvoidingView
@@ -524,7 +524,7 @@ export const CompanyInfoView = ({ navigation, route }) => {
             onPress={handleSubmit}
           >
             <Text style={Styles.btnPrimaryText}>
-              { mode == 'create' ? 'Créer' : 'Modifiér'}
+              {mode == 'create' ? 'Créer' : 'Modifiér'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -631,6 +631,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center'
   },
+  backButton: {
+    padding: 4,
+    paddingRight: Spacings.md
+  },
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Poppins-Medium',
@@ -691,6 +695,7 @@ const styles = StyleSheet.create({
   },
   optionsList: {
     paddingHorizontal: Spacings.lg,
+    paddingBottom: Spacings.xxxl
   },
   optionItem: {
     flexDirection: 'row',

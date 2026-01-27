@@ -54,7 +54,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   );
 
   const queryClient = useQueryClient();
-  const { pkg, headerColor = Colors.blue } = route.params || {};
+  const { pkg, headerColor = Colors.blue, secondaryColor = Colors.blue2 } = route.params || {};
 
   const { data: cartData } = useQuery({
     queryKey: ['cart'],
@@ -91,11 +91,11 @@ export const InactiveTrainingView = ({ navigation, route }) => {
         style={[styles.sectionContainer, isLastInRow && { marginRight: 0 }]}
       >
         <View style={styles.sectionImageWrapper}>
-          <View style={[styles.sectionImagePlaceholder, { borderColor: color ?? Colors.blue }]}>
+          <View style={[styles.sectionImagePlaceholder, { borderColor: color, backgroundColor: color }]}>
             {image ?
               <Image
                 source={{ uri: process.env.EXPO_PUBLIC_S3_URL + image }}
-                style={[styles.sectionImage, {tintColor: color ?? Colors.blue}]}
+                style={styles.sectionImage}
                 resizeMode='contain'
               />
               :
@@ -283,21 +283,21 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.wrapper, { backgroundColor: headerColor || Colors.blue }]} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={headerColor || Colors.blue} />
+    <SafeAreaView style={[styles.wrapper, { backgroundColor: secondaryColor || Colors.blue }]} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={secondaryColor || Colors.blue} />
 
       <GestureHandlerRootView style={{ flex: 1 }}>
         {/* Header with colored background and logo */}
-        <View style={[styles.headerContainer, { backgroundColor: headerColor }]}>
+        <View style={[styles.headerContainer, { backgroundColor: secondaryColor }]}>
           <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-            <Ionicons name="close" size={24} color={Colors.white} />
+            <Ionicons name="close" size={24} color={headerColor} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <View style={styles.logoContainer}>
+            <View style={[styles.logoContainer, {backgroundColor: headerColor}]}>
               {pkg.image ?
                 <Image
                   source={{ uri: process.env.EXPO_PUBLIC_S3_URL + pkg.image }}
-                  style={[styles.logo, { tintColor: headerColor }]}
+                  style={[styles.logo]}
                   resizeMode="contain"
                 />
                 :
@@ -484,10 +484,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    width: 120, // Tăng kích thước logo
+    width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.blue,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 3,
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    borderWidth: 2,
+
   },
   sectionImage: {
     width: 65,

@@ -12,7 +12,7 @@ interface StepperProps {
   currentStep: number;
 }
 
-const steps = ['Paiement', 'Membres', 'Formations', 'Complété'];
+const steps = ['Financement', 'Membres', 'Formations', 'Complété'];
 
 const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
   return (
@@ -68,9 +68,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: Colors.grayLight,
     justifyContent: 'center',
     alignItems: 'center',
@@ -86,20 +86,20 @@ const styles = StyleSheet.create({
     borderColor: Colors.blue,
   },
   stepNumber: {
-    fontSize: 8,
+    fontSize: 10,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
   },
   stepNumberActive: {
-    fontSize: 9,
+    fontSize: 12,
     fontFamily: 'Poppins-Bold',
     color: Colors.white,
   },
   stepLabel: {
-    fontSize: 8,
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
-    marginTop: Spacings.xxs,
+    marginTop: Spacings.xs,
     textAlign: 'center',
   },
   stepLabelActive: {
@@ -109,9 +109,9 @@ const styles = StyleSheet.create({
   stepLine: {
     height: 1,
     backgroundColor: Colors.gray,
-    flex: 0.5,
-    marginHorizontal: -8,
-    marginTop: -14,
+    flex: 0.2,
+    marginHorizontal: -30,
+    marginTop: -20,
   },
   stepLineActive: {
     backgroundColor: Colors.blue,

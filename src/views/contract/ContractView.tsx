@@ -1,4 +1,4 @@
-// ContractView.tsx - Enhanced with API integration and multi-group support
+// ContractView.tsx - Fixed hook ordering
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -33,22 +33,13 @@ interface ContractData {
 }
 
 export const ContractView = ({ navigation, route }) => {
-  // Hide bottom nav
-  useEffect(() => {
-    // Hide
-    navigation.getParent()?.setOptions({
-      tabBarStyle: { display: 'none' }
-    });
+  // Query client
+  const queryClient = useQueryClient();
 
-    // Re-Show when unmount
-    return () => {
-      navigation.getParent()?.setOptions({
-        tabBarStyle: { display: 'flex' }
-      });
-    };
-  }, [navigation]);
+  // Refs
+  const webViewRef = useRef(null);
 
-  // Get cart Id
+  // Get cart Id from route params
   const { cartId } = route.params;
 
   // Fetch contract data
@@ -59,7 +50,9 @@ export const ContractView = ({ navigation, route }) => {
     retryDelay: 1000,
   });
 
-  // State management
+  const [webViewLoading, setWebViewLoading] = useState(false);
+  
+  // All other state management
   const [selectedOrgIndex, setSelectedOrgIndex] = useState(0);
   const [selectedPdfIndex, setSelectedPdfIndex] = useState(0);
   const [signatureBase64, setSignatureBase64] = useState<string>('');
@@ -67,13 +60,19 @@ export const ContractView = ({ navigation, route }) => {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const queryClient = useQueryClient();
 
   // User info
   const [location, setLocation] = useState('');
   const [fullName, setFullName] = useState('');
 
-  const webViewRef = useRef(null);
+  // Helper functions
+  const getPdfUrl = (url: string) => {
+    if (Platform.OS === 'android') {
+      // Use Google Docs Viewer for Android
+      return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+    }
+    return url;
+  };
 
   // Get current PDF URL
   const getCurrentPdfUrl = () => {
@@ -188,11 +187,14 @@ export const ContractView = ({ navigation, route }) => {
     setShowCelebration(false);
     navigation.popToTop();
   };
+  
   const handleViewContracts = () => {
     setShowCelebration(false);
     navigation.navigate('profile', { screen: 'document-view' });
   };
 
+  // ✅ NOW conditional returns come AFTER all hooks
+  
   // Loading state
   if (isLoading) {
     return (
@@ -210,6 +212,9 @@ export const ContractView = ({ navigation, route }) => {
         <Text style={styles.errorText}>Erreur de chargement</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
           <Text style={styles.retryButtonText}>Réessayer</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.retryButtonText}>Retourner</Text>
         </TouchableOpacity>
       </View>
     );
@@ -299,18 +304,31 @@ export const ContractView = ({ navigation, route }) => {
       {/* PDF Viewer via WebView */}
       <View style={styles.pdfContainer}>
         {currentPdfUrl ? (
-          <WebView
-            ref={webViewRef}
-            source={{ uri: currentPdfUrl }}
-            style={styles.webview}
-            startInLoadingState={true}
-            renderLoading={() => (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#007AFF" />
-                <Text style={styles.loadingText}>Chargement du PDF...</Text>
+          <>
+            <WebView
+              ref={webViewRef}
+              source={{ uri: getPdfUrl(currentPdfUrl) }}
+              style={styles.webview}
+              startInLoadingState={true}
+              renderLoading={() => (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#007AFF" />
+                  <Text style={styles.loadingText}>Chargement du PDF...</Text>
+                </View>
+              )}
+              onLoadStart={() => { setWebViewLoading(true); }}
+              onLoad={() => { setWebViewLoading(false); }}
+              onLoadEnd={() => { setWebViewLoading(false); }}
+              onError={() => { setWebViewLoading(false); }}
+            />
+            {/* Loading Overlay */}
+            {webViewLoading && (
+              <View style={styles.webViewLoadingOverlay}>
+                <ActivityIndicator size="large" color={Colors.info} />
+                <Text style={styles.loadingText}>Chargement...</Text>
               </View>
             )}
-          />
+          </>
         ) : (
           <View style={styles.centerContainer}>
             <Text>Aucun PDF disponible</Text>
@@ -602,10 +620,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.sm,
     paddingVertical: Spacings.xs,
     borderRadius: 8,
+    marginBottom: Spacings.md,
   },
   retryButtonText: {
     color: Colors.white,
     fontFamily: 'Poppins-Medium',
+  },
+  returnButton: {
+    backgroundColor: Colors.gray,
+    paddingHorizontal: Spacings.sm,
+    paddingVertical: Spacings.xs,
+    borderRadius: 8,
   },
 
   // Header
@@ -617,10 +642,10 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
   },
   backButton: {
     padding: 4,
+    paddingRight: Spacings.md
   },
   headerTitle: {
     fontSize: 16,
@@ -628,10 +653,9 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   headerSubtitle: {
-    fontSize: 11,
+    fontSize: 14,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
-    marginTop: -4,
   },
 
   // Tabs
@@ -674,6 +698,13 @@ const styles = StyleSheet.create({
   },
 
   // PDF Pagination
+  webViewLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
   pdfPaginationContainer: {
     backgroundColor: Colors.white,
     padding: Spacings.xs,
@@ -878,7 +909,7 @@ const styles = StyleSheet.create({
   },
   infoModalContainer: {
     backgroundColor: Colors.white,
-    paddingBottom: Spacings.lg,
+    paddingBottom: Spacings.xxxl,
   },
   infoModalHeader: {
     flexDirection: 'row',
