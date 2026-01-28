@@ -1,25 +1,26 @@
 import React, { useEffect, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ImageBackground, StyleSheet, Animated, Image, Text } from 'react-native';
+import { ImageBackground, StyleSheet, Animated, Image } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 SplashScreen.preventAutoHideAsync();
 
 interface CustomSplashScreenProps {
   onFinish: () => void;
+  appIsReady: boolean;
 }
 
-const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => {
+const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish, appIsReady }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.7)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     // Hide splash screen native
     SplashScreen.hideAsync();
 
-    // Animation
+    // Animation fade in
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -31,19 +32,47 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
         friction: 4,
         useNativeDriver: true,
       }),
-    ]).start();
-
-    const timer = setTimeout(() => {
-      onFinish();
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    }, 2500);
-
-    return () => clearTimeout(timer);
+    ]).start(() => {
+      Animated.loop(
+        Animated.sequence([
+          // First time
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          // Second time
+          Animated.timing(pulseAnim, {
+            toValue: 1.08,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          // Stop 2s
+          Animated.delay(2000),
+        ])
+      ).start();
+    });
   }, []);
+
+  useEffect(() => {
+    if (appIsReady) {
+      const timer = setTimeout(() => {
+        onFinish();
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [appIsReady, onFinish]);
 
   return (
     <SafeAreaProvider>
@@ -57,7 +86,10 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish }) => 
             styles.content,
             {
               opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
+              transform: [
+                { scale: scaleAnim },
+                { scale: pulseAnim },
+              ],
             },
           ]}
         >
@@ -94,7 +126,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.md,
   },
   brand: {
-    height: 30,
+    height: 20,
     width: 150,
   },
 });

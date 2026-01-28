@@ -610,7 +610,7 @@ export const CompanyView = ({ navigation, route }) => {
 
             {/* Title */}
             <View style={styles.addMemberHeader}>
-              <Ionicons name="person-add" size={32} color={Colors.blue} />
+              <Ionicons name="person-add" size={50} color={Colors.blue} />
               <Text style={styles.addMemberTitle}>Inviter un membre</Text>
             </View>
 
@@ -737,14 +737,9 @@ export const CompanyView = ({ navigation, route }) => {
                   </View>
                 </View>
               </View>
-
-
-              <View style={styles.addPkgInfoNote}>
-                <Ionicons name="refresh" size={20} color={Colors.gray} />
-                <Text style={styles.addPkgInfoNoteText}>
-                  Répétez l'opération avec un autre organisme (selon vos besoins)
-                </Text>
-              </View>
+              <Text style={[styles.addPkgInfoDescription, { marginBottom: Spacings.lg }]}>
+                Répétez l'opération avec un autre organisme (selon vos besoins).
+              </Text>
 
               <TouchableOpacity
                 style={styles.sendInviteButton}
@@ -1125,7 +1120,7 @@ const styles = StyleSheet.create({
     gap: Spacings.xs,
   },
   sendInviteButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
   },
@@ -1305,14 +1300,14 @@ const styles = StyleSheet.create({
     padding: Spacings.lg,
   },
   addPkgInfoDescription: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Poppins-Regular',
     color: Colors.text,
-    lineHeight: 20,
     marginBottom: Spacings.md,
+    textAlign: 'justify',
   },
   addPkgInfoSection: {
-    marginBottom: Spacings.md,
+    marginBottom: Spacings.xs,
   },
   addPkgInfoSectionTitle: {
     fontSize: 14,

@@ -70,15 +70,3 @@ export const ToolsView = ({ navigation }) => {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-
-  pageTitle: {
-    fontSize: 35,
-    fontWeight: 'bold',
-    alignSelf: 'flex-start',
-    marginLeft: 40,
-    marginVertical: 30
-  },
-})
-

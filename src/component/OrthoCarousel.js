@@ -38,7 +38,7 @@ const CarousselCard = ({ item, onPress }) => {
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.author}>{item.author}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <AntDesign name="clock-circle" size={10} color={Colors.text} style={{ paddingRight: Spacings.xxs }} />
+          <AntDesign name="clock-circle" size={10} color={Colors.gray} style={{ paddingRight: Spacings.xxs }} />
           <Text style={styles.metaText}>{item.duration}</Text>
         </View>
         {item.tags &&
@@ -81,23 +81,24 @@ const styles = StyleSheet.create({
     marginVertical: Spacings.xs
   },
   image: {
-    flex: 0.8,
+    wdith: 160,
   },
   detail: {
     flex: 1.2,
-    paddingLeft: Spacings.md,
+    paddingLeft: Spacings.sm,
+    justifyContent: 'center'
   },
   title: {
     fontWeight: '600',
     fontSize: 14,
     lineHeight: 14,
     marginBottom: Spacings.xxxs,
-    marginTop: Spacings.xs,
   },
   author: {
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.primary,
     fontWeight: '500',
+    fontFamily: 'Roboto',
     marginBottom: Spacings.xxs,
   },
   description: {
@@ -106,13 +107,14 @@ const styles = StyleSheet.create({
     color: Colors.subtext,
   },
   thumbnail: {
-    width: 'auto',
-    height: 120,
+    width: 160,
+    height: 90,
     resizeMode: 'cover',
     borderRadius: 8
   },
   metaText: {
-    fontSize: 10,
-    fontFamily: 'Poppins-Light'
+    fontSize: 11,
+    color: Colors.gray,
+    fontFamily: 'Poppins-Regular'
   }
 })

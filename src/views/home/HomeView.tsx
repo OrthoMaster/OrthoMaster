@@ -10,9 +10,10 @@ import {
   TouchableOpacity,
   Animated,
   Platform,
-  Linking,
-  RefreshControl
+  RefreshControl,
+  Alert
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -33,15 +34,23 @@ import { useGetUser } from '../../hooks/auth.hook';
 
 import { DailyQuestionModal } from './components/DailyQuestionModal';
 import { getDailyAction } from '../../services/v2/ContentService';
+import { getPreFormData, updateSettings, sendError } from '../../services/v2/AuthService';
 
 import { PodcastPlayerModal } from './components/PodcastPlayerModal';
+import { TopicsOnboardingModal } from './components/TopicsOnboardingModal';
 
+interface Topic {
+  id: string;
+  name: string;
+  image?: string;
+  description?: string;
+}
 
 export const HomeView = ({ navigation, route }) => {
   const actionChangeScreen = route.params?.action ?? null;
 
   /** Get user */
-  const { data: user } = useGetUser();
+  const { data: user, refetch: refetchUser } = useGetUser();
 
   /** Videos */
   const { data: videoData, isLoading: isLoadingVideo, isFetching: isFetchingVideo, isError: isErrorVideo, refetch: refetchVideos } = useQuery({
@@ -78,11 +87,11 @@ export const HomeView = ({ navigation, route }) => {
   const hasDailyQuestions = dailyContentData?.questions && dailyContentData.questions.length > 0;
   const hasDailyPodcasts = dailyContentData?.podcasts && dailyContentData.podcasts.length > 0;
 
-  // Daily question - lưu question được chọn
+  // Daily question
   const [showDailyQuestion, setShowDailyQuestion] = useState(false);
   const [selectedQuestionData, setSelectedQuestionData] = useState(null);
-  
-  // Podcast - lưu podcast được chọn
+
+  // Podcast
   const [showPodcast, setShowPodcast] = useState(false);
   const [selectedPodcastData, setSelectedPodcastData] = useState(null);
 
@@ -110,7 +119,6 @@ export const HomeView = ({ navigation, route }) => {
 
     return;
   }, [actionChangeScreen, hasDailyQuestions, hasDailyPodcasts]);
-
 
   /** Handle reload screen */
   const reload = () => {
@@ -181,6 +189,74 @@ export const HomeView = ({ navigation, route }) => {
     setShowPodcast(true);
   };
 
+  /** Topics onboarding */
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [topics, setTopics] = useState<Topic[]>([]);
+
+  // Load topics data
+  const { data: preData, isLoading: isLoadingTopics } = useQuery({
+    queryKey: ['pre-form-data-profile'],
+    queryFn: () => getPreFormData(),
+  });
+
+  // Set topics from API
+  useEffect(() => {
+    if (preData?.data?.topics && user.settings?.topics?.length == 0) {
+      setTopics(preData.data.topics);
+    }
+  }, [preData]);
+
+  // Check AsyncStorage
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user || isLoadingTopics || topics.length === 0) return;
+
+      try {
+        const hasOpened = await AsyncStorage.getItem('open-topics-onboarding');
+
+        if (!hasOpened || hasOpened === 'false') {
+          setTimeout(() => {
+            setShowOnboarding(true);
+          }, 1000);
+        }
+      } catch (error) {
+        sendError('topics-onboarding-modal', error);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user, topics, isLoadingTopics]);
+
+  // Handle onboarding complete
+  const handleOnboardingComplete = async (selectedTopicIds: string[]) => {
+    try {
+      const result = await updateSettings({
+        notifications: true,
+        favoriteTopicIds: selectedTopicIds,
+      });
+
+      if (result === true) {
+        await AsyncStorage.setItem('open-topics-onboarding', 'true');
+        setShowOnboarding(false);
+        refetchUser();
+      }
+
+      return;
+    } catch (error) {
+      sendError('topics-onboarding-modal', error);
+    }
+  };
+
+  // Handle skip onboarding
+  const handleSkipOnboarding = async () => {
+    try {
+      await AsyncStorage.setItem('open-topics-onboarding', 'true');
+      setShowOnboarding(false);
+    } catch (error) {
+      setShowOnboarding(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }}
       edges={Platform.OS === 'android' ? ['top', 'left', 'right'] : ['top', 'left', 'right']}>
@@ -214,7 +290,7 @@ export const HomeView = ({ navigation, route }) => {
               contentContainerStyle={styles.bannerScrollContent}
               style={styles.bannerScrollView}
             >
-              {/* Quizz Banners - map qua tất cả questions */}
+              {/* Quizz Banners - questions */}
               {hasDailyQuestions && dailyContentData.questions.map((questionData, index) => (
                 <TouchableOpacity
                   key={`question-${index}`}
@@ -241,7 +317,7 @@ export const HomeView = ({ navigation, route }) => {
                 </TouchableOpacity>
               ))}
 
-              {/* Podcast Banners - map qua tất cả podcasts */}
+              {/* Podcast Banners - podcasts */}
               {hasDailyPodcasts && dailyContentData.podcasts.map((podcastData, index) => (
                 <TouchableOpacity
                   key={`podcast-${index}`}
@@ -325,10 +401,19 @@ export const HomeView = ({ navigation, route }) => {
           isSubcribed={selectedPodcastData.has_topic}
         />
       )}
+
+      {/* Topics Onboarding Modal */}
+      {user.settings?.topics?.length == 0 && topics.length > 0 &&
+        <TopicsOnboardingModal
+          visible={showOnboarding}
+          topics={topics}
+          onComplete={handleOnboardingComplete}
+          onSkip={handleSkipOnboarding}
+        />
+      }
     </SafeAreaView >
   );
 }
-
 
 const styles = StyleSheet.create({
   carouselContainer: {
@@ -368,7 +453,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end'
   },
 
-  // ✨ BANNER STYLES
+  // BANNER STYLES
   actionlHeaderTitle: {
     marginLeft: Spacings.lg,
     fontSize: 18,

@@ -26,7 +26,7 @@ export const ToolsStack = ({ navigation, route }) => {
           title: 'Outils',
           headerTintColor: '#fff',
           headerStyle: {
-            backgroundColor: "#5696df",
+            backgroundColor: "#457EFF",
             height: 120,
           },
           headerTitleStyle: {

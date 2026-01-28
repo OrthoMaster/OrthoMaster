@@ -279,12 +279,17 @@ export const SelectPackageView = ({ navigation, route }) => {
 
       {!isLoading && !error && trainings &&
         (<>
-          <View style={styles.titleBodyContainer}>
-            <Text style={styles.bodyTitle}>Vous pouvez sélectionner plusieurs modules de formation. Votre dossier sera adapté en fonction de vos choix.</Text>
-            <Text style={styles.headerSubtitle}>
-              NB: selon la durée totale, plusieurs dossiers peuvent être créés automatiquement
-            </Text>
-          </View>
+          {paymentMethod.id !== '0'
+            ? <View style={styles.titleBodyContainer}>
+              <Text style={styles.bodyTitle}>Vous pouvez sélectionner plusieurs modules de formation. Votre dossier sera adapté en fonction de vos choix.</Text>
+              <Text style={styles.headerSubtitle}>
+                NB: selon la durée totale, plusieurs dossiers peuvent être créés automatiquement
+              </Text>
+            </View>
+            : <View style={styles.titleBodyContainer}>
+              <Text style={styles.bodyTitle}>Vous pouvez sélectionner plusieurs modules de formation.</Text>
+            </View>
+          }
 
           {/* Package Groups */}
           <ScrollView
@@ -454,7 +459,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: CONTAINER_PADDING,
-    paddingTop: Spacings.sm,
+    paddingTop: Spacings.lg,
   },
 
   // Header
@@ -489,7 +494,7 @@ const styles = StyleSheet.create({
   },
   titleBodyContainer: {
     marginBottom: Spacings.md,
-    paddingHorizontal: Spacings.md,
+    paddingHorizontal: Spacings.lg,
   },
   bodyTitle: {
     fontSize: 13,

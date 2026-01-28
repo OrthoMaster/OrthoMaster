@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { useQueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NavigationContainer } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from "expo-linking"
 const prefix = Linking.createURL('/');
 
@@ -45,9 +45,9 @@ const LAST_ACTIVE_KEY = '@app_last_active_time';
 const LAST_DATE_KEY = '@app_last_date';
 const INACTIVE_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 
-export default function App({ navigation }) {
-  const queryClient = useQueryClient();
+const queryClient = new QueryClient();
 
+export default function App({ navigation }) {
   const [showSplash, setShowSplash] = useState(true);
   const [appIsReady, setAppIsReady] = useState(false);
   // Animation overlay
@@ -55,7 +55,7 @@ export default function App({ navigation }) {
   const [showOverlay, setShowOverlay] = useState(false);
 
   const { data: user } = useGetUser();
-  const [showSessionExpired, setShowSessionExpired] = useState(true);
+  const [showSessionExpired, setShowSessionExpired] = useState(false);
   const previousUserRef = useRef(null);
 
   // Check if app should reset based on inactivity or new day
@@ -95,7 +95,11 @@ export default function App({ navigation }) {
   };
 
   // Reset app data and navigation
+  const resetInProgress = useRef(false);
   const resetAppData = async () => {
+    if (resetInProgress.current) return;
+    resetInProgress.current = true;
+
     try {
       // Show splash
       setShowSplash(true);
@@ -111,14 +115,19 @@ export default function App({ navigation }) {
       await AsyncStorage.setItem(LAST_DATE_KEY, today);
 
       // Navigate to home using deep link
-      const homeUrl = Linking.createURL('open/home'); // hoặc path nào đó về home
-      await Linking.openURL(homeUrl);
+      // Navigation phải đợi NavigationContainer ready
+      if (navigationRef.current?.isReady()) {
+        const homeUrl = Linking.createURL('open/home');
+        await Linking.openURL(homeUrl);
+      }
 
       // Wait for data to load
       await new Promise(resolve => setTimeout(resolve, 800));
       setShowSplash(false);
     } catch (error) {
       sendError('reset-app', error);
+    } finally {
+      resetInProgress.current = false;
       setShowSplash(false);
     }
   };
@@ -154,6 +163,16 @@ export default function App({ navigation }) {
 
     prepare();
   }, []);
+
+  // Safety timeout for splash
+  useEffect(() => {
+    if (appIsReady) {
+      const timeout = setTimeout(() => {
+        if (showSplash) setShowSplash(false);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [appIsReady]);
 
   // Save user id to know this is the first time login
   useEffect(() => {
@@ -366,6 +385,7 @@ export default function App({ navigation }) {
       {/* CustomSplash - z-index: 9999 */}
       {(!appIsReady || showSplash) && (
         <CustomSplashScreen
+          appIsReady={appIsReady}
           onFinish={() => {
             setShowOverlay(true);
 
@@ -406,13 +426,11 @@ export default function App({ navigation }) {
             <Provider>
               {user ?
                 <UseCaptureGuard>
-                  <QueryClientProvider client={queryClient}>
-                    <AppTab />
-                    <SessionExpiredScreen
-                      visible={showSessionExpired}
-                      onLoginPress={handleLoginPress}
-                    />
-                  </QueryClientProvider>
+                  <AppTab />
+                  <SessionExpiredScreen
+                    visible={showSessionExpired}
+                    onLoginPress={handleLoginPress}
+                  />
                 </UseCaptureGuard>
                 :
                 <AuthStack />

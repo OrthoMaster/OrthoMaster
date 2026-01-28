@@ -14,7 +14,7 @@ export default {
   greenDisabled: '#7ECED3',
 
   blue: '#5696df',
-  blue1: '#5696df',
+  blue1: '#457EFF',
   blueDark2: '#1D3470',
   blueBackground: '#E3F2FD',
   blueDark: '#2D55AF',

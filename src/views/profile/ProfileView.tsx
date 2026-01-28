@@ -313,7 +313,7 @@ export const ProfileView = ({ navigation, route }) => {
                 style={styles.favoriteButtonIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.favoriteButtonText}>Mes sujets préférés</Text>
+              <Text style={styles.favoriteButtonText}>Mes centres d'intérêt</Text>
             </TouchableOpacity>
           </View>
 

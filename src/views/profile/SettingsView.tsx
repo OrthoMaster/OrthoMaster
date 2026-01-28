@@ -39,7 +39,7 @@ interface Topic {
 interface SettingItemProps {
   iconName: keyof typeof Ionicons.glyphMap;
   title: string;
-  description: string;
+  description?: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
   isLast?: boolean;
@@ -101,7 +101,9 @@ const SettingItem: React.FC<SettingItemProps> = ({
       </View>
       <View style={styles.settingItemText}>
         <Text style={styles.settingItemTitle}>{title}</Text>
-        <Text style={styles.settingItemDescription}>{description}</Text>
+        {description &&
+          <Text style={styles.settingItemDescription}>{description}</Text>
+        }
       </View>
     </View>
     <Switch
@@ -264,7 +266,7 @@ export const SettingsView = ({ navigation }) => {
         <TouchableOpacity style={styles.backButton} onPress={back}>
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Centres d'intérêt</Text>
+        <Text style={styles.headerTitle}>Mes centres d'intérêt</Text>
       </View>
 
       <ScrollView
@@ -274,12 +276,12 @@ export const SettingsView = ({ navigation }) => {
       >
         {/* Notifications Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { marginBottom: Spacings.md }]}>Notifications</Text>
+          <Text style={styles.sectionTitle}>Notifications pour rester informé</Text>
+          <Text style={styles.topicSectionDescription}>Aucune publicité, que du contenu pédagogique 😉</Text>
           <View style={styles.sectionContent}>
             <SettingItem
               iconName="notifications-outline"
-              title="Notifications push"
-              description="Recevoir des notifications sur votre appareil"
+              title="Recevoir l’actualité de mes centres d’intérêts par notification"
               value={settings.notifications}
               onValueChange={(value) => handleSettingChange('notifications', value)}
               isLast
@@ -399,12 +401,11 @@ const styles = StyleSheet.create({
     marginTop: Spacings.lg,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
     paddingHorizontal: Spacings.lg,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   sectionContent: {
     backgroundColor: Colors.white,
@@ -442,13 +443,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingItemTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
     marginBottom: 2,
   },
   settingItemDescription: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
     lineHeight: 16,
@@ -460,7 +461,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.lg,
   },
   topicSectionDescription: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
     marginBottom: Spacings.md,

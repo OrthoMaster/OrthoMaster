@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     color: Colors.success,
   },
   paymentDescription: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
   },
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     gap: Spacings.xs,
   },
   termsHeaderText: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Poppins-Medium',
     color: Colors.gray,
   },
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   termItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: Spacings.xs,
+    marginBottom: Spacings.xxs,
   },
   termBullet: {
     width: 4,
@@ -434,14 +434,14 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: Colors.blue,
     marginTop: 6,
-    marginRight: Spacings.sm,
+    marginRight: Spacings.xs,
   },
   termText: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 13,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
-    lineHeight: 16,
+    lineHeight: 15,
   },
 
   // Continue Button
