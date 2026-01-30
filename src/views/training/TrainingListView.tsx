@@ -29,6 +29,7 @@ import { getTrainings } from "../../services/v2/TrainingService";
 
 const HEADER_HEIGHT = 120;
 const SCROLL_THRESHOLD = 5;
+const SCROLL_DOWN_AMOUNT = 400;
 
 type ScrollDirection = 'up' | 'down' | null;
 const strokeColor = '#58CC02';
@@ -79,7 +80,6 @@ const CircularProgress = ({ size = 70, strokeWidth = 8, progress, accentColor, b
           />
           {/* Progress circle */}
           <Circle
-            // stroke={accentColor || Colors.warning}
             stroke={strokeColor}
             fill="none"
             cx={size / 2}
@@ -121,7 +121,6 @@ export const TrainingListView = ({ navigation, route }) => {
     }, [navigation])
   );
 
-
   const initPackageId = route.params?.initPackageId ?? null;
   const screenWidth = Dimensions.get('window').width;
   const itemSize = (screenWidth - (2 * Spacings.lg) - (2 * Spacings.md)) / 3;
@@ -132,6 +131,22 @@ export const TrainingListView = ({ navigation, route }) => {
     retry: 1,
     retryDelay: 1000,
   });
+
+  // Refs
+  const scrollViewRef = useRef(null);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const headerScale = useRef(new Animated.Value(1)).current;
+
+  // States
+  const [lastScrollY, setLastScrollY] = useState<number>(0);
+  const [scrollDirection, setScrollDirection] = useState<ScrollDirection>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [layoutHeight, setLayoutHeight] = useState(0);
+  const [currentScrollY, setCurrentScrollY] = useState(0);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   // Handle open package screen
   useEffect(() => {
@@ -158,15 +173,16 @@ export const TrainingListView = ({ navigation, route }) => {
     }
   }, [initPackageId, trainings, isLoading, error]);
 
-  // Handle scrolls
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(0)).current;
-  const [lastScrollY, setLastScrollY] = useState<number>(0);
-  const [scrollDirection, setScrollDirection] = useState<ScrollDirection>(null);
+  // Check scroll button
+  useEffect(() => {
+    const isScrollable = contentHeight > layoutHeight;
+    const isNearBottom = currentScrollY + layoutHeight >= contentHeight - 20;
+    const shouldShow = isScrollable && !isNearBottom;
+
+    setShowScrollButton(shouldShow);
+  }, [contentHeight, layoutHeight, currentScrollY]);
 
   // Animation values
-  const headerOpacity = useRef(new Animated.Value(1)).current;
-  const headerScale = useRef(new Animated.Value(1)).current;
   const headerBackgroundOpacity = scrollY.interpolate({
     inputRange: [0, HEADER_HEIGHT / 3, HEADER_HEIGHT],
     outputRange: [0.9, 0.95, 1],
@@ -176,8 +192,10 @@ export const TrainingListView = ({ navigation, route }) => {
   // Handle scroll direction changes
   useEffect(() => {
     const listenerId = scrollY.addListener(({ value }: { value: number }) => {
+      setCurrentScrollY(value);
+
       const diff = value - lastScrollY;
-      // Fix scroll down to reload of scroll view
+
       if (value <= 0) {
         setScrollDirection('up');
       }
@@ -194,6 +212,43 @@ export const TrainingListView = ({ navigation, route }) => {
 
     return () => scrollY.removeListener(listenerId);
   }, [lastScrollY, scrollDirection, scrollY]);
+
+  useEffect(() => {
+    const bounceAnimation = Animated.loop(
+      Animated.sequence([
+        // Nhảy lần 1
+        Animated.timing(bounceAnim, {
+          toValue: -15,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        // Nhảy lần 2
+        Animated.timing(bounceAnim, {
+          toValue: -15,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        // Nghỉ 2 giây
+        Animated.delay(2000),
+      ])
+    );
+
+    bounceAnimation.start();
+
+    return () => {
+      bounceAnimation.stop();
+    };
+  }, [bounceAnim]);
 
   const animateHeader = (direction: ScrollDirection, scrollValue: number): void => {
     const shouldHideHeader = direction === 'down' && scrollValue > 20;
@@ -230,13 +285,21 @@ export const TrainingListView = ({ navigation, route }) => {
         const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
         const paddingToBottom = 100;
 
-        // Check if user scrolled near bottom
         if (contentOffset.y + layoutMeasurement.height + paddingToBottom >= contentSize.height) {
           // loadMore();
         }
       }
     }
   );
+
+  const handleScrollDown = () => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({
+        y: currentScrollY + SCROLL_DOWN_AMOUNT,
+        animated: true,
+      });
+    }
+  };
 
   const handlePackagePress = (training, pkg) => {
     if (pkg.available_flg) {
@@ -277,9 +340,6 @@ export const TrainingListView = ({ navigation, route }) => {
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Mes formations</Text>
           <View style={styles.headerRightIcons}>
-            {/* <TouchableOpacity onPress={closeScreen}>
-              <MaterialIcons name="emoji-events" size={24} color={Colors.blue} />
-            </TouchableOpacity> */}
             <TouchableOpacity onPress={() => { navigation.navigate('cart-view') }}>
               <Image
                 source={require("../../../assets/v2_images/icon/bag_icon_color.png")}
@@ -319,6 +379,8 @@ export const TrainingListView = ({ navigation, route }) => {
           }}
         />
       )}
+
+      {/* Error */}
       {error && (
         <View style={styles.errorContainer}>
           <MaterialCommunityIcons
@@ -341,12 +403,20 @@ export const TrainingListView = ({ navigation, route }) => {
       )}
 
       {/* Content */}
-      <ScrollView style={styles.scrollView}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         bounces={true}
         scrollEventThrottle={16}
+        onContentSizeChange={(width, height) => {
+          setContentHeight(height);
+        }}
+        onLayout={(event) => {
+          setLayoutHeight(event.nativeEvent.layout.height);
+        }}
         refreshControl={
           <RefreshControl
             refreshing={isFetching}
@@ -361,7 +431,7 @@ export const TrainingListView = ({ navigation, route }) => {
         {!error && trainings && trainings.map((training) => (
           <View key={training.id} style={styles.trainingCard}>
             <View style={styles.trainingHeaderNew}>
-              <Text style={[styles.trainingTitleNew,  { backgroundColor: training.color }]} numberOfLines={2} ellipsizeMode='tail'>
+              <Text style={[styles.trainingTitleNew, { backgroundColor: training.color }]} numberOfLines={2} ellipsizeMode='tail'>
                 {training.name}
               </Text>
             </View>
@@ -393,6 +463,26 @@ export const TrainingListView = ({ navigation, route }) => {
           </View>
         ))}
       </ScrollView>
+
+      {/* Scroll Down Button */}
+      {showScrollButton && (
+        <Animated.View
+          style={[
+            styles.scrollDownButton,
+            {
+              transform: [{ translateY: bounceAnim }]
+            }
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.scrollDownButtonInner}
+            onPress={handleScrollDown}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="arrow-down-circle-outline" size={40} color={Colors.lgreen} />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 };
@@ -543,6 +633,22 @@ const styles = StyleSheet.create({
   },
   imageText: {
     fontSize: 28,
+  },
+
+  // Scroll Down Button
+  scrollDownButton: {
+    position: 'absolute',
+    alignSelf: 'center',
+    bottom: Spacings.md,
+    zIndex: 999,
+  },
+  scrollDownButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 28,
+    backgroundColor: 'tranparent',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Error

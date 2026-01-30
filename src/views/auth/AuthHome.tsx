@@ -17,7 +17,7 @@ export const AuthHome = ({ navigation }) => {
   const slideAnim = useRef(new Animated.Value(200)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const videoSource = require('../../../assets/v2_images/intro.mov');
+  const videoSource = require('../../../assets/v2_images/intro.mp4');
   const player = useVideoPlayer(videoSource, player => {
     player.loop = false;
     player.play();

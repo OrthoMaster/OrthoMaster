@@ -340,7 +340,6 @@ export default function App({ navigation }) {
               path: "open/daily-content/:action",
             }
           },
-
         },
         'media': {
           screens: {

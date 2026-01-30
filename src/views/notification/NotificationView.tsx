@@ -71,13 +71,36 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [hasReachedThreshold, setHasReachedThreshold] = useState(false);
+  const [isSwiping, setIsSwiping] = useState(false);
   const hasVibratedRef = useRef(false);
+
+  const handleDeletePress = () => {
+    // Animate to fully off screen
+    Animated.parallel([
+      Animated.timing(translateX, {
+        toValue: -SCREEN_WIDTH,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsDeleting(true);
+      setTimeout(() => onDelete(notification.id), 50);
+    });
+  };
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
         return Math.abs(gestureState.dx) > 5 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+      },
+      onPanResponderGrant: () => {
+        setIsSwiping(true);
       },
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dx < 0) {
@@ -104,25 +127,11 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
         // Reset vibration flag
         hasVibratedRef.current = false;
         setHasReachedThreshold(false);
+        setIsSwiping(false);
 
         // Nếu đã vuốt qua ngưỡng, thực hiện xóa
         if (gestureState.dx < SWIPE_THRESHOLD) {
-          // Animate to fully off screen
-          Animated.parallel([
-            Animated.timing(translateX, {
-              toValue: -SCREEN_WIDTH,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(deleteOpacity, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            })
-          ]).start(() => {
-            setIsDeleting(true);
-            setTimeout(() => onDelete(notification.id), 50);
-          });
+          handleDeletePress();
         } else {
           // Quay về vị trí ban đầu với spring animation mượt mà
           Animated.parallel([
@@ -164,7 +173,12 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
   return (
     <View style={styles.swipeContainer}>
       {/* Delete Background - với animated opacity và scale */}
-      <View style={styles.deleteBackground}>
+      <TouchableOpacity
+        style={styles.deleteBackground}
+        onPress={handleDeletePress}
+        activeOpacity={0.8}
+        disabled={isSwiping}
+      >
         <Animated.View
           style={[
             styles.deleteIconContainer,
@@ -181,7 +195,7 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
           />
           <Text style={styles.deleteText}>Supprimer</Text>
         </Animated.View>
-      </View>
+      </TouchableOpacity>
 
       {/* Notification Card */}
       <Animated.View

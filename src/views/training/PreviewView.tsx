@@ -13,7 +13,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Keyboard
+  Keyboard,
+  Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
@@ -25,6 +26,7 @@ import { Styles } from '../../../constants/Styles';
 
 import StripePaymentModal from './components/StripePaymentModal';
 import CelebrationScreen from './components/CelebrationActivePackageScreen';
+import ContractInfoModal from './components/ContractInfoModal';
 
 import {
   getCartDetails,
@@ -186,6 +188,8 @@ export const PreviewView = ({ navigation, route }) => {
   const [currentInvoiceId, setCurrentInvoiceId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showContractInfoModal, setShowContractInfoModal] = useState(false);
+
   const queryClient = useQueryClient();
 
   const handleConfirmPayment = async () => {
@@ -351,7 +355,7 @@ export const PreviewView = ({ navigation, route }) => {
             <View style={styles.sectionHeader}>
               <MaterialCommunityIcons name={'ticket-percent-outline'} size={20} color={Colors.warning} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>Offre</Text>
+                <Text style={styles.sectionTitle}>Code promotionnel</Text>
                 {!appliedPromo &&
                   <Text style={styles.emptyPromoText}>Aucun code promotionnel appliqué</Text>
                 }
@@ -451,6 +455,17 @@ export const PreviewView = ({ navigation, route }) => {
           <Text style={styles.confirmAmount}>{finalAmount} €</Text>
         </View>
         <View style={styles.confirmActions}>
+          <TouchableOpacity
+            style={styles.contractButton}
+            onPress={() => { setShowContractInfoModal(true) }}
+            disabled={creatingInvoice}
+          >
+            {creatingInvoice
+              ? <ActivityIndicator size="small" color={Colors.white} />
+              : <FontAwesome6 name="file-signature" size={20} color={Colors.white} />
+            }
+            <Text style={styles.contractButtonText}>Demander une{'\n'}prise en charge</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.paymentButton}
             onPress={handleConfirmPayment}
@@ -576,6 +591,13 @@ export const PreviewView = ({ navigation, route }) => {
       <CelebrationScreen
         visible={showCelebration}
         onClose={handleCelebrationClose}
+      />
+
+      {/* Contract Description Modal */}
+      <ContractInfoModal
+        visible={showContractInfoModal}
+        onClose={() => setShowContractInfoModal(false)}
+        navigation={navigation}
       />
     </SafeAreaView>
   );
@@ -1085,12 +1107,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgb(255, 255, 255, 0.85)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: Spacings.lg,
     paddingVertical: Spacings.lg,
     borderTopWidth: 1,
     borderTopColor: Colors.line,
-    elevation: 8,
+    elevation: 4,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
@@ -1113,7 +1135,27 @@ const styles = StyleSheet.create({
   },
   confirmActions: {
     flexDirection: 'row',
-    gap: Spacings.md
+    gap: Spacings.md,
+  },
+  contractButton: {
+    flex: 1.5,
+    backgroundColor: Colors.lgreen,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacings.xs,
+    paddingVertical: Spacings.sm,
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: Colors.lgreen,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+  },
+  contractButtonText: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.white,
   },
   paymentButton: {
     flex: 1,
@@ -1136,7 +1178,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacings.xs,
+    gap: Spacings.xxs,
     paddingVertical: Spacings.md,
     borderRadius: 16,
     elevation: 4,

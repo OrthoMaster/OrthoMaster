@@ -10,7 +10,8 @@ import {
   Platform,
   Dimensions,
   Alert,
-  StatusBar
+  StatusBar,
+  Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator } from 'react-native-paper';
@@ -18,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Video, ResizeMode } from 'expo-av';
 
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 
@@ -30,7 +32,7 @@ import LessonLogoIcon from './components/LessonLogoIcon';
 
 type Tab = 'detail' | 'course';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const COLUMN_COUNT = 3;
 const ITEM_SPACING = Spacings.md;
 const ITEM_WIDTH = (width - (Spacings.lg * 2) - (ITEM_SPACING * (COLUMN_COUNT - 1))) / COLUMN_COUNT;
@@ -70,9 +72,12 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   }, [cartData, pkg.id]);
 
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const videoRef = useRef<Video>(null);
   const [currentLessons, setCurrentLessons] = useState([]);
   const [currentTab, setCurrentTab] = useState<Tab>('course');
   const [sheetData, setSheetData] = useState<string>('');
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [videoStatus, setVideoStatus] = useState({});
   const snapPoints = useMemo(() => ['15%', '50%', '90%'], []);
 
   // Section
@@ -99,7 +104,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
                 resizeMode='contain'
               />
               :
-              <MaterialCommunityIcons name="bookshelf" size={30} color={Colors.gray} />
+              <MaterialCommunityIcons name="bookshelf" size={30} color={Colors.white} />
             }
           </View>
         </View>
@@ -174,6 +179,20 @@ export const InactiveTrainingView = ({ navigation, route }) => {
       trainingName: 'Module A',
       lessonId: '1',
     })
+  }, []);
+
+  // Handle open video modal
+  const handleOpenVideo = useCallback(() => {
+    setShowVideoModal(true);
+  }, []);
+
+  // Handle close video modal
+  const handleCloseVideo = useCallback(async () => {
+    if (videoRef.current) {
+      await videoRef.current.pauseAsync();
+      await videoRef.current.setPositionAsync(0);
+    }
+    setShowVideoModal(false);
   }, []);
 
   // Handle close modal
@@ -293,7 +312,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
             <Ionicons name="close" size={24} color={headerColor} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <View style={[styles.logoContainer, {backgroundColor: headerColor}]}>
+            <View style={[styles.logoContainer, { backgroundColor: headerColor }]}>
               {pkg.image ?
                 <Image
                   source={{ uri: process.env.EXPO_PUBLIC_S3_URL + pkg.image }}
@@ -301,7 +320,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
                   resizeMode="contain"
                 />
                 :
-                <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={40} color={Colors.gray} />
+                <MaterialCommunityIcons name={'book-open-page-variant-outline'} size={40} color={Colors.white} />
               }
             </View>
           </View>
@@ -348,8 +367,30 @@ export const InactiveTrainingView = ({ navigation, route }) => {
             {currentTab === 'detail' &&
               <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
                 <View style={styles.descriptionContainer}>
-                  {/* <Text style={styles.descriptionTitle}>Description</Text> */}
-                  <Text style={styles.description}>{pkg.description || '---'}</Text>
+                  {pkg.description && (
+                    <Text style={styles.description}>{pkg.description}</Text>
+                  )}
+
+                  {/* Video Thumbnail */}
+                  {pkg.thumbnail && (
+                    <TouchableOpacity
+                      style={styles.videoThumbnailContainer}
+                      onPress={handleOpenVideo}
+                      activeOpacity={0.8}
+                    >
+                      <Image
+                        source={{ uri: process.env.EXPO_PUBLIC_S3_URL + pkg.thumbnail }}
+                        style={styles.thumbnailImage}
+                        resizeMode="cover"
+                      />
+                      {/* Overlay */}
+                      <View style={[styles.thumbnailOverlay, { backgroundColor: `${headerColor}40` }]} />
+                      {/* Play Button */}
+                      <View style={[styles.playButton, { backgroundColor: headerColor }]}>
+                        <Ionicons name="play" size={32} color={Colors.white} style={{ marginLeft: 4 }} />
+                      </View>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </ScrollView>
             }
@@ -454,6 +495,39 @@ export const InactiveTrainingView = ({ navigation, route }) => {
             ))}
           </BottomSheetScrollView>
         </BottomSheet>
+
+        {/* Video Modal */}
+        <Modal
+          visible={showVideoModal}
+          animationType="fade"
+          onRequestClose={handleCloseVideo}
+          supportedOrientations={['portrait', 'landscape']}
+        >
+          <View style={styles.videoModalContainer}>
+            <StatusBar hidden />
+
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.videoCloseButton}
+              onPress={handleCloseVideo}
+            >
+              <Ionicons name="close" size={28} color={Colors.white} />
+            </TouchableOpacity>
+
+            {/* Video Player */}
+            {pkg.video_url && (
+              <Video
+                ref={videoRef}
+                source={{ uri: pkg.video_url }}
+                style={styles.video}
+                useNativeControls
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay
+                onPlaybackStatusUpdate={status => setVideoStatus(() => status)}
+              />
+            )}
+          </View>
+        </Modal>
       </GestureHandlerRootView>
     </SafeAreaView>
   );
@@ -593,7 +667,68 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: Colors.text,
     fontFamily: 'Roboto',
-    marginBottom: Spacings.xxs
+    marginBottom: Spacings.lg,
+  },
+
+  // Video Thumbnail
+  videoThumbnailContainer: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: Spacings.md,
+    position: 'relative',
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  thumbnailOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  playButton: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginLeft: -32,
+    marginTop: -32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+
+  // Video Modal
+  videoModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoCloseButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 20,
+    right: 20,
+    zIndex: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  video: {
+    width: width,
+    height: height,
   },
 
   // Modules Grid - 3 columns

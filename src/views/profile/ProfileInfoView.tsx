@@ -326,7 +326,7 @@ export const ProfileInfoView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}
-      edges={Platform.OS === 'android' ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}>
+      edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
@@ -1168,7 +1168,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingTop: Spacings.lg,
-    paddingBottom: Spacings.xxl,
+    paddingBottom: Platform.OS === 'android' ? Spacings.xxxl : Spacings.xxl,
     paddingHorizontal: Spacings.lg,
     borderTopWidth: 1,
     borderTopColor: Colors.line,

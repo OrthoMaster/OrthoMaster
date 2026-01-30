@@ -253,7 +253,7 @@ export const getTrainings = async () => {
 
 export const addPackages = async (packageIds: string[]) => {
     return axiosInstance
-        .put(`${baseUrl}/pro-cart/trainings`, {packageIds})
+        .put(`${baseUrl}/pro-cart/trainings`, { packageIds })
         .then((response) => {
             if (response.data?.success == true) {
                 return response.data;

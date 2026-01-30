@@ -232,7 +232,7 @@ export const CompanyView = ({ navigation, route }) => {
   // Render course circle
   const renderCourseCircle = (course) => {
     const progress = course.pivot?.progress || 0;
-    const strokeWidth = 2.5;
+    const strokeWidth = 2;
     const radius = (circleSize - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (circumference * progress) / 100;
@@ -526,7 +526,7 @@ export const CompanyView = ({ navigation, route }) => {
               resizeMode="contain"
               source={require('../../../assets/v2_images/icon/add-package.png')}
             />
-            <Text style={styles.fabSecondaryText}>Ajouter{'\n'}formations</Text>
+            <Text style={styles.fabSecondaryText}>Ajouter des{'\n'}formations</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1278,7 +1278,7 @@ const styles = StyleSheet.create({
   addPkgInfoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacings.lg,
+    paddingLeft: Spacings.lg,
     paddingTop: Spacings.lg,
     paddingBottom: Spacings.md,
     borderBottomWidth: 1,
@@ -1294,7 +1294,7 @@ const styles = StyleSheet.create({
     color: Colors.blue,
   },
   addPkgInfoCloseButton: {
-    padding: Spacings.xxs,
+    paddingHorizontal: Spacings.lg,
   },
   addPkgInfoBody: {
     padding: Spacings.lg,

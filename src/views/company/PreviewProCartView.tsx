@@ -281,7 +281,7 @@ export const PreviewProCartView = ({ navigation, route }) => {
         </View>
       </View>
 
-      {(!cartData || error) && (
+      {error && (
         <View style={styles.errorContainer}>
           <MaterialCommunityIcons
             name="alert-circle-outline"
@@ -302,7 +302,7 @@ export const PreviewProCartView = ({ navigation, route }) => {
         </View>
       )}
 
-      {!!cartData && (<>
+      {!!cartData && !error && (<>
         {/* Content */}
         <ScrollView
           style={styles.scrollView}

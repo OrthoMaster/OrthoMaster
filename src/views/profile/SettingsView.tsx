@@ -60,12 +60,13 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, isSelected, onToggle }) =>
     <View style={[
       styles.topicImageContainer,
       { width: topicWidth, height: topicWidth },
-      isSelected && styles.topicImageContainerSelected
+      isSelected && styles.topicImageContainerSelected,
+      { opacity: isSelected ? 1 : 0.6 }
     ]}>
       {topic.image ? (
         <Image
           source={{ uri: process.env.EXPO_PUBLIC_S3_URL + topic.image }}
-          style={[styles.topicImage, { opacity: isSelected ? 1 : 0.6 }]}
+          style={styles.topicImage}
           resizeMode="cover"
         />
       ) : (
@@ -258,7 +259,7 @@ export const SettingsView = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}
-      edges={Platform.OS === 'android' ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}>
+      edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
@@ -534,7 +535,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingTop: Spacings.lg,
-    paddingBottom: Spacings.xxl,
+    paddingBottom: Platform.OS === 'android' ? Spacings.xxxl : Spacings.xxl,
     paddingHorizontal: Spacings.lg,
     borderTopWidth: 1,
     borderTopColor: Colors.line,
