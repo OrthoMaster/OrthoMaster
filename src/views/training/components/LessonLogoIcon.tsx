@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { Image } from 'expo-image';
+import { View, StyleSheet, Animated, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Colors from "../../../../constants/Colors";
 
@@ -127,7 +126,7 @@ const LessonLogoIcon = ({
                   borderRadius: 100,
                 },
               ]}
-              contentFit="contain"
+              resizeMode="contain"
             />
           ) : (
             <>

@@ -10,10 +10,10 @@ import {
   Alert,
   RefreshControl
 } from 'react-native';
-import { Directory, File, Paths } from 'expo-file-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from "@tanstack/react-query";
+import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 import Colors from '../../../constants/Colors';
@@ -94,30 +94,29 @@ export const DocumentView = ({ navigation }) => {
     });
   };
 
-  const downloadFile = async (document: string) => {
-    const url = document;
-    const destination = new Directory(Paths.cache, 'OrthoMaster');
+  const downloadFile = async (url: string) => {
+  try {
+    const fileName = url.split('/').pop() || `document_${Date.now()}.pdf`;
+    const fileUri = FileSystem.documentDirectory + fileName;
+    const downloadResumable = FileSystem.createDownloadResumable(
+      url,
+      fileUri,
+      {},
+      null
+    );
 
-    try {
-      if (!destination.exists) {
-        destination.create();
-      }
-
-      const fileName = url.split('/').pop() || `document_${Date.now()}.pdf`;
-      const file = new File(destination, fileName);
-      if (file.exists) {
-        file.delete();
-      }
-
-      const finalFile = await File.downloadFileAsync(url, destination);
-      await Sharing.shareAsync(finalFile.uri, {
+    const { uri } = await downloadResumable.downloadAsync();
+    if (uri) {
+      await Sharing.shareAsync(uri, {
         UTI: 'com.adobe.pdf',
         mimeType: 'application/pdf',
       });
-    } catch (error) {
-      Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
     }
+  } catch (err) {
+    console.error(err);
+    Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
   }
+};
 
   return (
     <SafeAreaView style={styles.container}

@@ -45,19 +45,6 @@
       "package": "com.hugotaieb.OrthoMaster",
       "autoIncrement": true,
       "googleServicesFile": "./google-services.json",
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "fetch",
-          "remote-notification",
-          "fetch",
-          "remote-notification",
-          "fetch",
-          "remote-notification",
-          "fetch",
-          "remote-notification"
-        ],
-        "ITSAppUsesNonExemptEncryption": false
-      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -94,12 +81,6 @@
         {
           "supportsBackgroundPlayback": true,
           "supportsPictureInPicture": true
-        }
-      ],
-      [
-        "react-native-video",
-        {
-          "iosCategory": "playback"
         }
       ],
       [

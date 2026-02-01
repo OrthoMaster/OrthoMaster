@@ -14,8 +14,8 @@ import {
   NativeScrollEvent,
   RefreshControl,
   Dimensions,
+  Image
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -343,7 +343,7 @@ export const TrainingListView = ({ navigation, route }) => {
             <TouchableOpacity onPress={() => { navigation.navigate('cart-view') }}>
               <Image
                 source={require("../../../assets/v2_images/icon/bag_icon_color.png")}
-                style={{ height: 30, width: 30 }} contentFit="contain" />
+                style={{ height: 30, width: 30 }} resizeMode="contain" />
             </TouchableOpacity>
           </View>
         </View>

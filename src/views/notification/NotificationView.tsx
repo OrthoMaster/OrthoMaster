@@ -428,7 +428,7 @@ export const NotificationView = ({ navigation, route }) => {
           size={10}
           bounceHeight={5}
           containerStyle={{
-            backgroundColor: Colors.grayLight,
+            backgroundColor: Colors.white,
             zIndex: 999,
             elevation: 5,
           }}

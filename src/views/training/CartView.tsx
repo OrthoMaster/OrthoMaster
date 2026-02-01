@@ -11,9 +11,9 @@ import {
   PanResponder,
   RefreshControl,
   Dimensions,
-  Vibration
+  Vibration,
+  Image
 } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -191,7 +191,7 @@ const SwipeableItem: React.FC<SwipeableItemProps> = ({
               <Image
                 source={{ uri: process.env.EXPO_PUBLIC_S3_URL + course.package.image }}
                 style={styles.courseImage}
-                contentFit="contain"
+                resizeMode="contain"
               />
               :
               <MaterialCommunityIcons name={'book-open-page-variant-outline'}
