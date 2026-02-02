@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  Platform
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -16,24 +17,36 @@ export const AuthHome = ({ navigation }) => {
   const [showButtons, setShowButtons] = useState(false);
   const slideAnim = useRef(new Animated.Value(200)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const videoSource = require('../../../assets/v2_images/intro.mp4');
-  const player = useVideoPlayer(videoSource, player => {
+  const videoSource = Platform.OS !== 'android'
+    ? require('../../../assets/v2_images/intro.mp4')
+    : { uri: 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/intro-video/intro.mp4' };
+
+  const videoUrl = 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/intro-video/intro.mp4';
+
+  const player = Platform.OS !== 'web' ? useVideoPlayer(videoSource, player => {
     player.loop = false;
     player.play();
-  });
+  }) : null;
 
   useEffect(() => {
+    // Auto-play for web
+    if (Platform.OS === 'web' && videoRef.current) {
+      videoRef.current.play().catch(err => {
+        console.log('Autoplay prevented:', err);
+      });
+    }
+
     const timeout = setTimeout(() => {
       setShowButtons(true);
-    }, 8000);
+    }, Platform.OS === 'ios' ? 8000 : 9000);
 
     return () => {
       clearTimeout(timeout);
     };
   }, []);
 
-  // Animation when showButtons = true
   useEffect(() => {
     if (showButtons) {
       Animated.parallel([
@@ -53,16 +66,34 @@ export const AuthHome = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <VideoView
-        style={styles.video}
-        player={player}
-        allowsPictureInPicture={false}
-        nativeControls={false}
-        contentFit="cover"
-        allowsVideoFrameAnalysis={false}
-        requiresLinearPlayback={true}
-        pointerEvents="none"
-      />
+      {Platform.OS === 'web' ? (
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            pointerEvents: 'none',
+          }}
+          muted
+          playsInline
+          autoPlay
+          loop={false}
+        />
+      ) : (
+        <VideoView
+          style={styles.video}
+          player={player}
+          allowsPictureInPicture={false}
+          nativeControls={false}
+          contentFit="cover"
+          allowsVideoFrameAnalysis={false}
+          requiresLinearPlayback={true}
+          pointerEvents="none"
+        />
+      )}
 
       {showButtons && (
         <Animated.View

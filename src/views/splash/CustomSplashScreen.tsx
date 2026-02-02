@@ -112,6 +112,7 @@ const CustomSplashScreen: React.FC<CustomSplashScreenProps> = ({ onFinish, appIs
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',

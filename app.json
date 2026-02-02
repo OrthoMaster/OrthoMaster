@@ -8,7 +8,8 @@
     "jsEngine": "hermes",
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "icon": "./assets/v2_images/logo/icon.png",
     "splash": {
@@ -62,9 +63,11 @@
       "runtimeVersion": {
         "policy": "appVersion"
       },
-      "permissions": [
-        "INTERNET"
-      ]
+      "permissions": []
+    },
+    "web": {
+      "favicon": "./assets/v2_images/logo/icon.png",
+      "bundler": "metro"
     },
     "extra": {
       "eas": {
@@ -96,7 +99,21 @@
           "color": "#FFAF31"
         }
       ],
-      "expo-router"
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "blockedPermissions": [
+              "android.permission.READ_MEDIA_IMAGES",
+              "android.permission.READ_MEDIA_VIDEO",
+              "android.permission.READ_EXTERNAL_STORAGE",
+              "android.permission.WRITE_EXTERNAL_STORAGE"
+            ]
+          }
+        }
+      ],
+      "./expo-plugins/withAndroidPermissionsFix.js"
     ],
     "updates": {
       "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"
