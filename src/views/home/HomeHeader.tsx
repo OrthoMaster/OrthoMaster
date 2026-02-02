@@ -5,7 +5,7 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 const { width, height } = Dimensions.get('window');
-const CARD_SIZE = (width - (Spacings.xl * 2) - (Spacings.md * 2)) / 3;
+const CARD_SIZE = (width > 500 ? 500 : width - (Spacings.xl * 2) - (Spacings.md * 2)) / 3;
 
 interface HomeHeaderProps {
   userName?: string;
@@ -157,7 +157,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               activeOpacity={0.8}
             >
               <Image
-                style={[styles.icons, {width: CARD_SIZE - 5, height: CARD_SIZE - 5, borderRadius: 16}]}
+                style={[styles.icons, { width: CARD_SIZE - 5, height: CARD_SIZE - 5, borderRadius: 16 }]}
                 source={require('../../../assets/v2_images/icon/home/tool.gif')}
               />
             </TouchableOpacity>
@@ -174,7 +174,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               activeOpacity={0.8}
             >
               <Image
-                style={[styles.icons]}
+                style={styles.icons}
                 source={require('../../../assets/v2_images/icon/home/search.gif')}
               />
             </TouchableOpacity>
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   centerCardWrapper: {
     marginTop: Spacings.xl,
   },
-  
+
   // 3D Wrapper for cards
   card3DWrapper: {
     borderRadius: 20,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   search3DWrapper: {
     backgroundColor: Colors.primary,
   },
-  
+
   squareCard: {
     width: CARD_SIZE,
     height: CARD_SIZE + Spacings.xs,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   icons: {
     resizeMode: 'contain',
-    width: 70,
-    height: 70,
+    width: CARD_SIZE * 0.7,
+    height: CARD_SIZE * 0.7,
   }
 });

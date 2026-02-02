@@ -22,7 +22,6 @@ export const AuthHome = ({ navigation }) => {
   const videoSource = Platform.OS !== 'android'
     ? require('../../../assets/v2_images/intro.mp4')
     : { uri: 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/intro-video/intro.mp4' };
-
   const videoUrl = 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/intro-video/intro.mp4';
 
   const player = Platform.OS !== 'web' ? useVideoPlayer(videoSource, player => {
@@ -66,6 +65,7 @@ export const AuthHome = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.wrapper}>
       {Platform.OS === 'web' ? (
         <video
           ref={videoRef}
@@ -115,14 +115,13 @@ export const AuthHome = ({ navigation }) => {
           <TouchableOpacity
             style={[Styles.btnWhite,
             { width: '70%', marginTop: Spacings.md, backgroundColor: '#000' }]}
-            onPress={() => navigation.navigate('register')}
+            onPress={() => Platform.OS !== 'web' ? navigation.navigate('register') : window.open('https://auth.orthomaster.fr', '_blank')}
           >
-            <Text style={[Styles.btnWhiteText, {}]}>
-              Créer un compte
-            </Text>
+            <Text style={Styles.btnWhiteText}>Créer un compte</Text>
           </TouchableOpacity>
         </Animated.View>
       )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -130,7 +129,15 @@ export const AuthHome = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    alignItems: 'center',
     backgroundColor: '#000',
+    paddingBottom: Platform.OS !== 'web' ? 0 : Spacings.xxxl, 
+  },
+  wrapper: {
+    flex: 1,
+    maxWidth: 500,
+    width: '100%',
   },
   video: {
     width: '100%',

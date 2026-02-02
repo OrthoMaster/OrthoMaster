@@ -1,15 +1,16 @@
-// MediaSkeleton.tsx
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
+import { View, Animated, StyleSheet, ScrollView } from 'react-native';
 import Colors from "../../../../constants/Colors";
 import Spacings from "../../../../constants/Spacings";
 
 interface MediaSkeletonProps {
-  numberOfObjects: number;
+  numberOfObjects?: number;
+  horizontal?: boolean;
 }
 
 const MediaSkeleton: React.FC<MediaSkeletonProps> = ({
   numberOfObjects = 1,
+  horizontal = false,
 }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
 
@@ -39,55 +40,46 @@ const MediaSkeleton: React.FC<MediaSkeletonProps> = ({
   });
 
   const renderSkeletonItem = (index: number) => (
-    <View key={index} style={styles.skeletonItem}>
+    <View
+      key={index}
+      style={[
+        styles.skeletonItem,
+        horizontal ? styles.skeletonItemHorizontal : styles.skeletonItemVertical
+      ]}
+    >
       {/* Image */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.squareBox,
+          horizontal ? { width: 100, height: 80 } : { flex: 0.8, aspectRatio: 3 / 2 },
           { opacity }
-        ]} 
+        ]}
       />
-      
+
       {/* Text */}
       <View style={styles.textLines}>
-        <Animated.View 
-          style={[
-            styles.lineBox,
-            styles.lineBoxLong,
-            { opacity }
-          ]} 
-        />
-        <Animated.View 
-          style={[
-            styles.lineBox,
-            styles.lineBoxLong,
-            { opacity }
-          ]} 
-        />
-        <Animated.View 
-          style={[
-            styles.lineBox,
-            styles.lineBoxMedium,
-            { opacity }
-          ]} 
-        />
-        <Animated.View 
-          style={[
-            styles.lineBox,
-            styles.lineBoxShort,
-            { opacity }
-          ]} 
-        />
+        <Animated.View style={[styles.lineBox, styles.lineBoxLong, { opacity }]} />
+        <Animated.View style={[styles.lineBox, styles.lineBoxLong, { opacity }]} />
+        <Animated.View style={[styles.lineBox, styles.lineBoxMedium, { opacity }]} />
+        {!horizontal && (
+          <Animated.View style={[styles.lineBox, styles.lineBoxShort, { opacity }]} />
+        )}
       </View>
     </View>
   );
 
+  const ContainerWrapper = horizontal ? ScrollView : View;
+  const wrapperProps = horizontal ? { horizontal: true, showsHorizontalScrollIndicator: false } : {};
+
   return (
-    <View style={styles.container}>
-      {Array.from({ length: numberOfObjects }).map((_, index) => 
+    <ContainerWrapper
+      {...wrapperProps}
+      style={[styles.container, horizontal && styles.containerHorizontal]}
+    >
+      {Array.from({ length: numberOfObjects }).map((_, index) =>
         renderSkeletonItem(index)
       )}
-    </View>
+    </ContainerWrapper>
   );
 };
 
@@ -95,17 +87,24 @@ const styles = StyleSheet.create({
   container: {
     padding: Spacings.md,
   },
-  skeletonItem: {
-    flex: 1,
+  containerHorizontal: {
     flexDirection: 'row',
+  },
+  skeletonItem: {
+    flexDirection: 'row',
+  },
+  skeletonItemVertical: {
     marginBottom: Spacings.md,
+  },
+  skeletonItemHorizontal: {
+    marginRight: Spacings.md,
+    width: 280,
   },
   squareBox: {
     flex: 0.8,
     aspectRatio: 3 / 2,
     backgroundColor: Colors.gray,
     borderRadius: 8,
-    marginBottom: Spacings.md,
   },
   textLines: {
     flex: 1.2,

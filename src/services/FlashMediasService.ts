@@ -11,15 +11,15 @@ type fetchMediasParams = {
 }
 
 export const fetchMedias = async (params?: fetchMediasParams) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  // const config = await restoreLocalConfigAsync()
+  // const authHeader = 'Bearer ' + config.JWT;
 
 
   return axios
     .get(baseurl + "/", {
-      headers: {
-        Authorization: authHeader
-      },
+      // headers: {
+      //   Authorization: authHeader
+      // },
       params: params
     })
     .then((response) => {

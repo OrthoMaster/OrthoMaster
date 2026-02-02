@@ -11,7 +11,6 @@ import {
   Animated,
   Platform,
   RefreshControl,
-  Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,7 +24,6 @@ import { HomeHeader } from './HomeHeader';
 import { IContent } from '../../utils/interfaces';
 
 import MediaSkeleton from '../../views/media/components/MediaSkeleton';
-import { BouncingDots } from '../../component/LoadingDots';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -48,6 +46,21 @@ interface Topic {
 
 export const HomeView = ({ navigation, route }) => {
   const actionChangeScreen = route.params?.action ?? null;
+
+  const storageGet = async (key: string): Promise<string | null> => {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return await AsyncStorage.getItem(key);
+  };
+
+  const storageSet = async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(key, value);
+      return;
+    }
+    await AsyncStorage.setItem(key, value);
+  };
 
   /** Get user */
   const { data: user, refetch: refetchUser } = useGetUser();
@@ -97,7 +110,7 @@ export const HomeView = ({ navigation, route }) => {
 
   // Handle open modal from pushing notification
   useEffect(() => {
-    // Daily question - mở question đầu tiên
+    // Daily question - Open
     if (actionChangeScreen == 'daily-question' && hasDailyQuestions) {
       const timeout = setTimeout(() => {
         setSelectedQuestionData(dailyContentData.questions[0]);
@@ -107,7 +120,7 @@ export const HomeView = ({ navigation, route }) => {
       return () => clearTimeout(timeout);
     }
 
-    // Podcast - mở podcast đầu tiên
+    // Podcast - Open
     if (actionChangeScreen == 'podcast' && hasDailyPodcasts) {
       const timeout = setTimeout(() => {
         setSelectedPodcastData(dailyContentData.podcasts[0]);
@@ -212,7 +225,7 @@ export const HomeView = ({ navigation, route }) => {
       if (!user || isLoadingTopics || topics.length === 0) return;
 
       try {
-        const hasOpened = await AsyncStorage.getItem('open-topics-onboarding');
+        const hasOpened = await storageGet('open-topics-onboarding');
 
         if (!hasOpened || hasOpened === 'false') {
           setTimeout(() => {
@@ -236,7 +249,7 @@ export const HomeView = ({ navigation, route }) => {
       });
 
       if (result === true) {
-        await AsyncStorage.setItem('open-topics-onboarding', 'true');
+        await storageSet('open-topics-onboarding', 'true');
         setShowOnboarding(false);
         refetchUser();
       }
@@ -250,7 +263,7 @@ export const HomeView = ({ navigation, route }) => {
   // Handle skip onboarding
   const handleSkipOnboarding = async () => {
     try {
-      await AsyncStorage.setItem('open-topics-onboarding', 'true');
+      await storageSet('open-topics-onboarding', 'true');
       setShowOnboarding(false);
     } catch (error) {
       setShowOnboarding(false);
@@ -259,7 +272,7 @@ export const HomeView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }}
-      edges={Platform.OS === 'android' ? ['top', 'left', 'right'] : ['top', 'left', 'right']}>
+      edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}
@@ -356,7 +369,7 @@ export const HomeView = ({ navigation, route }) => {
             )}
           </View>
           {isVideoLoading && (
-            <MediaSkeleton numberOfObjects={3} />
+            <MediaSkeleton numberOfObjects={Platform.OS === 'web' ? 5 : 3} horizontal={Platform.OS === 'web'}/>
           )}
           {!isVideoLoading && !isErrorVideo && (
             <OrthoCarousel entries={videoData} onSelect={handleNavigation} />

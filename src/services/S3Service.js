@@ -7,14 +7,14 @@ const baseurl = process.env.EXPO_PUBLIC_API_URL+"/s3"
 
 
 export const getS3Image = async (path) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  // const config = await restoreLocalConfigAsync()
+  // const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(baseurl + "/content", {
       headers: {
         'Access-Control-Allow-Origin': true,
-        Authorization: authHeader
+        // Authorization: authHeader
       },
       params: {
         key: path
