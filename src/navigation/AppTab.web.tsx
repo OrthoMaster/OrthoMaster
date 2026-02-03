@@ -17,7 +17,7 @@ import Colors from '../../constants/Colors';
 import Spacings from '../../constants/Spacings';
 
 const Stack = createStackNavigator();
-const SIDEBAR_WIDTH = 220;
+const SIDEBAR_WIDTH = 200;
 
 const menuItems = [
   { name: 'home', title: 'Accueil', icon: require('../../assets/v2_images/icon/nav/home.png'), activeColor: Colors.primary, inactiveColor: Colors.orange2, component: HomeStack },
@@ -114,14 +114,58 @@ export const AppTab = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', height: '100vh' as any, backgroundColor: Colors.white },
-  sidebar: { width: SIDEBAR_WIDTH, backgroundColor: '#000', height: '100%' },
-  logoContainer: { paddingVertical: 30, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
-  logo: { width: 45, height: 45, marginBottom: 10 },
-  logoText: { fontSize: 18, fontFamily: 'Poppins-Medium', color: Colors.primary },
-  menuScrollView: { flex: 1, paddingVertical: 15 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 20, marginHorizontal: 10, borderRadius: 10, marginBottom: 8 },
-  menuIcon: { width: 22, height: 22, marginRight: 15 },
-  menuText: { fontSize: 14, fontFamily: 'Poppins-Medium' },
-  mainContent: { flex: 1, overflow: 'hidden' },
+  container: {
+    flex: 1,
+    flexDirection: 'row',
+    height: '100vh' as any,
+    backgroundColor: Colors.white
+  },
+  sidebar: {
+    width: SIDEBAR_WIDTH,
+    backgroundColor: Colors.leftNavBackground,
+    height: '100%'
+  },
+  logoContainer: {
+    paddingVertical: 30,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)'
+  },
+  logo: {
+    width: 45,
+    height: 45,
+    marginBottom: 10,
+    resizeMode: 'contain'
+  },
+  logoText: {
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.primary
+  },
+  menuScrollView: {
+    flex: 1,
+    paddingVertical: 15
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginHorizontal: 10,
+    borderRadius: 10,
+    marginBottom: 8
+  },
+  menuIcon: {
+    width: 22,
+    height: 22,
+    marginRight: 15
+  },
+  menuText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular'
+  },
+  mainContent: {
+    flex: 1,
+    overflow: 'hidden'
+  },
 });

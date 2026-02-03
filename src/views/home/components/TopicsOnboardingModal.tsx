@@ -17,7 +17,9 @@ import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
 const { width, height } = Dimensions.get('window');
-const topicWidth = Math.floor((width - 2 * Spacings.lg - 2 * Spacings.sm) / 3);
+const topicWidth = width > 700 
+  ? Math.floor((width - 2 * Spacings.lg - 8 * Spacings.sm) / 9)
+  : Math.floor((width - 2 * Spacings.lg - 2 * Spacings.sm) / 3);
 
 interface Topic {
   id: string;

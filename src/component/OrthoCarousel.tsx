@@ -36,7 +36,7 @@ const CarousselCard: FC<CarousselCardProps> = ({ item, onPress }) => {
     queryFn: () => getS3Image(`${item.s3_path}/${item.title}/logo.png`)
   });
 
-  // --- VERSION WEB: Thumbnail trên, Content dưới ---
+  // --- VERSION WEB ---
   if (isWeb) {
     return (
       <TouchableOpacity style={styles.cardWeb} onPress={onPress} activeOpacity={0.8}>
@@ -61,7 +61,7 @@ const CarousselCard: FC<CarousselCardProps> = ({ item, onPress }) => {
     );
   }
 
-  // --- VERSION MOBILE: Thumbnail trái, Content phải (Giao diện cũ) ---
+  // --- VERSION MOBILE ---
   return (
     <TouchableOpacity style={styles.cardMobile} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.imageContainerMobile}>
@@ -86,11 +86,12 @@ const CarousselCard: FC<CarousselCardProps> = ({ item, onPress }) => {
 export const OrthoCarousel: FC<{ entries: MediaItem[] | undefined; onSelect: (item: MediaItem) => void }> = ({ entries, onSelect }) => {
   if (isWeb) {
     return (
-      <ScrollView 
+      <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false} 
+        showsHorizontalScrollIndicator={true}
         contentContainerStyle={styles.webScrollContent}
         style={styles.webScrollView}
+        {...(Platform.OS === 'web' && { className: 'custom-scrollbar' })}
       >
         {entries?.map((item) => (
           <CarousselCard key={item.id_content} item={item} onPress={() => onSelect(item)} />
@@ -110,9 +111,16 @@ export const OrthoCarousel: FC<{ entries: MediaItem[] | undefined; onSelect: (it
 
 const styles = StyleSheet.create({
   // Container
-  webScrollView: { width: '100%' },
-  webScrollContent: { paddingHorizontal: Spacings.lg, paddingVertical: Spacings.md, flexDirection: 'row' },
-  mobileContainer: { width: '100%' },
+  webScrollView: {
+    paddingLeft: Spacings.lg,
+  },
+  webScrollContent: {
+    paddingBottom: Spacings.md,
+    flexDirection: 'row',
+  },
+  mobileContainer: {
+    width: '100%',
+  },
 
   // WEB STYLES (New Layout)
   cardWeb: {
@@ -124,13 +132,26 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  imageContainerWeb: { width: '100%', aspectRatio: 16 / 9 },
-  thumbnail: { width: '100%', height: '100%', resizeMode: 'cover' },
-  detailWeb: { padding: Spacings.sm, flex: 1 },
+  imageContainerWeb: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+  },
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  detailWeb: {
+    padding: Spacings.sm,
+    flex: 1,
+  },
 
   // MOBILE STYLES (Original Layout)
   cardMobile: {
@@ -139,15 +160,51 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacings.lg,
     marginVertical: Spacings.xs,
   },
-  imageContainerMobile: { width: 120, height: 80 },
-  thumbnailMobile: { width: 120, height: 80, resizeMode: 'cover', borderRadius: 8 },
-  detailMobile: { flex: 1, paddingLeft: Spacings.sm, justifyContent: 'center' },
-  metaRowMobile: { flexDirection: 'row', alignItems: 'center' },
+  imageContainerMobile: {
+    width: 120,
+    height: 80,
+  },
+  thumbnailMobile: {
+    width: 120,
+    height: 80,
+    resizeMode: 'cover',
+    borderRadius: 8,
+  },
+  detailMobile: {
+    flex: 1,
+    paddingLeft: Spacings.sm,
+    justifyContent: 'center',
+  },
+  metaRowMobile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 
   // Common Typography
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  durationBadge: { flexDirection: 'row', alignItems: 'center' },
-  author: { fontSize: 12, color: Colors.primary, fontWeight: '600', fontFamily: 'Roboto' },
-  metaText: { fontSize: 11, color: Colors.gray },
-  title: { fontFamily: 'Poppins-Medium', fontSize: 14, color: Colors.text, lineHeight: 20 },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  durationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  author: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: '600',
+    fontFamily: 'Roboto',
+  },
+  metaText: {
+    fontSize: 11,
+    color: Colors.gray,
+  },
+  title: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.text,
+    lineHeight: 20,
+  },
 });

@@ -14,7 +14,7 @@ import {
   RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { TextInput } from 'react-native-paper';
 import { BouncingDots } from '../../component/LoadingDots';
 
@@ -264,9 +264,6 @@ export const ProfileInfoView = ({ navigation, route }) => {
       setFormErrors(prev => ({ ...prev, verificationCode: 'Veuillez saisir un code à 6 chiffres !' }));
       return;
     }
-
-    // TODO
-
   };
 
   const handleSubmit = async () => {
@@ -1299,7 +1296,7 @@ const styles = StyleSheet.create({
   selectedOptionSubtext: {
     fontSize: 14,
     color: Colors.subtext2,
-    fontFamily: 'Reboto',
+    fontFamily: 'Roboto',
     paddingLeft: Spacings.md
   },
 

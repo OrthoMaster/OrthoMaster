@@ -431,11 +431,11 @@ export const ProfileView = ({ navigation, route }) => {
       <Portal>
         <Dialog visible={visibleConfirmExit}
           onDismiss={() => setVisibleConfirmExit(false)}
+          style={{ maxWidth: 500, alignSelf: 'center' }}
           theme={{
             colors: {
-              primary: Colors.primary,
               elevation: {
-                level3: Colors.white, // background của dialog
+                level3: Colors.white,
               }
             }
           }}>

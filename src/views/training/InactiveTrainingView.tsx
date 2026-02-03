@@ -128,7 +128,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
     <TouchableOpacity
       style={styles.lessonContainer}
       disabled={!isDemo}
-      onPress={() => handleShowLesson(lesson.title)}
+      onPress={() => {}}
     >
       {/* Icon Circle */}
       <LessonLogoIcon
@@ -170,15 +170,6 @@ export const InactiveTrainingView = ({ navigation, route }) => {
     setSheetData(title);
     setCurrentLessons(lessons);
     bottomSheetRef.current?.snapToIndex(1);
-  }, []);
-
-  // Handle show lesson content
-  const handleShowLesson = useCallback((title: string) => {
-    navigation.navigate('lesson-content', {
-      lessonTitle: 'Title A',
-      trainingName: 'Module A',
-      lessonId: '1',
-    })
   }, []);
 
   // Handle open video modal

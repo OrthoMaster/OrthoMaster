@@ -32,6 +32,7 @@ export const ProfileStack = () => {
         component={NewCompanyView}
         options={{
           headerShown: false,
+          animation: 'slide_from_right',
         }}
       />
 

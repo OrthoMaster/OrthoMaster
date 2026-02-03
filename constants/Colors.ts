@@ -67,6 +67,7 @@ export default {
 
   blackBackground: '#0a0a0a',
   darkBackground: '#303030',
+  leftNavBackground: '#202020',
 
 
   text: '#32343E',

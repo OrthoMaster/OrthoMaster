@@ -133,16 +133,14 @@ export const LoginView = ({ navigation, route }) => {
           />
           <Text style={styles.brand}>OrthoMaster</Text>
         </View>
-        <View style={[styles.form, { maxWidth: 500, width: '100%' }]}>
+        <View style={styles.form}>
           <Text style={styles.title}>Connexion</Text>
-
           {errorMessage && (
             <View style={Styles.errorMessageContainer}>
               <Text style={Styles.errorText}>{errorMessage}</Text>
             </View>
           )}
 
-          {/* Email Input */}
           <View style={Styles.inputContainer}>
             <TextInput
               multiline={false}
@@ -177,7 +175,6 @@ export const LoginView = ({ navigation, route }) => {
             )}
           </View>
 
-          {/* Password Input */}
           <View style={Styles.inputContainer}>
             <TextInput
               multiline={false}
@@ -225,7 +222,6 @@ export const LoginView = ({ navigation, route }) => {
             )}
           </View>
 
-          {/* Forgot Password */}
           <View style={styles.forgotPasswordWrapper}>
             <TouchableOpacity
               onPress={() => { window.open('https://auth.orthomaster.fr/forgot-password', '_blank'); }}
@@ -282,6 +278,7 @@ const styles = StyleSheet.create({
   logo: {
     height: 120,
     marginBottom: Spacings.md,
+    resizeMode: 'contain'
   },
   brand: {
     fontSize: 24,
@@ -293,6 +290,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: Spacings.lg,
     alignSelf: 'center',
+    maxWidth: 600,
   },
   title: {
     fontSize: 20,

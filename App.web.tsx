@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Dimensions, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import * as Linking from "expo-linking";
 const prefix = Linking.createURL('/');
 
-import { View, Animated } from 'react-native';
+import { Animated } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
@@ -19,6 +20,7 @@ import { useGetUser } from './src/hooks/auth.hook';
 import { authEvents, sendError } from './src/services/v2/AuthService';
 
 import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScreen';
+import DownloadPage from './src/views/download/DownloadPage';
 
 // Constants for app reset logic (WEB)
 const LAST_ACTIVE_KEY = '@app_last_active_time';
@@ -28,6 +30,8 @@ const INACTIVE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 const queryClient = new QueryClient();
 
 export default function App({ navigation }) {
+  const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
+
   const [showSplash, setShowSplash] = useState(true);
   const [appIsReady, setAppIsReady] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -36,6 +40,18 @@ export default function App({ navigation }) {
   const { data: user } = useGetUser();
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const previousUserRef = useRef(null);
+
+  // Listen to window resize
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setWindowWidth(window.width);
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  // Check if should show mobile download page
+  const shouldShowDownloadPage = Platform.OS === 'web' && windowWidth < 900;
 
   // WEB: Check if app should reset based on inactivity or new day
   const checkIfShouldResetApp = async () => {
@@ -204,6 +220,11 @@ export default function App({ navigation }) {
       }
     }
   };
+
+  // Show download page for mobile screens
+  if (shouldShowDownloadPage && appIsReady && !showSplash) {
+    return <DownloadPage />;
+  }
 
   return (
     <>

@@ -203,7 +203,7 @@ export const HomeView = ({ navigation, route }) => {
   };
 
   /** Topics onboarding */
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
   const [topics, setTopics] = useState<Topic[]>([]);
 
   // Load topics data
@@ -285,7 +285,7 @@ export const HomeView = ({ navigation, route }) => {
             tintColor={Colors.primary}
           />
         }>
-        <HomeHeader userName={user.name}
+        <HomeHeader userName={user.name + ' ' + (user.first_name ?? '' )}
           onNotificationPress={() => navigation.navigate('notification-list')}
           hasNotification={user.settings?.notifications.length > 0 || false}
           onSearchPress={() => navigation.navigate('home-search')}
@@ -430,7 +430,7 @@ export const HomeView = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   carouselContainer: {
-    marginVertical: Spacings.md
+    marginVertical: Spacings.lg
   },
   carouselHeader: {
     width: '100%',

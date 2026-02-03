@@ -67,7 +67,8 @@
     },
     "web": {
       "favicon": "./assets/v2_images/logo/logo_primary_1024.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static"
     },
     "extra": {
       "eas": {

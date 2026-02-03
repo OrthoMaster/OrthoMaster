@@ -129,7 +129,7 @@ export const Styles = StyleSheet.create({
   },
   dialogTitle: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 22,
+    fontSize: 20,
     marginTop: Spacings.md,
     marginBottom: Spacings.sm
   },
@@ -148,5 +148,21 @@ export const Styles = StyleSheet.create({
     fontFamily: 'Poppins-Bold',
     fontSize: 12,
     color: Colors.white
-  }
+  },
+
+  dialogWeb: {
+    maxWidth: 500,
+    alignSelf: 'center',
+    backgroundColor: 'white',
+  },
+  dialogWebTitle: {
+    fontSize: 20,
+    color: Colors.primary,
+    fontFamily: 'Poppins-Medium',
+  },
+  dialogWebContent: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+    color: Colors.text
+  },
 });
