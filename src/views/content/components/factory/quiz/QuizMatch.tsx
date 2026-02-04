@@ -29,37 +29,6 @@ const buttonColor = [
 ]
 
 const QuizFixedBox = ({ item, index }) => {
-  const content = useSelector(selectContent)
-  const [boxImage, setBoxImage] = useState(null)
-
-  const fetchBoxImage = async () => {
-    try {
-      let path = content.type + '/' + content.module_num + '/' + content.title + '/' + item.children[0].attributes.src
-      if (content.type != 'lesson') {
-        path = content.type + '/' + content.title + '/' + item.children[0].attributes.src
-      }
-
-      return await getS3Image(path)
-    } catch (error) {
-      throw error
-    }
-  }
-
-  useEffect(() => {
-    var isMounted = true
-
-    if (item.children.length > 0) {
-      fetchBoxImage().then((url) => {
-        if (isMounted) {
-          setBoxImage(url)
-        }
-      })
-    }
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
   return (
     <View
       style={[styles.questionListItem, {
@@ -69,14 +38,12 @@ const QuizFixedBox = ({ item, index }) => {
     >
       {
         item.children.length > 0 ?
-          boxImage ?
-            <Image source={{ uri: boxImage }} style={{
-              resizeMode: 'contain',
-              height: 100,
-              width: '100%',
-            }} />
-            : <ActivityIndicator />
-          : <Text>{item?.value || 'txt'}</Text>
+          <Image source={{ uri: item.children[0].attributes['s3'] }} style={{
+            resizeMode: 'contain',
+            height: 100,
+            width: '100%',
+          }} />
+          : <Text style={{ height: 100 }}>{item?.value || 'txt'}</Text>
       }
     </View>
   )
@@ -106,18 +73,6 @@ const QuizAnswerBox = ({ config, onColorChange, quizDone }) => {
     ]
   });
 
-  const fetchBoxImage = async () => {
-    try {
-      let path = content.type + '/' + content.module_num + '/' + content.title + '/' + config.children[0].attributes.src
-
-      if (content.type != 'lesson') {
-        path = content.type + '/' + content.title + '/' + config.children[0].attributes.src
-      }
-      return await getS3Image(path)
-    } catch (error) {
-      throw error
-    }
-  }
   const handleClick = () => {
     if (quizDone) {
       return
@@ -130,21 +85,6 @@ const QuizAnswerBox = ({ config, onColorChange, quizDone }) => {
   }
 
   useEffect(() => {
-    var isMounted = true
-
-    if (config.children.length > 0) {
-      fetchBoxImage().then((url) => {
-        if (isMounted) {
-          setBoxImage(url)
-        }
-      })
-    }
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  useEffect(() => {
     onColorChange({ ref: config.attributes.ref, color: buttonColor[boxColorIndex] })
   }, [boxColorIndex])
 
@@ -152,10 +92,7 @@ const QuizAnswerBox = ({ config, onColorChange, quizDone }) => {
     if (quizDone) {
       handleAnimation()
     }
-
   }, [quizDone])
-
-
 
   return (
     <TouchableOpacity
@@ -175,14 +112,14 @@ const QuizAnswerBox = ({ config, onColorChange, quizDone }) => {
       >
         {
           config.children.length > 0 ?
-            boxImage ?
-              <Image source={{ uri: boxImage }} style={{
+            <Image
+              source={{ uri: config.children[0].attributes['s3'] }}
+              style={{
                 resizeMode: 'contain',
-                height: 125,
+                height: 100,
                 width: '100%',
               }} />
-              : <ActivityIndicator />
-            : <Text>{config?.value || 'txt'}</Text>
+            : <Text style={{ height: 100 }}>{config?.value || 'txt'}</Text>
         }
       </Animated.View>
     </TouchableOpacity>
@@ -247,7 +184,7 @@ export const QuizMatch = ({ quizPossibilities, quizDone, quizAnswer, onSelect })
       <View style={styles.answerContainer}>
         <View style={styles.receivingContainer}>
           {quizPossibilities.map((item, index) => {
-            return <QuizFixedBox key={index} item={item} isDisable={true} index={index} />
+            return <QuizFixedBox key={index} item={item} index={index} />
           })}
         </View>
 

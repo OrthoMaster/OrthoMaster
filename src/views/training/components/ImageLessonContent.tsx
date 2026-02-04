@@ -28,6 +28,7 @@ export const ImageLessonContent = ({ url, config }) => {
             alignSelf: 'center',
             width: imgWidth,
             height: imageHeight,
+            resizeMode: 'contain'
           }}
           resizeMode='contain'
           source={{ uri: url }}

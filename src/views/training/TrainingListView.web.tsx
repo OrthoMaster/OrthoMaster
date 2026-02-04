@@ -156,32 +156,28 @@ export const TrainingListView = ({ navigation, route }) => {
   // Calculate responsive columns and item size
   const getColumnsAndSize = () => {
     if (windowWidth >= 1400) {
-      // Extra large screens: 6 columns
-      const cols = 6;
+      const cols = 12;
       const itemSize = (windowWidth - (2 * Spacings.lg) - ((cols - 1) * Spacings.sm)) / cols;
       return {
         columns: cols,
         itemSize
       };
     } else if (windowWidth >= 1200) {
-      // Large screens: 5 columns
-      const cols = 5;
+      const cols = 8;
       const itemSize = (windowWidth - (2 * Spacings.lg) - ((cols - 1) * Spacings.sm)) / cols;
       return {
         columns: cols,
         itemSize
       };
     } else if (windowWidth >= 900) {
-      // Medium screens: 4 columns
-      const cols = 4;
+      const cols = 7;
       const itemSize = (windowWidth - (2 * Spacings.lg) - ((cols - 1) * Spacings.sm)) / cols;
       return {
         columns: cols,
         itemSize
       };
     } else {
-      // Small screens: 3 columns (default)
-      const cols = 3;
+      const cols = 6;
       const itemSize = (windowWidth - (2 * Spacings.lg) - ((cols - 1) * Spacings.sm)) / cols;
       return {
         columns: cols,
@@ -191,7 +187,6 @@ export const TrainingListView = ({ navigation, route }) => {
   };
 
   const { columns, itemSize } = getColumnsAndSize();
-
   const { data: trainings, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['trainings'],
     queryFn: () => getTrainings(),

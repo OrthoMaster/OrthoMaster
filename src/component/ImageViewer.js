@@ -7,7 +7,6 @@ export const ImageViewer = ({ url, visible, onClose }) => {
     const screenHeight = Dimensions.get("window").height
     const [imageSize, setImageSize] = useState({ width: screenWidth, height: screenWidth })
 
-
     return (
         <Modal visible={visible} onRequestClose={onClose} statusBarTranslucent animationType="slide">
             <StatusBar

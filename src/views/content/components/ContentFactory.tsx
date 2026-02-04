@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 
-import { StyleSheet, View, Text } from 'react-native';
+import { View, Text } from 'react-native';
 import { ImageFactory } from './factory/ImageFactory';
 import { TextFactory } from './factory/TextFactory';
 import { VideoFactory } from './factory/video/VideoFactory';

@@ -10,6 +10,7 @@ import {
   Animated,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -485,7 +486,7 @@ const styles = StyleSheet.create({
     left: 0,
     width: '100%',
     paddingHorizontal: Spacings.xl,
-    paddingBottom: Spacings.xxl,
+    paddingBottom: Platform.OS === 'ios' ? Spacings.xxl : Spacings.xxxl,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   continueButton: {
