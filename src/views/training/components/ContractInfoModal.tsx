@@ -7,6 +7,7 @@ import {
   Modal,
   StyleSheet,
   Linking,
+  Platform
 } from 'react-native';
 import { FontAwesome6, Ionicons } from '@expo/vector-icons';
 
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
   contractInfoModalContent: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    width: '100%',
+    width: Platform.OS === 'web' ? 600 : '100%',
     maxHeight: '90%',
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },

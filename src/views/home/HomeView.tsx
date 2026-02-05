@@ -47,6 +47,49 @@ interface Topic {
 export const HomeView = ({ navigation, route }) => {
   const actionChangeScreen = route.params?.action ?? null;
 
+  // Global CSS Scroll bar - Web version
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const styleId = 'global-scrollbar-styles';
+
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          /* Scrollbar thin và neutral cho cả light/dark mode */
+          ::-webkit-scrollbar {
+            width: 8px;  /* Scrollbar dọc */
+            height: 8px; /* Scrollbar ngang */
+          }
+          
+          ::-webkit-scrollbar-track {
+            background: rgba(128, 128, 128, 0.1); /* Gray nhạt, trong suốt */
+            border-radius: 10px;
+          }
+          
+          ::-webkit-scrollbar-thumb {
+            background: rgba(128, 128, 128, 0.4); /* Gray trung bình */
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: rgba(128, 128, 128, 0.6); /* Đậm hơn khi hover */
+            background-clip: padding-box;
+          }
+          
+          /* Firefox */
+          * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(128, 128, 128, 0.4) rgba(128, 128, 128, 0.1);
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, []);
+
   const storageGet = async (key: string): Promise<string | null> => {
     if (Platform.OS === 'web') {
       return localStorage.getItem(key);
@@ -285,7 +328,7 @@ export const HomeView = ({ navigation, route }) => {
             tintColor={Colors.primary}
           />
         }>
-        <HomeHeader userName={user.name + ' ' + (user.first_name ?? '' )}
+        <HomeHeader userName={user.name + ' ' + (user.first_name ?? '')}
           onNotificationPress={() => navigation.navigate('notification-list')}
           hasNotification={user.settings?.notifications.length > 0 || false}
           onSearchPress={() => navigation.navigate('home-search')}
@@ -369,7 +412,7 @@ export const HomeView = ({ navigation, route }) => {
             )}
           </View>
           {isVideoLoading && (
-            <MediaSkeleton numberOfObjects={Platform.OS === 'web' ? 5 : 3} horizontal={Platform.OS === 'web'}/>
+            <MediaSkeleton numberOfObjects={Platform.OS === 'web' ? 5 : 3} horizontal={Platform.OS === 'web'} />
           )}
           {!isVideoLoading && !isErrorVideo && (
             <OrthoCarousel entries={videoData} onSelect={handleNavigation} />

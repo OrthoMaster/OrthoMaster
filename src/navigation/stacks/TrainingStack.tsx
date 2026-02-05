@@ -1,5 +1,7 @@
 /** @author Francis */
 import React from 'react'
+import { Platform } from 'react-native';
+
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { TrainingListView } from "../../views/training/TrainingListView";
@@ -49,58 +51,71 @@ export const TrainingStack = () => {
       <TrainingStackNav.Screen
         name="inactive-training-view"
         component={InactiveTrainingView}
-        options={{
-          headerShown: false,
-          cardStyleInterpolator: forZoomFromCenter,
-          transitionSpec: {
-            open: {
-              animation: 'spring',
-              config: {
-                stiffness: 150,
-                damping: 30,
-              },
-            },
-            close: {
-              animation: 'timing',
-              config: {
-                duration: 350,
-              },
-            },
-          },
-        }}
+        options={
+          Platform.OS === 'web'
+            ? {
+              headerShown: false,
+              presentation: 'transparentModal',
+              animation: 'slide_from_right',
+            }
+            : {
+              headerShown: false,
+              cardStyleInterpolator: forZoomFromCenter,
+              transitionSpec: {
+                open: {
+                  animation: 'spring',
+                  config: {
+                    stiffness: 150,
+                    damping: 30,
+                  },
+                },
+                close: {
+                  animation: 'timing',
+                  config: {
+                    duration: 350,
+                  },
+                },
+              }
+            }
+        }
       />
       <TrainingStackNav.Screen
         name="training-view"
         component={TrainingView}
-        options={{
-          headerShown: false,
-          cardStyleInterpolator: forZoomFromCenter,
-          transitionSpec: {
-            open: {
-              animation: 'spring',
-              config: {
-                stiffness: 150,
-                damping: 30,
+        options={
+          Platform.OS === 'web'
+            ? {
+              headerShown: false,
+              presentation: 'transparentModal',
+              animation: 'slide_from_right',
+            }
+            : {
+              headerShown: false,
+              cardStyleInterpolator: forZoomFromCenter,
+              transitionSpec: {
+                open: {
+                  animation: 'spring',
+                  config: {
+                    stiffness: 150,
+                    damping: 30,
+                  },
+                },
+                close: {
+                  animation: 'timing',
+                  config: {
+                    duration: 350,
+                  },
+                },
               },
-            },
-            close: {
-              animation: 'timing',
-              config: {
-                duration: 350,
-              },
-            },
-          },
-        }}
+            }}
       />
-
-      
 
       <TrainingStackNav.Screen
         name="cart-view"
         component={CartView}
         options={{
           headerShown: false,
-          presentation: 'card',
+          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
         }}
       />
 
@@ -109,7 +124,7 @@ export const TrainingStack = () => {
         component={PreviewView}
         options={{
           headerShown: false,
-          presentation: 'card',
+          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
         }}
       />
 
@@ -140,25 +155,32 @@ export const TrainingStack = () => {
       <TrainingStackNav.Screen
         name="lesson-content-xml"
         component={LessonContentWithXML}
-        options={{
-          headerShown: false,
-          cardStyleInterpolator: forZoomFromCenter,
-          transitionSpec: {
-            open: {
-              animation: 'spring',
-              config: {
-                stiffness: 150,
-                damping: 30,
+        options={
+          Platform.OS === 'web'
+            ? {
+              headerShown: false,
+              presentation: 'transparentModal',
+              animation: 'fade_from_bottom',
+            }
+            : {
+              headerShown: false,
+              cardStyleInterpolator: forZoomFromCenter,
+              transitionSpec: {
+                open: {
+                  animation: 'spring',
+                  config: {
+                    stiffness: 150,
+                    damping: 30,
+                  },
+                },
+                close: {
+                  animation: 'timing',
+                  config: {
+                    duration: 350,
+                  },
+                },
               },
-            },
-            close: {
-              animation: 'timing',
-              config: {
-                duration: 350,
-              },
-            },
-          },
-        }}
+            }}
       />
     </TrainingStackNav.Navigator>
   );

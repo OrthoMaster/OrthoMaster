@@ -1,4 +1,6 @@
-import React from 'react'
+import React from 'react';
+
+import { Platform } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { HomeView } from '../../views/home/HomeView';
@@ -86,13 +88,13 @@ export const HomeStack = () => {
         }}
       />
 
-
       <HomeStackNav.Screen
         name="notification-list"
         component={NotificationView}
         options={{
           headerShown: false,
           animation: 'slide_from_right',
+          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
         }}
       />
       <HomeStackNav.Screen
@@ -101,6 +103,7 @@ export const HomeStack = () => {
         options={{
           headerShown: false,
           animation: 'slide_from_right',
+          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
         }}
       />
 

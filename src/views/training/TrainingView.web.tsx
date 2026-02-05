@@ -5,15 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
-  StatusBar,
   Animated,
   Dimensions
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, Portal, Dialog, Button } from 'react-native-paper';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 
 import Colors from "../../../constants/Colors";
 import Spacings from "../../../constants/Spacings";
@@ -25,20 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { BouncingDots } from '../../component/LoadingDots';
 
-type Tab = 'detail' | 'course';
-
 export const TrainingView = ({ navigation, route }) => {
-  // Hide bottom nav when screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      navigation.getParent()?.setOptions({
-        tabBarStyle: {
-          display: 'none'
-        }
-      });
-    }, [navigation])
-  );
-
   // Get params from route
   const {
     pkgId,
@@ -86,21 +69,6 @@ export const TrainingView = ({ navigation, route }) => {
     }
     return moduleColors;
   }, [backgroundColor]);
-
-  // Refetch when screen is focused (goBack from other screen)
-  useFocusEffect(
-    useCallback(() => {
-      if (isInitialMount.current) {
-        isInitialMount.current = false;
-        return;
-      }
-
-      refetch().then(() => {
-        setHasScrolledToSelected(false);
-        setSelectedLessonId(null);
-      });
-    }, [refetch])
-  );
 
   // Helper function to lighten a hex color
   const lightenColor = (color: string, amount: number = 0.75) => {
@@ -518,7 +486,7 @@ export const TrainingView = ({ navigation, route }) => {
   });
 
   // Handle close modal
-  const closeModal = () => {
+  const handleClose = () => {
     navigation.goBack();
   };
 
@@ -530,144 +498,155 @@ export const TrainingView = ({ navigation, route }) => {
   }, [error]);
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: Colors.darkBackground }}
-      edges={['top', 'left', 'right']}
-    >
-      {/* Header */}
-      <View style={[
-        styles.header,
-        { backgroundColor }
-      ]}>
+    <>
+      {/* Overlay */}
+      <TouchableOpacity
+        style={styles.overlay}
+        activeOpacity={1}
+        onPress={handleClose}
+      >
+        {/* Training Panel */}
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={closeModal}
+          activeOpacity={1}
+          style={styles.trainingPanel}
+          onPress={(e) => e.stopPropagation()}
         >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={Colors.white}
-          />
-        </TouchableOpacity>
+          {/* Header */}
+          <View style={[
+            styles.header,
+            { backgroundColor }
+          ]}>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTrainingName}>
+                {trainingName}
+              </Text>
+              <Text style={styles.headerPackageName}>
+                {pkg?.name ?? '---'}
+              </Text>
+            </View>
 
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTrainingName}>
-            {trainingName}
-          </Text>
-          <Text style={styles.headerPackageName}>
-            {pkg?.name ?? '---'}
-          </Text>
-        </View>
-
-        {isFetching && (
-          <ActivityIndicator
-            size="small"
-            color={Colors.white}
-            style={{ marginLeft: Spacings.sm }}
-          />
-        )}
-      </View>
-
-      <View style={styles.moduleNameContainer}>
-        {/* Loading */}
-        {(isLoading || isFetching) && !error && (
-          <BouncingDots
-            color={Colors.blue}
-            size={10}
-            bounceHeight={5}
-            containerStyle={{
-              position: 'absolute',
-              backgroundColor: 'transparent',
-              zIndex: 999,
-              elevation: 5,
-              bottom: 0,
-              left: '45%',
-            }}
-          />
-        )}
-
-        {/* Error */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <MaterialCommunityIcons
-              name="alert-circle-outline"
-              size={64}
-              color={Colors.danger}
-            />
-            <Text style={styles.errorTitle}>
-              Erreur de chargement
-            </Text>
-            <Text style={styles.errorMessage}>
-              Impossible de charger les formation
-            </Text>
             <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => refetch()}
+              style={styles.backButton}
+              onPress={handleClose}
             >
               <Ionicons
-                name="refresh"
-                size={20}
+                name="close"
+                size={28}
                 color={Colors.white}
               />
-              <Text style={styles.retryButtonText}>
-                Réessayer
-              </Text>
             </TouchableOpacity>
+
+            {isFetching && (
+              <ActivityIndicator
+                size="small"
+                color={Colors.white}
+                style={{ marginLeft: Spacings.sm }}
+              />
+            )}
           </View>
-        )}
 
-        {/* Module Message Box with Animation */}
-        {pkg &&
-          <Animated.View
-            style={[
-              styles.moduleMessageBox,
-              {
-                backgroundColor: getCurrentModuleColor(),
-                opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }]
-              }
-            ]}
-          >
-            <Text style={styles.moduleMessageSubtext}>
-              Module
-            </Text>
-            <Text style={styles.moduleMessageText}>
-              {getCurrentModuleName()}
-            </Text>
-          </Animated.View>
-        }
+          <View style={styles.moduleNameContainer}>
+            {/* Loading */}
+            {(isLoading || isFetching) && !error && (
+              <BouncingDots
+                color={Colors.blue}
+                size={10}
+                bounceHeight={5}
+                containerStyle={{
+                  position: 'absolute',
+                  backgroundColor: 'transparent',
+                  zIndex: 999,
+                  elevation: 5,
+                  bottom: 0,
+                  left: '45%',
+                }}
+              />
+            )}
 
-        {/* Content */}
-        {pkg &&
-          <View style={styles.contentContainer}>
-            <ScrollView
-              ref={scrollViewRef}
-              showsVerticalScrollIndicator={false}
-              style={{ flex: 1 }}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-            >
-              {pkg.modules.map((module, moduleIndex) => (
-                <ModuleSection
-                  key={module.id}
-                  module={module}
-                  moduleIndex={moduleIndex}
+            {/* Error */}
+            {error && (
+              <View style={styles.errorContainer}>
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={64}
+                  color={Colors.danger}
                 />
-              ))}
-              <View style={{
-                height: Dimensions.get('window').height - 380
-              }} />
-            </ScrollView>
+                <Text style={styles.errorTitle}>
+                  Erreur de chargement
+                </Text>
+                <Text style={styles.errorMessage}>
+                  Impossible de charger les formation
+                </Text>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={() => refetch()}
+                >
+                  <Ionicons
+                    name="refresh"
+                    size={20}
+                    color={Colors.white}
+                  />
+                  <Text style={styles.retryButtonText}>
+                    Réessayer
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Module Message Box with Animation */}
+            {pkg &&
+              <Animated.View
+                style={[
+                  styles.moduleMessageBox,
+                  {
+                    backgroundColor: getCurrentModuleColor(),
+                    opacity: fadeAnim,
+                    transform: [{ scale: scaleAnim }]
+                  }
+                ]}
+              >
+                <Text style={styles.moduleMessageSubtext}>
+                  Module
+                </Text>
+                <Text style={styles.moduleMessageText}>
+                  {getCurrentModuleName()}
+                </Text>
+              </Animated.View>
+            }
+
+            {/* Content */}
+            {pkg &&
+              <View style={styles.contentContainer}>
+                <ScrollView
+                  ref={scrollViewRef}
+                  showsVerticalScrollIndicator={false}
+                  style={{ flex: 1 }}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                >
+                  {pkg.modules.map((module, moduleIndex) => (
+                    <ModuleSection
+                      key={module.id}
+                      module={module}
+                      moduleIndex={moduleIndex}
+                    />
+                  ))}
+                  <View style={{
+                    height: Dimensions.get('window').height - 380
+                  }} />
+                </ScrollView>
+              </View>
+            }
           </View>
-        }
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
 
       {/* Portal Dialog (replacing Alert) */}
       <Portal>
         <Dialog
           visible={showErrorDialog}
           onDismiss={() => setShowErrorDialog(false)}
-          style={Styles.dialogWeb}
+          style={styles.dialogWeb}
         >
           <Dialog.Title style={[
             Styles.dialogWebTitle,
@@ -686,7 +665,7 @@ export const TrainingView = ({ navigation, route }) => {
               labelStyle={{
                 fontFamily: 'Poppins-Medium'
               }}
-              onPress={closeModal}
+              onPress={handleClose}
             >
               Fermer
             </Button>
@@ -705,11 +684,29 @@ export const TrainingView = ({ navigation, route }) => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
-    </SafeAreaView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  // Modal & Overlay
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+  },
+  trainingPanel: {
+    width: 700,
+    height: '100%',
+    backgroundColor: Colors.darkBackground,
+    shadowColor: Colors.black,
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -721,6 +718,9 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255, 0.1)',
+
   },
   headerTextContainer: {
     flex: 1,
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
   },
   moduleNameContainer: {
     flex: 1,
-    width: 700,
+    width: '100%',
     alignSelf: 'center',
     backgroundColor: Colors.darkBackground,
   },
@@ -833,5 +833,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
+  },
+
+  // Dialog Styles
+  dialogWeb: {
+    backgroundColor: Colors.white,
+    borderRadius: 8,
+    maxWidth: 400,
+    alignSelf: 'center',
+    position: 'absolute',
   },
 });

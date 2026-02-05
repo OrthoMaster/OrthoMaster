@@ -32,9 +32,9 @@ import LessonLogoIcon from './components/LessonLogoIcon';
 
 type Tab = 'detail' | 'course';
 
-const MODAL_WIDTH = 680;
-const MODAL_HEIGHT_PERCENT = 0.95;
-const COLUMN_COUNT = 4;
+const MODAL_WIDTH = 700;
+const MODAL_HEIGHT_PERCENT = 1;
+const COLUMN_COUNT = 5;
 const ITEM_SPACING = Spacings.md;
 const ITEM_WIDTH = (MODAL_WIDTH - (Spacings.lg * 2) - (ITEM_SPACING * (COLUMN_COUNT - 1))) / COLUMN_COUNT;
 
@@ -280,15 +280,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView
-      style={styles.wrapper}
-      edges={['top', 'left', 'right']}
-    >
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="rgba(0, 0, 0, 0.5)"
-      />
-
+    <>
       {/* Modal Overlay */}
       <View style={styles.modalOverlay}>
         <GestureHandlerRootView style={styles.modalContainer}>
@@ -646,25 +638,24 @@ export const InactiveTrainingView = ({ navigation, route }) => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
-    </SafeAreaView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContainer: {
     width: MODAL_WIDTH,
     height: `${MODAL_HEIGHT_PERCENT * 100}%`,
-    borderRadius: 24,
     overflow: 'hidden',
     elevation: 10,
     shadowColor: Colors.black,

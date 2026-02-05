@@ -1,5 +1,6 @@
-import React, {useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react'
 
+import { Platform } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { FlashMediaView } from '../../views/flash/FlashMediaView';
@@ -7,13 +8,10 @@ import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 import { PreviewMediaView } from '../../views/flash/PreviewMediaView';
 import ChannelMediaView from '../../views/flash/ChannelMediaView';
 import ReturnButtonIcon from '../components/ReturnButton';
-import { useIsFocused } from '@react-navigation/native';
-import { getCurrentDate } from '../../futils';
-import { saveEvent } from '../../services/SessionEventService';
 
 
 const FlashStackNav = createStackNavigator();
-export const FlashStack = ({}) => {
+export const FlashStack = ({ }) => {
 
   // const focused = useIsFocused()
   // const startDate = null
@@ -28,20 +26,24 @@ export const FlashStack = ({}) => {
   //     })
   //   }
   // }, [focused])
-  
+
 
 
   return (
     <FlashStackNav.Navigator
-    initialRouteName='flash-media-home'
-    screenOptions={{
-      animation: 'default'
-    }}
+      id={"media-stack" as undefined}
+      initialRouteName='flash-media-home'
+      screenOptions={{
+        animation: 'default'
+      }}
     >
       <FlashStackNav.Screen
         name="flash-media-home"
         component={FlashMediaView}
-        options={{
+        options={
+          Platform.OS === 'web'
+          ? { headerShown: false, }
+          :{
           headerShown: true,
           title: 'Médias',
           headerTintColor: '#fff',
@@ -67,7 +69,7 @@ export const FlashStack = ({}) => {
           headerTitle: "",
           headerBackButtonDisplayMode: "minimal",
           headerTransparent: true,
-          headerBackImage: ()=>(<ReturnButtonIcon />)
+          headerBackImage: () => (<ReturnButtonIcon />)
         }}
       />
 
@@ -88,7 +90,7 @@ export const FlashStack = ({}) => {
           headerBackButtonDisplayMode: "minimal",
           headerTintColor: '#000',
           headerTransparent: true,
-          headerBackImage: ()=>(<ReturnButtonIcon />)
+          headerBackImage: () => (<ReturnButtonIcon />)
         }}
       />
 

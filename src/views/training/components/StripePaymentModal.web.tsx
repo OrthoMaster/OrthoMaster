@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { confirmPayment } from '../../../services/v2/CartService';
+import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
@@ -143,7 +144,7 @@ const PaymentForm = ({
             <div style={styles.buttonSpinner} />
           ) : (
             <>
-              <span style={styles.cardIcon}>💳</span>
+              <Ionicons name="card-sharp" size={20} color={Colors.white} />
               <span style={styles.payButtonText}>Payer</span>
             </>
           )}
@@ -215,14 +216,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     display: 'flex',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
   },
   modalContent: {
     backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
     maxHeight: '90%',
     width: '100%',
     maxWidth: 600,
@@ -239,8 +239,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderBottom: `1px solid ${Colors.line}`,
   },
   modalTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins-Medium, -apple-system, sans-serif',
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
     color: Colors.text,
     margin: 0,
   },
@@ -289,7 +289,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: Colors.text,
     textAlign: 'center',
     marginBottom: Spacings.xl,
-    marginTop: Spacings.sm,
+    marginTop: Spacings.xs,
   },
   cardFieldContainer: {
     marginBottom: Spacings.md,
@@ -315,8 +315,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: '1px solid #fcc',
   },
   errorText: {
-    color: '#c33',
-    fontSize: 13,
+    color: Colors.danger,
+    fontSize: 14,
     fontFamily: 'Poppins-Regular, -apple-system, sans-serif',
     margin: 0,
   },
@@ -358,7 +358,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   payButtonText: {
     fontSize: 15,
-    fontFamily: 'Poppins-Bold, -apple-system, sans-serif',
+    fontFamily: 'Poppins-Medium, -apple-system, sans-serif',
     color: Colors.white,
   },
   cardIcon: {

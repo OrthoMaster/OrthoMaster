@@ -1,5 +1,7 @@
 /** @author Francis */
 import React from 'react'
+import { Platform } from 'react-native';
+
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { ProfileView } from '../../views/profile/ProfileView';
@@ -41,6 +43,7 @@ export const ProfileStack = () => {
         component={NotificationView}
         options={{
           headerShown: false,
+          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
           animation: 'slide_from_right',
         }}
       />

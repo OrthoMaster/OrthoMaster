@@ -91,7 +91,6 @@ export const OrthoCarousel: FC<{ entries: MediaItem[] | undefined; onSelect: (it
         showsHorizontalScrollIndicator={true}
         contentContainerStyle={styles.webScrollContent}
         style={styles.webScrollView}
-        {...(Platform.OS === 'web' && { className: 'custom-scrollbar' })}
       >
         {entries?.map((item) => (
           <CarousselCard key={item.id_content} item={item} onPress={() => onSelect(item)} />
@@ -112,7 +111,7 @@ export const OrthoCarousel: FC<{ entries: MediaItem[] | undefined; onSelect: (it
 const styles = StyleSheet.create({
   // Container
   webScrollView: {
-    paddingLeft: Spacings.lg,
+    marginLeft: Spacings.lg,
   },
   webScrollContent: {
     paddingBottom: Spacings.md,
@@ -130,14 +129,8 @@ const styles = StyleSheet.create({
     marginRight: Spacings.md,
     borderRadius: 12,
     overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: Colors.line
   },
   imageContainerWeb: {
     width: '100%',

@@ -34,6 +34,7 @@ interface Package {
   name: string;
   short_name: string;
   image?: string;
+  image_2?: string;
   color: string;
   duration: number;
   duration_text: string;
@@ -73,14 +74,14 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
       {/* Circle Container */}
       <View style={[
         styles.courseCircle,
-        { backgroundColor: isDisabled ? backgroundColor : color },
+        { backgroundColor: isDisabled ? color : backgroundColor },
         isSelected && styles.courseCircleSelected,
         isDisabled && styles.courseCircleDisabled
       ]}>
         {/* Icon */}
         {pkg.image
           ? <Image
-            source={{ uri: process.env.EXPO_PUBLIC_S3_URL + pkg.image }}
+            source={{ uri: process.env.EXPO_PUBLIC_S3_URL + isDisabled ? pkg.image : pkg.image_2 }}
             style={[{
               width: '100%',
               height: '100%',
@@ -104,17 +105,17 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
         )}
 
         {/* Lock Icon for Disabled */}
-        {isDisabled && (
+        {/* {isDisabled && (
           <View style={styles.lockOverlay}>
             <MaterialCommunityIcons name="check-decagram" size={20} color={color || Colors.success} />
           </View>
-        )}
+        )} */}
       </View>
 
       {/* Duration Badge */}
       <View style={[
         styles.durationBadge,
-        isDisabled && [styles.durationBadgeDisabled, { backgroundColor: Colors.lgreen3 }]
+        isDisabled && [styles.durationBadgeDisabled, { backgroundColor: Colors.lgreenDark }]
       ]}>
         {!isDisabled &&
           <Ionicons
@@ -125,7 +126,7 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
         }
         <Text style={[
           styles.durationText,
-          isDisabled && [styles.durationTextDisabled, { color: Colors.lgreenDark }]
+          isDisabled && [styles.durationTextDisabled]
         ]}>
           {isDisabled ? 'Activé' : pkg.duration_text}
         </Text>
@@ -135,7 +136,7 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
       <Text
         style={[
           styles.courseName,
-          isSelected && styles.courseNameSelected,
+          isSelected && [styles.courseNameSelected, { color: color }],
           isDisabled && styles.courseNameDisabled
         ]}
         numberOfLines={2}
@@ -394,7 +395,7 @@ export const SelectPackageView = ({ navigation, route }) => {
                 <Ionicons
                   name="arrow-forward"
                   size={20}
-                  color={!creatable ? Colors.gray : Colors.white}
+                  color={(selectedPackages.length === 0 || (confirming || !creatable)) ? Colors.gray : Colors.white}
                 />
               )}
             </TouchableOpacity>
@@ -578,17 +579,20 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
     marginBottom: Spacings.xs,
-    padding: Spacings.xxs
+    padding: Spacings.xxs,
+    opacity: 0.6
   },
-  courseCircleSelected: {},
-  courseCircleDisabled: {
+  courseCircleSelected: {
     opacity: 1,
+  },
+  courseCircleDisabled: {
+    opacity: 0.8,
   },
   courseIcon: {
     fontSize: 24,
   },
   courseIconDisabled: {
-    opacity: 1,
+    opacity: 0.8,
   },
   checkmarkOverlay: {
     position: 'absolute',
@@ -604,7 +608,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   courseName: {
-    fontSize: 8,
+    fontSize: 10,
     fontFamily: 'Poppins-Regular',
     color: Colors.text,
     textAlign: 'center',
@@ -630,15 +634,15 @@ const styles = StyleSheet.create({
   },
   durationBadgeDisabled: {
     backgroundColor: Colors.successBackground,
-    opacity: 0.7,
   },
   durationText: {
-    fontSize: 8,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 9,
+    fontFamily: 'Poppins-Regular',
     color: Colors.blue,
   },
   durationTextDisabled: {
-    color: Colors.success,
+    color: Colors.white,
+    fontFamily: 'Poppins-Medium'
   },
 
   // Empty State

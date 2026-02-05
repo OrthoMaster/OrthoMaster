@@ -215,8 +215,6 @@ export const LessonContentWithXML = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={Styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-
       {/* Ads overlay */}
       {showAds &&
         <AdServingModalMediaAccess

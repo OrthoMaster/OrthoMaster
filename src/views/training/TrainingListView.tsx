@@ -451,7 +451,7 @@ export const TrainingListView = ({ navigation, route }) => {
                       progress={pkg.available_flg ? pkg.progress : null}
                       accentColor={training.color}
                       backgroundColor={training.background_color}
-                      image={pkg.image}
+                      image={pkg.available_flg ? pkg.image : pkg.image_2}
                     />
                     <Text numberOfLines={2} ellipsizeMode='tail'
                       style={[styles.pkgTitle,

@@ -122,7 +122,7 @@ const PaymentContent = ({
             <ActivityIndicator size="small" color={Colors.white} />
           ) : (
             <>
-              <Ionicons name="card-outline" size={20} color={Colors.white} />
+              <Ionicons name="card-sharp" size={20} color={Colors.white} />
               <Text style={styles.payButtonText}>Payer</Text>
             </>
           )}

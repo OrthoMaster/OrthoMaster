@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { BouncingDots } from '../../component/LoadingDots';
 import Colors from '../../../constants/Colors';
@@ -26,8 +26,8 @@ import { getCartDetails, removeFromCart, clearCart } from '../../services/v2/Car
 import { sendError } from '../../services/v2/AuthService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SWIPE_THRESHOLD = -80; // Ngưỡng để trigger xóa (giảm xuống để dễ trigger hơn)
-const DELETE_ZONE_WIDTH = 100; // Độ rộng vùng hiển thị nút xóa
+const SWIPE_THRESHOLD = -80;
+const DELETE_ZONE_WIDTH = 100;
 
 interface Item {
   id: string;
