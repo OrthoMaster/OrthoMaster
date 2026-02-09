@@ -74,18 +74,19 @@ const PackageCard: React.FC<PackageCardProps> = ({ pkg, color, backgroundColor, 
       {/* Circle Container */}
       <View style={[
         styles.courseCircle,
-        { backgroundColor: isDisabled ? color : backgroundColor },
+        { backgroundColor: (isDisabled || isSelected) ? color : backgroundColor },
         isSelected && styles.courseCircleSelected,
         isDisabled && styles.courseCircleDisabled
       ]}>
         {/* Icon */}
         {pkg.image
           ? <Image
-            source={{ uri: process.env.EXPO_PUBLIC_S3_URL + isDisabled ? pkg.image : pkg.image_2 }}
+            source={{ uri: process.env.EXPO_PUBLIC_S3_URL + ((isDisabled || isSelected) ? pkg.image : pkg.image_2) }}
             style={[{
               width: '100%',
               height: '100%',
               borderRadius: 100,
+              resizeMode: 'contain'
             }, isDisabled && styles.courseIconDisabled]}
             resizeMode="contain"
           />
@@ -579,14 +580,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
     marginBottom: Spacings.xs,
-    padding: Spacings.xxs,
-    opacity: 0.6
+    opacity: 0.8
   },
   courseCircleSelected: {
     opacity: 1,
   },
   courseCircleDisabled: {
-    opacity: 0.8,
+    opacity: 0.6,
   },
   courseIcon: {
     fontSize: 24,

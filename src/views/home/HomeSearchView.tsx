@@ -504,8 +504,8 @@ export const HomeSearchView = ({ navigation }) => {
           <View style={{ width: Spacings.xxl }}></View>
         </View>
         <View style={styles.headerCenter}>
-          <Text style={styles.searchTitle}>Recherchez le sujet</Text>
-          <Text style={styles.searchSubTitle}>par mot clé, nom de l'expert ou du congrès ...</Text>
+          <Text style={styles.searchTitle}>Chercher un contenu</Text>
+          <Text style={styles.searchSubTitle}>par mot clé, nom d'expert ou du congrès ...</Text>
         </View>
         <View style={styles.headerBottom}>
           {/* Search Bar */}
@@ -514,7 +514,7 @@ export const HomeSearchView = ({ navigation }) => {
             <TextInput
               autoCapitalize="none"
               style={styles.searchInput}
-              placeholder="Rechercher des contenus ..."
+              placeholder="Chercher un contenu ..."
               value={searchQuery}
               onChangeText={handleTextChange}
               onSubmitEditing={handleSubmit}
@@ -525,7 +525,7 @@ export const HomeSearchView = ({ navigation }) => {
             {/* Clear button */}
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={handleClearSearch} style={styles.clearIconButton}>
-                <Ionicons name="close" size={24} color={Colors.gray} />
+                <Ionicons name="close" size={20} color={Colors.gray} />
               </TouchableOpacity>
             )}
           </View>
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   searchSubTitle: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Roboto',
     color: Colors.white,
   },

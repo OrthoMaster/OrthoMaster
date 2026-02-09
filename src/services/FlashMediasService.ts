@@ -14,6 +14,7 @@ export const fetchMedias = async (params?: fetchMediasParams) => {
   // const config = await restoreLocalConfigAsync()
   // const authHeader = 'Bearer ' + config.JWT;
 
+  console.log(params);
 
   return axios
     .get(baseurl + "/", {
@@ -23,6 +24,7 @@ export const fetchMedias = async (params?: fetchMediasParams) => {
       params: params
     })
     .then((response) => {
+      console.log(response.data);
       return response.data;
     })
 

@@ -16,6 +16,7 @@ import {
   Dimensions,
   Image
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,6 +27,8 @@ import Spacings from "../../../constants/Spacings";
 import { BouncingDots } from '../../component/LoadingDots';
 import { useQuery } from "@tanstack/react-query";
 import { getTrainings } from "../../services/v2/TrainingService";
+
+import TrainingIntroModal from './components/TrainingIntroModal';
 
 const HEADER_HEIGHT = 120;
 const SCROLL_THRESHOLD = 5;
@@ -320,6 +323,34 @@ export const TrainingListView = ({ navigation, route }) => {
     }
   };
 
+  // Show intro modal
+  const [showIntroModal, setShowIntroModal] = useState(false);
+  const [closedIntroModal, setClosedIntroModal] = useState(false);
+  const checkShouldShowModal = async (): Promise<boolean> => {
+    try {
+      const value = await AsyncStorage.getItem('@never_open_training_intro');
+      return value !== 'true';
+    } catch (error) {
+      return true;
+    }
+  };
+  useEffect(() => {
+    const initModal = async () => {
+      if (!closedIntroModal) {
+        const shouldShow = await checkShouldShowModal();
+        if (shouldShow) {
+          setClosedIntroModal(true);
+          setTimeout(() => {
+            setShowIntroModal(true);
+          }, 1000);
+        }
+      }
+    };
+
+    initModal();
+  }, []);
+
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.lgreen} />
@@ -366,7 +397,7 @@ export const TrainingListView = ({ navigation, route }) => {
       {/* Loading */}
       {(isLoading || isFetching) && !error && (
         <BouncingDots
-          color={Colors.blue}
+          color={Colors.lgreen}
           size={10}
           bounceHeight={5}
           containerStyle={{
@@ -421,8 +452,8 @@ export const TrainingListView = ({ navigation, route }) => {
           <RefreshControl
             refreshing={isFetching}
             onRefresh={refetch}
-            colors={[Colors.blue]}
-            tintColor={Colors.blue}
+            colors={[Colors.lgreen]}
+            tintColor={Colors.lgreen}
             style={{ zIndex: 9999 }}
           />
         }>
@@ -436,7 +467,7 @@ export const TrainingListView = ({ navigation, route }) => {
               </Text>
             </View>
 
-            {/* Grid pkg layout - 3 cột */}
+            {/* Grid pkg layout */}
             <View style={styles.packagesContainer}>
               <View style={styles.packagesGridContent}>
                 {training.packages.map((pkg) => (
@@ -483,6 +514,14 @@ export const TrainingListView = ({ navigation, route }) => {
           </TouchableOpacity>
         </Animated.View>
       )}
+
+      {/* Intro Modal */}
+      <TrainingIntroModal
+        visible={showIntroModal}
+        onClose={() => {
+          setShowIntroModal(false);
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -524,7 +563,7 @@ const styles = StyleSheet.create({
   },
   headerBorder: {
     height: 1,
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.lgreen,
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -616,7 +655,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.grayLight,
+    shadowColor: Colors.gray,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
@@ -676,7 +715,7 @@ const styles = StyleSheet.create({
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.lgreenDark,
     paddingHorizontal: Spacings.lg,
     paddingVertical: Spacings.sm,
     borderRadius: 8,

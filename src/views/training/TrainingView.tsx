@@ -284,8 +284,8 @@ export const TrainingView = ({ navigation, route }) => {
           // Mark as scrolled
           setTimeout(() => {
             setHasScrolledToSelected(true);
-          }, 600);
-        }, 500);
+          }, 300);
+        }, 200);
       }
     }
   }, [isLayoutComplete, findSelectedLesson, pkg, hasScrolledToSelected]);
@@ -296,7 +296,7 @@ export const TrainingView = ({ navigation, route }) => {
     // Wait for layout to complete
     const timer = setTimeout(() => {
       setIsLayoutComplete(true);
-    }, 600);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [pkg]);

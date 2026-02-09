@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.blue,
     marginRight: Spacings.sm,
-    padding: Spacings.xxs
+    padding: 2
   },
   courseImage: {
     width: '100%',

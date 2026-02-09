@@ -15,13 +15,11 @@ import { useQuery } from "@tanstack/react-query";
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { fetchMedias } from '../../services/FlashMediasService';
-import { fetchEvents } from '../../services/EventsService';
-import SimpleAdaptiveCarousel, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
+import SimpleAdaptiveCarouselWeb, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarouselWeb';
 import { IContent, IEvent } from '../../utils/interfaces';
-import { ChannelMediaViewParams } from './ChannelMediaView';
 import { PreviewMediaParams } from './PreviewMediaView';
-import SearchModalComponent from '../../component/SearchModalComponent';
 import { getCdnContentAccessUrl } from '../../services/ContentService';
+import { getEvents } from '../../services/v2/ContentService';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -95,31 +93,11 @@ export const FlashMediaView = ({ navigation, route }) => {
         setEventsLoading(true);
         setEventsError(false);
 
-        const data = await fetchEvents();
-        
-
-        const evtsCards: CarouselItem[] = data.map(evt => ({
-          key: evt.name,
-          content: <EventCard
-            event={evt}
-            onSelect={(event) => {
-              const params: ChannelMediaViewParams = {
-                channelType: 'event',
-                name: event.name,
-                logoUrl: event.logo_url,
-                description: event.description,
-                targetId: event.id,
-                website: event.website
-              }
-              navigation.navigate("flash-media-channel", params)
-            }}
-          />
-        }));
-
-        setEventsCarouselItems(evtsCards);
-        console.log(evtsCards);
+        const data = await getEvents();
+        if (data) {
+          setEventsCarouselItems(data);
+        }
       } catch (error) {
-        console.error('Error loading events:', error);
         setEventsError(true);
       } finally {
         setEventsLoading(false);
@@ -218,8 +196,8 @@ export const FlashMediaView = ({ navigation, route }) => {
         </View> */}
 
         <View style={styles.sectionContainer}>
-          <Text style={[styles.categoryTitle]}>Congrès</Text>
-          <Text style={[styles.categorySubTitle, { marginBottom: 5 }]}>Les sociétés savantes</Text>
+          <Text style={styles.categoryTitle}>Congrès</Text>
+          <Text style={styles.categorySubTitle}>Les sociétés savantes</Text>
           {
             eventsLoading ?
               <ActivityIndicator color={Colors.white} />
@@ -227,11 +205,9 @@ export const FlashMediaView = ({ navigation, route }) => {
                 <View>
                   <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <SimpleAdaptiveCarousel
+                : <SimpleAdaptiveCarouselWeb
                   items={eventsCarouselItems}
-                  widthPercent={1}
-                  height={170}
-                  cardSpacing={5}
+                  navigation={navigation}
                 />
           }
         </View>
@@ -326,7 +302,7 @@ const styles = StyleSheet.create({
   },
 
   sectionContainer: {
-    marginTop: 30,
+    marginTop: Spacings.md,
     paddingVertical: 5,
   },
   categoryTitle: {

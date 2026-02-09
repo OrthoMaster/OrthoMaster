@@ -237,8 +237,8 @@ export const TrainingView = ({ navigation, route }) => {
 
           setTimeout(() => {
             setHasScrolledToSelected(true);
-          }, 600);
-        }, 500);
+          }, 300);
+        }, 200);
       }
     }
   }, [isLayoutComplete, findSelectedLesson, pkg, hasScrolledToSelected]);
@@ -248,7 +248,7 @@ export const TrainingView = ({ navigation, route }) => {
     if (!pkg) return;
     const timer = setTimeout(() => {
       setIsLayoutComplete(true);
-    }, 600);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [pkg]);

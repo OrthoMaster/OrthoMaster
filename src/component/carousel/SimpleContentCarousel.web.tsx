@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Platform, View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, LayoutChangeEvent } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../services/S3Service";
 
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
+
 const CARD_WIDTH = 300;
+const CARD_MARGIN = 20;
 
 const Card = ({ data, onSelect }) => {
   // Global CSS Scroll bar
@@ -88,24 +93,70 @@ const Card = ({ data, onSelect }) => {
 }
 
 const SimpleCarousel = ({ data, onSelect }) => {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [contentWidth, setContentWidth] = useState(0);
+
+  // Tính toán scroll
+  const scrollDistance = CARD_WIDTH + CARD_MARGIN;
+  const maxScroll = Math.max(0, contentWidth - containerWidth);
+  const canScrollLeft = scrollPosition > 5;
+  const canScrollRight = scrollPosition < maxScroll - 5;
+
+  const scrollLeft = () => {
+    const newPosition = Math.max(0, scrollPosition - scrollDistance);
+    scrollViewRef.current?.scrollTo({ x: newPosition, animated: true });
+  };
+
+  const scrollRight = () => {
+    const newPosition = Math.min(maxScroll, scrollPosition + scrollDistance);
+    scrollViewRef.current?.scrollTo({ x: newPosition, animated: true });
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={true}
-        nestedScrollEnabled={true}
-        contentContainerStyle={styles.scrollViewContent}
-        style={styles.scrollView}
-        {...(Platform.OS === 'web' && { className: 'dark-scrollbar' } as any)}
-      >
-        {data.map((item, index) => (
-          <Card
-            key={index}
-            data={item}
-            onSelect={() => onSelect(item)}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.carouselWrapper}>
+        {canScrollLeft && (
+          <TouchableOpacity
+            style={[styles.arrowButton, styles.leftArrow]}
+            onPress={scrollLeft}
+          >
+            <Ionicons name="chevron-back" size={24} color={Colors.white} />
+          </TouchableOpacity>
+        )}
+
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          nestedScrollEnabled={true}
+          contentContainerStyle={styles.scrollViewContent}
+          style={styles.scrollView}
+          onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+          onContentSizeChange={(width) => setContentWidth(width)}
+          onScroll={(e) => setScrollPosition(e.nativeEvent.contentOffset.x)}
+          scrollEventThrottle={16}
+          {...(Platform.OS === 'web' && { className: 'dark-scrollbar' } as any)}
+        >
+          {data.map((item, index) => (
+            <Card
+              key={index}
+              data={item}
+              onSelect={() => onSelect(item)}
+            />
+          ))}
+        </ScrollView>
+
+        {canScrollRight && (
+          <TouchableOpacity
+            style={[styles.arrowButton, styles.rightArrow]}
+            onPress={scrollRight}
+          >
+            <Ionicons name="chevron-forward" size={24} color={Colors.white} />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
@@ -113,20 +164,23 @@ const SimpleCarousel = ({ data, onSelect }) => {
 const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
-    height: '100%',
-    paddingLeft: 10,
-    paddingTop: 10,
-    paddingBottom: 50,
+    paddingLeft: Spacings.md,
+    paddingTop: Spacings.md,
+    paddingBottom: Spacings.md,
+  },
+  carouselWrapper: {
+    position: 'relative',
+    flex: 1,
   },
   scrollViewContent: {
   },
   scrollView: {
-    paddingBottom: 10,
+    paddingBottom: Spacings.md,
   },
   card: {
     width: CARD_WIDTH,
-    height: 220,
-    marginRight: 20,
+    height: 240,
+    marginRight: CARD_MARGIN,
     borderRadius: 5,
     alignItems: "flex-start",
     justifyContent: 'flex-start',
@@ -142,12 +196,36 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium'
   },
   authorText: {
-    marginTop: 15,
-    color: "#ffaf31",
+    marginTop: Spacings.sm,
+    color: Colors.primary,
     fontFamily: 'Roboto',
     fontWeight: '500',
     fontSize: 12
-  }
+  },
+  // Arrow styles
+  arrowButton: {
+    position: 'absolute',
+    top: '30%',
+    transform: [{ translateY: -25 }],
+    width: 50,
+    height: 50,
+    backgroundColor: Colors.red,
+    opacity: 0.9,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+    } as any),
+  },
+  leftArrow: {
+    left: Spacings.sm,
+  },
+  rightArrow: {
+    right: Spacings.md,
+  },
 });
 
 export default SimpleCarousel;

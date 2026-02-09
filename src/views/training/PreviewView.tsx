@@ -14,7 +14,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
@@ -910,7 +909,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.blue,
     marginRight: Spacings.sm,
-    padding: Spacings.xxs
+    padding: 2
   },
   courseImage: {
     width: '100%',

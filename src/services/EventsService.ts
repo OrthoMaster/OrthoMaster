@@ -19,18 +19,19 @@ type fetchPastEventParams = {
 }
 
 export const fetchPastEvents = async (params : fetchPastEventParams) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  // const config = await restoreLocalConfigAsync()
+  // const authHeader = 'Bearer ' + config.JWT;
 
 
   return axios
     .get<IPastEvent[]>(baseurl + "/past", {
-      headers: {
-        Authorization: authHeader
-      },
+      // headers: {
+      //   Authorization: authHeader
+      // },
       params
     })
     .then((response)=> {
+      console.log(response.data);
       return response.data;
     })
 

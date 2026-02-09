@@ -1,8 +1,10 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Linking, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+
+import SendQuestionInfoModal from './components/SendQuestionInfoModal';
 
 const { width, height } = Dimensions.get('window');
 const CARD_SIZE = (width > 500 ? 500 : width - (Spacings.xl * 2) - (Spacings.md * 2)) / 3;
@@ -22,6 +24,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onToolPress,
   hasNotification = false,
 }) => {
+
+  const [showInfoModal, setShowInfoModal] = useState(false);
+
   // Animation cho notification icon
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -92,88 +97,98 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   });
 
   return (
-    <View style={styles.container}>
-      {/* Top Row: Logo and Notifications */}
-      <View style={styles.topRow}>
-        <View style={styles.greetingSection}>
-          <Text style={styles.greetingText}>Bonjour,</Text>
-          <Text style={styles.userNameText}>{userName}</Text>
+    <>
+      <View style={styles.container}>
+        {/* Top Row: Logo and Notifications */}
+        <View style={styles.topRow}>
+          <View style={styles.greetingSection}>
+            <Text style={styles.greetingText}>Bonjour,</Text>
+            <Text style={styles.userNameText}>{userName}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={onNotificationPress}
+          >
+            {hasNotification ? (
+              <Animated.View
+                style={{
+                  transform: [
+                    { scale: scaleAnim },
+                    { rotate: rotateInterpolate },
+                  ],
+                }}
+              >
+                <Ionicons name="notifications" size={28} color={Colors.primary} />
+              </Animated.View>
+            ) : (
+              <Ionicons name="notifications" size={28} color={Colors.gray} />
+            )}
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.notificationButton}
-          onPress={onNotificationPress}
-        >
-          {hasNotification ? (
-            <Animated.View
-              style={{
-                transform: [
-                  { scale: scaleAnim },
-                  { rotate: rotateInterpolate },
-                ],
-              }}
-            >
-              <Ionicons name="notifications" size={28} color={Colors.primary} />
-            </Animated.View>
-          ) : (
-            <Ionicons name="notifications" size={28} color={Colors.gray} />
-          )}
-        </TouchableOpacity>
+
+        {/* Square Cards in V Formation */}
+        <View style={styles.cardsContainer}>
+          {/* Left Card - Question */}
+          <View style={styles.cardWrapper}>
+            <View style={[styles.card3DWrapper]}>
+              <TouchableOpacity
+                style={[styles.squareCard]}
+                onPress={() => setShowInfoModal(true)}
+                activeOpacity={0.8}
+              >
+                <Image
+                  style={[styles.icons]}
+                  source={require('../../../assets/v2_images/icon/home/question.gif')}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.cardText]}>Poser une{'\n'}Question</Text>
+          </View>
+
+          {/* Center Card (Bottom) - Outils */}
+          <View style={[styles.cardWrapper]}>
+            <View style={[styles.card3DWrapper]}>
+              <TouchableOpacity
+                style={[styles.squareCard]}
+                onPress={onToolPress}
+                activeOpacity={0.8}
+              >
+                <Image
+                  style={[styles.icons, { width: CARD_SIZE - 5, height: CARD_SIZE - 5, borderRadius: 16 }]}
+                  source={require('../../../assets/v2_images/icon/home/tool.gif')}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.cardText]}>Prise en{'\n'}Charge</Text>
+          </View>
+
+          {/* Right Card - Search */}
+          <View style={styles.cardWrapper}>
+            <View style={[styles.card3DWrapper]}>
+              <TouchableOpacity
+                style={[styles.squareCard]}
+                onPress={onSearchPress}
+                activeOpacity={0.8}
+              >
+                <Image
+                  style={styles.icons}
+                  source={require('../../../assets/v2_images/icon/home/search.gif')}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.cardText]}>Chercher un{'\n'}Contenu</Text>
+          </View>
+        </View>
       </View>
 
-      {/* Square Cards in V Formation */}
-      <View style={styles.cardsContainer}>
-        {/* Left Card - Question */}
-        <View style={styles.cardWrapper}>
-          <View style={[styles.card3DWrapper]}>
-            <TouchableOpacity
-              style={[styles.squareCard]}
-              onPress={() => Linking.openURL('mailto:question@orthomaster.fr')}
-              activeOpacity={0.8}
-            >
-              <Image
-                style={[styles.icons]}
-                source={require('../../../assets/v2_images/icon/home/question.gif')}
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.cardText]}>Poser une{'\n'}Question</Text>
-        </View>
-
-        {/* Center Card (Bottom) - Outils */}
-        <View style={[styles.cardWrapper]}>
-          <View style={[styles.card3DWrapper]}>
-            <TouchableOpacity
-              style={[styles.squareCard]}
-              onPress={onToolPress}
-              activeOpacity={0.8}
-            >
-              <Image
-                style={[styles.icons, { width: CARD_SIZE - 5, height: CARD_SIZE - 5, borderRadius: 16 }]}
-                source={require('../../../assets/v2_images/icon/home/tool.gif')}
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.cardText]}>Prise en{'\n'}Charge</Text>
-        </View>
-
-        {/* Right Card - Search */}
-        <View style={styles.cardWrapper}>
-          <View style={[styles.card3DWrapper]}>
-            <TouchableOpacity
-              style={[styles.squareCard]}
-              onPress={onSearchPress}
-              activeOpacity={0.8}
-            >
-              <Image
-                style={styles.icons}
-                source={require('../../../assets/v2_images/icon/home/search.gif')}
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.cardText]}>Chercher un{'\n'}Contenu</Text>
-        </View>
-      </View>
-    </View>
+      {/* Contract Description Modal */}
+      <SendQuestionInfoModal
+        visible={showInfoModal}
+        onClose={() => {
+          setShowInfoModal(false);
+        }}
+      />
+    </>
   );
 };
 

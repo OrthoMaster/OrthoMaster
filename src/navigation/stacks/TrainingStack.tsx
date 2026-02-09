@@ -116,6 +116,7 @@ export const TrainingStack = () => {
         options={{
           headerShown: false,
           presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
+          animation: 'slide_from_right',
         }}
       />
 

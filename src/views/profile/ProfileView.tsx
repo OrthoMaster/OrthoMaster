@@ -266,7 +266,7 @@ export const ProfileView = ({ navigation, route }) => {
           {more && more?.data?.companiesIsMember?.length > 0 &&
             <View style={styles.userCard}>
               <Text style={styles.teamTitle}>Équipe dont je fais partie :</Text>
-              <Divider />
+              <Divider theme={{ colors: { primary: Colors.purpleDark } }}/>
               {more?.data?.companiesIsMember.map((company, index) => (
                 <View key={'company-' + index} style={styles.companyWrapper}>
                   <View style={{ flex: 1 }}>

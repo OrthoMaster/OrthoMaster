@@ -12,23 +12,6 @@ import ReturnButtonIcon from '../components/ReturnButton';
 
 const FlashStackNav = createStackNavigator();
 export const FlashStack = ({ }) => {
-
-  // const focused = useIsFocused()
-  // const startDate = null
-
-  // useEffect(() => {
-  //   if (focused) {
-  //     startDate = getCurrentDate()
-  //   } else {
-  //     const event : SessionEventScreen = 
-  //     saveEvent("screen_view", {
-
-  //     })
-  //   }
-  // }, [focused])
-
-
-
   return (
     <FlashStackNav.Navigator
       id={"media-stack" as undefined}
@@ -42,36 +25,50 @@ export const FlashStack = ({ }) => {
         component={FlashMediaView}
         options={
           Platform.OS === 'web'
-          ? { headerShown: false, }
-          :{
-          headerShown: true,
-          title: 'Médias',
-          headerTintColor: '#fff',
-          headerStyle: {
-            backgroundColor: "#FF4B4B",
-            height: 120,
-          },
-          headerTitleStyle: {
-            fontSize: 20,
-            fontFamily: 'Poppins-Medium',
-            marginLeft: 8,
-            marginBottom: 8,
-          },
-          headerTitleAlign: 'left'
-        }}
+            ? { headerShown: false, }
+            : {
+              headerShown: true,
+              title: 'Médias',
+              headerTintColor: '#fff',
+              headerStyle: {
+                backgroundColor: "#FF4B4B",
+                height: 120,
+              },
+              headerTitleStyle: {
+                fontSize: 20,
+                fontFamily: 'Poppins-Medium',
+                marginLeft: 8,
+                marginBottom: 8,
+              },
+              headerTitleAlign: 'left'
+            }}
       />
 
-      <FlashStackNav.Screen
-        name="flash-media-channel"
-        component={ChannelMediaView}
-        options={{
-          headerShown: true,
-          headerTitle: "",
-          headerBackButtonDisplayMode: "minimal",
-          headerTransparent: true,
-          headerBackImage: () => (<ReturnButtonIcon />)
-        }}
-      />
+      {Platform.OS === 'web' ?
+        <FlashStackNav.Screen
+          name="flash-media-channel"
+          component={ChannelMediaView}
+          options={{
+            headerShown: true,
+            headerTitle: "",
+            headerBackButtonDisplayMode: "minimal",
+            headerTransparent: true,
+            headerBackImage: () => (<ReturnButtonIcon />)
+          }}
+        />
+      :
+        <FlashStackNav.Screen
+          name="flash-media-channel"
+          component={ChannelMediaView}
+          options={{
+            headerShown: true,
+            headerTitle: "",
+            headerBackButtonDisplayMode: "minimal",
+            headerTransparent: true,
+            headerBackImage: () => (<ReturnButtonIcon />)
+          }}
+        />
+      }
 
       <FlashStackNav.Screen
         name="flash-media-preview"

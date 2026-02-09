@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.blue,
     borderRadius: 45,
-    padding: Spacings.xs
+    padding: 4
   },
   courseImage: {
     width: '100%',

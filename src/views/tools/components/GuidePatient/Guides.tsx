@@ -16,7 +16,7 @@ export const GUIDES = [{
 
 
 const GuideCard = ({ config, showGuide }) => {
-  const guide = useQuery({queryKey: ['Guide patient', 'GET', 'QR', config.name], queryFn: () => getS3Image(config.s3_guide_path)})
+  const guide = useQuery({ queryKey: ['Guide patient', 'GET', 'QR', config.name], queryFn: () => getS3Image(config.s3_guide_path) })
   const fileUri = FileSystem.cacheDirectory + `guide-patient-${config.name.replace(' ', '-')}.png`
 
   const onShare = async () => {
@@ -27,7 +27,7 @@ const GuideCard = ({ config, showGuide }) => {
         UTI: 'image/png',
       };
       FileSystem.downloadAsync(guide.data, fileUri)
-      orthomasterShareFile(fileUri, options, 'qr-guide-'+config.name.replace(' ', '-').toLowerCase())
+      orthomasterShareFile(fileUri, options, 'qr-guide-' + config.name.replace(' ', '-').toLowerCase())
 
     } catch (error) {
       Alert.alert(error.message);
@@ -59,12 +59,9 @@ const GuideCard = ({ config, showGuide }) => {
     </View>
 
     <View style={{ flex: 1, alignItems: 'center' }}>
-
       <Text style={styles.subToolText}>{config.name}</Text>
 
-
       <View style={{ flexDirection: 'row', width: '100%', height: 80 }}>
-
         <View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center' }]}>
           <TouchableOpacity style={{
             alignItems: 'center',
@@ -96,10 +93,6 @@ const GuideCard = ({ config, showGuide }) => {
         </View>
       </View>
     </View>
-
-
-
-
   </View>
 }
 
@@ -117,16 +110,13 @@ const Guides: React.FC<{ onSelect?: (guideUrl: string) => any }> = ({ onSelect }
       }} />)
       }
       scrollEnabled={false}
-      style={{ width: '100%'}}
+      style={{ width: '100%' }}
       contentContainerStyle={{ alignItems: 'center' }}
     />
   </View>);
 }
 
 const styles = StyleSheet.create({
-
-
-
   subToolContainer: {
     backgroundColor: '#F1F1F1',
     width: '90%',
