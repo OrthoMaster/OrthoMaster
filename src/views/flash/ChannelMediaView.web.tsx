@@ -54,10 +54,10 @@ interface CarouselWithArrowsProps {
   onSelect: (content: IContent) => void;
 }
 
-const CarouselWithArrows: React.FC<CarouselWithArrowsProps> = ({ 
-  data, 
-  nbElement2Display, 
-  onSelect 
+const CarouselWithArrows: React.FC<CarouselWithArrowsProps> = ({
+  data,
+  nbElement2Display,
+  onSelect
 }) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -84,14 +84,14 @@ const CarouselWithArrows: React.FC<CarouselWithArrowsProps> = ({
   return (
     <View style={styles.carouselContainer}>
       {canScrollLeft && (
-        <TouchableOpacity 
-          style={[styles.arrowButton, styles.leftArrow]} 
+        <TouchableOpacity
+          style={[styles.arrowButton, styles.leftArrow]}
           onPress={scrollLeft}
         >
           <Ionicons name="chevron-back" size={24} color={Colors.white} />
         </TouchableOpacity>
       )}
-      
+
       <ScrollView
         ref={scrollViewRef}
         horizontal
@@ -110,8 +110,8 @@ const CarouselWithArrows: React.FC<CarouselWithArrowsProps> = ({
       </ScrollView>
 
       {canScrollRight && (
-        <TouchableOpacity 
-          style={[styles.arrowButton, styles.rightArrow]} 
+        <TouchableOpacity
+          style={[styles.arrowButton, styles.rightArrow]}
           onPress={scrollRight}
         >
           <Ionicons name="chevron-forward" size={24} color={Colors.white} />
@@ -188,6 +188,12 @@ const ChannelMediaView = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="close" size={28} color={Colors.white} />
+      </TouchableOpacity>
       <View style={styles.header}>
         <View style={styles.logoContainer}>
           <Image
@@ -227,6 +233,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.darkBackground,
     paddingVertical: Spacings.lg
+  },
+  backButton: {
+    position: 'absolute',
+    top: Spacings.lg,
+    right: Spacings.lg,
+    width: 50,
+    height: 50,
+    backgroundColor: Colors.red,
+    opacity: 0.7,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   header: {
     flexDirection: 'row',

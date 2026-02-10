@@ -25,54 +25,6 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 const LIMIT_LAST_RELEASE = 5
-const CAROUSEL_SIZE = 180
-const { width: screenWidth } = Dimensions.get('screen')
-
-type EventCardProp = {
-  event: IEvent, onSelect: (event: IEvent) => any
-}
-const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
-  const logo_url = useQuery({
-    queryKey: ['event-logo', event.id],
-    queryFn: () => getCdnContentAccessUrl(event.logo_url),
-    enabled: !!event.logo_url
-  })
-  return <TouchableOpacity style={{
-    width: screenWidth / 4, height: '100%',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  }}
-    onPress={() => {
-      onSelect({
-        ...event,
-        logo_url: logo_url.data
-      } as IEvent)
-    }}>
-    <View style={{
-      width: screenWidth / 4,
-      height: screenWidth / 4,
-
-    }}>
-      <Image
-        source={{ uri: logo_url.data }}
-        style={{
-          backgroundColor: '#fff',
-          width: '100%', height: '100%',
-          objectFit: 'contain',
-          borderRadius: 10
-        }}
-      />
-    </View>
-    <Text style={{
-      textAlign: 'center',
-      fontSize: 10,
-      fontWeight: 'bold',
-      marginTop: 5,
-      color: '#fff',
-    }}>{event.name}</Text>
-  </TouchableOpacity>
-}
-
 
 export const FlashMediaView = ({ navigation, route }) => {
   const lastRelease = useQuery({

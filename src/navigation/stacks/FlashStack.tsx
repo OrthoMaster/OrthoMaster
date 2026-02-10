@@ -49,11 +49,8 @@ export const FlashStack = ({ }) => {
           name="flash-media-channel"
           component={ChannelMediaView}
           options={{
-            headerShown: true,
-            headerTitle: "",
-            headerBackButtonDisplayMode: "minimal",
-            headerTransparent: true,
-            headerBackImage: () => (<ReturnButtonIcon />)
+            headerShown: false,
+            animation: 'fade_from_bottom',
           }}
         />
       :
