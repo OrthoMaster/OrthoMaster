@@ -5,9 +5,6 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
-  Dimensions,
-  TouchableOpacity,
-  Image,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useQuery } from "@tanstack/react-query";
@@ -16,9 +13,8 @@ import SimpleContentCarousel from '../../component/carousel/SimpleContentCarouse
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { fetchMedias } from '../../services/FlashMediasService';
 import SimpleAdaptiveCarouselWeb, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarouselWeb';
-import { IContent, IEvent } from '../../utils/interfaces';
+import { IContent } from '../../utils/interfaces';
 import { PreviewMediaParams } from './PreviewMediaView';
-import { getCdnContentAccessUrl } from '../../services/ContentService';
 import { getEvents } from '../../services/v2/ContentService';
 
 import Colors from '../../../constants/Colors';

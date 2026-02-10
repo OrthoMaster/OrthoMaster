@@ -61,11 +61,11 @@ export const getUserNextLesson = async () => {
 
 export const getCdnContentAccessUrl = async (path) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  // const authHeader = 'Bearer ' + config.JWT;
 
   return axios
   .get(baseurl + "/cdn/", {
-    headers: { Authorization: authHeader },
+    // headers: { Authorization: authHeader },
     params: {
       path: path
     }
@@ -77,11 +77,11 @@ export const getCdnContentAccessUrl = async (path) => {
 
 export const getContentById = async (idContent) => {
   const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  // const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(baseurl + "/get" , {
-      headers: { Authorization: authHeader },
+      // headers: { Authorization: authHeader },
       params: {
         ic: idContent
       }

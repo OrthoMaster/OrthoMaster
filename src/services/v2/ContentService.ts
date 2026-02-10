@@ -173,3 +173,21 @@ export const getEvents = async () => {
       return null;
     });
 }
+
+/**
+ * Get content of media
+ */
+export const getContent = async (contentId: string) => {
+  return axiosInstance
+    .get(`${baseUrl}/media/content`, { params: { contentId } })
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}

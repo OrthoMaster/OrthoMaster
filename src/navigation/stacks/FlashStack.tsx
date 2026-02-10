@@ -44,8 +44,8 @@ export const FlashStack = ({ }) => {
             }}
       />
 
-      {Platform.OS === 'web' ?
-        <FlashStackNav.Screen
+      {Platform.OS === 'web'
+        ? <FlashStackNav.Screen
           name="flash-media-channel"
           component={ChannelMediaView}
           options={{
@@ -53,8 +53,7 @@ export const FlashStack = ({ }) => {
             animation: 'fade_from_bottom',
           }}
         />
-      :
-        <FlashStackNav.Screen
+        : <FlashStackNav.Screen
           name="flash-media-channel"
           component={ChannelMediaView}
           options={{
@@ -67,26 +66,45 @@ export const FlashStack = ({ }) => {
         />
       }
 
-      <FlashStackNav.Screen
-        name="flash-media-preview"
-        component={PreviewMediaView}
-        options={{
-          headerShown: false,
-        }}
-      />
-
-      <FlashStackNav.Screen
-        name="flash-media-viewer"
-        component={ContentDisplayer}
-        options={{
-          headerShown: true,
-          headerTitle: "",
-          headerBackButtonDisplayMode: "minimal",
-          headerTintColor: '#000',
-          headerTransparent: true,
-          headerBackImage: () => (<ReturnButtonIcon />)
-        }}
-      />
+      {Platform.OS === 'web'
+        ? <FlashStackNav.Screen
+          name="flash-media-preview"
+          component={PreviewMediaView}
+          options={{
+            headerShown: false,
+            presentation: 'transparentModal',
+            animation: 'slide_from_right',
+          }}
+        />
+        : <FlashStackNav.Screen
+          name="flash-media-preview"
+          component={PreviewMediaView}
+          options={{
+            headerShown: false,
+          }}
+        />
+      }
+      {Platform.OS === 'web'
+        ? <FlashStackNav.Screen
+          name="flash-media-viewer"
+          component={ContentDisplayer}
+          options={{
+            headerShown: false,
+          }}
+        />
+        : <FlashStackNav.Screen
+          name="flash-media-viewer"
+          component={ContentDisplayer}
+          options={{
+            headerShown: true,
+            headerTitle: "",
+            headerBackButtonDisplayMode: "minimal",
+            headerTintColor: '#000',
+            headerTransparent: true,
+            headerBackImage: () => (<ReturnButtonIcon />)
+          }}
+        />
+      }
 
     </FlashStackNav.Navigator>
   );

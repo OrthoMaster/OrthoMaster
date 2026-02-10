@@ -14,6 +14,8 @@ import { getCdnContentAccessUrl } from '../../../../../services/ContentService';
 import Colors from "../../../../../../constants/Colors";
 import Spacings from "../../../../../../constants/Spacings";
 
+const S3_OBJECT_ROOT = "https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/";
+
 const SummaryVideoFactory = ({ summary, onSelectChapter }) => {
   return (
     <View style={{ marginTop: Spacings.md }}>
@@ -135,17 +137,11 @@ const YoutubePlayer = ({ videoId, seekTo }) => {
 export const VideoFactory = ({ video, contentInfos }) => {
   const videoSummary = video.children.length > 0 && video.children.find(item => item.name === "summary");
   const [videoSeekTo, setVideoSeekTo] = useState(0);
-  
-  const videoUrl = useQuery({
-    queryKey: ['video', video.attributes['src']],
-    queryFn: () => getCdnContentAccessUrl(contentInfos.aws_object_path + video.attributes['src']),
-    enabled: !!contentInfos.aws_object_path
-  });
 
   return (
     <View style={styles.container}>
       {contentInfos.aws_object_path
-        ? <DefaultPlayer videoUrl={videoUrl.data} seekTo={videoSeekTo} />
+        ? <DefaultPlayer videoUrl={S3_OBJECT_ROOT + contentInfos.aws_object_path + video.attributes['src']} seekTo={videoSeekTo} />
         : <YoutubePlayer videoId={video.attributes['src']} seekTo={videoSeekTo} />
       }
 

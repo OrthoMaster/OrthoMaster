@@ -46,7 +46,7 @@ const Card = ({ data, isCenter, onPress, isVisible = true, screenWidth, screenHe
         style={styles.gradient}
       />
       <View style={styles.textContainer}>
-        <Text style={[styles.authorText, { fontSize: isCenter ? 16 : 13 }]}>
+        <Text style={[styles.authorText, { fontSize: isCenter ? 20 : 14 }]}>
           <Text style={styles.authorName}>{data.author}</Text>
         </Text>
         <Text style={[styles.title, { fontSize: isCenter ? 30 : 16 }]} numberOfLines={2}>
@@ -365,8 +365,9 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   authorName: {
-    color: '#ffaf31',
-    fontWeight: 'bold',
+    color: Colors.primary,
+    fontFamily: 'Roboto',
+    fontWeight: '500'
   },
   arrowButton: {
     position: 'absolute',

@@ -32,9 +32,7 @@ export const AuthHome = ({ navigation }) => {
   useEffect(() => {
     // Auto-play for web
     if (Platform.OS === 'web' && videoRef.current) {
-      videoRef.current.play().catch(err => {
-        console.log('Autoplay prevented:', err);
-      });
+      videoRef.current.play().catch(err => {});
     }
 
     const timeout = setTimeout(() => {

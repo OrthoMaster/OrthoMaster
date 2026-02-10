@@ -24,8 +24,6 @@ import Spacings from '../../../constants/Spacings';
 
 import { getPreSearch, search, deleteKeyword, clearSearchHistory } from '../../services/v2/ContentService';
 
-const S3_OBJECT_ROOT = "https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/";
-
 interface Lesson {
   id: string;
   title: string;
