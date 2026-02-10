@@ -39,6 +39,7 @@ export const TrainingStack = () => {
     <TrainingStackNav.Navigator
       id={"training-stack" as undefined}
       initialRouteName='training-list'
+      screenOptions={{ title: 'Mes Formations' }} // for web
     >
       <TrainingStackNav.Screen
         name="training-list"

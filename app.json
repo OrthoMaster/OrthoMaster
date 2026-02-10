@@ -67,7 +67,11 @@
     },
     "web": {
       "favicon": "./assets/v2_images/logo/logo_primary_1024.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "name": "OrthoMaster – L’assistant orthopédique des professionnels de santé",
+      "shortName": "OrthoMaster",
+      "description": "OrthoMaster est une application d’orthopédie réservée aux professionnels de santé, conçue pour la formation continue, l’aide à la décision et l’optimisation de la prise en charge des pathologies de la mobilité.",
+      "lang": "fr"
     },
     "extra": {
       "eas": {

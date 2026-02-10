@@ -17,6 +17,7 @@ export const ToolsStack = ({ navigation, route }) => {
   return (
     <ToolsStackNav.Navigator
       initialRouteName='tools-home'
+      screenOptions={{ title: 'Outils' }}
     >
       <ToolsStackNav.Screen
         name="tools-home"

@@ -17,7 +17,8 @@ export const FlashStack = ({ }) => {
       id={"media-stack" as undefined}
       initialRouteName='flash-media-home'
       screenOptions={{
-        animation: 'default'
+        animation: 'default',
+        title: 'Médias' // for web
       }}
     >
       <FlashStackNav.Screen

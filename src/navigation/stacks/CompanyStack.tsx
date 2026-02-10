@@ -17,6 +17,7 @@ export const CompanyStack = () => {
     <CompanyStackNav.Navigator
       id={"company-stack" as undefined}
       initialRouteName='company-view'
+      screenOptions={{ title: 'Mon Équipe' }}
     >
       <CompanyStackNav.Screen
         name="company-view"

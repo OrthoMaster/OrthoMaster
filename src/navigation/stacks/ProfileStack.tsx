@@ -19,6 +19,7 @@ export const ProfileStack = () => {
     <ProfileStackNav.Navigator
       id={"profile-stack" as undefined}
       initialRouteName='profile-view'
+      screenOptions={{ title: 'Profil' }} // for web 
     >
       <ProfileStackNav.Screen
         name="profile-view"

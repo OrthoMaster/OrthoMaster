@@ -41,6 +41,7 @@ export const HomeStack = () => {
     <HomeStackNav.Navigator
       id={"home-stack" as undefined}
       initialRouteName='home-home'
+      screenOptions={{ title: 'Accueil' }} // for web
     >
       <HomeStackNav.Screen
         name={"home-home"}
