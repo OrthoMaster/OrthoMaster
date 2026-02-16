@@ -5,14 +5,17 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
+  Image
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useQuery } from "@tanstack/react-query";
+import { Ionicons } from '@expo/vector-icons';
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { fetchMedias } from '../../services/FlashMediasService';
-import SimpleAdaptiveCarouselWeb, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarouselWeb';
+import { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarouselWeb';
 import { IContent } from '../../utils/interfaces';
 import { PreviewMediaParams } from './PreviewMediaView';
 import { getEvents } from '../../services/v2/ContentService';
@@ -79,6 +82,19 @@ export const FlashMediaView = ({ navigation, route }) => {
     })
   }
 
+  const handleOpenEvent = (item: CarouselItem) => {
+    const params = {
+      channelType: 'event',
+      name: item.name,
+      logoUrl: item.logo_url,
+      image: item.image,
+      description: item.description,
+      targetId: item.id,
+      website: item.website
+    }
+    navigation.navigate("flash-media-channel", params)
+  }
+
   const verifyRoute = async () => {
     if (route.path && route.path.includes("open/media-preview/")) {
       if (route.params && route.params.id) {
@@ -108,7 +124,14 @@ export const FlashMediaView = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Médias</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Médias</Text>
+          <View style={styles.headerRightIcons}>
+            <TouchableOpacity onPress={() => { navigation.navigate('flash-search') }}>
+              <Ionicons name="search" size={34} color={Colors.white} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       <ScrollView
@@ -149,14 +172,31 @@ export const FlashMediaView = ({ navigation, route }) => {
           {
             eventsLoading ?
               <ActivityIndicator color={Colors.white} />
-              : eventsError ?
-                <View>
+              : eventsError
+                ? <View>
                   <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <SimpleAdaptiveCarouselWeb
-                  items={eventsCarouselItems}
-                  navigation={navigation}
-                />
+                : <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  contentContainerStyle={styles.eventScrollViewContent}
+                  style={styles.eventScrollView}
+                >
+                  {eventsCarouselItems.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.eventSlide}
+                      onPress={() => { handleOpenEvent(item) }}
+                    >
+                      <Image
+                        source={{ uri: process.env.EXPO_PUBLIC_S3_URL + item.image }}
+                        style={[styles.eventImage, { width: 200, height: 200 }]}
+                        resizeMode="cover" />
+                      <Text style={[styles.eventName, { width: 200, fontSize: item.name.length > 20 ? 13 : 16 }]}
+                        numberOfLines={3} ellipsizeMode="middle">{item.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
           }
         </View>
 
@@ -239,14 +279,23 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.red,
     paddingHorizontal: Spacings.lg,
     height: 100,
-    justifyContent: 'center',
-    alignItems: 'flex-start'
   },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Poppins-Medium',
     textAlign: 'right',
     color: Colors.white,
+  },
+  headerContent: {
+    height: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerRightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   sectionContainer: {
@@ -277,5 +326,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 10,
     fontFamily: 'Poppins-Regular',
+  },
+
+  eventScrollView: {
+    marginLeft: Spacings.sm,
+    paddingVertical: Spacings.md
+  },
+  eventScrollViewContent: {
+    gap: Spacings.md,
+  },
+  eventSlide: {
+    overflow: 'hidden',
+  },
+  eventImage: {
+    borderRadius: 16,
+    resizeMode: 'cover'
+  },
+  eventName: {
+    marginTop: Spacings.md,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Medium',
+    fontSize: 16,
+    color: Colors.white,
   }
 });

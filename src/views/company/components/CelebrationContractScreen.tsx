@@ -348,6 +348,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+    maxWidth: 600,
+    alignSelf: 'center'
   },
   primaryButtonText: {
     fontSize: 16,
@@ -365,6 +367,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     borderWidth: 2,
     borderColor: Colors.white,
+    maxWidth: 600,
+    alignSelf: 'center'
   },
   secondaryButtonText: {
     fontSize: 16,

@@ -6,6 +6,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { FlashMediaView } from '../../views/flash/FlashMediaView';
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 import { PreviewMediaView } from '../../views/flash/PreviewMediaView';
+
+import { FlashSearchView } from '../../views/flash/FlashSearchView';
+
 import ChannelMediaView from '../../views/flash/ChannelMediaView';
 import ReturnButtonIcon from '../components/ReturnButton';
 
@@ -27,22 +30,8 @@ export const FlashStack = ({ }) => {
         options={
           Platform.OS === 'web'
             ? { headerShown: false, }
-            : {
-              headerShown: true,
-              title: 'Médias',
-              headerTintColor: '#fff',
-              headerStyle: {
-                backgroundColor: "#FF4B4B",
-                height: 120,
-              },
-              headerTitleStyle: {
-                fontSize: 20,
-                fontFamily: 'Poppins-Medium',
-                marginLeft: 8,
-                marginBottom: 8,
-              },
-              headerTitleAlign: 'left'
-            }}
+            : { headerShown: false, }
+        }
       />
 
       {Platform.OS === 'web'
@@ -58,11 +47,8 @@ export const FlashStack = ({ }) => {
           name="flash-media-channel"
           component={ChannelMediaView}
           options={{
-            headerShown: true,
-            headerTitle: "",
-            headerBackButtonDisplayMode: "minimal",
-            headerTransparent: true,
-            headerBackImage: () => (<ReturnButtonIcon />)
+            headerShown: false,
+            animation: 'slide_from_right',
           }}
         />
       }
@@ -85,6 +71,7 @@ export const FlashStack = ({ }) => {
           }}
         />
       }
+      
       {Platform.OS === 'web'
         ? <FlashStackNav.Screen
           name="flash-media-viewer"
@@ -107,6 +94,15 @@ export const FlashStack = ({ }) => {
         />
       }
 
+      <FlashStackNav.Screen
+        name="flash-search"
+        component={FlashSearchView}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
+        }}
+      />
     </FlashStackNav.Navigator>
   );
 }

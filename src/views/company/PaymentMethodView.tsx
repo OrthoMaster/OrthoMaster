@@ -7,7 +7,8 @@ import {
   StyleSheet,
   StatusBar,
   RefreshControl,
-  Platform
+  Platform,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
@@ -18,6 +19,9 @@ import Stepper from './components/Stepper';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+
+const { width, height } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 interface PaymentMethod {
   id: string;
@@ -309,11 +313,10 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.sm,
-    paddingBottom: Spacings.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    height: isTablet ? 100 : 60,
   },
   headerLeft: {
     flexDirection: 'row',

@@ -14,7 +14,8 @@ import {
   NativeScrollEvent,
   RefreshControl,
   Dimensions,
-  Image
+  Image,
+  Platform
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -30,12 +31,12 @@ import { getTrainings } from "../../services/v2/TrainingService";
 
 import TrainingIntroModal from './components/TrainingIntroModal';
 
-const HEADER_HEIGHT = 120;
-const SCROLL_THRESHOLD = 5;
 const SCROLL_DOWN_AMOUNT = 400;
 
-type ScrollDirection = 'up' | 'down' | null;
 const strokeColor = '#58CC02';
+
+const { width, height } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 // Circular progress component
 const CircularProgress = ({ size = 70, strokeWidth = 8, progress, accentColor, backgroundColor, image }) => {
@@ -106,7 +107,7 @@ const CircularProgress = ({ size = 70, strokeWidth = 8, progress, accentColor, b
         {image
           ? <Image
             source={{ uri: process.env.EXPO_PUBLIC_S3_URL + image }}
-            style={{ width: '100%', height: '100%', borderRadius: 60 }}
+            style={{ width: '100%', height: '100%', borderRadius: (size - strokeWidth * 2) / 2 }}
           />
           : <Text style={styles.imageText}>📚</Text>}
       </View>
@@ -126,7 +127,11 @@ export const TrainingListView = ({ navigation, route }) => {
 
   const initPackageId = route.params?.initPackageId ?? null;
   const screenWidth = Dimensions.get('window').width;
-  const itemSize = (screenWidth - (2 * Spacings.lg) - (2 * Spacings.md)) / 3;
+
+  // Calculate itemSize based on device type
+  const itemSize = isTablet
+    ? (screenWidth - (2 * Spacings.lg) - (4 * Spacings.md)) / 5  // 5 items for tablet
+    : (screenWidth - (2 * Spacings.lg) - (2 * Spacings.md)) / 3; // 3 items for phone
 
   const { data: trainings, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['trainings'],
@@ -138,13 +143,8 @@ export const TrainingListView = ({ navigation, route }) => {
   // Refs
   const scrollViewRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = useRef(new Animated.Value(1)).current;
-  const headerScale = useRef(new Animated.Value(1)).current;
 
   // States
-  const [lastScrollY, setLastScrollY] = useState<number>(0);
-  const [scrollDirection, setScrollDirection] = useState<ScrollDirection>(null);
   const [contentHeight, setContentHeight] = useState(0);
   const [layoutHeight, setLayoutHeight] = useState(0);
   const [currentScrollY, setCurrentScrollY] = useState(0);
@@ -153,7 +153,7 @@ export const TrainingListView = ({ navigation, route }) => {
 
   // Handle open package screen
   useEffect(() => {
-    if (!isLoading && !error) {
+    if (!isLoading && !error && trainings && Array.isArray(trainings)) {
       let foundTraining = null;
       let foundPackage = null;
 
@@ -185,41 +185,19 @@ export const TrainingListView = ({ navigation, route }) => {
     setShowScrollButton(shouldShow);
   }, [contentHeight, layoutHeight, currentScrollY]);
 
-  // Animation values
-  const headerBackgroundOpacity = scrollY.interpolate({
-    inputRange: [0, HEADER_HEIGHT / 3, HEADER_HEIGHT],
-    outputRange: [0.9, 0.95, 1],
-    extrapolate: 'clamp',
-  });
-
-  // Handle scroll direction changes
+  // Track scroll position
   useEffect(() => {
     const listenerId = scrollY.addListener(({ value }: { value: number }) => {
       setCurrentScrollY(value);
-
-      const diff = value - lastScrollY;
-
-      if (value <= 0) {
-        setScrollDirection('up');
-      }
-
-      if (Math.abs(diff) > SCROLL_THRESHOLD) {
-        const newDirection: ScrollDirection = diff > 0 ? 'down' : 'up';
-        if (newDirection !== scrollDirection) {
-          setScrollDirection(newDirection);
-          animateHeader(newDirection, value);
-        }
-        setLastScrollY(value);
-      }
     });
 
     return () => scrollY.removeListener(listenerId);
-  }, [lastScrollY, scrollDirection, scrollY]);
+  }, [scrollY]);
 
+  // Bounce animation for scroll down button
   useEffect(() => {
     const bounceAnimation = Animated.loop(
       Animated.sequence([
-        // Nhảy lần 1
         Animated.timing(bounceAnim, {
           toValue: -15,
           duration: 300,
@@ -230,7 +208,6 @@ export const TrainingListView = ({ navigation, route }) => {
           duration: 300,
           useNativeDriver: true,
         }),
-        // Nhảy lần 2
         Animated.timing(bounceAnim, {
           toValue: -15,
           duration: 300,
@@ -241,7 +218,6 @@ export const TrainingListView = ({ navigation, route }) => {
           duration: 300,
           useNativeDriver: true,
         }),
-        // Nghỉ 2 giây
         Animated.delay(2000),
       ])
     );
@@ -252,33 +228,6 @@ export const TrainingListView = ({ navigation, route }) => {
       bounceAnimation.stop();
     };
   }, [bounceAnim]);
-
-  const animateHeader = (direction: ScrollDirection, scrollValue: number): void => {
-    const shouldHideHeader = direction === 'down' && scrollValue > 20;
-    const toValue = shouldHideHeader ? -HEADER_HEIGHT : 0;
-    const opacityValue = shouldHideHeader ? 0.3 : 1;
-    const scaleValue = shouldHideHeader ? 0.95 : 1;
-
-    Animated.parallel([
-      Animated.spring(headerTranslateY, {
-        toValue,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }),
-      Animated.timing(headerOpacity, {
-        toValue: opacityValue,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(headerScale, {
-        toValue: scaleValue,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }),
-    ]).start();
-  };
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -355,19 +304,8 @@ export const TrainingListView = ({ navigation, route }) => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.lgreen} />
 
-      {/* Enhanced Animated Header */}
-      <Animated.View
-        style={[
-          styles.header,
-          {
-            transform: [
-              { translateY: headerTranslateY },
-              { scale: headerScale }
-            ],
-            opacity: Animated.multiply(headerOpacity, headerBackgroundOpacity),
-          },
-        ]}
-      >
+      {/* Static Header */}
+      <View style={styles.header}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Mes formations</Text>
           <View style={styles.headerRightIcons}>
@@ -378,142 +316,131 @@ export const TrainingListView = ({ navigation, route }) => {
             </TouchableOpacity>
           </View>
         </View>
+      </View>
 
-        {/* Header bottom border with animation */}
-        <Animated.View
-          style={[
-            styles.headerBorder,
-            {
-              opacity: scrollY.interpolate({
-                inputRange: [0, 80, 120],
-                outputRange: [0, 0.5, 1],
-                extrapolate: 'clamp',
-              }),
-            },
-          ]}
-        />
-      </Animated.View>
+      <View style={styles.body}>
+        {/* Loading */}
+        {(isLoading || isFetching) && !error && (
+          <BouncingDots
+            color={Colors.white}
+            size={10}
+            bounceHeight={5}
+            containerStyle={{
+              position: 'absolute',
+              backgroundColor: 'transparent',
+              zIndex: 999,
+              elevation: 5,
+              bottom: 0,
+              left: '45%',
+            }}
+          />
+        )}
 
-      {/* Loading */}
-      {(isLoading || isFetching) && !error && (
-        <BouncingDots
-          color={Colors.lgreen}
-          size={10}
-          bounceHeight={5}
-          containerStyle={{
-            position: 'absolute',
-            backgroundColor: 'transparent',
-            zIndex: 999,
-            elevation: 5,
-            bottom: 0,
-            left: '45%',
+        {/* Error */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={64}
+              color={Colors.danger}
+            />
+            <Text style={styles.errorTitle}>Erreur de chargement</Text>
+            <Text style={styles.errorMessage}>
+              Impossible de charger les formation
+            </Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => refetch()}
+            >
+              <Ionicons name="refresh" size={20} color={Colors.white} />
+              <Text style={styles.retryButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Content */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          bounces={true}
+          scrollEventThrottle={16}
+          onContentSizeChange={(width, height) => {
+            setContentHeight(height);
           }}
-        />
-      )}
+          onLayout={(event) => {
+            setLayoutHeight(event.nativeEvent.layout.height);
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isFetching}
+              onRefresh={refetch}
+              colors={[Colors.lgreen]}
+              tintColor={Colors.lgreen}
+              style={{ zIndex: 9999 }}
+            />
+          }>
 
-      {/* Error */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <MaterialCommunityIcons
-            name="alert-circle-outline"
-            size={64}
-            color={Colors.danger}
-          />
-          <Text style={styles.errorTitle}>Erreur de chargement</Text>
-          <Text style={styles.errorMessage}>
-            Impossible de charger les formation
-          </Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => refetch()}
-          >
-            <Ionicons name="refresh" size={20} color={Colors.white} />
-            <Text style={styles.retryButtonText}>Réessayer</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+          {/* Training cards with grid pkg layout */}
+          {!error && trainings && Array.isArray(trainings) && trainings.map((training) => (
+            <View key={training.id} style={styles.trainingCard}>
+              <View style={styles.trainingHeaderNew}>
+                <Text style={[styles.trainingTitleNew, { backgroundColor: training.color }]} numberOfLines={2} ellipsizeMode='tail'>
+                  {training.name}
+                </Text>
+              </View>
 
-      {/* Content */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        bounces={true}
-        scrollEventThrottle={16}
-        onContentSizeChange={(width, height) => {
-          setContentHeight(height);
-        }}
-        onLayout={(event) => {
-          setLayoutHeight(event.nativeEvent.layout.height);
-        }}
-        refreshControl={
-          <RefreshControl
-            refreshing={isFetching}
-            onRefresh={refetch}
-            colors={[Colors.lgreen]}
-            tintColor={Colors.lgreen}
-            style={{ zIndex: 9999 }}
-          />
-        }>
-
-        {/* Training cards with grid pkg layout */}
-        {!error && trainings && trainings.map((training) => (
-          <View key={training.id} style={styles.trainingCard}>
-            <View style={styles.trainingHeaderNew}>
-              <Text style={[styles.trainingTitleNew, { backgroundColor: training.color }]} numberOfLines={2} ellipsizeMode='tail'>
-                {training.name}
-              </Text>
-            </View>
-
-            {/* Grid pkg layout */}
-            <View style={styles.packagesContainer}>
-              <View style={styles.packagesGridContent}>
-                {training.packages.map((pkg) => (
-                  <TouchableOpacity
-                    key={pkg.id}
-                    style={[styles.pkgItem, { width: itemSize }]}
-                    onPress={() => handlePackagePress(training, pkg)}
-                  >
-                    <CircularProgress
-                      size={itemSize}
-                      strokeWidth={4}
-                      progress={pkg.available_flg ? pkg.progress : null}
-                      accentColor={training.color}
-                      backgroundColor={training.background_color}
-                      image={pkg.available_flg ? pkg.image : pkg.image_2}
-                    />
-                    <Text numberOfLines={2} ellipsizeMode='tail'
-                      style={[styles.pkgTitle,
-                      pkg.available_flg && { color: training.color, fontFamily: 'Poppins-Bold' }]}>{pkg.short_name}</Text>
-                  </TouchableOpacity>
-                ))}
+              {/* Grid pkg layout */}
+              <View style={styles.packagesContainer}>
+                <View style={styles.packagesGridContent}>
+                  {training.packages && Array.isArray(training.packages) && training.packages.map((pkg) => (
+                    <TouchableOpacity
+                      key={pkg.id}
+                      style={[styles.pkgItem, { width: itemSize }]}
+                      onPress={() => handlePackagePress(training, pkg)}
+                    >
+                      <CircularProgress
+                        size={itemSize}
+                        strokeWidth={4}
+                        progress={pkg.available_flg ? pkg.progress : null}
+                        accentColor={training.color}
+                        backgroundColor={training.background_color}
+                        image={pkg.available_flg ? pkg.image : pkg.image_2}
+                      />
+                      <Text numberOfLines={2} ellipsizeMode='tail'
+                        style={[styles.pkgTitle,
+                        pkg.available_flg && { color: training.color, fontFamily: 'Poppins-Bold' }]}>{pkg.short_name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </View>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
 
-      {/* Scroll Down Button */}
-      {showScrollButton && (
-        <Animated.View
-          style={[
-            styles.scrollDownButton,
-            {
-              transform: [{ translateY: bounceAnim }]
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.scrollDownButtonInner}
-            onPress={handleScrollDown}
-            activeOpacity={0.7}
+        {/* Scroll Down Button */}
+        {showScrollButton && (
+          <Animated.View
+            style={[
+              styles.scrollDownButton,
+              {
+                transform: [{ translateY: bounceAnim }]
+              }
+            ]}
           >
-            <MaterialCommunityIcons name="arrow-down-circle-outline" size={40} color={Colors.lgreen} />
-          </TouchableOpacity>
-        </Animated.View>
-      )}
+            <TouchableOpacity
+              style={styles.scrollDownButtonInner}
+              onPress={handleScrollDown}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons name="arrow-down-circle-outline" size={40} color={Colors.lgreen} />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+      </View>
 
       {/* Intro Modal */}
       <TrainingIntroModal
@@ -529,25 +456,22 @@ export const TrainingListView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.darkBackground,
-  },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    height: HEADER_HEIGHT,
     backgroundColor: Colors.lgreen,
   },
-  headerContent: {
+  header: {
+    height: isTablet ? 100 : 60,
+    backgroundColor: Colors.lgreen,
+  },
+  body: {
     flex: 1,
+    backgroundColor: Colors.darkBackground
+  },
+  headerContent: {
+    height: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.xxxl,
-    paddingBottom: Spacings.md,
   },
   headerRightIcons: {
     flexDirection: 'row',
@@ -569,12 +493,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-
   scrollView: {
     flex: 1,
-    paddingTop: HEADER_HEIGHT - Spacings.xxl,
+    paddingTop: Spacings.md,
   },
   scrollContainer: {
+    paddingTop: isTablet ? Spacings.xl : 0,
     paddingBottom: Spacings.xl,
   },
 

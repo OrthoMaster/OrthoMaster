@@ -287,6 +287,7 @@ const styles = StyleSheet.create({
   readMoreContainer: {
     marginTop: Spacings.md,
     alignItems: 'flex-end',
+    marginRight: Spacings.xxxxl
   },
   readMoreBtn: {
     padding: 5,

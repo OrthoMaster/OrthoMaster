@@ -10,7 +10,9 @@ import {
   Linking,
   RefreshControl,
   Animated,
-  Image
+  Image,
+  Dimensions,
+  Platform
 } from 'react-native';
 import { Divider, Dialog, Portal, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +30,9 @@ import { BouncingDots } from '../../component/LoadingDots';
 
 import { getMoreInfo } from '../../services/v2/AuthService';
 import { quitCompany } from '../../services/v2/CompanyService';
+
+const { width } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 interface MenuItemProps {
   iconName: keyof typeof Ionicons.glyphMap;
@@ -218,7 +223,7 @@ export const ProfileView = ({ navigation, route }) => {
           <Text style={styles.headerTitle}>Profil</Text>
           <Text style={styles.userName}>{user.name + ' ' + user.first_name}</Text>
           <Text style={styles.userProf}>{user.student_flg == true ? 'Étudiant' : user.profession}</Text>
-          
+
           {
             user && user.student_flg == true && user.expires_at !== null &&
             <Text style={styles.userExpiresAt}>Expire le <Text
@@ -266,7 +271,7 @@ export const ProfileView = ({ navigation, route }) => {
           {more && more?.data?.companiesIsMember?.length > 0 &&
             <View style={styles.userCard}>
               <Text style={styles.teamTitle}>Équipe dont je fais partie :</Text>
-              <Divider theme={{ colors: { primary: Colors.purpleDark } }}/>
+              <Divider theme={{ colors: { primary: Colors.purpleDark } }} />
               {more?.data?.companiesIsMember.map((company, index) => (
                 <View key={'company-' + index} style={styles.companyWrapper}>
                   <View style={{ flex: 1 }}>
@@ -284,7 +289,7 @@ export const ProfileView = ({ navigation, route }) => {
             </View>
           }
 
-          <View style={styles.cusButtonsContainer}>
+          <View style={isTablet ? styles.cusButtonsContainerTablet : styles.cusButtonsContainer}>
             <TouchableOpacity style={styles.shareButton}
               activeOpacity={0.8}
               onPress={() => {
@@ -431,14 +436,8 @@ export const ProfileView = ({ navigation, route }) => {
       <Portal>
         <Dialog visible={visibleConfirmExit}
           onDismiss={() => setVisibleConfirmExit(false)}
-          style={{ maxWidth: 500, alignSelf: 'center' }}
-          theme={{
-            colors: {
-              elevation: {
-                level3: Colors.white,
-              }
-            }
-          }}>
+          style={{ width: 400, alignSelf: 'center' }}
+        >
           <Dialog.Title style={{ fontFamily: 'Poppins-Medium', fontSize: 18, color: Colors.danger }}>Quitter l'équipe</Dialog.Title>
           <Dialog.Content>
             <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 14, color: Colors.text }}>Êtes-vous sûr de vouloir quitter cette équipe ?</Text>
@@ -465,12 +464,13 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start'
+    alignItems: 'center',
+    paddingBottom: Spacings.md,
+    paddingTop: isTablet ? Spacings.lg : 0, 
   },
   headerTitle: {
     fontSize: 14,
@@ -500,18 +500,16 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.xs
   },
   userName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '500',
     fontFamily: 'Roboto',
     color: Colors.primary,
     marginBottom: -2,
   },
   userProf: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.subtext2,
-    marginBottom: -2,
-    marginLeft: Spacings.xxxs,
   },
   studentWrapper: {
     marginTop: Spacings.xs,
@@ -652,6 +650,11 @@ const styles = StyleSheet.create({
   cusButtonsContainer: {
     marginTop: Spacings.md,
   },
+  cusButtonsContainerTablet: {
+    marginTop: Spacings.md,
+    flexDirection: 'row',
+    gap: Spacings.md,
+  },
   shareButton: {
     flex: 1,
     borderRadius: 12,
@@ -678,7 +681,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
   },
   favoriteButton: {
-    flex: 2,
+    flex: 1,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'flex-start',

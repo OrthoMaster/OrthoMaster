@@ -25,6 +25,7 @@
       "color": "#FFAF31"
     },
     "ios": {
+      "requireFullScreen": true,
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "useNextNotificationsApi": true,
@@ -35,7 +36,7 @@
         "NSMicrophoneUsageDescription": "Utilisé pour enregistrer de l’audio.",
         "NSFaceIDUsageDescription": "Utilisé pour sécuriser l’accès à l’application.",
         "NSCameraUsageDescription": "La caméra est utilisée pour scanner des contenus ou ajouter des médias à votre profil.",
-        "NSUserNotificationUsageDescription": "Les notifications sont utilisées pour envoyer des rappels, des mises à jour de contenu et des informations importantes."
+        "NSUserNotificationUsageDescription": "Les notifications sont utilisées pour envoyer des rappels, des mises à jour de contenu et des informations importantes.",
       }
     },
     "android": {

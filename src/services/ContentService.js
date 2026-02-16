@@ -60,7 +60,7 @@ export const getUserNextLesson = async () => {
 }
 
 export const getCdnContentAccessUrl = async (path) => {
-  const config = await restoreLocalConfigAsync()
+  // const config = await restoreLocalConfigAsync()
   // const authHeader = 'Bearer ' + config.JWT;
 
   return axios
@@ -76,7 +76,7 @@ export const getCdnContentAccessUrl = async (path) => {
 }
 
 export const getContentById = async (idContent) => {
-  const config = await restoreLocalConfigAsync()
+  // const config = await restoreLocalConfigAsync()
   // const authHeader = 'Bearer ' + config.JWT;
 
   return axios

@@ -10,7 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  Alert
+  Alert,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,9 @@ import { Styles } from '../../../constants/Styles';
 import { BouncingDots } from '../../component/LoadingDots';
 
 import { createCompany } from '../../services/v2/CompanyService';
+
+const { width, height } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 interface FormData {
   name: string;
@@ -199,7 +203,7 @@ export const NewCompanyView = ({ navigation, route }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={back}>
-          <Ionicons name="arrow-back" size={20} color={Colors.text} />
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Créer Espace Pro</Text>
       </View>
@@ -633,12 +637,12 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    height: isTablet ? 100 : 60,
   },
   backButton: {
     padding: 4,

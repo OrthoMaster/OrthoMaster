@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, Image, Dimensions, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, Dimensions, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../services/S3Service";
-import Carousel, {
-  ICarouselInstance,
-  Pagination,
-} from "react-native-reanimated-carousel";
+import Carousel, { Pagination } from "react-native-reanimated-carousel";
 import { useSharedValue } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 const { width: screenWidth } = Dimensions.get("window");
+const isTablet = Platform.OS !== 'web' && screenWidth >= 768;
 
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
 
 const Card = ({ data, onPress }) => {
   const imageUrl = useQuery({
@@ -21,20 +21,21 @@ const Card = ({ data, onPress }) => {
     onPress={onPress}
   >
     <Image source={{ uri: imageUrl.data }} style={styles.image} />
-    <LinearGradient colors={["transparent", "transparent", "#000"]}
+    <LinearGradient colors={["transparent", 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.8)']}
       style={{
-        width: '100%', height: '100%',
+        width: '100%',
+        height: '100%',
         position: 'absolute'
       }}
     />
     <View style={{
       position: 'absolute',
-      bottom: 10,
-      zIndex: 1,
-      width: '90%'
+      bottom: isTablet ? Spacings.lg : Spacings.md,
+      left: isTablet ? Spacings.lg : Spacings.md,
+      width: '70%'
     }}>
-      <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 14, textAlign: 'left' }}>{data.title}</Text>
-      <Text style={{ color: '#fff' }}>par <Text style={{ color: '#ffaf31', fontWeight: 'bold', textAlign: 'left' }}>{data.author}</Text></Text>
+      <Text style={{ color: Colors.primary, fontFamily: 'Roboto', fontWeight: '500', fontSize: isTablet ? 18 : 14, textAlign: 'left' }}>{data.author ? data.author : 'OrthoMaster'}</Text>
+      <Text style={{ color: Colors.white, fontFamily: 'Poppins-Medium', fontSize: isTablet ? 24 : 16, textAlign: 'left' }}>{data.title}</Text>
     </View>
   </TouchableOpacity>
 }

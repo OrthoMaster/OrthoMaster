@@ -56,7 +56,8 @@ export const AppTab = ({ }) => {
     <Tab.Navigator
       id={"main-tabs" as unknown as undefined}
       initialRouteName='home'
-      screenOptions={({ route }) => ({
+      screenOptions={() => ({
+        tabBarLabelPosition: 'below-icon',
         tabBarStyle: { backgroundColor: 'white', paddingBottom: insets.bottom },
       })}
     >

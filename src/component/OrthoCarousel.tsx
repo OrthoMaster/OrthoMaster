@@ -7,6 +7,7 @@ import {
   View,
   ScrollView,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from '../services/S3Service';
@@ -26,15 +27,20 @@ export interface MediaItem {
 interface CarousselCardProps {
   item: MediaItem;
   onPress: () => void;
+  imageWidth?: number;
 }
 
+const { width, height } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
-const CarousselCard: FC<CarousselCardProps> = ({ item, onPress }) => {
+const CarousselCard: FC<CarousselCardProps> = ({ item, onPress, imageWidth }) => {
   const imageUrl = useQuery<string>({
     queryKey: ['Home', 'GET', 'contentThumbnail', item.id_content, item.title],
     queryFn: () => getS3Image(`${item.s3_path}/${item.title}/logo.png`)
   });
+
+  const imageHeight = imageWidth ? imageWidth * (9 / 16) : undefined;
 
   // --- VERSION WEB ---
   if (isWeb) {
@@ -49,13 +55,13 @@ const CarousselCard: FC<CarousselCardProps> = ({ item, onPress }) => {
         </View>
         <View style={styles.detailWeb}>
           <View style={styles.metaRow}>
-            <Text style={styles.author} numberOfLines={1}>{item.author}</Text>
+            <Text style={styles.author} numberOfLines={1} ellipsizeMode='tail'>{item.author}</Text>
             <View style={styles.durationBadge}>
               <AntDesign name="clock-circle" size={10} color={Colors.gray} style={{ marginRight: 4 }} />
               <Text style={styles.metaText}>{item.duration}</Text>
             </View>
           </View>
-          <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.title} numberOfLines={2} ellipsizeMode='tail'>{item.title}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -63,8 +69,18 @@ const CarousselCard: FC<CarousselCardProps> = ({ item, onPress }) => {
 
   // --- VERSION MOBILE ---
   return (
-    <TouchableOpacity style={styles.cardMobile} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.imageContainerMobile}>
+    <TouchableOpacity
+      style={[
+        styles.cardMobileVertical,
+        imageWidth && { width: imageWidth }
+      ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={[
+        styles.imageContainerMobile,
+        imageWidth && imageHeight && { width: imageWidth, height: imageHeight }
+      ]}>
         {imageUrl.data ? (
           <Image style={styles.thumbnailMobile} source={{ uri: imageUrl.data }} />
         ) : (
@@ -72,12 +88,14 @@ const CarousselCard: FC<CarousselCardProps> = ({ item, onPress }) => {
         )}
       </View>
       <View style={styles.detailMobile}>
-        <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.author} numberOfLines={1}>{item.author}</Text>
-        <View style={styles.metaRowMobile}>
-          <AntDesign name="clock-circle" size={10} color={Colors.gray} style={{ marginRight: 4 }} />
-          <Text style={styles.metaText}>{item.duration}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.author} numberOfLines={1}>{item.author}</Text>
+          <View style={styles.durationBadge}>
+            <AntDesign name="clock-circle" size={10} color={Colors.gray} style={{ marginRight: 4 }} />
+            <Text style={styles.metaText}>{item.duration}</Text>
+          </View>
         </View>
+        <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -99,12 +117,52 @@ export const OrthoCarousel: FC<{ entries: MediaItem[] | undefined; onSelect: (it
     );
   }
 
+  const horizontalPadding = Spacings.lg * 2; // padding trái phải
+  const columnGap = Spacings.md; // khoảng cách giữa các cột
+
+  let numColumns: number;
+  let imageWidth: number;
+
+  if (isTablet) {
+    // iPad
+    numColumns = 3;
+    imageWidth = (width - horizontalPadding - (columnGap * (numColumns - 1))) / numColumns;
+  } else {
+    // iPhone
+    numColumns = 1;
+    imageWidth = (width - horizontalPadding - (columnGap * (numColumns - 1))) / numColumns;
+  }
+
+  // Chia entries thành các hàng theo số cột
+  const rows: (MediaItem | null)[][] = [];
+  for (let i = 0; i < (entries?.length || 0); i += numColumns) {
+    const row: (MediaItem | null)[] = [];
+    for (let j = 0; j < numColumns; j++) {
+      row.push(entries?.[i + j] || null);
+    }
+    rows.push(row);
+  }
+
   return (
-    <View style={styles.mobileContainer}>
-      {entries?.map((item) => (
-        <CarousselCard key={item.id_content} item={item} onPress={() => onSelect(item)} />
+    <ScrollView style={styles.mobileContainer} showsVerticalScrollIndicator={false}>
+      {rows.map((row, rowIndex) => (
+        <View key={`row-${rowIndex}`} style={styles.gridRow}>
+          {row.map((item, colIndex) =>
+            item ? (
+              <View key={item.id_content} style={styles.gridColumn}>
+                <CarousselCard
+                  item={item}
+                  onPress={() => onSelect(item)}
+                  imageWidth={imageWidth}
+                />
+              </View>
+            ) : (
+              <View key={`empty-${colIndex}`} style={styles.gridColumn} />
+            )
+          )}
+        </View>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -121,7 +179,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  // WEB STYLES (New Layout)
+  // WEB STYLES
   cardWeb: {
     width: 260,
     height: 240,
@@ -146,31 +204,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // MOBILE STYLES (Original Layout)
-  cardMobile: {
-    flexDirection: 'row',
+  // MOBILE STYLES
+  cardMobileVertical: {
     backgroundColor: Colors.white,
-    marginHorizontal: Spacings.lg,
-    marginVertical: Spacings.xs,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.line,
+    marginBottom: Spacings.md,
   },
   imageContainerMobile: {
-    width: 120,
-    height: 80,
+    width: '100%',
   },
   thumbnailMobile: {
-    width: 120,
-    height: 80,
+    width: '100%',
+    height: '100%',
     resizeMode: 'cover',
-    borderRadius: 8,
   },
   detailMobile: {
-    flex: 1,
-    paddingLeft: Spacings.sm,
-    justifyContent: 'center',
+    padding: Spacings.sm,
   },
-  metaRowMobile: {
+
+  // GRID LAYOUT (2 cols iPhone, 3 cols iPad)
+  gridRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    paddingHorizontal: Spacings.lg,
+    gap: Spacings.md,
+  },
+  gridColumn: {
+    flex: 1,
   },
 
   // Common Typography
@@ -187,11 +249,12 @@ const styles = StyleSheet.create({
   author: {
     fontSize: 12,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '500',
     fontFamily: 'Roboto',
   },
   metaText: {
     fontSize: 11,
+    fontFamily: 'Poppins-Regular',
     color: Colors.gray,
   },
   title: {
@@ -199,5 +262,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.text,
     lineHeight: 20,
+    minHeight: isTablet ? 40 : 20,
   },
 });

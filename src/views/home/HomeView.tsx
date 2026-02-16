@@ -293,13 +293,17 @@ export const HomeView = ({ navigation, route }) => {
 
       if (result === true) {
         await storageSet('open-topics-onboarding', 'true');
+
         setShowOnboarding(false);
         refetchUser();
       }
 
       return;
     } catch (error) {
+
       sendError('topics-onboarding-modal', error);
+      setShowOnboarding(false);
+      refetchUser();
     }
   };
 
@@ -522,13 +526,14 @@ const styles = StyleSheet.create({
   },
   bannerScrollContent: {
     paddingHorizontal: Spacings.lg,
-    gap: Spacings.sm,
+    gap: Spacings.md,
     backgroundColor: Colors.white,
   },
   dailyQuestionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: Spacings.md,
+    paddingRight: Spacings.xl,
     borderRadius: 16,
     shadowColor: Colors.blue,
     shadowOffset: { width: 0, height: 4 },

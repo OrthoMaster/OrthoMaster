@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Linking, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Platform, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -7,6 +7,7 @@ import Spacings from '../../../constants/Spacings';
 import SendQuestionInfoModal from './components/SendQuestionInfoModal';
 
 const { width, height } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 const CARD_SIZE = (width > 500 ? 500 : width - (Spacings.xl * 2) - (Spacings.md * 2)) / 3;
 
 interface HomeHeaderProps {
@@ -97,7 +98,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
   return (
     <>
-      <View style={styles.container}>
+      <View style={[styles.container, isTablet && { paddingTop: Spacings.xl }]}>
         {/* Top Row: Logo and Notifications */}
         <View style={styles.topRow}>
           <View style={styles.logoContainer}>

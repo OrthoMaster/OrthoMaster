@@ -6,14 +6,14 @@ import { getSessionId } from "../SessionEventService";
 const baseurl = process.env.EXPO_PUBLIC_API_URL + "/tools/que-choisir"
 
 export const getAPIqueChoisirStep = async (category) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  // const config = await restoreLocalConfigAsync()
+  // const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(baseurl + "/step", {
-      headers: {
-        Authorization: authHeader
-      },
+      // headers: {
+      //   Authorization: authHeader
+      // },
       params: {
         category: category
       }
@@ -25,14 +25,14 @@ export const getAPIqueChoisirStep = async (category) => {
 }
 
 export const getAPIqueChoisirRedFlags = async (category) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  //const config = await restoreLocalConfigAsync()
+  //const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(baseurl + "/redflags", {
-      headers: {
-        Authorization: authHeader
-      },
+      // headers: {
+      //   Authorization: authHeader
+      // },
       params: {
         category: category
       }
@@ -44,13 +44,13 @@ export const getAPIqueChoisirRedFlags = async (category) => {
 }
 
 export const getQCcategories = async () => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  // const config = await restoreLocalConfigAsync()
+  // const authHeader = 'Bearer ' + config.JWT;
 
   return axios
     .get(baseurl + "/categories", {
       headers: {
-        Authorization: authHeader
+        // Authorization: authHeader
       }
     })
     .then((response) => {
@@ -65,8 +65,8 @@ export const saveQCEntries = async ({
   userHistory,
   filtersConfig
 }) => {
-  const config = await restoreLocalConfigAsync()
-  const authHeader = 'Bearer ' + config.JWT;
+  // const config = await restoreLocalConfigAsync()
+  // const authHeader = 'Bearer ' + config.JWT;
 
   let finalProducts = []
   allFinalProductsSections.forEach(section => {
@@ -82,7 +82,7 @@ export const saveQCEntries = async ({
       session_id: getSessionId()
     }, {
       headers: {
-        Authorization: authHeader
+        // Authorization: authHeader
       }
     })
     .then((response) => {

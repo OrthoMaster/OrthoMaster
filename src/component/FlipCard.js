@@ -48,7 +48,7 @@ export const FlipCard = ({
                 <TouchableOpacity
                     style={styles.button}
                     onPress={animate}>
-                    <AntDesign name="pluscircle" size={40} color="#FFAF31" />
+                    <AntDesign name="plus-circle" size={40} color="#FFAF31" />
                 </TouchableOpacity>
             </View>
         </Animated.View>

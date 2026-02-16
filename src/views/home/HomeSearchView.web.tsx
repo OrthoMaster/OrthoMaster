@@ -79,8 +79,8 @@ export const HomeSearchView = ({ navigation }) => {
 
   const [categories, setCategories] = useState<Category[]>([
     { id: 'all', name: 'Tout' },
-    { id: 'lesson', name: 'Formation' },
-    { id: 'video', name: 'Média' },
+    { id: 'lesson', name: 'Formations' },
+    { id: 'video', name: 'Médias' },
   ]);
 
   // Search Results States

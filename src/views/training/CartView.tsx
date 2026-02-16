@@ -12,7 +12,8 @@ import {
   RefreshControl,
   Dimensions,
   Vibration,
-  Image
+  Image,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,6 +27,8 @@ import { getCartDetails, removeFromCart, clearCart } from '../../services/v2/Car
 import { sendError } from '../../services/v2/AuthService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && SCREEN_WIDTH >= 768;
+
 const SWIPE_THRESHOLD = -80;
 const DELETE_ZONE_WIDTH = 100;
 
@@ -464,6 +467,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    height: isTablet ? 100 : 60,
   },
   headerLeft: {
     flexDirection: 'row',

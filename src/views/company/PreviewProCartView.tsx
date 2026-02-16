@@ -13,7 +13,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Keyboard
+  Keyboard,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
@@ -25,6 +26,8 @@ import { Styles } from '../../../constants/Styles';
 
 import StripePaymentModal from '../training/components/StripePaymentModal';
 import CelebrationScreen from '../training/components/CelebrationActivePackageScreen';
+
+const isTablet = Platform.OS !== 'web' && Dimensions.get('window').width >= 768;
 
 import {
   previewProCart,
@@ -633,9 +636,10 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
+    justifyContent: 'center',
+    height: isTablet ? 100 : 60,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -819,12 +823,6 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: Colors.danger,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: Spacings.xs,
   },
   errorText: {
     fontSize: 12,

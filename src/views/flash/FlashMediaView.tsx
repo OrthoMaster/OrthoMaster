@@ -14,24 +14,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
 import { useQuery } from "@tanstack/react-query";
+import { Ionicons } from '@expo/vector-icons';
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { fetchMedias } from '../../services/FlashMediasService';
-import { fetchEvents } from '../../services/EventsService';
 import SimpleAdaptiveCarousel, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
 import { IContent, IEvent } from '../../utils/interfaces';
-import { ChannelMediaViewParams } from './ChannelMediaView';
 import { PreviewMediaParams } from './PreviewMediaView';
-import SearchModalComponent from '../../component/SearchModalComponent';
 import { getCdnContentAccessUrl } from '../../services/ContentService';
+
+import { getEvents } from '../../services/v2/ContentService';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-const LIMIT_LAST_RELEASE = 5
-const CAROUSEL_SIZE = 180
-const { width: screenWidth } = Dimensions.get('screen')
+const LIMIT_LAST_RELEASE = 5;
+const { width: screenWidth } = Dimensions.get('screen');
+const isTablet = Platform.OS !== 'web' && screenWidth >= 768;
 
 type EventCardProp = {
   event: IEvent, onSelect: (event: IEvent) => any
@@ -91,33 +91,7 @@ export const FlashMediaView = ({ navigation, route }) => {
     queryKey: ["medias-categories-content"],
     queryFn: () => fetchMedias({ group_by: "category" })
   })
-  const { isError: eventsError, isLoading: eventsLoading } = useQuery({
-    queryKey: ["events"],
-    queryFn: () => fetchEvents().then((data) => {
-      let evtsCards: CarouselItem[] = [];
 
-      data.forEach(evt => {
-        evtsCards.push({
-          key: evt.name,
-          content: <EventCard event={evt} onSelect={(event) => {
-            const params: ChannelMediaViewParams = {
-              channelType: 'event',
-              name: event.name,
-              logoUrl: event.logo_url,
-              description: event.description,
-              targetId: event.id,
-              website: event.website
-            }
-            navigation.navigate("flash-media-channel", params)
-          }} />
-        })
-      });
-      setEventsCarouselItems(evtsCards)
-      return data;
-    })
-  })
-
-  const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([])
   const [openMediaIsLoading, setOpenMediaIsLoading] = useState<boolean>(false)
   const [openMediaErrorMessage, setOpenMediaErrorMessage] = useState<string>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -162,6 +136,42 @@ export const FlashMediaView = ({ navigation, route }) => {
     }
   }
 
+  const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState(false);
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        setEventsLoading(true);
+        setEventsError(false);
+
+        const data = await getEvents();
+        if (data) {
+          setEventsCarouselItems(data);
+        }
+      } catch (error) {
+        setEventsError(true);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
+    loadEvents();
+  }, []);
+
+  const handleOpenEvent = (item: CarouselItem) => {
+    const params = {
+      channelType: 'event',
+      name: item.name,
+      logoUrl: item.logo_url,
+      image: item.image,
+      description: item.description,
+      targetId: item.id,
+      website: item.website
+    }
+    navigation.navigate("flash-media-channel", params)
+  }
+
   useEffect(() => {
     if (categories.data) {
       verifyRoute()
@@ -169,106 +179,106 @@ export const FlashMediaView = ({ navigation, route }) => {
   }, [route.params, categories.data])
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.red} />
+
+      {/* Static Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Médias</Text>
+          <View style={styles.headerRightIcons}>
+            <TouchableOpacity onPress={() => { navigation.navigate('flash-search') }}>
+              <Ionicons name="search" size={24} color={Colors.white} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
       <ScrollView
+        style={styles.body}
         scrollEnabled={!isSearching}
         nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={false}
       >
         <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2, paddingBottom: 30, marginTop: 0 }]}>
-          <Text style={[styles.categoryTitle, {
-            color: "#fff",
-            backgroundColor: 'none',
-            marginTop: 30,
-          }]}>Tendances sur OrthoMaster</Text>
+          <Text style={[styles.categoryTitle, styles.categoryTrending]}>Tendances sur OrthoMaster</Text>
           {
             lastRelease.isLoading ?
               <ActivityIndicator />
               : lastRelease.isError ?
                 <View>
-                  <Text>Une erreur s'est produite lors du chargement</Text>
+                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
                 </View>
                 : <PanoramaCarousel onSelect={handleNavigation} data={lastRelease.data} />
           }
-
-        </View>
-        <View style={[styles.sectionContainer]}>
-          <TouchableOpacity style={{
-            backgroundColor: '#F1F1F1',
-            borderRadius: 10,
-            padding: 10,
-            alignSelf: 'center',
-            width: "90%",
-            marginHorizontal: 20
-          }}
-            onPress={() => setIsSearching(true)}
-          >
-            <Text style={{ color: 'gray' }}>Rechercher ...</Text>
-          </TouchableOpacity>
         </View>
 
-        <View style={[styles.sectionContainer, { paddingTop: 20 }]}>
-          <Text style={[styles.categoryTitle]}>Congrès</Text>
-          <Text style={[styles.categorySubTitle, { marginBottom: 5 }]}>Les sociétés savantes</Text>
+        {/* Events */}
+        <View style={[styles.sectionContainer, { paddingTop: Spacings.lg }]}>
           {
-            eventsLoading ?
-              <ActivityIndicator />
-              : eventsError ?
-                <View>
-                  <Text>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                : <SimpleAdaptiveCarousel
-                  items={eventsCarouselItems}
-                  widthPercent={1}
-                  height={170}
-                  cardSpacing={5}
-                />
+            !eventsError && !eventsLoading &&
+            <>
+              <Text style={[styles.categoryTitle]}>Congrès</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.eventScrollViewContent}
+                style={styles.eventScrollView}
+              >
+                {eventsCarouselItems.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.eventSlide}
+                    onPress={() => { handleOpenEvent(item) }}
+                  >
+                    <Image
+                      source={{ uri: process.env.EXPO_PUBLIC_S3_URL + item.image }}
+                      style={[styles.eventImage, { width: isTablet ? 150 : 100, height: isTablet ? 150 : 100 }]}
+                      resizeMode="cover" />
+                    <Text style={[styles.eventName, { width: isTablet ? 150 : 100, fontSize: item.name.length > 20 ? 12 : 14 }]}
+                      numberOfLines={3} ellipsizeMode="middle">{item.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
           }
 
-          <Text style={[styles.categorySubTitle, { marginBottom: 10 }]}>Les derniers contenus</Text>
+          <Text style={[styles.categoryTitle]}>Les derniers contenus</Text>
           {
             categories.isLoading ?
               <ActivityIndicator />
               : categories.isError ?
                 <View>
-                  <Text>Une erreur s'est produite lors du chargement</Text>
+                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <View style={{ height: CAROUSEL_SIZE }}>
-                  <SimpleContentCarousel data={categories.data["Congrès"].slice(0, 15)} nbElement2Display={2.2} onSelect={handleNavigation} />
-                </View>
+                : <SimpleContentCarousel data={categories.data["Congrès"].slice(0, 15)} nbElement2Display={2.2} onSelect={handleNavigation} />
 
           }
         </View>
 
-        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2.2 }]}>
+        <View style={styles.sectionContainer}>
           <Text style={styles.categoryTitle}>Travaux pratiques</Text>
           {
             categories.isLoading ?
-              <ActivityIndicator />
+              <ActivityIndicator color={Colors.white} />
               : categories.isError ?
                 <View>
-                  <Text>Une erreur s'est produite lors du chargement</Text>
+                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <View style={{ height: CAROUSEL_SIZE }}>
-                  <SimpleContentCarousel data={categories.data["Travaux pratiques"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-                </View>
+                : <SimpleContentCarousel data={categories.data["Travaux pratiques"]} nbElement2Display={2.2} onSelect={handleNavigation} />
           }
-
         </View>
 
-        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2.2 }]}>
+        <View style={styles.sectionContainer}>
           <Text style={styles.categoryTitle}>Entretiens</Text>
           {
             categories.isLoading ?
               <ActivityIndicator />
               : categories.isError ?
                 <View>
-                  <Text>Une erreur s'est produite lors du chargement</Text>
+                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <View style={{ height: CAROUSEL_SIZE }}>
-                  <SimpleContentCarousel data={categories.data["Entretiens"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-                </View>
-
+                : <SimpleContentCarousel data={categories.data["Entretiens"]} nbElement2Display={2.2} onSelect={handleNavigation} />
           }
 
         </View>
@@ -280,14 +290,14 @@ export const FlashMediaView = ({ navigation, route }) => {
               <ActivityIndicator />
               : categories.isError ?
                 <View>
-                  <Text>Une erreur s'est produite lors du chargement</Text>
+                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
                 </View>
-                : <View style={{ height: CAROUSEL_SIZE }}>
-                  <SimpleContentCarousel data={categories.data["Reportages"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-                </View>
+                : <SimpleContentCarousel data={categories.data["Reportages"]} nbElement2Display={2.2} onSelect={handleNavigation} />
           }
 
         </View>
+
+        <View style={{ height: Spacings.xl }}></View>
       </ScrollView>
       <Modal isVisible={openMediaIsLoading}
         backdropColor='#999999'
@@ -308,22 +318,38 @@ export const FlashMediaView = ({ navigation, route }) => {
           }
         </View>
       </Modal>
-      <SearchModalComponent
-        isVisible={isSearching}
-        contentType='flash'
-        keyId='search-media'
-        onSelect={(media) => {
-          handleNavigation(media)
-          setIsSearching(false)
-        }}
-        onClose={() => setIsSearching(false)}
-      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: Colors.red,
+  },
+  header: {
+    height: isTablet ? 100 : 60,
+    backgroundColor: Colors.red,
+  },
+  headerContent: {
+    height: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacings.lg,
+  },
+  headerRightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacings.xs
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
+    textAlign: 'right',
+    color: Colors.white,
+  },
+  body: {
     backgroundColor: Colors.darkBackground,
   },
   sectionContainer: {
@@ -331,21 +357,54 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     fontSize: 18,
-    marginVertical: 5,
-    paddingLeft: 10,
-    paddingRight: 20,
-    paddingVertical: 3,
+    marginTop: Spacings.md,
+    marginBottom: Spacings.md,
+    paddingLeft: Spacings.lg,
+    paddingRight: Spacings.lg,
+    paddingVertical: Spacings.xxs,
     fontFamily: 'Poppins-Medium',
     backgroundColor: Colors.red,
-    color: '#fff',
+    color: Colors.white,
     alignSelf: 'flex-start',
-    borderTopEndRadius: 7,
-    borderBottomEndRadius: 7
+    borderTopEndRadius: 8,
+    borderBottomEndRadius: 8
+  },
+  categoryTrending: {
+    marginTop: Spacings.lg,
   },
   categorySubTitle: {
-    fontSize: 15,
-    marginLeft: 10,
-    color: '#fff',
+    fontSize: 16,
+    marginLeft: Spacings.md,
+    color: Colors.white,
     fontFamily: 'Poppins-Regular'
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.grayLight,
+    fontFamily: 'Poppins-Regular',
+    padding: Spacings.md
+  },
+
+  // Event
+  eventScrollView: {
+    marginLeft: Spacings.sm,
+    paddingVertical: Spacings.md
+  },
+  eventScrollViewContent: {
+    gap: Spacings.md,
+  },
+  eventSlide: {
+    overflow: 'hidden',
+  },
+  eventImage: {
+    borderRadius: 16,
+    resizeMode: 'cover'
+  },
+  eventName: {
+    marginTop: Spacings.md,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Medium',
+    fontSize: 16,
+    color: Colors.white,
   }
 })

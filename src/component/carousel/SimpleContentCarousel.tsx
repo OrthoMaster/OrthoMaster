@@ -1,8 +1,16 @@
 import React, { useState } from "react";
-import { View, Text, Image, FlatList, Dimensions, StyleSheet, TouchableOpacity, NativeSyntheticEvent, LayoutChangeEvent } from "react-native";
+import { View, Text, Image, FlatList, Dimensions, StyleSheet, TouchableOpacity, Platform, LayoutChangeEvent } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../services/S3Service";
+
 const { width: screenWidth } = Dimensions.get("window");
+const isTablet = Platform.OS !== 'web' && screenWidth >= 768;
+
+const CARD_WIDTH = isTablet ? 300 : 200;
+
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
 
 
 const Card = ({ data, onSelect, nbElement2Display }) => {
@@ -10,44 +18,23 @@ const Card = ({ data, onSelect, nbElement2Display }) => {
     queryKey: ['contentThumbnail', data.id_content, data.title],
     queryFn: () => getS3Image(`${data.s3_path}/${data.title}/logo.png`)
   })
-  const [imgDimensions, setImgDimensions] = useState({
-    width: 0,
-    height: 0
-  })
-
 
   // return <TouchableOpacity style={[styles.card, {width: screenWidth / nbElement2Display}]}
-  return <TouchableOpacity style={[styles.card, { width: screenWidth / nbElement2Display }]}
+  return <TouchableOpacity style={[styles.card, { width: CARD_WIDTH }]}
     onPress={onSelect}
-    onLayout={(event: LayoutChangeEvent) => {
-      setImgDimensions({
-        width: event.nativeEvent.layout.width,
-        height: event.nativeEvent.layout.width * (9 / 16)
-      })
-
-    }}
   >
-    <Image source={{ uri: imageUrl.data }} style={[styles.image, {
-      width: imgDimensions.width,
-      height: imgDimensions.height
-    }]} />
-    <Text style={styles.title} numberOfLines={2} >
-      {data.title}
-    </Text>
-    <View style={{
-      width: '100%',
-      paddingLeft: 5
-    }}>
-      <Text style={{
-        color: "#ffaf31",
-        fontWeight: 'bold',
-        fontSize: 10
-      }}>{data.author}</Text>
+    <Image source={{ uri: imageUrl.data }}
+      style={[styles.image, {
+        width: CARD_WIDTH,
+        height: CARD_WIDTH * 9 / 16
+      }]} />
 
-    </View>
+    {data.author &&
+      <Text style={styles.subTitle}>{data.author}</Text>
+    }
+    <Text style={styles.title} numberOfLines={2}>{data.title}</Text>
   </TouchableOpacity>
 }
-
 
 const SimpleCarousel = ({
   data,
@@ -63,7 +50,6 @@ const SimpleCarousel = ({
         decelerationRate={"fast"}
         nestedScrollEnabled={true}
         keyExtractor={(item: any, index: number) => index.toString()}
-
         renderItem={({ item }) => (
           <Card data={item} nbElement2Display={nbElement2Display} onSelect={() => {
             onSelect(item)
@@ -78,37 +64,38 @@ const SimpleCarousel = ({
 const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
-    height: '100%'
   },
   listContainer: {
-    paddingHorizontal: 2, // Ajoute du padding pour éviter que les films collent aux bords
+    paddingHorizontal: Spacings.sm,
   },
   card: {
-    maxHeight: "100%",
-    marginHorizontal: 5, // Espacement entre les films
-    borderRadius: 5,
+    marginRight: Spacings.md,
+    borderRadius: 6,
     backgroundColor: "none",
     alignItems: "center",
     justifyContent: 'flex-start',
   },
-
   image: {
-    width: "100%",
-    height: "60%",
-    resizeMode: 'contain',
-    borderRadius: 5,
-    backgroundColor: '#000'
+    resizeMode: 'cover',
+    borderRadius: 6,
+    backgroundColor: Colors.gray,
+    marginBottom: Spacings.sm,
   },
   title: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
-    textAlign: "left",
-    marginTop: 5,
+    color: Colors.white,
+    fontSize: 14,
     width: "100%",
-    paddingHorizontal: 5,
-    fontFamily: 'Roboto'
+    fontFamily: 'Poppins-Medium',
+    minHeight: 30,
   },
+  subTitle: {
+    color: Colors.primary,
+    fontSize: 12,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    width: "100%",
+    marginBottom: Spacings.xxxs,
+  }
 });
 
 export default SimpleCarousel;

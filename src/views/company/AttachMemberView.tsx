@@ -6,20 +6,22 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  RefreshControl,
-  Alert
+  Alert,
+  Dimensions,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ActivityIndicator } from 'react-native-paper';
 
 import Stepper from './components/Stepper';
-
-import { BouncingDots } from '../../component/LoadingDots';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import { syncMembers } from '../../services/v2/CartService';
+
+const { width, height } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 interface Member {
   id: string;
@@ -308,11 +310,10 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.sm,
-    paddingBottom: Spacings.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    height: isTablet ? 100 : 60,
   },
   headerLeft: {
     flexDirection: 'row',

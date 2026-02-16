@@ -308,6 +308,7 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+    maxWidth: 700,
     paddingHorizontal: Spacings.lg,
     alignSelf: 'center',
   },

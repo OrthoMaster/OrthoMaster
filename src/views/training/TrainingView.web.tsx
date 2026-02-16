@@ -416,6 +416,8 @@ export const TrainingView = ({ navigation, route }) => {
             key={lesson.id}
           />
         </Animated.View>
+
+        <Text style={styles.lessonTitle}>{lesson.title}</Text>
       </TouchableOpacity>
     );
   };
@@ -784,6 +786,17 @@ const styles = StyleSheet.create({
   lessonItem: {
     marginBottom: Spacings.lg,
     alignItems: 'flex-start',
+  },
+  lessonTitle: {
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    marginTop: Spacings.sm,
+    marginBottom: Spacings.md,
+    color: Colors.subtext2,
+    width: 200,
+    marginLeft: -50,
+    textAlign: 'center',
   },
   lessonCircle: {
     width: 60,

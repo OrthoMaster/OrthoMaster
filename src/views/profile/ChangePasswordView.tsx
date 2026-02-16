@@ -11,6 +11,7 @@ import {
   Platform,
   Keyboard,
   Alert,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -21,6 +22,9 @@ import Spacings from '../../../constants/Spacings';
 import { Styles } from '../../../constants/Styles';
 
 import { changePassword } from '../../services/v2/AuthService';
+
+const { width } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 interface FormData {
   newPassword: string;
@@ -152,7 +156,7 @@ export const ChangePasswordView = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={back}>
-          <Ionicons name="arrow-back" size={20} color={Colors.text} />
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Sécurité</Text>
       </View>
@@ -382,13 +386,12 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.sm,
-    paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    height: isTablet ? 100 : 60, 
   },
   backButton: {
     padding: 4,

@@ -19,7 +19,7 @@ const PrintView: React.FC<any> = () => {
               alignSelf: 'center',
               marginBottom: 20
             }]}>
-              <AntDesign name="shoppingcart" size={35} color="#FBB200" />
+              <AntDesign name="shopping-cart" size={35} color="#FBB200" />
             </View>
     
             <TouchableOpacity style={{

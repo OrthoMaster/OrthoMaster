@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getS3Image } from "../../services/S3Service";
 import { LinearGradient } from "expo-linear-gradient";
 
+import Ionicons from '@expo/vector-icons/Ionicons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
@@ -81,7 +82,7 @@ const PanoramaCarousel = ({ data, onSelect, initialIndex = 0 }) => {
   }, []);
 
   const screenWidth = dimensions.width;
-  const screenHeight = dimensions.height;
+  const screenHeight = dimensions.height - 100;
 
   // Determine if we show 3 cards or just 1
   const showThreeCards = screenWidth > BREAKPOINT_LARGE;
@@ -205,6 +206,7 @@ const PanoramaCarousel = ({ data, onSelect, initialIndex = 0 }) => {
           onPress={goToPrevious}
           disabled={isScrolling}
         >
+          <Ionicons name="chevron-back" size={30} color={Colors.white} />
         </TouchableOpacity>
 
         {/* Carousel */}
@@ -268,6 +270,7 @@ const PanoramaCarousel = ({ data, onSelect, initialIndex = 0 }) => {
           onPress={goToNext}
           disabled={isScrolling}
         >
+          <Ionicons name="chevron-forward" size={30} color={Colors.white} />
         </TouchableOpacity>
       </View>
 
@@ -297,7 +300,7 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 50,
+    paddingBottom: Spacings.md,
     backgroundColor: 'transparent',
   },
   carouselWrapper: {
@@ -343,14 +346,15 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     position: 'absolute',
-    bottom: 25,
+    bottom: Spacings.lg,
     left: 0,
     right: 0,
     zIndex: 1,
-    paddingHorizontal: 25,
+    paddingHorizontal: Spacings.lg,
   },
   title: {
-    color: "#fff",
+    color: Colors.white,
+    fontFamily: 'Poppins-Medium',
     fontWeight: "bold",
     textAlign: 'left',
     marginBottom: 8,
@@ -375,7 +379,8 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -40 }],
     width: 80,
     height: 80,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: Colors.red,
+    opacity: 0.8,
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
@@ -385,9 +390,11 @@ const styles = StyleSheet.create({
   },
   leftArrow: {
     left: -40,
+    paddingLeft: 20,
   },
   rightArrow: {
     right: -40,
+    paddingRight: 20,
   },
   arrowText: {
     fontSize: 56,
@@ -399,7 +406,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: Spacings.md,
     gap: 12,
   },
   indicator: {

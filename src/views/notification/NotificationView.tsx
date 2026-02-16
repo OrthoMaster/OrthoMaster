@@ -11,7 +11,8 @@ import {
   PanResponder,
   RefreshControl,
   Dimensions,
-  Vibration
+  Vibration,
+  Platform
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,6 +33,8 @@ import {
 import { useGetUser } from '../../hooks/auth.hook';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && SCREEN_WIDTH >= 768;
+
 const SWIPE_THRESHOLD = -80;
 const DELETE_ZONE_WIDTH = 100;
 
@@ -499,13 +502,12 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.sm,
-    paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    height: isTablet ? 100 : 60,
   },
   headerLeft: {
     flexDirection: 'row',

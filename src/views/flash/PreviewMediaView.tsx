@@ -9,8 +9,8 @@ import {
   StyleSheet,
   ScrollView,
   FlatList,
-  ImageBackground,
   ActivityIndicator,
+  Platform
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from "@tanstack/react-query";
@@ -18,14 +18,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useGetUser } from "../../hooks/useGetUser.hook";
 import { getS3Image } from "../../services/S3Service";
 import { IContent } from "../../utils/interfaces";
-import { Ionicons, Feather, FontAwesome } from '@expo/vector-icons';
+import { Ionicons, Feather, FontAwesome, AntDesign } from '@expo/vector-icons';
 
 import { LinearGradient } from "expo-linear-gradient";
 import { fetchSearchList } from "../../services/SearchService";
 import { orthomasterShare } from "../../futils";
 import { AdServingModalMediaAccess } from "./ads/AdServingModalMediaAccess";
 
-const screenWidth = Dimensions.get("screen").width;
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
+
+const {width, height} = Dimensions.get("screen");
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 type SimilarMediasContentCardProp = {
   media: IContent;
@@ -42,76 +46,23 @@ const SimilarMediasContentCard: React.FC<SimilarMediasContentCardProp> = ({
 
   return (
     <TouchableOpacity
-      style={{
-        flexDirection: "row",
-        marginVertical: 3,
-        height: 100,
-        width: "100%",
-        borderRadius: 5,
-        borderStartStartRadius: 5,
-        shadowOffset: {
-          width: 0,
-          height: 0,
-        },
-        shadowRadius: 1,
-        shadowOpacity: 0.5,
-      }}
+      style={styles.videoContainer}
       onPress={() => onSelect(media)}
     >
       <Image
         source={{ uri: imageUrl.data }}
-        style={{
-          width: "40%",
-          height: "100%",
-          objectFit: "contain",
-          borderTopLeftRadius: 5,
-          borderBottomLeftRadius: 5,
-        }}
+        style={styles.videoImage}
       />
-      <View
-        style={{
-          flex: 3,
-          padding: 5,
-        }}
-      >
-        <Text
-          style={{
-            fontWeight: "bold",
-            fontSize: 12,
-            marginTop: 5,
-            color: "#fff",
-          }}
-        >
-          {media.title}
-        </Text>
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 10,
-              color: "#ffaf31",
-              fontWeight: "bold",
-              marginRight: 5,
-            }}
-          >
-            {media.author}
-          </Text>
-          <Text style={{ fontSize: 10, color: "#F1F1F1" }}>
-            ⏱️ {media.duration}
-          </Text>
+      <View style={styles.videoDescription}>
+        <Text style={styles.videoTitle} numberOfLines={2} ellipsizeMode="tail">{media.title}</Text>
+        {media.author &&
+          <Text style={styles.videoAuthor}>{media.author}</Text>
+        }
+        <View style={styles.videoMetadata}>
+          <AntDesign name="clock-circle" size={14} color={Colors.subtext2} />
+          <Text style={styles.videoMetatext}>{media.duration}</Text>
         </View>
-        <Text
-          style={{
-            fontSize: 10,
-            color: "#999999",
-          }}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
+        <Text style={styles.videoTag} numberOfLines={1} ellipsizeMode="tail">
           {media.tags?.split(";").map((value, index) => {
             return (
               <Text key={index}>
@@ -205,128 +156,61 @@ export const PreviewMediaView = ({ navigation, route }) => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScrollView style={{ flex: 1 }}>
-        <View
-          style={[
-            styles.mediaSection,
-            {
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 0,
-                height: 10,
-              },
-              shadowRadius: 10,
-              shadowOpacity: 0.8,
-              paddingBottom: 20,
-              zIndex: 1,
-            },
-          ]}
-        >
-          <View style={{ backgroundColor: "#fff" }}>
-            <View
-              style={{
-                width: "100%",
-                height: "100%",
-                position: "absolute",
-                top: 0,
-                left: 0,
-                zIndex: 1,
-              }}
-            >
-              <Image
-                source={{ uri: imageUrl.data }}
-                style={{
-                  resizeMode: "contain",
-                  width: "100%",
-                  height: "100%",
-                  opacity: 0.9,
-                }}
-                blurRadius={25}
-              />
-              <LinearGradient
-                // Background Linear Gradient
-                colors={["transparent", "#fff"]}
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  height: "100%",
-                }}
-              />
-            </View>
-            <View style={{ zIndex: 10 }}>
-              <View
-                style={{
-                  width: screenWidth * 0.9,
-                  height: (screenWidth * 0.9) / 2,
-                  alignSelf: "center",
-                  marginVertical: 20,
-                }}
-              >
-                <Image
-                  source={{ uri: imageUrl.data }}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                  }}
-                />
-              </View>
-              <Text
-                style={[
-                  styles.mediaTextContainer,
-                  { fontWeight: "bold", fontSize: 16 },
-                ]}
-              >
-                {media.title}
-              </Text>
-              <Text style={styles.mediaTextContainer}>⏱️ {media.duration}</Text>
-              <TouchableOpacity
-                style={styles.accessButtonContainer}
-                onPress={() => setShowAds(true)}
-              >
-                <FontAwesome name="play" size={18} color="black" />
-                <Text style={{ marginLeft: 10 }}>Accéder</Text>
-              </TouchableOpacity>
-
-              {media.description && (
-                <Text style={styles.mediaTextContainer}>
-                  {media.description}
-                </Text>
-              )}
+        <View style={styles.mediaSection}>
+          <View style={styles.heroContainer}>
+            <Image
+              source={{ uri: imageUrl.data }}
+              style={styles.heroImage}
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.8)']}
+              style={styles.gradient}
+            />
+            <View style={styles.heroInfoContainer}>
               {media.author && (
-                <Text
-                  style={[styles.mediaTextContainer, { marginVertical: 10 }]}
-                >
-                  <Text style={{ fontWeight: "bold" }}>Orateur : </Text>
-                  {media.author}
-                </Text>
+                <Text style={styles.heroAuthor}>{media.author}</Text>
               )}
-            </View>
-          </View>
+              <Text style={styles.heroTitle}>{media.title}</Text>
+              <View style={styles.heroDurationContainer}>
+                <AntDesign name="clock-circle" size={14} color={Colors.white} />
+                <Text style={styles.heroDuration}>{media.duration}</Text>
+              </View>
+              {media.description && (
+                <Text style={styles.mediaDescription}>{media.description}</Text>
+              )}
 
-          <View style={styles.mediaInteractionContainer}>
-            <TouchableOpacity
-              style={styles.interactionButton}
-              onPress={() => {
-                shareMedia(media);
-              }}
-            >
-              <Feather name="share" size={24} color="black" />
-              <Text>Partager</Text>
-            </TouchableOpacity>
+              {/* Buttons inside hero */}
+              <View style={styles.heroButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={() => setShowAds(true)}
+                >
+                  <FontAwesome name="play" size={16} color={Colors.white} />
+                  <Text style={styles.primaryButtonText}>Accéder</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  onPress={() => shareMedia(media)}
+                >
+                  <Feather name="share" size={16} color="#000" />
+                  <Text style={styles.secondaryButtonText}>Partager</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
-        <View style={{ paddingVertical: 10, backgroundColor: "#444444" }}>
+
+        <View style={{ paddingVertical: Spacings.lg, backgroundColor: Colors.darkBackground }}>
           <Text
             style={{
-              fontWeight: "bold",
+              fontFamily: 'Poppins-Bold',
               fontSize: 18,
-              marginVertical: 10,
-              color: "#fff",
-              width: "90%",
-              alignSelf: "center",
+              marginLeft: Spacings.lg,
+              color: Colors.white,
+              width: "100%",
             }}
           >
             À voir aussi
@@ -341,7 +225,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
               keyExtractor={(item: any, index: number) => index.toString()}
               scrollEnabled={false}
               contentContainerStyle={{
-                width: "95%",
+                width: "100%",
                 alignSelf: "center",
               }}
               renderItem={({ item }) => (
@@ -373,7 +257,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
 
       {/* Back button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-back" size={24} color={'#000'} />
+        <Ionicons name="chevron-back" size={25} color={Colors.text} />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -382,56 +266,188 @@ export const PreviewMediaView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#303030",
+    backgroundColor: Colors.darkBackground,
     position: "relative",
   },
-  accessButtonContainer: {
-    display: "flex",
-    flexDirection: "row",
-    padding: 7,
-    marginVertical: 15,
-    width: "90%",
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#ffaf31",
-  },
-  mediaInteractionContainer: {
-    backgroundColor: "#fff",
-    display: "flex",
-    flexDirection: "row",
-    marginTop: 20,
-  },
-  interactionButton: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   mediaSection: {
-    backgroundColor: "#fff",
-    borderBottomColor: "#F1F1F1",
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
+    backgroundColor: Colors.black,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    shadowColor: Colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowRadius: 10,
+    shadowOpacity: 0.8,
   },
-  mediaTextContainer: {
-    width: "90%",
-    alignSelf: "center",
+
+  // Netflix-style Hero Section
+  heroContainer: {
+    width: width,
+    height: isTablet ? (width / 16) * 9 : height * 0.6,
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '80%',
+  },
+  heroInfoContainer: {
+    position: 'absolute',
+    bottom: Spacings.lg,
+    left: Spacings.lg,
+    maxWidth: '70%',
+    alignItems: 'flex-start',
+  },
+  heroTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 20,
+    color: '#fff',
+    textAlign: 'left',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    marginBottom: 6,
+  },
+  heroAuthor: {
+    fontFamily: 'Roboto',
+    fontWeight: '500',
+    fontSize: 14,
+    color: Colors.primary,
+    textAlign: 'left',
+  },
+  heroDurationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  heroDuration: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  // Hero Buttons
+  heroButtonsContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: Spacings.md,
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.redDark,
+    paddingVertical: Spacings.md,
+    paddingHorizontal: Spacings.xl,
+    borderRadius: 8,
+    gap: Spacings.xs,
+  },
+  primaryButtonText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 16,
+    color: Colors.white,
+  },
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingVertical: Spacings.md,
+    paddingHorizontal: Spacings.xl,
+    borderRadius: 8,
+    gap: Spacings.xs,
+  },
+  secondaryButtonText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 16,
+    color: Colors.text,
+  },
+
+  // Description
+  mediaDescription: {
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    fontSize: 16,
+    color: Colors.white,
+    paddingTop: Spacings.md,
   },
 
   // Back button
   backButton: {
     position: 'absolute',
-    borderRadius: 5,
-    left: 10,
-    top: 80,
+    left: Spacings.lg,
+    top: Spacings.xxxl,
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 3,
     shadowOpacity: 0.5,
-    width: 30,
-    height: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999
+  },
+
+  // More videos
+  videoContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: 'flex-start',
+    marginVertical: Spacings.sm,
+    minHeight: 100,
+    gap: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+  },
+  videoImage: {
+    width: 100 * 16 / 9,
+    height: 100,
+    objectFit: "cover",
+    borderRadius: 8,
+  },
+  videoDescription: {
+    flex: 1,
+    flexShrink: 1,
+  },
+  videoTitle: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: isTablet ? 16 : 14,
+    color: Colors.white,
+  },
+  videoAuthor: {
+    fontSize: isTablet ? 14 : 12,
+    color: Colors.primary,
+    fontWeight: "400",
+    fontFamily: 'Roboto'
+  },
+  videoMetadata: {
+    marginTop: Spacings.xxs,
+    flexDirection: "row",
+    alignItems: 'center',
+    gap: Spacings.xs,
+  },
+  videoMetatext: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: isTablet ? 12 : 10,
+    color: Colors.subtext2
+  },
+  videoTag: {
+    fontFamily: 'Roboto',
+    fontSize: isTablet ? 14 : 12,
+    fontStyle: 'italic',
+    marginTop: Spacings.xs,
+    color: Colors.subtext2
   }
 });

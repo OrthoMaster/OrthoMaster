@@ -27,7 +27,7 @@ const DropDownField = ({ props }) => {
                     <Text style={stylesDropdown.dropdownButtonTxtStyle}>
                         {(selectedItem && selectedItem.name) || 'Sélectionnez une option'}
                     </Text>
-                    <AntDesign name={isOpened ? 'caretup' : 'caretdown'} size={15} color="black" />
+                    <AntDesign name={isOpened ? 'caret-up' : 'caret-down'} size={15} color="black" />
                 </View>
             );
         }}

@@ -65,7 +65,7 @@ const  FiltersQC = ({ onChange, filterConfig }) => {
                         setFiltredBrands(flt)
                     }}
                 >
-                    <AntDesign name="caretdown" size={15} color="gray" />
+                    <AntDesign name="caret-down" size={15} color="gray" />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -79,7 +79,7 @@ const  FiltersQC = ({ onChange, filterConfig }) => {
                         setFiltredBrands(flt)
                     }}
                 >
-                    <AntDesign name="caretup" size={15} color="gray" />
+                    <AntDesign name="caret-up" size={15} color="gray" />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={{ padding: 10 }}
@@ -88,7 +88,7 @@ const  FiltersQC = ({ onChange, filterConfig }) => {
                         setSelection([...selection, item])
                     }}
                 >
-                    <AntDesign name="minuscircle" size={15} color="#33C0B7" />
+                    <AntDesign name="minus-circle" size={15} color="#33C0B7" />
                 </TouchableOpacity>
             </View>
         </View>
@@ -203,7 +203,7 @@ const  FiltersQC = ({ onChange, filterConfig }) => {
                         >
                             <Text style={{ marginHorizontal: 5 }}>{value}</Text>
 
-                            <AntDesign name="pluscircle" size={15} color="#33C0B7" />
+                            <AntDesign name="plus-circle" size={15} color="#33C0B7" />
                         </TouchableOpacity>
                     })
                 }

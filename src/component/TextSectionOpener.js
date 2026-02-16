@@ -23,9 +23,9 @@ const TextSectionOpener = ({ title, text }) => {
             </Text>
             {
                 isOpen ?
-                    <AntDesign name="caretdown" size={10} color="#000" />
+                    <AntDesign name="caret-down" size={10} color="#000" />
                     :
-                    <AntDesign name="caretright" size={10} color="#000" />
+                    <AntDesign name="caret-right" size={10} color="#000" />
             }
         </TouchableOpacity>
         {

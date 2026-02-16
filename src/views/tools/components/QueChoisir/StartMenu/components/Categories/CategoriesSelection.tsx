@@ -50,8 +50,6 @@ type CategoriesSelectionProps = {
 const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect }) => {
     const qcCategories = useQuery({queryKey: ['Tools', 'GET', 'QC categories'], queryFn: () => getQCcategories()})
 
-
-
     return (<View style={{
         width: "100%",
         paddingVertical: 30,

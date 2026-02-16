@@ -33,7 +33,9 @@ import LessonLogoIcon from './components/LessonLogoIcon';
 type Tab = 'detail' | 'course';
 
 const { width, height } = Dimensions.get('window');
-const COLUMN_COUNT = 3;
+const isTablet = Platform.OS !== 'web' && width >= 768;
+
+const COLUMN_COUNT = isTablet ? 6 : 3;
 const ITEM_SPACING = Spacings.md;
 const ITEM_WIDTH = (width - (Spacings.lg * 2) - (ITEM_SPACING * (COLUMN_COUNT - 1))) / COLUMN_COUNT;
 
@@ -303,7 +305,7 @@ export const InactiveTrainingView = ({ navigation, route }) => {
             <Ionicons name="close" size={24} color={headerColor} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <View style={[styles.logoContainer, { backgroundColor: headerColor }]}>
+            <View style={[styles.logoContainer, { backgroundColor: headerColor }, isTablet && styles.logoContainerTablet]}>
               {pkg.image ?
                 <Image
                   source={{ uri: process.env.EXPO_PUBLIC_S3_URL + pkg.image }}
@@ -561,10 +563,15 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     padding: Spacings.xxs
   },
+  logoContainerTablet: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+  },
   logo: {
     width: '100%',
     height: '100%',
-    borderRadius: 60,
+    borderRadius: 100,
   },
   contentWrapper: {
     flex: 1,

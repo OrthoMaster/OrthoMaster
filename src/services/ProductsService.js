@@ -1,18 +1,18 @@
 import axios from "axios";
 
-import { restoreLocalConfigAsync } from "../futils";
+// import { restoreLocalConfigAsync } from "../futils";
 
 const baseurl = process.env.EXPO_PUBLIC_API_URL + "/products"
 
 export const getAPIgetProducts = async (category) => {
-    const config = await restoreLocalConfigAsync()
+    // const config = await restoreLocalConfigAsync()
 
-    const authHeader = 'Bearer ' + config.JWT;
+    // const authHeader = 'Bearer ' + config.JWT;
     return axios
         .get(baseurl + "/products", {
-            headers: {
-                Authorization: authHeader
-            },
+            // headers: {
+            //     Authorization: authHeader
+            // },
             params: {
                 category: category
             }
@@ -24,16 +24,19 @@ export const getAPIgetProducts = async (category) => {
 }
 
 export const getProductsBrands = async () => {
-    const config = await restoreLocalConfigAsync()
+    // const config = await restoreLocalConfigAsync()
+    // const authHeader = 'Bearer ' + config.JWT;
+    console.log('b');
 
-    const authHeader = 'Bearer ' + config.JWT;
     return axios
         .get(baseurl + "/brands", {
             headers: {
-                Authorization: authHeader
+                // Authorization: authHeader
+                Authorization: 'Bearer '
             }
         })
         .then((response) => {
+            console.log(response.data);
             return response.data;
         })
 

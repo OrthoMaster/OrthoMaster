@@ -7,10 +7,10 @@ import {
   StyleSheet,
   StatusBar,
   Dimensions,
-  TextInput,
   Alert,
   Modal,
-  Image
+  Image,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -28,6 +28,9 @@ const COURSES_PER_ROW = 5;
 const CARD_SPACING = Spacings.xs;
 const CONTAINER_PADDING = Spacings.lg;
 const COURSE_SIZE = (SCREEN_WIDTH - (CONTAINER_PADDING * 2) - (CARD_SPACING * (COURSES_PER_ROW - 1))) / COURSES_PER_ROW;
+
+
+const isTablet = Platform.OS !== 'web' && SCREEN_WIDTH >= 768;
 
 interface Package {
   id: string;
@@ -468,11 +471,10 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.sm,
-    paddingBottom: Spacings.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    height: isTablet ? 100 : 60,
   },
   headerLeft: {
     flexDirection: 'row',

@@ -8,10 +8,10 @@ import {
   StatusBar,
   RefreshControl,
   Alert,
-  Pressable,
+  Platform,
   Dimensions,
   Modal,
-  Image
+  Image,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
@@ -28,6 +28,9 @@ import { getCompany } from "../../services/v2/CompanyService";
 import { BouncingDots } from '../../component/LoadingDots';
 
 import { updateManager, removeMember, inviteMember } from '../../services/v2/CompanyService';
+
+const { width } = Dimensions.get('screen');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 interface Member {
   id: string;
@@ -56,8 +59,10 @@ export const CompanyView = ({ navigation, route }) => {
 
   // Calculate dynamic circle width - 4 items per row
   const screenWidth = Dimensions.get('window').width;
+  const isTablet = Platform.OS !== 'web' && screenWidth >= 768;
+
   const containerPadding = Spacings.lg * 2;
-  const numberOfCircles = 4; // Changed from 6 to 4
+  const numberOfCircles = isTablet ? 8 : 4;
   const gapWidth = Spacings.sm * (numberOfCircles - 1);
   const circleWidth = (screenWidth - containerPadding - gapWidth) / numberOfCircles;
   const circleSize = circleWidth - 10;
@@ -411,15 +416,6 @@ export const CompanyView = ({ navigation, route }) => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mon Équipe</Text>
-        <View style={styles.headerActions}>
-          {/* Share button */}
-          {/* <TouchableOpacity
-            style={styles.headerIconButton}
-            onPress={() => {}}
-          >
-            <Ionicons name="share-social-outline" size={20} color={Colors.white} />
-          </TouchableOpacity> */}
-        </View>
       </View>
 
       {/* Tab Bar */}
@@ -770,14 +766,14 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.purple,
     paddingHorizontal: Spacings.lg,
-    paddingBottom: Spacings.md,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    height: isTablet ? 100 : 60,
   },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Poppins-Medium',
+    textAlign: 'right',
     color: Colors.white,
   },
   headerActions: {

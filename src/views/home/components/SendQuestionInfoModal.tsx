@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.yellow3,
     borderRadius: 16,
     width: Platform.OS === 'web' ? 600 : '100%',
+    maxWidth: 700,
     maxHeight: '90%',
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },

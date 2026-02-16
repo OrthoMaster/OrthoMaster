@@ -27,7 +27,9 @@ import { useGetUser } from '../../hooks/auth.hook';
 import { getPreFormData, updateSettings } from '../../services/v2/AuthService';
 
 const { width, height } = Dimensions.get('window');
-const topicWidth = (width - 2 * Spacings.lg - 2 * Spacings.sm) / 3 - 10;
+const isTablet = Platform.OS !== 'web' && width >= 768;
+const numberCol = isTablet ? 5 : 3;
+const topicWidth = (width - 2 * Spacings.lg - (numberCol - 1) * Spacings.sm) / numberCol - (4 * numberCol);
 
 interface Topic {
   id: string;
@@ -59,7 +61,7 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, isSelected, onToggle }) =>
   >
     <View style={[
       styles.topicImageContainer,
-      { width: topicWidth, height: topicWidth },
+      { width: topicWidth, height: topicWidth, borderRadius: topicWidth },
       isSelected && styles.topicImageContainerSelected,
       { opacity: isSelected ? 1 : 0.6 }
     ]}>
@@ -265,7 +267,7 @@ export const SettingsView = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={back}>
-          <Ionicons name="arrow-back" size={20} color={Colors.text} />
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mes centres d'intérêt</Text>
       </View>
@@ -381,13 +383,12 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.sm,
-    paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    height: isTablet ? 100 : 60,
   },
   backButton: {
     padding: 4,
@@ -442,18 +443,19 @@ const styles = StyleSheet.create({
   },
   settingItemText: {
     flex: 1,
+    justifyContent: 'center',
   },
   settingItemTitle: {
     fontSize: 13,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
-    marginBottom: 2,
   },
   settingItemDescription: {
     fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.gray,
     lineHeight: 16,
+    marginTop: 2,
   },
 
   // Topic Section Styles

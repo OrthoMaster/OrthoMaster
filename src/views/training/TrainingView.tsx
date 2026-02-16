@@ -9,7 +9,8 @@ import {
   StatusBar,
   Animated,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -18,7 +19,6 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import Colors from "../../../constants/Colors";
 import Spacings from "../../../constants/Spacings";
-import { Styles } from "../../../constants/Styles";
 
 import LessonLogoIcon from './components/LessonLogoIcon';
 import { getPackage } from "../../services/v2/TrainingService";
@@ -26,6 +26,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { BouncingDots } from '../../component/LoadingDots';
 import { SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
+
+const { width, height } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 export const TrainingView = ({ navigation, route }) => {
   // Hide bottom nav when screen is focused, show when blur
@@ -478,7 +481,7 @@ export const TrainingView = ({ navigation, route }) => {
           <LessonLogoIcon
             color={lessonBgColor}
             secondaryColor={secondaryColor}
-            size={90}
+            size={isTablet ? 120 : 90}
             image={lesson.image}
             passed={lesson.completed_flg}
             selected={isSelected}
@@ -486,6 +489,8 @@ export const TrainingView = ({ navigation, route }) => {
             key={lesson.id}
           />
         </Animated.View>
+
+        <Text style={styles.lessonTitle}>{lesson.title}</Text>
       </TouchableOpacity>
     );
   };
@@ -583,7 +588,7 @@ export const TrainingView = ({ navigation, route }) => {
 
       <GestureHandlerRootView style={[styles.moduleNameContainer, backgroundColor]}>
         {/* New Header */}
-        <View style={[styles.header, { backgroundColor }]}>
+        <View style={[styles.header, { backgroundColor }, isTablet && { height: 100 }]}>
           <TouchableOpacity style={styles.backButton} onPress={closeModal}>
             <Ionicons name="arrow-back" size={24} color={Colors.white} />
           </TouchableOpacity>
@@ -767,16 +772,16 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.lg,
     alignItems: 'flex-start',
   },
-  lessonCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+  lessonTitle: {
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    marginTop: Spacings.sm,
+    marginBottom: Spacings.md,
+    color: Colors.subtext2,
+    width: isTablet ? 200 : 150,
+    marginLeft: isTablet ? - 50 : -30,
+    textAlign: 'center',
   },
 
   // Error

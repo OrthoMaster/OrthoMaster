@@ -5,27 +5,28 @@ const baseurl = process.env.EXPO_PUBLIC_API_URL + "/contents/v2/search"
 
 export const fetchSearchList = async ({ contentType = null, filters = null, searchText = "" }, page, pageSize) => {
 
-
-  const config = await restoreLocalConfigAsync()
-
-  const authHeader = 'Bearer ' + config.JWT;
-
+  // const config = await restoreLocalConfigAsync()
+  // const authHeader = 'Bearer ' + config.JWT;
+console.log('a');
   return axios
     .get(baseurl, {
-      headers: { Authorization: authHeader },
+      // headers: { Authorization: authHeader },
       params: {
         pageSize: pageSize ? pageSize : 10,
         page: page,
         type: contentType,
         filters: filters,
         searchText: searchText,
-        user: config.user.id_user
+        // user: config.user.id_user
+        user: 1,
       }
     })
     .then((response) => {
+      console.log(response);
       return response.data;
     })
     .catch((e) => {
-      throw e
+      console.log(e);
+      throw e;
     });
 }

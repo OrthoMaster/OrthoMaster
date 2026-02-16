@@ -178,7 +178,7 @@ export const CartView = ({ navigation }) => {
                 style={styles.backButton}
                 onPress={handleClose}
               >
-                <Ionicons name="arrow-forward" size={24} color={Colors.text} />
+                <Ionicons name="arrow-back" size={24} color={Colors.text} />
               </TouchableOpacity>
               <View>
                 <Text style={styles.headerTitle}>Mon Cartable</Text>

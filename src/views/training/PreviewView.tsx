@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
@@ -32,6 +33,9 @@ import {
   validatePromotionCode,
   createPaymentIntent,
 } from '../../services/v2/CartService';
+
+const { width } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 interface Item {
   id: string;
@@ -614,14 +618,14 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.sm,
-    paddingBottom: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
+    height: isTablet ? 100 : 60,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: '100%'
   },
   backButton: {
     padding: 4,

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,9 +17,8 @@ import PurchaseStickerView from './PurchaseStickerView';
 import PrintView from './PrintView';
 import Guides from './Guides';
 
-
-const { width: screenWidth } = Dimensions.get('screen')
-
+const { width: screenWidth } = Dimensions.get('screen');
+const isWeb = Platform.OS == 'web';
 
 export const GuidePatientButton: React.FC<{ onPress: () => any }> = ({ onPress }) => {
   return (<TouchableOpacity
@@ -33,8 +33,8 @@ export const GuidePatientButton: React.FC<{ onPress: () => any }> = ({ onPress }
     <Image
       source={require('../../../../../assets/tools/guide-patient/access-icon.png')}
       style={{
-        width: screenWidth / 6,
-        height: screenWidth / 6,
+        width: isWeb ? 100 : screenWidth / 6,
+        height: isWeb ? 100 : screenWidth / 6,
         marginBottom: 10
       }}
     />
@@ -116,7 +116,7 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
               onPress={() => {
                 setPurchaseSticker(true)
               }}>
-              <AntDesign name="shoppingcart" size={24} color="#FBB200" />
+              <AntDesign name="shopping-cart" size={24} color="#FBB200" />
 
             </TouchableOpacity>
 

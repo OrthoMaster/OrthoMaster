@@ -12,17 +12,20 @@ import {
   ActivityIndicator,
   Platform,
   Modal,
-  Keyboard
+  Keyboard,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-
 import { useQuery } from "@tanstack/react-query"
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import { getPreSearch, search, deleteKeyword, clearSearchHistory } from '../../services/v2/ContentService';
+
+const { width, height } = Dimensions.get('window');
+const isTablet = Platform.OS !== 'web' && width >= 768;
 
 interface Lesson {
   id: string;
@@ -93,8 +96,8 @@ export const HomeSearchView = ({ navigation }) => {
 
   const [categories, setCategories] = useState<Category[]>([
     { id: 'all', name: 'Tout' },
-    { id: 'lesson', name: 'Formation' },
-    { id: 'video', name: 'Média' },
+    { id: 'lesson', name: 'Formations' },
+    { id: 'video', name: 'Médias' },
   ]);
 
   // Search Results States
@@ -322,6 +325,48 @@ export const HomeSearchView = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // Render lesson grid (2 columns for tablet when > 1 item)
+  const renderLessonGrid = () => {
+    if (!isTablet || lessons.length <= 1) {
+      // Single column for phone or when there's only 1 item
+      return (
+        <FlatList
+          data={lessons}
+          renderItem={renderLessonItem}
+          keyExtractor={(item) => `lesson-${item.id}`}
+          scrollEnabled={false}
+        />
+      );
+    }
+
+    // 2 columns for tablet
+    const rows: (Lesson | null)[][] = [];
+    for (let i = 0; i < lessons.length; i += 2) {
+      rows.push([
+        lessons[i],
+        lessons[i + 1] || null
+      ]);
+    }
+
+    return (
+      <>
+        {rows.map((row, rowIndex) => (
+          <View key={`lesson-row-${rowIndex}`} style={styles.gridRow}>
+            {row.map((item, colIndex) =>
+              item ? (
+                <View key={item.id} style={styles.gridColumnLesson}>
+                  {renderLessonItem({ item })}
+                </View>
+              ) : (
+                <View key={`empty-lesson-${colIndex}`} style={styles.gridColumnLesson} />
+              )
+            )}
+          </View>
+        ))}
+      </>
+    );
+  };
+
   // Render video item
   const renderVideoItem = ({ item }: { item: Video }) => (
     <TouchableOpacity
@@ -348,15 +393,57 @@ export const HomeSearchView = ({ navigation }) => {
       </View>
 
       <View style={styles.videoInfo}>
-        <Text style={styles.description} numberOfLines={2}>
+        <Text style={styles.description} numberOfLines={1} ellipsizeMode='tail'>
           {item.author ?? 'OrthoMaster'}
         </Text>
-        <Text style={styles.videoTitle} numberOfLines={2}>
+        <Text style={styles.videoTitle} numberOfLines={2} ellipsizeMode='tail'>
           {item.title}
         </Text>
       </View>
     </TouchableOpacity >
   );
+
+  // Render video grid (2 columns for tablet always)
+  const renderVideoGrid = () => {
+    if (!isTablet) {
+      // Single column for phone
+      return (
+        <FlatList
+          data={videos}
+          renderItem={renderVideoItem}
+          keyExtractor={(item) => `video-${item.id_content}-${item.id}`}
+          scrollEnabled={false}
+        />
+      );
+    }
+
+    // 2 columns for tablet
+    const rows: (Video | null)[][] = [];
+    for (let i = 0; i < videos.length; i += 2) {
+      rows.push([
+        videos[i],
+        videos[i + 1] || null
+      ]);
+    }
+
+    return (
+      <>
+        {rows.map((row, rowIndex) => (
+          <View key={`video-row-${rowIndex}`} style={styles.gridRow}>
+            {row.map((item, colIndex) =>
+              item ? (
+                <View key={`${item.id_content}-${item.id}`} style={styles.gridColumnVideo}>
+                  {renderVideoItem({ item })}
+                </View>
+              ) : (
+                <View key={`empty-video-${colIndex}`} style={styles.gridColumnVideo} />
+              )
+            )}
+          </View>
+        ))}
+      </>
+    );
+  };
 
   // Render "Load More" button
   const renderLoadMoreButton = (hasMore: boolean, isLoading: boolean, onPress: () => void) => {
@@ -495,7 +582,7 @@ export const HomeSearchView = ({ navigation }) => {
           </TouchableOpacity>
 
           <Image
-            style={styles.searchIcon}
+            style={isTablet ? styles.searchIconTablet : styles.searchIcon}
             source={require('../../../assets/v2_images/icon/home/search.gif')}
           />
 
@@ -642,12 +729,7 @@ export const HomeSearchView = ({ navigation }) => {
                         Formations
                       </Text>
                     </View>
-                    <FlatList
-                      data={lessons}
-                      renderItem={renderLessonItem}
-                      keyExtractor={(item) => `lesson-${item.id}`}
-                      scrollEnabled={false}
-                    />
+                    {renderLessonGrid()}
                     {renderLoadMoreButton(hasMoreLessons, isLoadingMoreLessons, loadMoreLessons)}
                   </View>
                 )}
@@ -660,12 +742,7 @@ export const HomeSearchView = ({ navigation }) => {
                         Médias
                       </Text>
                     </View>
-                    <FlatList
-                      data={videos}
-                      renderItem={renderVideoItem}
-                      keyExtractor={(item) => `video-${item.id_content}-${item.id}`}
-                      scrollEnabled={false}
-                    />
+                    {renderVideoGrid()}
                     {renderLoadMoreButton(hasMoreVideos, isLoadingMoreVideos, loadMoreVideos)}
                   </View>
                 )}
@@ -734,6 +811,11 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
   },
+  searchIconTablet: {
+    width: 100,
+    height: 100,
+    marginTop: Spacings.lg,
+  },
   searchBarContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -777,7 +859,7 @@ const styles = StyleSheet.create({
     gap: Spacings.sm,
   },
   categoryChip: {
-    paddingHorizontal: Spacings.md,
+    paddingHorizontal: Spacings.lg,
     paddingVertical: Spacings.xs,
     borderRadius: 20,
     backgroundColor: Colors.grayLight,
@@ -859,12 +941,27 @@ const styles = StyleSheet.create({
     color: Colors.greenDark,
     paddingVertical: Spacings.sm,
   },
+
+  // Grid Layout
+  gridRow: {
+    flexDirection: 'row',
+    gap: Spacings.md,
+    paddingHorizontal: Spacings.lg,
+  },
+  gridColumnLesson: {
+    flex: 1,
+  },
+  gridColumnVideo: {
+    flex: 1,
+  },
+
+  // Video Item
   videoItem: {
     backgroundColor: Colors.white,
     marginBottom: Spacings.md,
     borderRadius: 12,
     overflow: 'hidden',
-    marginHorizontal: Spacings.lg,
+    marginHorizontal: isTablet ? 0 : Spacings.lg,
   },
   thumbnailContainer: {
     position: 'relative',
@@ -899,8 +996,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
-    lineHeight: 20,
+    lineHeight: 18,
     marginBottom: Spacings.xs,
+    minHeight: isTablet ? 36 : 18,
   },
   videoMeta: {
     fontSize: 12,
@@ -911,15 +1009,17 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.subtext,
+    fontFamily: 'Roboto',
+    fontWeight: '500',
+    color: Colors.primary,
     lineHeight: 16,
+    marginBottom: Spacings.xxs,
   },
 
   // Lesson
   courseItem: {
     flex: 1,
-    marginHorizontal: Spacings.lg,
+    marginHorizontal: isTablet ? 0 : Spacings.lg,
     marginBottom: Spacings.md,
     flexDirection: 'row',
   },
@@ -949,20 +1049,21 @@ const styles = StyleSheet.create({
     padding: Spacings.md
   },
   courseTraining: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Roboto',
     color: Colors.subtext,
   },
   coursePackage: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: Colors.greenDark,
     marginBottom: Spacings.xxs
   },
   courseName: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
+    minHeight: 30,
   },
 
   // Footer Loading

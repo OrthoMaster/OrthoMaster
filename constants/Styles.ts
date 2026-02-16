@@ -154,6 +154,7 @@ export const Styles = StyleSheet.create({
     maxWidth: 500,
     alignSelf: 'center',
     backgroundColor: 'white',
+    minWidth: 300,
   },
   dialogWebTitle: {
     fontSize: 20,

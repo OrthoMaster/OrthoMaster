@@ -234,6 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lgreen3,
     borderRadius: 16,
     width: Platform.OS === 'web' ? 600 : '100%',
+    maxWidth: 600,
     maxHeight: '80%',
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
@@ -258,12 +259,12 @@ const styles = StyleSheet.create({
   headerIcon: {
     width: 100,
     height: 100,
+    borderRadius: 100,
     resizeMode: 'contain',
     position: 'absolute',
     top: -40,
-    alignSelf: 'center',
+    left: 140,
     zIndex: 10,
-    borderRadius: 100,
   },
   trainingIntroTitle: {
     flex: 1,

@@ -86,6 +86,7 @@
     "react-native-worklets": "^0.5.1",
     "react-native-youtube-iframe": "2.3.0",
     "react-redux": "^9.2.0",
+    "react-signature-canvas": "^1.1.0-alpha.2",
     "react-xml-parser": "^1.1.8"
   },
   "private": true,

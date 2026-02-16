@@ -231,10 +231,10 @@ export const ProfileView = ({ navigation, route }) => {
         }>
 
         {/* Main Body - Split into 2 columns */}
-        <View style={styles.bodyRow}>
+        <View style={[styles.bodyRow, !(more && more?.data?.companiesIsMember?.length > 0) && styles.bodyCol]}>
 
           {/* LEFT COLUMN: User Card & Actions */}
-          <View style={styles.columnLeft}>
+          <View style={(more && more?.data?.companiesIsMember?.length > 0) && styles.columnLeft}>
             {more && more?.data?.companiesIsMember?.length > 0 &&
               <View style={styles.userCard}>
                 <Text style={styles.teamTitle}>Équipe dont je fais partie :</Text>
@@ -431,6 +431,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.lg,
     flex: 1,
+  },
+  bodyCol: {
+    flexDirection: 'column',
+    maxWidth: 600,
+    alignSelf: 'center'
   },
   columnLeft: {
     flex: 1,
