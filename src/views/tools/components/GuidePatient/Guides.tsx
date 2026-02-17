@@ -1,11 +1,12 @@
-import React, { useState } from "react";
-import { FlatList, StyleSheet, ActivityIndicator, Alert, Image, Linking, Text, TouchableOpacity, View } from "react-native";
+import React from "react";
+import { FlatList, StyleSheet, ActivityIndicator, Alert, Image, Linking, Text, TouchableOpacity, View, Platform } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import { getS3Image } from "../../../../services/S3Service";
 import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import { orthomasterShareFile } from "../../../../futils";
+
+const isWeb = Platform.OS == 'web';
 
 export const GUIDES = [{
   name: 'Ceinture lombaire',
@@ -37,24 +38,21 @@ const GuideCard = ({ config, showGuide }) => {
   if (guide.isLoading)
     return <ActivityIndicator />
   return <View style={styles.subToolContainer}>
-    <View style={{ flex: 1, flexGrow: 0.6 }}>
+    <View style={{ flex: 1, flexGrow: isWeb ? 1 : 0.6, justifyContent: 'center' }}>
       <View style={{
         width: 100, height: 100, borderRadius: 100, shadowOpacity: 0.30,
         shadowOffset: { width: 3, height: 3 }, shadowRadius: 5
       }}>
-        <TouchableOpacity
-          onPress={() => {
-            showGuide(guide.data)
-          }}
-        >
+        <TouchableOpacity onPress={() => { showGuide(guide.data) }}>
           <Image
             source={{ uri: guide.data }}
             style={{
-              width: "100%", height: "100%", resizeMode: 'contain'
+              width: isWeb ? 100 : "100%",
+              height: isWeb ? 100 : "100%", 
+              resizeMode: 'contain'
             }}
           />
         </TouchableOpacity>
-
       </View>
     </View>
 
@@ -131,8 +129,9 @@ const styles = StyleSheet.create({
   },
   subToolText: {
     fontSize: 17,
+    textAlign: 'center',
     color: '#FBB200',
-    fontWeight: 'bold'
+    fontFamily: 'Poppins-Medium',
   },
   subToolButton: {
 

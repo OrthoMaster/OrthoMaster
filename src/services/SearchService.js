@@ -7,7 +7,6 @@ export const fetchSearchList = async ({ contentType = null, filters = null, sear
 
   // const config = await restoreLocalConfigAsync()
   // const authHeader = 'Bearer ' + config.JWT;
-console.log('a');
   return axios
     .get(baseurl, {
       // headers: { Authorization: authHeader },
@@ -22,11 +21,9 @@ console.log('a');
       }
     })
     .then((response) => {
-      console.log(response);
       return response.data;
     })
     .catch((e) => {
-      console.log(e);
       throw e;
     });
 }

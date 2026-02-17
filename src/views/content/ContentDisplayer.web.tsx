@@ -21,35 +21,23 @@ import { Styles } from "../../../constants/Styles";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getContent } from "../../services/v2/ContentService";
+import { getContent, getToolContent } from "../../services/v2/ContentService";
 import { ContentFactory } from "../content/components/ContentFactory";
 import LessonSkeleton from '../training/components/LessonSkeleton';
 
 const HEADER_HEIGHT = 100;
 const SCROLL_THRESHOLD = 5;
 
-// TypeScript interfaces
-interface Block {
-  id: string;
-  type: string;
-  data: any;
-  tunes?: any;
-}
-
-interface User {
-  student_flg: boolean;
-}
-
 type ScrollDirection = 'up' | 'down' | null;
 
 export const ContentDisplayer = ({ navigation, route }) => {
-  const { content } = route.params;
+  const { content, type = 'flash' } = route.params;
   const [showContent, setShowContent] = useState(null);
 
   // Get first data
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['mediaContent', content.id_content],
-    queryFn: () => getContent(content.id_content),
+    queryFn: () => type == 'tool' ? getToolContent(content.id_content) : getContent(content.id_content),
     retry: 2,
     retryDelay: 1000,
   });

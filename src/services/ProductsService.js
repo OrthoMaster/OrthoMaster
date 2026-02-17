@@ -26,8 +26,6 @@ export const getAPIgetProducts = async (category) => {
 export const getProductsBrands = async () => {
     // const config = await restoreLocalConfigAsync()
     // const authHeader = 'Bearer ' + config.JWT;
-    console.log('b');
-
     return axios
         .get(baseurl + "/brands", {
             headers: {
@@ -36,7 +34,6 @@ export const getProductsBrands = async () => {
             }
         })
         .then((response) => {
-            console.log(response.data);
             return response.data;
         })
 

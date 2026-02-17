@@ -39,9 +39,7 @@ export const ToolsView = ({ navigation }) => {
         <GuidePatientButton onPress={() => { setShowGuidePatientMenu(true) }} />
       </View>
 
-      <Modal
-        isVisible={showQueChoisirMenu}
-      >
+      <Modal style={styles.modal} isVisible={showQueChoisirMenu}>
         <QueChoisirMenu onClose={() => {
           setShowQueChoisirMenu(false)
         }}
@@ -54,20 +52,19 @@ export const ToolsView = ({ navigation }) => {
           }}
         />
       </Modal>
-      <Modal
-        isVisible={showGuidePatientMenu}
-      >
+
+      <Modal style={styles.modal} isVisible={showGuidePatientMenu}>
         <GuidePatientMenu onClose={() => { setShowGuidePatientMenu(false) }} />
       </Modal>
-      <Modal
-        isVisible={showLearningSupportMenu}
-      >
+      
+      <Modal style={styles.modal} isVisible={showLearningSupportMenu}>
         <LearningSupportMenu
           onClose={() => { setShowLearningSupportMenu(false) }}
           onStart={(content) => {
-            setShowLearningSupportMenu(false)
+            setShowLearningSupportMenu(false);
             navigation.navigate('tools-content', {
-              content: content
+              content: content,
+              type: 'tool',
             })
           }}
         />
@@ -102,6 +99,10 @@ const styles = StyleSheet.create({
     gap: Spacings.sm,
     justifyContent: 'center',
     backgroundColor: Colors.grayLight,
-    paddingHorizontal: Spacings.xxxl,
+    paddingHorizontal: (width - 300 - 1200) / 2,
+  },
+  modal: {
+    width: 700,
+    alignSelf: 'center',
   }
 })

@@ -230,7 +230,6 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
           position: 'absolute',
           bottom: 10,
           padding: 10,
-          backgroundColor: 'rgba(0,0,0,0.2)',
           borderRadius: 20,
         }}
         onPress={onClose}

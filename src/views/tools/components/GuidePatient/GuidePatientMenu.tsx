@@ -48,8 +48,6 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
   const [showPrintModal, setShowPrintModal] = useState(false)
   const [guideToDisplay, setGuideToDisplay] = useState(null)
 
-
-
   return <SafeAreaView>
     <LinearGradient
       colors={['#FBB200', '#FBB200']}
@@ -175,8 +173,6 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
 }
 
 const styles = StyleSheet.create({
-
-
   containerTitle: {
     fontSize: 35,
     fontWeight: 'bold',
@@ -188,7 +184,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     alignItems: 'center',
-    borderRadius: 15
+    borderRadius: 15,
+    paddingBottom: 60,
   },
   toolTitle: {
     color: '#ffffff',

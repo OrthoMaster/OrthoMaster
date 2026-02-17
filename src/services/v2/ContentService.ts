@@ -191,3 +191,21 @@ export const getContent = async (contentId: string) => {
       return null;
     });
 }
+
+/**
+ * Get content of tool
+ */
+export const getToolContent = async (contentId: string) => {
+  return axiosInstance
+    .get(`${baseUrl}/media/tool/content`, { params: { contentId } })
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}

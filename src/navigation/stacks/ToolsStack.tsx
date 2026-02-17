@@ -1,9 +1,7 @@
 import React from 'react'
 
-
 import { createStackNavigator } from '@react-navigation/stack';
-import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
-
+import { Platform } from 'react-native';
 import { ToolsView } from '../../views/tools/ToolsView';
 import { QueChoisirView } from '../../views/tools/components/QueChoisir/View/QueChoisirView';
 import { FinalQC } from "../../views/tools/components/QueChoisir/FinalView/FinalQC";
@@ -16,6 +14,7 @@ export const ToolsStack = ({ navigation, route }) => {
 
   return (
     <ToolsStackNav.Navigator
+      id={"tools-stack" as undefined}
       initialRouteName='tools-home'
       screenOptions={{ title: 'Outils' }}
     >
@@ -27,14 +26,19 @@ export const ToolsStack = ({ navigation, route }) => {
       <ToolsStackNav.Screen
         name="tools-content"
         component={ContentDisplayer}
-        options={{
-          headerShown: true,
-          headerTitle: "",
-          headerBackButtonDisplayMode: "minimal",
-          headerTintColor: '#000',
-          headerTransparent: true,
-          headerBackImage: () => (<ReturnButtonIcon />)
-        }}
+        options={
+          Platform.OS == 'web'
+            ? {
+              headerShown: false,
+            }
+            : {
+              headerShown: true,
+              headerTitle: "",
+              headerBackButtonDisplayMode: "minimal",
+              headerTintColor: '#000',
+              headerTransparent: true,
+              headerBackImage: () => (<ReturnButtonIcon />)
+            }}
       />
       <ToolsStackNav.Screen
         name="tools-que-choisir"
