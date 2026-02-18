@@ -75,6 +75,10 @@ function handleCustomText(text: string): (string | ReactElement)[] {
 
 export const handleColor = (color) => {
   if (color) {
+    if (color.startsWith('#')) {
+      return color
+    }
+
     const themes = color.split('|')
     var colors = new Map()
     themes.forEach(elem => {
