@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Dimensions, Image, TouchableOpacity } from 'react-native'
 import { ImageViewer } from '../../../component/ImageViewer';
 
@@ -7,6 +7,15 @@ export const ImageLessonContent = ({ url, config }) => {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [imageHeight, setImageHeight] = useState(0);
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    if (!url) {
+      setImgError(true);
+      return;
+    }
+    Image.prefetch(url)
+      .catch(() => setImgError(true));
+  }, [url]);
 
   var imgWidth = Dimensions.get('window').width
   if (config.attributes.width) {
@@ -39,7 +48,6 @@ export const ImageLessonContent = ({ url, config }) => {
             const { width, height } = e.nativeEvent.source;
             setImageHeight((imgWidth * height) / width);
           }}
-          onError={() => setImgError(true)}
         />
       </TouchableOpacity>
       {isFullscreen && <ImageViewer url={url} visible={isFullscreen} onClose={() => { setIsFullscreen(false) }} />}
