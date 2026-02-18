@@ -9,7 +9,7 @@ export const authEvents = new EventEmitter();
 
 const axiosInstance = axios.create({
     baseURL: baseUrl,
-    timeout: 20000,
+    timeout: 20000
 });
 
 axiosInstance.interceptors.request.use(
