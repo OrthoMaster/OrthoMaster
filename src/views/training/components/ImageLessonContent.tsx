@@ -6,6 +6,7 @@ import { ImageViewer } from '../../../component/ImageViewer';
 export const ImageLessonContent = ({ url, config }) => {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [imageHeight, setImageHeight] = useState(0);
+  const [imgError, setImgError] = useState(false);
 
   var imgWidth = Dimensions.get('window').width
   if (config.attributes.width) {
@@ -16,6 +17,8 @@ export const ImageLessonContent = ({ url, config }) => {
       imgWidth = parseInt(config.attributes.width)
     }
   }
+
+  if (!url || imgError) return null;
 
   return (
     <View>
@@ -36,6 +39,7 @@ export const ImageLessonContent = ({ url, config }) => {
             const { width, height } = e.nativeEvent.source;
             setImageHeight((imgWidth * height) / width);
           }}
+          onError={() => setImgError(true)}
         />
       </TouchableOpacity>
       {isFullscreen && <ImageViewer url={url} visible={isFullscreen} onClose={() => { setIsFullscreen(false) }} />}
