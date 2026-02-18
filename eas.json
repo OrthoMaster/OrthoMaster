@@ -9,7 +9,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr",
-        "EXPO_PUBLIC_API_V2_URL": "https://v2.api.orthomaster.fr/api"
+        "EXPO_PUBLIC_API_V2_URL": "https://v2.api.orthomaster.fr/api",
+        "EXPO_PUBLIC_S3_URL": "https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/"
       },
       "ios": {
         "resourceClass": "m-medium",
@@ -35,7 +36,9 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.orthomaster.fr",
-        "EXPO_PUBLIC_API_V2_URL": "https://v2.api.orthomaster.fr/api"
+        "EXPO_PUBLIC_API_V2_URL": "https://v2.api.orthomaster.fr/api",
+        "EXPO_PUBLIC_S3_URL": "https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/",
+        "EXPO_PUBLIC_AUTH_WEB_URL": "https://auth.orthomaster.fr"
       },
       "ios": {
         "resourceClass": "m-medium"
