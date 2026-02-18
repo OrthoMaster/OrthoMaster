@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 export const ImageFactory = ({ config }) => {
   const contentInfos = useSelector(selectContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const imgUrl = useQuery({
     queryKey: ['Content', 'GET', "contentImage", config.attributes['src']],
@@ -36,9 +37,7 @@ export const ImageFactory = ({ config }) => {
     );
   }
 
-  if (!imgUrl.data) {
-    return null;
-  }
+  if (!imgUrl.data || imgUrl.isError || imgError) return null;
 
   return (
     <View>
@@ -54,6 +53,7 @@ export const ImageFactory = ({ config }) => {
         <img
           src={imgUrl.data}
           alt={config.attributes['alt'] || 'Image'}
+          onError={() => setImgError(true)}
           style={{
             width: '100%',
             height: 'auto',
