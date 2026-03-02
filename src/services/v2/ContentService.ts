@@ -209,3 +209,30 @@ export const getToolContent = async (contentId: string) => {
       return null;
     });
 }
+
+/**
+ * Get CloudFront Signed Cookies for video access
+ */
+
+export const fetchVideoAccess = async (videoCode: string) => {
+  return axiosInstance
+    .post(
+      `${baseUrl}/video/${videoCode}/signed-cookies`,
+      {},
+      { withCredentials: true }
+    )
+    .then((response) => {
+      if (response.data?.success == true) {
+        return {
+          title: response.data?.video?.title,
+          url: response.data?.url,
+          highlights: response.data?.highlights || [],
+          subtitles: response.data.subtitles || [],
+        };
+      }
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+};

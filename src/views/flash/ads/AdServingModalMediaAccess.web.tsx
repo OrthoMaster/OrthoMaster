@@ -171,15 +171,16 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
 }
 
 const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ vast, onAccess }) => {
+  const { data: user, ...userQuery } = useGetUser()
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const [savedEvents, setSavedEvents] = useState([])
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isComplete, setIsComplete] = useState(false)
-  const [showInterestModal, setShowInterestModal] = useState(false)
-  const [skipLimit, setSkipLimit] = useState(0)
-  const [showSkipBtn, setShowSkipBtn] = useState(false)
+  const [isComplete, setIsComplete] = useState(false);
+  const [showInterestModal, setShowInterestModal] = useState(false);
+  const [skipLimit, setSkipLimit] = useState(0);
+  const [showSkipBtn, setShowSkipBtn] = useState(false);
 
   const targetHeight = screenHeight * 0.5;
   const targetWidth = targetHeight * 16 / 9;
@@ -262,8 +263,8 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
           break;
       }
 
-      if (skipLimit > 0 && curT > skipLimit) {
-        setShowSkipBtn(true)
+      if ((skipLimit > 0 && curT > skipLimit) || user?.closable_ads) {
+        setShowSkipBtn(true);
       }
 
       setCurrentTime(curT);
