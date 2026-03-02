@@ -656,7 +656,7 @@ const CorePlayer = ({
           style={[styles.subtitleOverlay, { bottom: subtitleBottom }]}
           pointerEvents="none"
         >
-          <Text style={styles.subtitleText}>{webCurrentText}</Text>
+          <Text style={[styles.subtitleText, { fontSize: isFullscreen ? 18 : 15 }]}>{webCurrentText}</Text>
         </Animated.View>
       )}
 
@@ -867,7 +867,9 @@ const VideoPlayerReady = ({ videoCode, videoData, embedWidth, embedHeight, navig
       const result: typeof webSubtitleData = {};
       for (const lang of videoData.subtitles) {
         try {
-          const res = await fetch(getSubtitleUrl(videoData.url, lang));
+          const res = await fetch(getSubtitleUrl(videoData.url, lang), {
+            credentials: 'include',
+          });
           if (res.ok) result[lang] = parseVTT(await res.text());
         } catch { }
       }
@@ -952,7 +954,7 @@ export const VideoPlayer = ({ videoCode, navigation, embedWidth }: VideoPlayerPr
   const [videoData, setVideoData] = useState<VideoData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const resolvedCode = videoCode ?? '1d5c4b4c-146f-4799-a729-ed1b5f778b1c';
+  const resolvedCode = videoCode;
   const width = embedWidth ?? (Dimensions.get('window').width - 48);
   const height = Math.round(width * 9 / 16);
 
