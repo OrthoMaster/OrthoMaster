@@ -20,6 +20,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { fetchVideoAccess } from '../../../services/v2/ContentService';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
 // ─── Types & Constants ────────────────────────────────────────────────────────
 
 type VideoData = {
@@ -30,15 +32,8 @@ type VideoData = {
 };
 
 export type VideoPlayerProps = {
-  /** UUID of the video to load */
   videoCode?: string;
-  /** When used as a standalone fullscreen screen (legacy) */
   navigation?: any;
-  /**
-   * Width of the embedded player in pixels.
-   * Height is automatically derived as width × 9/16.
-   * Defaults to device screen width.
-   */
   embedWidth?: number;
 };
 
@@ -51,10 +46,6 @@ const LANG_LABELS: { [key: string]: string } = {
 const AUTO_HIDE_MS = 3500;
 const TOOLTIP_WIDTH = 110;
 const TOOLTIP_BG = 'rgba(14,14,18,0.8)';
-
-// CloudFront cookies TTL = 15 min → refresh at 12 min to always have a valid
-// cookie before it expires. The API call simply responds with new Set-Cookie
-// headers; no extra client work is needed beyond calling it.
 const COOKIE_REFRESH_MS = 13 * 60 * 1000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -115,6 +106,91 @@ function getTooltipTranslateX(pos: number): number {
 function getArrowLeft(pos: number): number {
   return Math.max(8, Math.min(TOOLTIP_WIDTH - 8, -getTooltipTranslateX(pos)));
 }
+
+// ─── EmbeddedSommaire ─────────────────────────────────────────────────────────
+
+const EmbeddedSommaire = ({
+  highlights,
+  currentTime,
+  duration,
+  onSeek,
+}: {
+  highlights: VideoData['highlights'];
+  currentTime: number;
+  duration: number;
+  onSeek: (t: number) => void;
+}) => {
+  if (highlights.length === 0) return null;
+
+  return (
+    <View style={sommaireStyles.wrapper}>
+      <View style={sommaireStyles.header}>
+        <Ionicons name="list" size={12} color="rgba(255,255,255,0.3)" />
+        <Text style={sommaireStyles.headerLabel}>SOMMAIRE</Text>
+      </View>
+
+      {highlights.map((h, i) => {
+        const isActive =
+          currentTime >= h.time &&
+          (i === highlights.length - 1 || currentTime < highlights[i + 1].time);
+        const isPassed = !isActive && currentTime > h.time;
+        const progressRatio = duration > 0 ? Math.min(h.time / duration, 1) : 0;
+
+        return (
+          <TouchableOpacity
+            key={h.id}
+            style={[sommaireStyles.row, isActive && sommaireStyles.rowActive]}
+            onPress={() => onSeek(h.time)}
+            activeOpacity={0.6}
+          >
+            {/* Left accent bar */}
+            <View style={[sommaireStyles.accentBar, isActive && sommaireStyles.accentBarActive]} />
+
+            {/* Index bubble */}
+            <View style={[
+              sommaireStyles.indexBubble,
+              isPassed && sommaireStyles.indexBubblePassed,
+              isActive && sommaireStyles.indexBubbleActive,
+            ]}>
+              {isPassed && !isActive ? (
+                <Ionicons name="checkmark" size={9} color="#fff" />
+              ) : (
+                <Text style={[
+                  sommaireStyles.indexText,
+                  (isPassed || isActive) && sommaireStyles.indexTextLight,
+                ]}>
+                  {i + 1}
+                </Text>
+              )}
+            </View>
+
+            {/* Label + time */}
+            <View style={sommaireStyles.rowBody}>
+              <Text style={sommaireStyles.rowTime}>{formatTime(h.time)}</Text>
+              <Text
+                style={[sommaireStyles.rowLabel, isActive && sommaireStyles.rowLabelActive]}
+                numberOfLines={1}
+              >
+                {h.label}
+              </Text>
+            </View>
+
+            {/* Mini progress indicator */}
+            <View style={sommaireStyles.miniBar}>
+              <View style={[
+                sommaireStyles.miniBarFill,
+                {
+                  width: `${progressRatio * 100}%` as any,
+                  backgroundColor: isActive ? '#E50914' : isPassed ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)',
+                },
+              ]} />
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
 
 // ─── SubtitlePanel ────────────────────────────────────────────────────────────
 
@@ -234,7 +310,7 @@ const HighlightsPanel = ({
                   </View>
                 </View>
                 <View style={styles.highlightItemBody}>
-                  <Text style={[styles.highlightItemLabel, active && styles.highlightItemLabelActive]} numberOfLines={1}>
+                  <Text style={[styles.highlightItemLabel, active && styles.highlightItemLabelActive]}>
                     {h.label}
                   </Text>
                   <Text style={styles.highlightItemTime}>{formatTime(h.time)}</Text>
@@ -381,11 +457,8 @@ type CorePlayerProps = {
   isFullscreen: boolean;
   isActive: boolean;
   seekOnActive?: number;
-  /** Whether a 403/network error has been detected — shows error overlay. */
   hasError: boolean;
-  /** Fired when the web <video> element reports a network/decode error. */
   onVideoError: () => void;
-  /** Fired when user presses "Réessayer" on the error overlay. */
   onRetry: () => void;
   onRequestFullscreen: () => void;
   onExitFullscreen: () => void;
@@ -428,23 +501,6 @@ const CorePlayer = ({
       : null;
   }, [selectedLang, availableSubtitleTracks]);
 
-  // ── Web subtitle text sync ────────────────────────────────────────────────
-  const [webCurrentText, setWebCurrentText] = useState('');
-  const webSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    if (webSyncRef.current) clearInterval(webSyncRef.current);
-    if (!selectedLang || !webSubtitleData[selectedLang]) { setWebCurrentText(''); return; }
-    webSyncRef.current = setInterval(() => {
-      const el = document.querySelector('video') as HTMLVideoElement | null;
-      if (!el) return;
-      const cues = webSubtitleData[selectedLang];
-      setWebCurrentText(cues.find(c => el.currentTime >= c.start && el.currentTime <= c.end)?.text ?? '');
-    }, 100);
-    return () => { if (webSyncRef.current) clearInterval(webSyncRef.current); };
-  }, [selectedLang, webSubtitleData]);
-
   // ── Playback state ────────────────────────────────────────────────────────
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
   const [currentTime, setCurrentTime] = useState(0);
@@ -458,6 +514,23 @@ const CorePlayer = ({
     return () => clearInterval(id);
   }, [player]);
 
+  // ── Web subtitle text sync ────────────────────────────────────────────────
+  const [webCurrentText, setWebCurrentText] = useState('');
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      setWebCurrentText('');
+      return;
+    }
+    if (!selectedLang || !webSubtitleData[selectedLang]) {
+      setWebCurrentText('');
+      return;
+    }
+    const cues = webSubtitleData[selectedLang];
+    const active = cues.find(c => currentTime >= c.start && currentTime <= c.end);
+    setWebCurrentText(active?.text ?? '');
+  }, [currentTime, selectedLang, webSubtitleData]);
+
   // ── Seek to saved position when this view becomes active ─────────────────
   useEffect(() => {
     if (!isActive || seekOnActive == null || seekOnActive <= 0) return;
@@ -466,12 +539,9 @@ const CorePlayer = ({
       player.play();
     }, 80);
     return () => clearTimeout(t);
-  }, [isActive]); // intentionally only on isActive change
+  }, [isActive]);
 
   // ── Web 403 / network error detection ────────────────────────────────────
-  // expo-video wraps a native <video> element on web. When CloudFront returns
-  // 403 the element fires an error event with code MEDIA_ERR_NETWORK (2).
-  // We poll until the element appears, then listen for its error event.
   useEffect(() => {
     if (Platform.OS !== 'web' || !isActive) return;
 
@@ -509,9 +579,6 @@ const CorePlayer = ({
   const controlsFade = useRef(new Animated.Value(1)).current;
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
-
-  // Subtitle bottom animates with controls: 130 when visible, 28 when hidden.
-  // useNativeDriver: false because `bottom` is a layout property.
   const subtitleBottom = useRef(new Animated.Value(130)).current;
 
   const showControls = useCallback(() => {
@@ -557,7 +624,6 @@ const CorePlayer = ({
     ? { onMouseEnter: bringControls, onMouseLeave: () => scheduleHide(), onMouseMove: bringControls }
     : {};
 
-  // ── Playback helpers ──────────────────────────────────────────────────────
   const togglePlay = () => {
     if (isPlaying) player.pause(); else player.play();
     bringControls();
@@ -571,19 +637,20 @@ const CorePlayer = ({
   return (
     <View style={styles.playerRoot} {...webContainerProps}>
       {isActive ? (
-        <VideoView
-          player={player}
-          style={[StyleSheet.absoluteFill, { width: videoWidth, height: videoHeight }]}
-          nativeControls={false}
-          contentFit="cover"
-          allowsFullscreen={false}
-          allowsPictureInPicture={false}
-        />
+        <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+          <VideoView
+            player={player}
+            style={[StyleSheet.absoluteFill, { width: videoWidth, height: isFullscreen ? screenHeight : videoHeight }]}
+            nativeControls={false}
+            contentFit="contain"
+            allowsFullscreen={false}
+            allowsPictureInPicture={false}
+          />
+        </View>
       ) : (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000' }]} />
       )}
 
-      {/* Subtitle overlay — bottom animated with controls */}
       {webCurrentText !== '' && (
         <Animated.View
           style={[styles.subtitleOverlay, { bottom: subtitleBottom }]}
@@ -697,9 +764,6 @@ const CorePlayer = ({
         </View>
       )}
 
-      {/* ── Error overlay ─────────────────────────────────────────────────────
-          Shown when a CloudFront 403 or network error is detected mid-playback.
-          Sits above everything (including the Sommaire panel) via zIndex.      */}
       {hasError && (
         <View style={styles.errorOverlay}>
           <View style={styles.errorCard}>
@@ -723,12 +787,6 @@ const CorePlayer = ({
 };
 
 // ─── VideoPlayerReady ─────────────────────────────────────────────────────────
-//
-// Mounted only after videoData is loaded so useVideoPlayer always gets a real URL.
-// Owns:
-//   - player instance (single, shared between embedded & fullscreen)
-//   - cookie refresh interval
-//   - error / retry state
 
 type VideoPlayerReadyProps = {
   videoCode: string;
@@ -751,6 +809,18 @@ const VideoPlayerReady = ({ videoCode, videoData, embedWidth, embedHeight, navig
     [lang: string]: { start: number; end: number; text: string }[];
   }>({});
 
+  // ── currentTime cho EmbeddedSommaire ─────────────────────────────────────
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCurrentTime(player.currentTime ?? 0);
+      setDuration(player.duration ?? 0);
+    }, 300);
+    return () => clearInterval(id);
+  }, [player]);
+
   const pendingSeekRef = useRef<number>(0);
 
   const openFullscreen = useCallback(() => {
@@ -764,37 +834,27 @@ const VideoPlayerReady = ({ videoCode, videoData, embedWidth, embedHeight, navig
   }, [player]);
 
   // ── Cookie refresh ────────────────────────────────────────────────────────
-  // Calls the API every 12 min so the browser receives fresh CloudFront
-  // Set-Cookie headers before the current 15-min cookies expire.
-  // No extra work is needed here — the browser stores the new cookies
-  // automatically when the API response arrives.
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const id = setInterval(() => {
-      fetchVideoAccess(videoCode).catch(() => {
-        // If the silent refresh fails, the error overlay will appear naturally
-        // once the player starts receiving 403 responses.
-      });
+      fetchVideoAccess(videoCode).catch(() => { });
     }, COOKIE_REFRESH_MS);
     return () => clearInterval(id);
   }, [videoCode]);
 
   // ── Retry after 403 ───────────────────────────────────────────────────────
-  // Re-fetches cookies (new Set-Cookie from API), then reloads the player
-  // source so the browser sends the fresh cookies on the next HLS request.
   const handleRetry = useCallback(async () => {
     setRetrying(true);
     try {
-      await fetchVideoAccess(videoCode);         // refreshes CloudFront cookies
+      await fetchVideoAccess(videoCode);
       const resumeAt = player.currentTime ?? 0;
-      player.replace({ uri: videoData.url });    // reload source with new cookies
+      player.replace({ uri: videoData.url });
       setTimeout(() => {
         player.currentTime = resumeAt;
         player.play();
       }, 300);
       setHasError(false);
     } catch {
-      // Refresh itself failed — keep overlay visible so user can try again
     } finally {
       setRetrying(false);
     }
@@ -807,17 +867,13 @@ const VideoPlayerReady = ({ videoCode, videoData, embedWidth, embedHeight, navig
       const result: typeof webSubtitleData = {};
       for (const lang of videoData.subtitles) {
         try {
-          const res = await fetch(getSubtitleUrl(videoData.url, lang), {
-            // credentials: 'include',   // send CloudFront cookies with VTT request
-          });
+          const res = await fetch(getSubtitleUrl(videoData.url, lang));
           if (res.ok) result[lang] = parseVTT(await res.text());
         } catch { }
       }
       setWebSubtitleData(result);
     })();
   }, []);
-
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('screen');
 
   const sharedProps = {
     player,
@@ -833,6 +889,7 @@ const VideoPlayerReady = ({ videoCode, videoData, embedWidth, embedHeight, navig
 
   return (
     <>
+      {/* ── Embedded player ─────────────────────────────────────────────── */}
       <View style={{ width: embedWidth, height: embedHeight, backgroundColor: '#000', overflow: 'hidden' }}>
         <CorePlayer
           {...sharedProps}
@@ -846,6 +903,17 @@ const VideoPlayerReady = ({ videoCode, videoData, embedWidth, embedHeight, navig
         />
       </View>
 
+      {/* ── Sommaire sous le player (mode embedded uniquement) ──────────── */}
+      {!fullscreen && (
+        <EmbeddedSommaire
+          highlights={videoData.highlights}
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={t => { player.currentTime = t; player.play(); }}
+        />
+      )}
+
+      {/* ── Fullscreen modal ─────────────────────────────────────────────── */}
       <Modal
         visible={fullscreen}
         animationType="fade"
@@ -868,7 +936,6 @@ const VideoPlayerReady = ({ videoCode, videoData, embedWidth, embedHeight, navig
         </View>
       </Modal>
 
-      {/* Loading spinner shown over the embedded player while retrying */}
       {retrying && (
         <View style={[StyleSheet.absoluteFillObject, styles.retryingOverlay]}>
           <ActivityIndicator size="large" color="#E50914" />
@@ -930,6 +997,116 @@ export const VideoPlayerScreen = ({ navigation }: { navigation?: any }) => (
     </View>
   </Modal>
 );
+
+// ─── Sommaire Styles ──────────────────────────────────────────────────────────
+
+const sommaireStyles = StyleSheet.create({
+  wrapper: {
+    marginTop: 0,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(10, 10, 14, 0.9)'
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  headerLabel: {
+    color: 'rgba(255,255,255,0.28)',
+    fontSize: 10,
+    fontFamily: 'Poppins-Medium',
+    letterSpacing: 2,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 11,
+    paddingRight: 16,
+    paddingLeft: 12,
+    gap: 12,
+    borderRadius: 8,
+    marginHorizontal: 8,
+    marginBottom: 2,
+    overflow: 'hidden',
+  },
+  rowActive: {
+    backgroundColor: 'rgba(229,9,20,0.07)',
+  },
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 6,
+    bottom: 6,
+    width: 2.5,
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+  },
+  accentBarActive: {
+    backgroundColor: '#E50914',
+  },
+  indexBubble: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  indexBubblePassed: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  indexBubbleActive: {
+    backgroundColor: '#E50914',
+    borderColor: '#E50914',
+  },
+  indexText: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 9,
+    fontFamily: 'Poppins-Medium',
+  },
+  indexTextLight: {
+    color: '#fff',
+  },
+  rowBody: {
+    flex: 1,
+    gap: 1,
+  },
+  rowLabel: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 13,
+    fontFamily: 'Poppins-Regular',
+    lineHeight: 18,
+    marginBottom: 3,
+  },
+  rowLabelActive: {
+    color: '#fff',
+    fontFamily: 'Poppins-Medium',
+  },
+  rowTime: {
+    color: 'rgba(255,255,255,0.25)',
+    fontSize: 11,
+    fontFamily: 'Poppins-Regular',
+  },
+  miniBar: {
+    width: 36,
+    height: 2,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 1,
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  miniBarFill: {
+    height: '100%',
+    borderRadius: 1,
+  },
+});
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -1284,7 +1461,7 @@ const styles = StyleSheet.create({
   hlIndexDotActive: { backgroundColor: '#E50914', borderColor: '#E50914' },
   hlIndexText: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: 'Poppins-Medium' },
   highlightItemBody: { paddingLeft: 32 },
-  highlightItemLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontFamily: 'Poppins-Regular' },
+  highlightItemLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontFamily: 'Poppins-Regular' },
   highlightItemLabelActive: { color: '#fff', fontFamily: 'Poppins-Medium' },
   highlightItemTime: { color: 'rgba(255,255,255,0.35)', fontSize: 11, fontFamily: 'Poppins-Regular', marginTop: 2 },
   hlMiniBar: {
@@ -1296,8 +1473,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   hlMiniBarFill: { height: '100%', borderRadius: 1 },
-
-  // ── Error overlay ──────────────────────────────────────────────────────────
   errorOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.75)',
@@ -1361,8 +1536,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     letterSpacing: 0.3,
   },
-
-  // ── Retry loading overlay ──────────────────────────────────────────────────
   retryingOverlay: {
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
