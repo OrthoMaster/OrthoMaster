@@ -656,7 +656,7 @@ const CorePlayer = ({
           style={[styles.subtitleOverlay, { bottom: subtitleBottom }]}
           pointerEvents="none"
         >
-          <Text style={[styles.subtitleText, { fontSize: isFullscreen ? 18 : 15 }]}>{webCurrentText}</Text>
+          <Text style={[styles.subtitleText, { fontSize: isFullscreen ? 20 : 16 }]}>{webCurrentText}</Text>
         </Animated.View>
       )}
 
