@@ -43,7 +43,7 @@ const Card = ({ data, isCenter, onPress, isVisible = true, screenWidth, screenHe
     >
       <Image source={{ uri: imageUrl.data }} style={styles.image} />
       <LinearGradient
-        colors={["transparent", "transparent", "rgba(0,0,0,0.85)"]}
+        colors={["transparent", "rgba(0,0,0,0.6)", "rgba(0,0,0,0.9)"]}
         style={styles.gradient}
       />
       <View style={styles.textContainer}>
@@ -85,7 +85,7 @@ const PanoramaCarousel = ({ data, onSelect, initialIndex = 0 }) => {
   const screenHeight = dimensions.height - 100;
 
   // Determine if we show 3 cards or just 1
-  const showThreeCards = screenWidth > BREAKPOINT_LARGE;
+  const showThreeCards = screenWidth >= BREAKPOINT_LARGE;
 
   // Card sizes based on current dimensions
   const CENTER_CARD_HEIGHT = screenHeight * 0.6;

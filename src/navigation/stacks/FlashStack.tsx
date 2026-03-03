@@ -27,11 +27,7 @@ export const FlashStack = ({ }) => {
       <FlashStackNav.Screen
         name="flash-media-home"
         component={FlashMediaView}
-        options={
-          Platform.OS === 'web'
-            ? { headerShown: false, }
-            : { headerShown: false, }
-        }
+        options={{ headerShown: false }}
       />
 
       {Platform.OS === 'web'
@@ -85,11 +81,6 @@ export const FlashStack = ({ }) => {
           component={ContentDisplayer}
           options={{
             headerShown: false,
-            // headerTitle: "",
-            // headerBackButtonDisplayMode: "minimal",
-            // headerTintColor: '#000',
-            // headerTransparent: true,
-            // headerBackImage: () => (<ReturnButtonIcon />)
           }}
         />
       }

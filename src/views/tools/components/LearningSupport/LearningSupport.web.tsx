@@ -239,7 +239,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLOR,
     padding: Spacings.md,
     borderRadius: 16,
-    marginVertical: Spacings.md,
   },
   bigButtonImage: {
     width: 100,

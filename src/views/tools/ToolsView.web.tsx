@@ -4,7 +4,8 @@ import {
   View,
   StyleSheet,
   Dimensions,
-  Text
+  Text,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
@@ -16,7 +17,7 @@ import { LearningSupportMenu, LearningSupportButton } from './components/Learnin
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-const { width } = Dimensions.get('screen');
+const { width } = Dimensions.get('window');
 
 export const ToolsView = ({ navigation }) => {
   const [showQueChoisirMenu, setShowQueChoisirMenu] = useState(false)
@@ -33,11 +34,11 @@ export const ToolsView = ({ navigation }) => {
         </View>
       </View>
 
-      <View style={styles.body}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView} contentContainerStyle={styles.body}>
         <LearningSupportButton onPress={() => { setShowLearningSupportMenu(true) }} />
         <QueChoisirButton onPress={() => { setShowQueChoisirMenu(true) }} />
         <GuidePatientButton onPress={() => { setShowGuidePatientMenu(true) }} />
-      </View>
+      </ScrollView>
 
       <Modal style={styles.modal} isVisible={showQueChoisirMenu}>
         <QueChoisirMenu onClose={() => {
@@ -76,7 +77,7 @@ export const ToolsView = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.grayLight,
   },
   header: {
     backgroundColor: Colors.blue,
@@ -94,12 +95,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
   },
-  body: {
+  scrollView: {
     flex: 1,
+    height: '100%',
+  },
+  body: {
     gap: Spacings.sm,
     justifyContent: 'center',
     backgroundColor: Colors.grayLight,
-    paddingHorizontal: (width - 300 - 1200) / 2,
+    paddingTop: Spacings.xxl,
+    paddingBottom: Spacings.lg,
+    paddingHorizontal: (width * 0.3) / 2,
   },
   modal: {
     width: 700,

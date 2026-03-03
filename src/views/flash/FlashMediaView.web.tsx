@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -58,9 +58,8 @@ export const FlashMediaView = ({ navigation, route }) => {
     loadEvents();
   }, []);
 
-  const [openMediaIsLoading, setOpenMediaIsLoading] = useState<boolean>(false)
-  const [openMediaErrorMessage, setOpenMediaErrorMessage] = useState<string>(null)
-  const [isSearching, setIsSearching] = useState(false)
+  const [openMediaIsLoading, setOpenMediaIsLoading] = useState<boolean>(false);
+  const [openMediaErrorMessage, setOpenMediaErrorMessage] = useState<string>(null);
 
   const handleNavigation = (card: IContent) => {
     navigation.push('flash-media-preview', {
@@ -135,7 +134,6 @@ export const FlashMediaView = ({ navigation, route }) => {
       </View>
 
       <ScrollView
-        scrollEnabled={!isSearching}
         nestedScrollEnabled={true}
         showsVerticalScrollIndicator={false}
       >
@@ -151,20 +149,6 @@ export const FlashMediaView = ({ navigation, route }) => {
                 : <PanoramaCarousel onSelect={handleNavigation} data={lastRelease.data} />
           }
         </View>
-        {/* <View style={[styles.sectionContainer]}>
-          <TouchableOpacity style={{
-            backgroundColor: '#F1F1F1',
-            borderRadius: 10,
-            padding: 10,
-            alignSelf: 'center',
-            width: "90%",
-            marginHorizontal: 20
-          }}
-            onPress={() => setIsSearching(true)}
-          >
-            <Text style={{ color: 'gray' }}>Rechercher ...</Text>
-          </TouchableOpacity>
-        </View> */}
 
         <View style={styles.sectionContainer}>
           <Text style={styles.categoryTitle}>Congrès</Text>
@@ -190,9 +174,9 @@ export const FlashMediaView = ({ navigation, route }) => {
                     >
                       <Image
                         source={{ uri: process.env.EXPO_PUBLIC_S3_URL + item.image }}
-                        style={[styles.eventImage, { width: 200, height: 200 }]}
+                        style={[styles.eventImage, { width: 160, height: 160 }]}
                         resizeMode="cover" />
-                      <Text style={[styles.eventName, { width: 200, fontSize: item.name.length > 20 ? 13 : 16 }]}
+                      <Text style={[styles.eventName, { width: 160, fontSize: item.name.length > 20 ? 12 : 16 }]}
                         numberOfLines={3} ellipsizeMode="middle">{item.name}</Text>
                     </TouchableOpacity>
                   ))}
