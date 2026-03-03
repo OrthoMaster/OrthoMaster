@@ -118,7 +118,8 @@
           }
         }
       ],
-      "./expo-plugins/withAndroidPermissionsFix.js"
+      "./expo-plugins/withAndroidPermissionsFix.js",
+      "expo-localization"
     ],
     "updates": {
       "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"

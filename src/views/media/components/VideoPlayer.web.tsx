@@ -126,7 +126,7 @@ const EmbeddedSommaire = ({
     <View style={sommaireStyles.wrapper}>
       <View style={sommaireStyles.header}>
         <Ionicons name="list" size={12} color="rgba(255,255,255,0.3)" />
-        <Text style={sommaireStyles.headerLabel}>SOMMAIRE</Text>
+        <Text style={sommaireStyles.headerLabel}>Chapitres</Text>
       </View>
 
       {highlights.map((h, i) => {
@@ -284,7 +284,7 @@ const HighlightsPanel = ({
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
       <Animated.View style={[styles.highlightsPanel, { opacity: fade, transform: [{ translateX }] }]}>
         <View style={styles.highlightsPanelHeader}>
-          <Text style={styles.highlightsPanelTitle}>Sommaire</Text>
+          <Text style={styles.highlightsPanelTitle}>Chapitres</Text>
           <TouchableOpacity onPress={onClose} style={styles.highlightsPanelClose}>
             <Ionicons name="close" size={18} color="rgba(255,255,255,0.55)" />
           </TouchableOpacity>
@@ -1022,6 +1022,7 @@ const sommaireStyles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Poppins-Medium',
     letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   row: {
     flexDirection: 'row',

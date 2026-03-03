@@ -1,5 +1,6 @@
 // VideoPlayer.tsx (Mobile - Native Controls Only, No Fullscreen Highlights)
 import React, { useState, useEffect } from 'react';
+import * as Localization from 'expo-localization';
 import {
   StyleSheet,
   View,
@@ -37,6 +38,8 @@ export type VideoPlayerProps = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const deviceLang = Localization.getLocales()[0]?.languageCode;
+
 function formatTime(s: number) {
   if (!isFinite(s) || s < 0) return '0:00';
   const m = Math.floor(s / 60);
@@ -57,16 +60,27 @@ const EmbeddedSommaire = ({
   duration: number;
   onSeek: (t: number) => void;
 }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   if (highlights.length === 0) return null;
 
   return (
     <View style={sommaireStyles.wrapper}>
-      <View style={sommaireStyles.header}>
+      <TouchableOpacity
+        style={sommaireStyles.header}
+        onPress={() => setIsExpanded(prev => !prev)}
+        activeOpacity={0.7}
+      >
         <Ionicons name="list" size={12} color="rgba(255,255,255,0.3)" />
-        <Text style={sommaireStyles.headerLabel}>SOMMAIRE</Text>
-      </View>
+        <Text style={[sommaireStyles.headerLabel, { flex: 1 }]}>Chapitres</Text>
+        <Ionicons
+          name={isExpanded ? 'chevron-up' : 'chevron-down'}
+          size={14}
+          color="rgba(255,255,255,0.3)"
+        />
+      </TouchableOpacity>
 
-      {highlights.map((h, i) => {
+      {isExpanded && highlights.map((h, i) => {
         const isActive =
           currentTime >= h.time &&
           (i === highlights.length - 1 || currentTime < highlights[i + 1].time);
@@ -171,6 +185,23 @@ const VideoPlayerReady = ({ videoData, embedWidth, embedHeight }: VideoPlayerRea
 
   return (
     <View>
+      {/* Subtitle bar — shown above the video when subtitles are available */}
+      {videoData.subtitles.length > 0 && (
+        <View style={styles.subtitleBar}>
+          {deviceLang == 'fr'
+            ? <Text style={styles.subtitleBarLabel}>{videoData.subtitles.length > 1 ? 'Sous-titres disponibles' : 'Sous-titre disponible'}</Text>
+            : <Text style={styles.subtitleBarLabel}>{videoData.subtitles.length > 1 ? 'Subtitles available' : 'Subtitle available'}</Text>
+          }
+          <View style={styles.subtitlePills}>
+            {videoData.subtitles.map((s, i) => (
+              <View key={i} style={styles.subtitlePill}>
+                <Text style={styles.subtitlePillText}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
       <View style={{ width: embedWidth, height: embedHeight, backgroundColor: Colors.blackBackground, overflow: 'hidden' }}>
         <CorePlayer player={player} />
       </View>
@@ -247,6 +278,7 @@ const sommaireStyles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Poppins-Medium',
     letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   row: {
     flexDirection: 'row',
@@ -326,4 +358,37 @@ const sommaireStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   playerRoot: { flex: 1, backgroundColor: Colors.blackBackground },
+
+  subtitleBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  subtitleBarLabel: {
+    color: Colors.gray,
+    fontSize: 11,
+    fontFamily: 'Poppins-Regular',
+    marginRight: 2,
+  },
+  subtitlePills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+  },
+  subtitlePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  subtitlePillText: {
+    color: Colors.primary,
+    fontSize: 10,
+    fontFamily: 'Poppins-Regular',
+  },
 });
