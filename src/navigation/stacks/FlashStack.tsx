@@ -84,12 +84,12 @@ export const FlashStack = ({ }) => {
           name="flash-media-viewer"
           component={ContentDisplayer}
           options={{
-            headerShown: true,
-            headerTitle: "",
-            headerBackButtonDisplayMode: "minimal",
-            headerTintColor: '#000',
-            headerTransparent: true,
-            headerBackImage: () => (<ReturnButtonIcon />)
+            headerShown: false,
+            // headerTitle: "",
+            // headerBackButtonDisplayMode: "minimal",
+            // headerTintColor: '#000',
+            // headerTransparent: true,
+            // headerBackImage: () => (<ReturnButtonIcon />)
           }}
         />
       }

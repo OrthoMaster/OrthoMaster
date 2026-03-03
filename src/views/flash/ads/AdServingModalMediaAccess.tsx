@@ -176,6 +176,7 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
 }
 
 const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ vast, onAccess }) => {
+  const { data: user, ...userQuery } = useGetUser();
   const player = useVideoPlayer(vast?.linearMedia?.mediaFiles[0], player => {
     player.loop = false;
     player.currentTime = 0;
@@ -255,7 +256,7 @@ const DisplayAdModal: React.FC<{ vast: IVASTObject, onAccess: () => any }> = ({ 
         break;
     }
 
-    if (skipLimit > 0 && curT > skipLimit) {
+    if ((skipLimit > 0 && curT > skipLimit) || user?.closable_ads) {
       setShowSkipBtn(true)
     }
 
@@ -415,10 +416,10 @@ const AdCard: React.FC<AdCardProps> = ({ vastObj, onSelect }) => {
 }
 
 export const AdServingModalMediaAccess: React.FC<AdServingModalMediaAccessProps> = ({ enabled, onClose, grantAccess, closable = true }) => {
-  const { data: user, ...userQuery } = useGetUser()
-
   const [vastArray, setVastArray] = useState<IVASTObject[]>([])
   const [selectedVAST, setSelectedVAST] = useState<IVASTObject>(null)
+
+  const { data: user, ...userQuery } = useGetUser();
 
   const vastsArrayUrl: string[] = [
     "https://servedbyadbutler.com/vast.spark?setID=63510&ID=188636&pageid=123456&_abdk[Job Function]=" + user?.job_function,

@@ -13,8 +13,10 @@ import { handleColor } from "./factory/stylesXml";
 import { ImageLessonContent } from '../../training/components/ImageLessonContent';
 import Colors from "../../../../constants/Colors";
 
+import { VideoPlayer } from '../../media/components/VideoPlayer';
+
 var staticLessonIndex = 0
-export const ContentFactory = ({ component, contentInfos, onQuizCompleted }) => {
+export const ContentFactory = ({ component, contentInfos, onQuizCompleted = null }) => {
     const [quizStates, setQuizStates] = useState({});
     const [totalQuiz, setTotalQuiz] = useState(0);
 
@@ -91,7 +93,13 @@ export const ContentFactory = ({ component, contentInfos, onQuizCompleted }) => 
                             }
                             break;
                         case 'video':
-                            displayContent.push(<VideoFactory video={element} key={staticLessonIndex} contentInfos={contentInfos} />)
+                            if (element.attributes['code']) {
+                                // Hls video
+                                displayContent.push(<VideoPlayer key={staticLessonIndex} videoCode={element.attributes['code']} />)
+                            } else {
+                                displayContent.push(<VideoFactory video={element} key={staticLessonIndex} contentInfos={contentInfos} />)
+                            }
+
                             break;
                         case 'layout':
                             displayContent.push(buildContent(element, contentInfos))

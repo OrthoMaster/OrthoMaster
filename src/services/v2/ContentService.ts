@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import axiosInstance, { baseUrl } from './axiosInstance';
+import { Platform } from 'react-native';
 
 /**
  * Daily action : Quiz and Podcast
@@ -213,14 +214,34 @@ export const getToolContent = async (contentId: string) => {
 /**
  * Get CloudFront Signed Cookies for video access
  */
-
 export const fetchVideoAccess = async (videoCode: string) => {
+  // Web
+  if (Platform.OS === 'web') {
+    return axiosInstance
+      .post(
+        `${baseUrl}/video/${videoCode}/signed-cookies`,
+        {},
+        { withCredentials: true }
+      )
+      .then((response) => {
+        if (response.data?.success == true) {
+          return {
+            title: response.data?.video?.title,
+            url: response.data?.url,
+            highlights: response.data?.highlights || [],
+            subtitles: response.data.subtitles || [],
+          };
+        }
+        return null;
+      })
+      .catch((e: AxiosError) => {
+        return null;
+      });
+  }
+
+  // Mobile
   return axiosInstance
-    .post(
-      `${baseUrl}/video/${videoCode}/signed-cookies`,
-      {},
-      { withCredentials: true }
-    )
+    .post(`${baseUrl}/video/${videoCode}/proxy-url`)
     .then((response) => {
       if (response.data?.success == true) {
         return {

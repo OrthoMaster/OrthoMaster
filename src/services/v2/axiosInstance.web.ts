@@ -40,7 +40,6 @@ class WebEventEmitter {
 
 export const authEvents = new WebEventEmitter();
 
-// ... rest của code giữ nguyên
 const axiosInstance = axios.create({
     baseURL: baseUrl,
     timeout: 20000,
