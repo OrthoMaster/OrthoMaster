@@ -20,13 +20,11 @@ const DownloadPage = () => {
   }, []);
 
   const handleAppStorePress = () => {
-    // Remplacez par votre lien App Store
-    Linking.openURL('https://apps.apple.com/app/votre-app-id');
+    Linking.openURL('https://apps.apple.com/us/app/orthomaster/id1644851864');
   };
 
   const handlePlayStorePress = () => {
-    // Remplacez par votre lien Google Play
-    Linking.openURL('https://play.google.com/store/apps/details?id=com.votre.app');
+    Linking.openURL('https://play.google.com/store/apps/details?id=com.hugotaieb.OrthoMaster');
   };
 
   return (

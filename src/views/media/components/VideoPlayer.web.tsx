@@ -17,8 +17,9 @@ import {
 import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView, VideoPlayer as ExpoVideoPlayer } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
-
 import { fetchVideoAccess } from '../../../services/v2/ContentService';
+
+import Colors from "../../../../constants/Colors";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -125,7 +126,7 @@ const EmbeddedSommaire = ({
   return (
     <View style={sommaireStyles.wrapper}>
       <View style={sommaireStyles.header}>
-        <Ionicons name="list" size={12} color="rgba(255,255,255,0.3)" />
+        <Ionicons name="list" size={12} color={Colors.white} />
         <Text style={sommaireStyles.headerLabel}>Chapitres</Text>
       </View>
 
@@ -286,7 +287,7 @@ const HighlightsPanel = ({
         <View style={styles.highlightsPanelHeader}>
           <Text style={styles.highlightsPanelTitle}>Chapitres</Text>
           <TouchableOpacity onPress={onClose} style={styles.highlightsPanelClose}>
-            <Ionicons name="close" size={18} color="rgba(255,255,255,0.55)" />
+            <Ionicons name="close" size={18} color={Colors.white} />
           </TouchableOpacity>
         </View>
         <View style={styles.highlightsPanelDivider} />
@@ -484,22 +485,7 @@ const CorePlayer = ({
 }: CorePlayerProps) => {
   const { title: VIDEO_TITLE, highlights: HIGHLIGHTS } = videoData;
 
-  // ── Native subtitle tracks ────────────────────────────────────────────────
-  const { availableSubtitleTracks } = useEvent(player, 'availableSubtitleTracksChange', {
-    availableSubtitleTracks: player.availableSubtitleTracks,
-  });
-
-  const subtitleLangs =
-    Platform.OS === 'web'
-      ? videoData.subtitles
-      : availableSubtitleTracks.map(t => t.language);
-
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-    player.subtitleTrack = selectedLang
-      ? (availableSubtitleTracks.find(t => t.language === selectedLang) ?? null)
-      : null;
-  }, [selectedLang, availableSubtitleTracks]);
+  const subtitleLangs = videoData.subtitles;
 
   // ── Playback state ────────────────────────────────────────────────────────
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
@@ -891,8 +877,20 @@ const VideoPlayerReady = ({ videoCode, videoData, embedWidth, embedHeight, navig
 
   return (
     <>
+      {/* Subtitle bar */}
+      {videoData.subtitles.length > 0 && (
+        <View style={styles.subtitleBar}>
+          <Text style={styles.subtitleBarLabel}>{videoData.subtitles.length > 1 ? 'Sous-titres disponibles' : 'Sous-titre disponible'} :</Text>
+          <View style={styles.subtitlePills}>
+            {videoData.subtitles.map((s, i) => (
+              <Text key={i} style={styles.subtitlePillText}>{LANG_LABELS[s]}{i < videoData.subtitles.length - 1 ? ', ' : ''}</Text>
+            ))}
+          </View>
+        </View>
+      )}
+
       {/* ── Embedded player ─────────────────────────────────────────────── */}
-      <View style={{ width: embedWidth, height: embedHeight, backgroundColor: '#000', overflow: 'hidden' }}>
+      <View style={{ width: embedWidth, height: embedHeight, overflow: 'hidden' }}>
         <CorePlayer
           {...sharedProps}
           videoWidth={embedWidth}
@@ -1018,7 +1016,7 @@ const sommaireStyles = StyleSheet.create({
     paddingBottom: 10,
   },
   headerLabel: {
-    color: 'rgba(255,255,255,0.28)',
+    color: Colors.white,
     fontSize: 10,
     fontFamily: 'Poppins-Medium',
     letterSpacing: 2,
@@ -1377,7 +1375,7 @@ const styles = StyleSheet.create({
   },
   panelHeader: { paddingHorizontal: 16, paddingTop: 14 },
   panelTitle: {
-    color: 'rgba(255,255,255,0.4)',
+    color: Colors.white,
     fontSize: 10,
     fontFamily: 'Poppins-Medium',
     letterSpacing: 1.8,
@@ -1435,7 +1433,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   highlightsPanelTitle: {
-    color: 'rgba(255,255,255,0.4)',
+    color: Colors.white,
     fontSize: 10,
     fontFamily: 'Poppins-Medium',
     letterSpacing: 1.8,
@@ -1550,5 +1548,31 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     fontSize: 13,
     fontFamily: 'Poppins-Regular',
+  },
+
+  subtitleBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  subtitleBarLabel: {
+    color: Colors.gray,
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    marginRight: 2,
+  },
+  subtitlePills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+  },
+  subtitlePillText: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
   },
 });

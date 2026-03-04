@@ -95,7 +95,7 @@ export const ContentFactory = ({ component, contentInfos, onQuizCompleted }) => 
                         case 'video':
                             if (element.attributes['code']) {
                                 // Hls video
-                                displayContent.push(<VideoPlayer key={staticLessonIndex} videoCode={element.attributes['code']} />)
+                                displayContent.push(<VideoPlayer key={staticLessonIndex} videoCode={element.attributes['code']} embedWidth={900}/>)
                             } else {
                                 displayContent.push(<VideoFactory video={element} key={staticLessonIndex} contentInfos={contentInfos} />)
                             }

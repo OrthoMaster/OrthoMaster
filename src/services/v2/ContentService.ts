@@ -225,6 +225,7 @@ export const fetchVideoAccess = async (videoCode: string) => {
       )
       .then((response) => {
         if (response.data?.success == true) {
+          console.log(response.data.subtitles);
           return {
             title: response.data?.video?.title,
             url: response.data?.url,

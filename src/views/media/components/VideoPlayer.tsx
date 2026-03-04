@@ -71,12 +71,12 @@ const EmbeddedSommaire = ({
         onPress={() => setIsExpanded(prev => !prev)}
         activeOpacity={0.7}
       >
-        <Ionicons name="list" size={12} color="rgba(255,255,255,0.3)" />
+        <Ionicons name="list" size={12} color={Colors.white} />
         <Text style={[sommaireStyles.headerLabel, { flex: 1 }]}>Chapitres</Text>
         <Ionicons
           name={isExpanded ? 'chevron-up' : 'chevron-down'}
           size={14}
-          color="rgba(255,255,255,0.3)"
+          color={Colors.white}
         />
       </TouchableOpacity>
 
@@ -189,14 +189,12 @@ const VideoPlayerReady = ({ videoData, embedWidth, embedHeight }: VideoPlayerRea
       {videoData.subtitles.length > 0 && (
         <View style={styles.subtitleBar}>
           {deviceLang == 'fr'
-            ? <Text style={styles.subtitleBarLabel}>{videoData.subtitles.length > 1 ? 'Sous-titres disponibles' : 'Sous-titre disponible'}</Text>
-            : <Text style={styles.subtitleBarLabel}>{videoData.subtitles.length > 1 ? 'Subtitles available' : 'Subtitle available'}</Text>
+            ? <Text style={styles.subtitleBarLabel}>{videoData.subtitles.length > 1 ? 'Sous-titres disponibles' : 'Sous-titre disponible'} :</Text>
+            : <Text style={styles.subtitleBarLabel}>{videoData.subtitles.length > 1 ? 'Subtitles available' : 'Subtitle available'} :</Text>
           }
           <View style={styles.subtitlePills}>
             {videoData.subtitles.map((s, i) => (
-              <View key={i} style={styles.subtitlePill}>
-                <Text style={styles.subtitlePillText}>{s.label}</Text>
-              </View>
+              <Text key={i} style={styles.subtitlePillText}>{s.label}{i < videoData.subtitles.length - 1 ? ', ' : ''}</Text>
             ))}
           </View>
         </View>
@@ -274,7 +272,7 @@ const sommaireStyles = StyleSheet.create({
     paddingBottom: 10,
   },
   headerLabel: {
-    color: 'rgba(255,255,255,0.28)',
+    color: Colors.white,
     fontSize: 10,
     fontFamily: 'Poppins-Medium',
     letterSpacing: 2,
@@ -362,9 +360,9 @@ const styles = StyleSheet.create({
   subtitleBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
@@ -377,18 +375,11 @@ const styles = StyleSheet.create({
   subtitlePills: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 5,
-  },
-  subtitlePill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.primary,
+    gap: 2,
   },
   subtitlePillText: {
     color: Colors.primary,
-    fontSize: 10,
-    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
   },
 });

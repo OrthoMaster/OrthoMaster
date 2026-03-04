@@ -2,7 +2,7 @@
   "expo": {
     "name": "OrthoMaster",
     "slug": "OrthoMaster",
-    "version": "2.4.0",
+    "version": "2.4.1",
     "orientation": "portrait",
     "scheme": "orthomaster",
     "jsEngine": "hermes",
@@ -122,7 +122,11 @@
       "expo-localization"
     ],
     "updates": {
-      "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a"
+      "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "enableBsdiffPatchSupport": true
     },
     "runtimeVersion": {
       "policy": "appVersion"
