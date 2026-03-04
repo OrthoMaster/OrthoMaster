@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
 import { fetchMedias } from '../../services/FlashMediasService';
-import SimpleAdaptiveCarousel, { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
+import { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
 import { IContent, IEvent } from '../../utils/interfaces';
 import { PreviewMediaParams } from './PreviewMediaView';
 import { getCdnContentAccessUrl } from '../../services/ContentService';

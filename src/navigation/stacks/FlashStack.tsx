@@ -10,8 +10,6 @@ import { PreviewMediaView } from '../../views/flash/PreviewMediaView';
 import { FlashSearchView } from '../../views/flash/FlashSearchView';
 
 import ChannelMediaView from '../../views/flash/ChannelMediaView';
-import ReturnButtonIcon from '../components/ReturnButton';
-
 
 const FlashStackNav = createStackNavigator();
 export const FlashStack = ({ }) => {
@@ -67,7 +65,7 @@ export const FlashStack = ({ }) => {
           }}
         />
       }
-      
+
       {Platform.OS === 'web'
         ? <FlashStackNav.Screen
           name="flash-media-viewer"

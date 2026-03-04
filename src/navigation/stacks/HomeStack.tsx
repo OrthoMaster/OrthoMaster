@@ -40,20 +40,12 @@ export const HomeStack = () => {
   return (
     <HomeStackNav.Navigator
       id={"home-stack" as undefined}
-      initialRouteName='home-home'
+      initialRouteName='home'
       screenOptions={{ title: 'Accueil' }} // for web
     >
       <HomeStackNav.Screen
-        name={"home-home"}
+        name={"home"}
         component={HomeView}
-        options={{
-          headerShown: false
-        }}
-      />
-
-      <HomeStackNav.Screen
-        name="home-search-1"
-        component={SearchView}
         options={{
           headerShown: false
         }}

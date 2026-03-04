@@ -336,7 +336,7 @@ export default function App({ navigation }) {
         'home': {
           path: 'open/home',
           screens: {
-            "home-home": {
+            "home": {
               path: "open/daily-content/:action",
             }
           },

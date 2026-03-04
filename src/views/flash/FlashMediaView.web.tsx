@@ -95,7 +95,7 @@ export const FlashMediaView = ({ navigation, route }) => {
   }
 
   const verifyRoute = async () => {
-    if (route.path && route.path.includes("open/media-preview/")) {
+    if (route.path && route.path.includes("media-preview")) {
       if (route.params && route.params.id) {
         handleOpenMediaLink(route.params.id)
           .then((media) => {

@@ -22,11 +22,6 @@ import { authEvents, sendError } from './src/services/v2/AuthService';
 import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScreen';
 import DownloadPage from './src/views/download/DownloadPage';
 
-// Constants for app reset logic (WEB)
-const LAST_ACTIVE_KEY = '@app_last_active_time';
-const LAST_DATE_KEY = '@app_last_date';
-const INACTIVE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
-
 const queryClient = new QueryClient();
 
 export default function App({ navigation }) {
@@ -53,70 +48,6 @@ export default function App({ navigation }) {
   // Check if should show mobile download page
   const shouldShowDownloadPage = Platform.OS === 'web' && windowWidth < 900;
 
-  // WEB: Check if app should reset based on inactivity or new day
-  const checkIfShouldResetApp = async () => {
-    try {
-      const lastActive = localStorage.getItem(LAST_ACTIVE_KEY);
-      const lastDate = localStorage.getItem(LAST_DATE_KEY);
-      const now = Date.now();
-      const today = new Date().toDateString();
-
-      let shouldReset = false;
-
-      if (lastDate && lastDate !== today) {
-        shouldReset = true;
-      }
-
-      if (lastActive && !shouldReset) {
-        const timeDiff = now - parseInt(lastActive);
-        if (timeDiff > INACTIVE_DURATION) {
-          shouldReset = true;
-        }
-      }
-
-      if (shouldReset) {
-        await resetAppData();
-      } else {
-        localStorage.setItem(LAST_ACTIVE_KEY, now.toString());
-        localStorage.setItem(LAST_DATE_KEY, today);
-      }
-    } catch (error) {
-      sendError('reset-app', error);
-    }
-  };
-
-  // Reset app data
-  const resetInProgress = useRef(false);
-  const resetAppData = async () => {
-    if (resetInProgress.current) return;
-    resetInProgress.current = true;
-
-    try {
-      setShowSplash(true);
-
-      await queryClient.invalidateQueries({ queryKey: ['current-user'] });
-      await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
-
-      const now = Date.now();
-      const today = new Date().toDateString();
-      localStorage.setItem(LAST_ACTIVE_KEY, now.toString());
-      localStorage.setItem(LAST_DATE_KEY, today);
-
-      if (navigationRef.current?.isReady()) {
-        const homeUrl = Linking.createURL('open/home');
-        await Linking.openURL(homeUrl);
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setShowSplash(false);
-    } catch (error) {
-      sendError('reset-app', error);
-    } finally {
-      resetInProgress.current = false;
-      setShowSplash(false);
-    }
-  };
-
   // Font loading and initialization
   useEffect(() => {
     async function prepare() {
@@ -136,8 +67,6 @@ export default function App({ navigation }) {
         } else {
           queryClient.setQueryData(['current-user'], JSON.parse(savedUser));
         }
-
-        await checkIfShouldResetApp();
       } catch (error) {
         sendError('prepare-app', error);
       } finally {
@@ -185,25 +114,25 @@ export default function App({ navigation }) {
     queryClient.clear();
   };
 
-  // WEB: Track page visibility instead of AppState
+  // Redirect to app if mobile device
   useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.hidden) {
-        // Page hidden - save timestamp
-        const now = Date.now();
-        localStorage.setItem(LAST_ACTIVE_KEY, now.toString());
-      } else {
-        // Page visible - check if should reset
-        await checkIfShouldResetApp();
-      }
-    };
+    if (!appIsReady) return;
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const isTouchDevice = /iPhone|iPad|Android/i.test(navigator.userAgent) ||
+      (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    const isNotDesktop = isTouchDevice && windowWidth < 1024;
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user]);
+    if (!isNotDesktop) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const contentId = params.get('id');
+    const isMediaPreview = window.location.pathname.includes('open/media-preview');
+
+    if (!isMediaPreview || !contentId) return;
+
+    // Try to open app
+    window.location.href = `orthomaster://open/content/${contentId}`;
+  }, [appIsReady]);
 
   // Link to screen
   const routeNameRef = React.useRef<string | undefined>(null);
@@ -211,12 +140,16 @@ export default function App({ navigation }) {
     prefixes: [prefix],
     config: {
       screens: {
-        home: 'open/home',
-        training: 'open/training',
-        media: 'open/media',
-        tools: 'open/tools',
-        company: 'open/company',
-        profile: 'open/profile',
+        home: 'home',
+        training: 'training',
+        media: {
+          screens: {
+            'flash-media-home': 'open/media-preview/:id?',
+          }
+        },
+        tools: 'tools',
+        company: 'company',
+        profile: 'profile',
       }
     }
   };
