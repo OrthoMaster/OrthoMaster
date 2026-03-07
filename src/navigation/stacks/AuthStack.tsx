@@ -22,6 +22,7 @@ export const AuthStack = () => {
         name="auth-init"
         component={AuthHome}
         options={{
+          title: 'OrthoMaster',
           headerShown: false
         }}
         
@@ -30,6 +31,7 @@ export const AuthStack = () => {
         name="auth-home"
         component={LoginView}
         options={{
+          title: 'Connexion',
           headerShown: false
         }}
       />
