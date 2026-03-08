@@ -60,7 +60,7 @@ const EmbeddedSommaire = ({
   duration: number;
   onSeek: (t: number) => void;
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (highlights.length === 0) return null;
 
