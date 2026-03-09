@@ -76,7 +76,7 @@ export const AppTab = ({ }) => {
           ),
           tabBarIcon: ({ focused }) => (
             <Image
-              style={focused ? styles.activeIcon : [styles.inactiveIcon, {width: 15}]}
+              style={focused ? styles.activeIcon : [styles.inactiveIcon, { width: 15 }]}
               resizeMode="contain"
               source={require('../../assets/v2_images/icon/nav/home.png')}
             />
@@ -98,7 +98,7 @@ export const AppTab = ({ }) => {
           ),
           tabBarIcon: ({ focused }) => (
             <Image
-              style={focused ? [styles.activeIcon, {width: 40}] : [styles.inactiveIcon, {width: 20}]}
+              style={focused ? [styles.activeIcon, { width: 40 }] : [styles.inactiveIcon, { width: 20 }]}
               resizeMode="contain"
               source={require('../../assets/v2_images/icon/nav/training.png')}
             />
@@ -108,6 +108,14 @@ export const AppTab = ({ }) => {
 
       <Tab.Screen name="media"
         component={FlashStack}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'media' }],
+            });
+          },
+        })}
         options={{
           headerShown: false,
           tabBarLabel: ({ focused }) => (
@@ -120,7 +128,7 @@ export const AppTab = ({ }) => {
           ),
           tabBarIcon: ({ focused }) => (
             <Image
-              style={focused ? [styles.activeIcon, {width: 30}] : styles.inactiveIcon}
+              style={focused ? [styles.activeIcon, { width: 30 }] : styles.inactiveIcon}
               resizeMode="contain"
               source={require('../../assets/v2_images/icon/nav/media.png')}
             />
@@ -165,10 +173,10 @@ export const AppTab = ({ }) => {
             ),
             tabBarIcon: ({ focused }) => (
               <Image
-              style={focused ? styles.activeIcon : styles.inactiveIcon}
-              resizeMode="contain"
-              source={require('../../assets/v2_images/icon/nav/company.png')}
-            />
+                style={focused ? styles.activeIcon : styles.inactiveIcon}
+                resizeMode="contain"
+                source={require('../../assets/v2_images/icon/nav/company.png')}
+              />
             )
           }}
         />
@@ -188,7 +196,7 @@ export const AppTab = ({ }) => {
           ),
           tabBarIcon: ({ focused }) => (
             <Image
-              style={focused ? [styles.activeIcon, {width: 20}] : styles.inactiveIcon}
+              style={focused ? [styles.activeIcon, { width: 20 }] : styles.inactiveIcon}
               resizeMode="contain"
               source={require('../../assets/v2_images/icon/nav/profile.png')}
             />

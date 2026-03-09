@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from "expo-linking"
 const prefix = Linking.createURL('/');
 
+import * as Updates from 'expo-updates';
+
 import * as Notifications from 'expo-notifications';
 import { AppState, Platform, View, Animated } from 'react-native';
 
@@ -57,6 +59,16 @@ export default function App({ navigation }) {
   const { data: user } = useGetUser();
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const previousUserRef = useRef(null);
+
+  // Check and apply OTA update from EAS
+  const checkForOTAUpdate = async () => {
+    if (__DEV__) return;
+    const update = await Updates.checkForUpdateAsync();
+    if (update.isAvailable) {
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    }
+  };
 
   // Check if app should reset based on inactivity or new day
   const checkIfShouldResetApp = async () => {
@@ -136,6 +148,9 @@ export default function App({ navigation }) {
   useEffect(() => {
     async function prepare() {
       try {
+        // Check OTA update
+        await checkForOTAUpdate();
+
         // Load fonts
         await Font.loadAsync({
           Roboto: require('./assets/fonts/Roboto-VariableFont_wdth,wght.ttf'),
@@ -228,6 +243,9 @@ export default function App({ navigation }) {
 
       // When app comes to foreground
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // Check OTA update
+        await checkForOTAUpdate();
+
         // Check if should reset app
         await checkIfShouldResetApp();
 

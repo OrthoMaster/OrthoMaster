@@ -26,17 +26,18 @@ const SummaryVideoFactory = ({ summary, onSelectChapter }) => {
     <View style={{ marginTop: Spacings.md }}>
       <Text style={styles.sectionHeaderText}>Accès direct</Text>
       <Text style={styles.sectionSubHeaderText}>Temps forts de la vidéo </Text>
-      <View style={{ paddingHorizontal: Spacings.lg, gap: Spacings.sm }}>
+      <View style={{ paddingHorizontal: Spacings.md, gap: Spacings.sm }}>
         {
           summary.children.map((value, index) => {
             return <TouchableOpacity
               style={{
                 flexDirection: 'row',
                 justifyContent: 'space-between',
+                alignItems: 'flex-start',
               }}
               key={index}
               onPress={() => onSelectChapter(parseInt(value.attributes.time))}>
-              <Text style={styles.chaperText}>• {value.value}</Text>
+              <Text style={styles.chaperText} numberOfLines={3}>• {value.value}</Text>
               <Ionicons name="play-circle-outline" size={20} color={Colors.primary} />
             </TouchableOpacity>
           })
@@ -154,12 +155,12 @@ export const VideoFactory = ({ video, contentInfos }) => {
   })
 
   return <View style={{}}>
-    { contentInfos.aws_object_path
-        ? <DefaultPlayer videoUrl={videoUrl.data} seekTo={videoSeekTo} />
-        : <MyYoutubePlayer videoId={video.attributes['src']} seekTo={videoSeekTo} />
+    {contentInfos.aws_object_path
+      ? <DefaultPlayer videoUrl={videoUrl.data} seekTo={videoSeekTo} />
+      : <MyYoutubePlayer videoId={video.attributes['src']} seekTo={videoSeekTo} />
     }
 
-    { videoSummary &&
+    {videoSummary &&
       <SummaryVideoFactory
         summary={videoSummary}
         onSelectChapter={(timeCode) => setVideoSeekTo(timeCode)}
@@ -196,5 +197,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Roboto',
     fontWeight: '400',
-  }
+    flex: 1,
+    flexWrap: 'wrap',
+    marginRight: 2,
+  },
 })

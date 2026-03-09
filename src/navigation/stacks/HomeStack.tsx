@@ -16,8 +16,6 @@ import { NotificationView } from '../../views/notification/NotificationView';
 import { LessonContentWithXML } from '../../views/training/LessonContentWithXML';
 import { HomeSearchView } from '../../views/home/HomeSearchView';
 
-import { PreviewMediaView } from '../../views/flash/PreviewMediaView';
-
 const forZoomFromCenter = ({ current, layouts }) => {
   return {
     cardStyle: {
@@ -125,25 +123,6 @@ export const HomeStack = () => {
           },
         }}
       />
-
-      {Platform.OS === 'web'
-        ? <HomeStackNav.Screen
-          name="flash-media-preview"
-          component={PreviewMediaView}
-          options={{
-            headerShown: false,
-            presentation: 'transparentModal',
-            animation: 'slide_from_right',
-          }}
-        />
-        : <HomeStackNav.Screen
-          name="flash-media-preview"
-          component={PreviewMediaView}
-          options={{
-            headerShown: false,
-          }}
-        />
-      }
     </HomeStackNav.Navigator>
   );
 }

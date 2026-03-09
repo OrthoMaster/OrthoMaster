@@ -122,9 +122,12 @@ export const HomeView = ({ navigation, route }) => {
   const isVideoLoading = isLoadingVideo || isFetchingVideo;
   const reloadVideos = () => { refetchVideos(); };
   const handleNavigation = (card: IContent) => {
-    navigation.push("flash-media-preview", {
-      media: card
-    })
+    navigation.navigate('media', {
+      screen: 'flash-media-preview',
+      params: {
+        media: card,
+      },
+    });
   }
 
   /** Daily content */
