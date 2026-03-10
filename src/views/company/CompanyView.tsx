@@ -214,7 +214,7 @@ export const CompanyView = ({ navigation, route }) => {
     try {
       const result = await inviteMember({ email: inviteEmail.trim() });
       if (result?.success) {
-        Alert.alert('Succès', result.message);
+        Alert.alert('Invitation evoyée', result.message);
         setInviteEmail('');
         setEmailError('');
         setShowAddMemberModal(false);
@@ -959,7 +959,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
   },
   memberRole: {
-    fontSize: 10,
+    fontSize: 12,
     color: Colors.gray,
     fontFamily: 'Poppins-Light',
   },
@@ -976,7 +976,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.sm,
   },
   memberMissingText: {
-    fontSize: 7,
+    fontSize: 9,
     fontFamily: 'Poppins-Light',
     color: Colors.danger,
   },
@@ -1165,7 +1165,7 @@ const styles = StyleSheet.create({
     marginBottom: -2,
   },
   formationMemberEmail: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins-Light',
     color: Colors.gray,
   },

@@ -156,7 +156,7 @@ export const CompanyView = ({ navigation, route }) => {
     try {
       const result = await inviteMember({ email: inviteEmail.trim() });
       if (result?.success) {
-        setMessageDialog({ title: 'Succès', message: result.message });
+        setMessageDialog({ title: 'Invitation envoyée', message: result.message });
         setShowMessageDialog(true);
         setInviteEmail('');
         setEmailError('');
