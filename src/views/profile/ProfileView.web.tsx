@@ -267,12 +267,12 @@ export const ProfileView = ({ navigation, route }) => {
                     message: "Rejoignez le premier écosystème de l'orthopédie !\n\n" +
                       user.name + " vous invite à découvrir la plateforme OrthoMaster. Une application gratuite, réservée aux professionnels de santé.\n\n" +
                       "Découvrez des centaines de contenus multidisciplinaires sur l’orthopédie :\n" +
-                      "  - Micro-formations certifiantes" +
-                      "  - Aide décisionnelle multimarque" +
-                      "  - Replays de congrès" +
-                      "  - Travaux pratiques" +
-                      "  - Interviews d'experts" +
-                      "  - Contenus pédagogiques pour patients" +
+                      "  - Micro-formations certifiantes\n" +
+                      "  - Aide décisionnelle multimarque\n" +
+                      "  - Replays de congrès\n" +
+                      "  - Travaux pratiques\n" +
+                      "  - Interviews d'experts\n" +
+                      "  - Contenus pédagogiques pour patients\n" +
                       "  - ..." +
                       "\n\nCliquez sur ce lien ci-dessous\nhttps://auth.orthomaster.fr\n\n" +
                       "Ou visitez le site internet\n",
