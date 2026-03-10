@@ -294,9 +294,18 @@ export const ProfileView = ({ navigation, route }) => {
               activeOpacity={0.8}
               onPress={() => {
                 orthomasterShare({
-                  message: "Rejoignez le premier écosystème de l'orthopédie !\n" +
-                    user.name + " vous invite à découvrir la plateforme OrthoMaster.\n" +
-                    "Cliquez sur ce lien ci-dessus et découvrez des centaines de contenus réservés aux professionnels de santé.\n\nhttps://auth.orthomaster.fr",
+                  message: "Rejoignez le premier écosystème de l'orthopédie !\n\n" +
+                    user.name + " vous invite à découvrir la plateforme OrthoMaster. Une application gratuite, réservée aux professionnels de santé.\n\n" +
+                    "Découvrez des centaines de contenus multidisciplinaires sur l’orthopédie :\n" +
+                    "  - Micro-formations certifiantes" +
+                    "  - Aide décisionnelle multimarque" +
+                    "  - Replays de congrès" +
+                    "  - Travaux pratiques" +
+                    "  - Interviews d'experts" +
+                    "  - Contenus pédagogiques pour patients" +
+                    "  - ..." +
+                    "\n\nCliquez sur ce lien ci-dessous\nhttps://auth.orthomaster.fr\n\n" +
+                    "Ou visitez le site internet\n",
                   url: "https://orthomaster.fr"
                 }, 'app invite', null)
               }}

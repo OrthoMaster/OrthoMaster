@@ -12,6 +12,7 @@ import {
   Dimensions,
   Modal,
   Image,
+  Linking
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
@@ -28,6 +29,7 @@ import { getCompany } from "../../services/v2/CompanyService";
 import { BouncingDots } from '../../component/LoadingDots';
 
 import { updateManager, removeMember, inviteMember } from '../../services/v2/CompanyService';
+import { useGetUser } from '../../../src/hooks/auth.hook';
 
 const { width } = Dimensions.get('screen');
 const isTablet = Platform.OS !== 'web' && width >= 768;
@@ -67,6 +69,7 @@ export const CompanyView = ({ navigation, route }) => {
   const circleWidth = (screenWidth - containerPadding - gapWidth) / numberOfCircles;
   const circleSize = circleWidth - 10;
 
+  const { data: user } = useGetUser();
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['company'],
     queryFn: () => getCompany(),
@@ -607,7 +610,7 @@ export const CompanyView = ({ navigation, route }) => {
             {/* Title */}
             <View style={styles.addMemberHeader}>
               <Ionicons name="person-add" size={50} color={Colors.blue} />
-              <Text style={styles.addMemberTitle}>Inviter un membre</Text>
+              <Text style={styles.addMemberTitle}>Ajouter un membre</Text>
             </View>
 
             {/* Email Input */}
@@ -655,6 +658,18 @@ export const CompanyView = ({ navigation, route }) => {
               <Ionicons name="send" size={18} color={Colors.white} />
               <Text style={styles.sendInviteButtonText}>Envoyer l'invitation</Text>
             </TouchableOpacity>
+
+            <View style={styles.regMemberWrapper}>
+              <Text style={styles.regMemberSubText}>Vous avez la possibilité de créer manuellement les comptes de vos membres via le bouton ci-dessous.</Text>
+              <TouchableOpacity
+                style={[styles.sendInviteButton, { backgroundColor: Colors.purple }]}
+                onPress={() => { Linking.openURL('https://auth.orthomaster.fr/group/members?x_id=' + user.id + '&y_id=' + data.company.id); }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="create-outline" size={18} color={Colors.white} />
+                <Text style={styles.sendInviteButtonText}>Ajouter moi-même</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1353,4 +1368,18 @@ const styles = StyleSheet.create({
   textBold: {
     fontFamily: 'Poppins-Bold',
   },
+
+  // Open member register form
+  regMemberWrapper: {
+    marginTop: Spacings.lg,
+    paddingTop: Spacings.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.line
+  },
+  regMemberSubText: {
+    fontSize: 14,
+    color: Colors.subtext2,
+    fontFamily: 'Poppins-Regular',
+    marginBottom: Spacings.sm,
+  }
 });
