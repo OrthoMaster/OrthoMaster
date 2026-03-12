@@ -94,7 +94,7 @@ export const TrainingView = ({ navigation, route }) => {
         isInitialMount.current = false;
         return;
       }
-      
+
       // Refetch data khi goBack để lấy selected_flg mới nhất
       refetch().then(() => {
         // Reset scroll state để trigger auto-scroll lại
@@ -277,10 +277,17 @@ export const TrainingView = ({ navigation, route }) => {
       // Find the Y position of this lesson
       const lessonPos = lessonPositions.current.find(pos => pos.lessonId === selectedLesson.id);
       if (lessonPos && scrollViewRef.current) {
+        // Do not scroll up
+        const targetY = Math.max(0, lessonPos.y + 5);
+        if (targetY <= currentScrollY.current) {
+          setHasScrolledToSelected(true);
+          return;
+        }
+
         // Delay to ensure smooth animation after mount
         setTimeout(() => {
           scrollViewRef.current?.scrollTo({
-            y: Math.max(0, lessonPos.y + 5),
+            y: Math.max(0, targetY),
             animated: true
           });
 
@@ -305,7 +312,9 @@ export const TrainingView = ({ navigation, route }) => {
   }, [pkg]);
 
   // Handle scroll to track current module
+  const currentScrollY = useRef(0);
   const handleScroll = (event: any) => {
+    currentScrollY.current = event.nativeEvent.contentOffset.y;
     const scrollY = event.nativeEvent.contentOffset.y;
 
     // Find which module is currently in view based on scroll position

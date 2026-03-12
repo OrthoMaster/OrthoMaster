@@ -8,8 +8,8 @@ import { PaymentMethodView } from '../../views/company/PaymentMethodView';
 import { AttachMemberView } from '../../views/company/AttachMemberView';
 import { SelectPackageView } from '../../views/company/SelectPackageView';
 import { PreviewProCartView } from '../../views/company/PreviewProCartView';
+import { AddMemberView } from '../../views/company/AddMemberView';
 import { ContractView } from '../../views/contract/ContractView';
-
 
 const CompanyStackNav = createStackNavigator();
 export const CompanyStack = () => {
@@ -63,6 +63,14 @@ export const CompanyStack = () => {
         }}
       />
 
+      <CompanyStackNav.Screen
+        name="add-member"
+        component={AddMemberView}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
     </CompanyStackNav.Navigator>
   );
 }

@@ -58,6 +58,7 @@ export const CompanyView = ({ navigation, route }) => {
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'membres' | 'formations'>('formations');
+  const [isActionLoading, setIsActionLoading] = useState(false)
 
   // Calculate dynamic circle width - 4 items per row
   const screenWidth = Dimensions.get('window').width;
@@ -211,18 +212,23 @@ export const CompanyView = ({ navigation, route }) => {
     }
 
     // Invite
+    setIsActionLoading(true);
     try {
       const result = await inviteMember({ email: inviteEmail.trim() });
       if (result?.success) {
         Alert.alert('Invitation evoyée', result.message);
         setInviteEmail('');
         setEmailError('');
+
+        setIsActionLoading(false);
         setShowAddMemberModal(false);
       } else {
         Alert.alert('Erreur', result?.message || 'Une erreur est survenue');
+        setIsActionLoading(false);
       }
     } catch (error) {
       Alert.alert('Erreur', error.message);
+      setIsActionLoading(false);
     }
   };
   // Invite member - END
@@ -653,6 +659,7 @@ export const CompanyView = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.sendInviteButton}
               onPress={handleSendInvite}
+              disabled={isActionLoading}
               activeOpacity={0.8}
             >
               <Ionicons name="send" size={18} color={Colors.white} />
@@ -663,7 +670,13 @@ export const CompanyView = ({ navigation, route }) => {
               <Text style={styles.regMemberSubText}>Vous avez la possibilité de créer manuellement les comptes de vos membres via le bouton ci-dessous.</Text>
               <TouchableOpacity
                 style={[styles.sendInviteButton, { backgroundColor: Colors.purple }]}
-                onPress={() => { Linking.openURL('https://auth.orthomaster.fr/group/members?x_id=' + user.id + '&y_id=' + data.company.id); }}
+                onPress={() => {
+                  setShowAddMemberModal(false);
+                  navigation.navigate('add-member', {
+                    webUrl: 'https://auth.orthomaster.fr/group/members?x_id=' + user.id + '&y_id=' + data.company.id,
+                    onGoBack: refetch
+                  });
+                }}
                 activeOpacity={0.8}
               >
                 <Ionicons name="create-outline" size={18} color={Colors.white} />
