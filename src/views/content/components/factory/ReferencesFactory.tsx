@@ -10,7 +10,7 @@ import Colors from "../../../../../constants/Colors";
 import Spacings from "../../../../../constants/Spacings";
 
 export const ReferencesFactory = ({ config }) => {
-  const [isTriggered, setIsTriggered] = useState(true)
+  const [isTriggered, setIsTriggered] = useState(false)
 
   return (
     <View style={styles.container}>
