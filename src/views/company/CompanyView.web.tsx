@@ -25,7 +25,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCompany } from "../../services/v2/CompanyService";
 import { BouncingDots } from '../../component/LoadingDots';
 
-import { updateManager, removeMember, inviteMember } from '../../services/v2/CompanyService';
+import { updateManager, removeMember, inviteMember, removeCompany } from '../../services/v2/CompanyService';
 import { useGetUser } from '../../../src/hooks/auth.hook';
 
 interface Member {
@@ -53,7 +53,7 @@ export const CompanyView = ({ navigation, route }) => {
 
   const circleSize = 70; // Fixed size for web
 
-  const { data: user } = useGetUser();
+  const { data: user, refetch: refetchUser } = useGetUser();
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['company'],
     queryFn: () => getCompany(),
@@ -69,6 +69,7 @@ export const CompanyView = ({ navigation, route }) => {
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [showRemoveCompanyDialog, setShowRemoveCompanyDialog] = useState(false);
   const [messageDialog, setMessageDialog] = useState({ title: '', message: '' });
 
   const isSelectedMananger = () => {
@@ -173,6 +174,27 @@ export const CompanyView = ({ navigation, route }) => {
     }
   };
   // Invite member - END
+
+  // Remove company
+  const handleRemoveCompany = async () => {
+    try {
+      const result = await removeCompany();
+      if (result?.success) {
+        refetchUser();
+        navigation.navigate('profile');
+      } else {
+        setShowAddMemberModal(false);
+        setMessageDialog({ title: 'Erreur', message: result?.message || 'Une erreur est survenue' });
+        setShowMessageDialog(true);
+      }
+    } catch (error) {
+      setShowAddMemberModal(false);
+      setMessageDialog({ title: 'Erreur', message: error.message });
+      setShowMessageDialog(true);
+    } finally {
+      setShowRemoveCompanyDialog(false);
+    }
+  }
 
   const reload = () => { refetch(); };
 
@@ -461,6 +483,17 @@ export const CompanyView = ({ navigation, route }) => {
                   />
                   <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>
                     Ajouter des formations
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.actionButtonDanger]}
+                  onPress={() => setShowRemoveCompanyDialog(true)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="trash-bin-outline" size={24} color={Colors.danger} />
+                  <Text style={[styles.actionButtonText, styles.actionButtonTextDanger]}>
+                    Supprimer mon équipe
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -805,6 +838,79 @@ export const CompanyView = ({ navigation, route }) => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      {/* Dialogs using Portal */}
+      <Portal>
+        {/* Remove Member Confirmation Dialog */}
+        <Dialog
+          visible={showRemoveDialog}
+          onDismiss={() => setShowRemoveDialog(false)}
+          style={Styles.dialogWeb}
+        >
+          <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.danger }]}>Confirmer la suppression</Dialog.Title>
+          <Dialog.Content>
+            <Text style={Styles.dialogWebContent}>Voulez-vous vraiment retirer {selectedMember?.name} de l'équipe ?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
+              onPress={() => {
+                setShowRemoveDialog(false);
+                setShowMemberModal(true);
+              }}>Annuler</Button>
+            <Button onPress={confirmRemoveMember} textColor={Colors.danger} labelStyle={{ fontFamily: 'Poppins-Medium' }}>Supprimer</Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        {/* Promote to Manager Confirmation Dialog */}
+        <Dialog
+          visible={showPromoteDialog}
+          onDismiss={() => setShowPromoteDialog(false)}
+          style={Styles.dialogWeb}
+        >
+          <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.blue }]}>Promouvoir</Dialog.Title>
+          <Dialog.Content>
+            <Text style={Styles.dialogWebContent}>Voulez-vous promouvoir {selectedMember?.name} en tant que responsable ?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
+              onPress={() => {
+                setShowPromoteDialog(false);
+                setShowMemberModal(true);
+              }}>Annuler</Button>
+            <Button
+              textColor={Colors.blue} labelStyle={{ fontFamily: 'Poppins-Medium' }}
+              onPress={confirmPromoteToManager}>Confirmer</Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        {/* Remove Company Dialog */}
+        <Dialog
+          visible={showRemoveCompanyDialog}
+          onDismiss={() => setShowRemoveCompanyDialog(false)}
+          style={Styles.dialogWeb}
+        >
+          <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.danger }]}>{'Confirmer la suppression'}</Dialog.Title>
+          <Dialog.Content>
+            <Text style={Styles.dialogWebContent}>{
+              data?.managers?.length > 1 ? "Êtes-vous sûr de vouloir supprimer votre équipe ? Elle restera active avec un autre responsable."
+                : (data?.members?.length > 0
+                  ? "Êtes-vous sûr de vouloir supprimer votre équipe ? Les autres membres la quitteront automatiquement."
+                  : "Êtes-vous sûr de vouloir supprimer votre équipe ?"
+                )
+            }</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
+              onPress={() => setShowRemoveCompanyDialog(false)}>Fermer</Button>
+            <Button
+              textColor={Colors.danger} labelStyle={{ fontFamily: 'Poppins-Medium' }}
+              onPress={() => handleRemoveCompany()}>Supprimer</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 };
@@ -935,6 +1041,14 @@ const styles = StyleSheet.create({
   },
   actionButtonTextSecondary: {
     color: Colors.purple,
+  },
+  actionButtonDanger: {
+    backgroundColor: Colors.red3,
+    borderWidth: 2,
+    borderColor: Colors.danger,
+  },
+  actionButtonTextDanger: {
+    color: Colors.danger,
   },
 
   // Members Card (Right Column)

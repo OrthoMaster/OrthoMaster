@@ -28,7 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCompany } from "../../services/v2/CompanyService";
 import { BouncingDots } from '../../component/LoadingDots';
 
-import { updateManager, removeMember, inviteMember } from '../../services/v2/CompanyService';
+import { updateManager, removeMember, inviteMember, removeCompany } from '../../services/v2/CompanyService';
 import { useGetUser } from '../../../src/hooks/auth.hook';
 
 const { width } = Dimensions.get('screen');
@@ -70,7 +70,7 @@ export const CompanyView = ({ navigation, route }) => {
   const circleWidth = (screenWidth - containerPadding - gapWidth) / numberOfCircles;
   const circleSize = circleWidth - 10;
 
-  const { data: user } = useGetUser();
+  const { data: user, refetch: refetchUser } = useGetUser();
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['company'],
     queryFn: () => getCompany(),
@@ -232,6 +232,48 @@ export const CompanyView = ({ navigation, route }) => {
     }
   };
   // Invite member - END
+
+  // Remove Company
+  const handleRemoveCompany = () => {
+    const hasOtherManager = data?.managers?.length > 1;
+    const hasMembers = data?.members?.length > 0;
+
+    const alertText = (
+      hasOtherManager
+        ? "Êtes-vous sûr de vouloir supprimer votre équipe ? Elle restera active avec un autre responsable."
+        : (hasMembers
+          ? "Êtes-vous sûr de vouloir supprimer votre équipe ? Les autres membres la quitteront automatiquement."
+          : "Êtes-vous sûr de vouloir supprimer votre équipe ?"
+        ))
+
+    Alert.alert(
+      'Confirmer la suppression',
+      alertText,
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await removeCompany();
+              if (result?.success) {
+                refetchUser();
+                navigation.navigate('profile');
+              } else {
+                Alert.alert('Erreur', result?.message || 'Une erreur est survenue');
+              }
+            } catch (error) {
+              Alert.alert('Erreur', error.message);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const reload = () => { refetch(); };
 
@@ -424,7 +466,14 @@ export const CompanyView = ({ navigation, route }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mon Équipe</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Mon Équipe</Text>
+          <View style={styles.headerRightIcons}>
+            <TouchableOpacity onPress={() => handleRemoveCompany()}>
+              <Ionicons name="trash-bin-outline" size={26} color={Colors.white} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       {/* Tab Bar */}
@@ -793,10 +842,20 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.purple,
-    paddingHorizontal: Spacings.lg,
+    height: isTablet ? 100 : 60,
+  },
+  headerContent: {
+    height: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    height: isTablet ? 100 : 60,
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacings.lg,
+  },
+  headerRightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacings.xs
   },
   headerTitle: {
     fontSize: 20,

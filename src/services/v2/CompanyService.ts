@@ -79,11 +79,11 @@ export const updateCompany = async (companyData: {
 };
 
 /**
- * Quit Company
+ * Quit Company as Member
  */
-export const quitCompany = async () => {
+export const quitCompany = async (selectedCompanyId: number) => {
   return axiosInstance
-    .patch(`${baseUrl}/company/quit`)
+    .patch(`${baseUrl}/company/quit`, {company_id : selectedCompanyId})
     .then((response) => {
       return response.data;
     })
@@ -96,6 +96,23 @@ export const quitCompany = async () => {
     });
 };
 
+/**
+ * Remove Company as Manager
+ */
+export const removeCompany = async () => {
+  return axiosInstance
+    .patch(`${baseUrl}/company/remove`)
+    .then((response) => {
+      return response.data;
+    })
+    .catch((e: AxiosError) => {
+      return {
+        success: false,
+        message: (e.response?.data as any)?.message || 'Une erreur est survenue',
+        statusCode: e.response?.status
+      };
+    });
+};
 
 /**
  * update manager of company

@@ -605,7 +605,7 @@ export const HomeSearchView = ({ navigation }) => {
               onSubmitEditing={handleSubmit}
               placeholderTextColor={Colors.gray}
               returnKeyType="search"
-              maxLength={20}
+              maxLength={30}
             />
             {/* Clear button */}
             {searchQuery.length > 0 && (

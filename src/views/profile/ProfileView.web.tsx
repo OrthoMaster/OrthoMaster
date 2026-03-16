@@ -102,7 +102,7 @@ export const ProfileView = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Dialog visibility states
-  const [visibleConfirmExit, setVisibleConfirmExit] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [visibleLogout, setVisibleLogout] = useState(false);
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '' });
 
@@ -111,10 +111,10 @@ export const ProfileView = ({ navigation, route }) => {
   };
 
   const handleConfirmExitCompany = async () => {
-    setVisibleConfirmExit(false);
     setIsLoading(true);
     try {
-      const result = await quitCompany();
+      const result = await quitCompany(selectedCompanyId);
+      setSelectedCompanyId(null);
 
       if (result?.success) {
         refetchUser();
@@ -244,7 +244,7 @@ export const ProfileView = ({ navigation, route }) => {
                       <Text style={styles.companyType}>{company.establishment?.name}</Text>
                       <Text style={styles.companyName} numberOfLines={2} ellipsizeMode='tail'>{company.name}</Text>
                     </View>
-                    <TouchableOpacity onPress={() => setVisibleConfirmExit(true)} style={styles.quitButton}>
+                    <TouchableOpacity onPress={() => setSelectedCompanyId(company.id)} style={styles.quitButton}>
                       <Ionicons name='exit-outline' size={24} color={Colors.danger} />
                     </TouchableOpacity>
                   </View>
@@ -383,11 +383,11 @@ export const ProfileView = ({ navigation, route }) => {
 
       {/* Portal Dialogs */}
       <Portal>
-        <Dialog visible={visibleConfirmExit} onDismiss={() => setVisibleConfirmExit(false)} style={Styles.dialogWeb}>
+        <Dialog visible={!!selectedCompanyId} onDismiss={() => setSelectedCompanyId(null)} style={Styles.dialogWeb}>
           <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.red }]}>Quitter l'équipe</Dialog.Title>
           <Dialog.Content><Text style={Styles.dialogWebContent}>Êtes-vous sûr de vouloir quitter cette équipe ?</Text></Dialog.Content>
           <Dialog.Actions>
-            <Button textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }} onPress={() => setVisibleConfirmExit(false)}>Annuler</Button>
+            <Button textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }} onPress={() => setSelectedCompanyId(null)}>Annuler</Button>
             <Button textColor={Colors.danger} labelStyle={{ fontFamily: 'Poppins-Medium' }} onPress={handleConfirmExitCompany}>Quitter</Button>
           </Dialog.Actions>
         </Dialog>

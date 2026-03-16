@@ -109,16 +109,17 @@ export const ProfileView = ({ navigation, route }) => {
     setIsLoading(isLoadingUser || isLoadingMore);
   }, [isLoadingUser, isLoadingMore]);
 
-  const [visibleConfirmExit, setVisibleConfirmExit] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
+  
   const handleConfirmExitCompany = async () => {
     setIsLoading(true);
     try {
-      const result = await quitCompany();
+      const result = await quitCompany(selectedCompanyId);
 
       if (result?.success) {
         refetchUser();
         refetchMore();
-        setVisibleConfirmExit(false);
+        setSelectedCompanyId(null);
         Alert.alert('Succès', result?.message);
       } else {
         Alert.alert('Erreur', result?.message || 'Une erreur est survenue');
@@ -281,7 +282,7 @@ export const ProfileView = ({ navigation, route }) => {
                     {(more?.data?.companyIsMember.postal_code || '') + ' ' + (more?.data.companyIsMember.city || '') + ' ' + (more?.data.companyIsMember.country || '')}
                   </Text> */}
                   </View>
-                  <TouchableOpacity onPress={() => setVisibleConfirmExit(true)} style={styles.quitButton}>
+                  <TouchableOpacity onPress={() => setSelectedCompanyId(company.id)} style={styles.quitButton}>
                     <Ionicons name='exit-outline' size={20} color={Colors.danger} />
                   </TouchableOpacity>
                 </View>
@@ -443,8 +444,8 @@ export const ProfileView = ({ navigation, route }) => {
 
       {/* Confirm exit company */}
       <Portal>
-        <Dialog visible={visibleConfirmExit}
-          onDismiss={() => setVisibleConfirmExit(false)}
+        <Dialog visible={!!selectedCompanyId}
+          onDismiss={() => setSelectedCompanyId(null)}
           style={{ width: 400, alignSelf: 'center' }}
         >
           <Dialog.Title style={{ fontFamily: 'Poppins-Medium', fontSize: 18, color: Colors.danger }}>Quitter l'équipe</Dialog.Title>
@@ -452,7 +453,7 @@ export const ProfileView = ({ navigation, route }) => {
             <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 14, color: Colors.text }}>Êtes-vous sûr de vouloir quitter cette équipe ?</Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }} onPress={() => setVisibleConfirmExit(false)}>Annuler</Button>
+            <Button textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }} onPress={() => setSelectedCompanyId(null)}>Annuler</Button>
             <Button textColor={Colors.danger} labelStyle={{ fontFamily: 'Poppins-Medium' }} onPress={handleConfirmExitCompany}>Quitter</Button>
           </Dialog.Actions>
         </Dialog>
