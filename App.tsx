@@ -149,7 +149,7 @@ export default function App({ navigation }) {
     async function prepare() {
       try {
         // Check OTA update
-        await checkForOTAUpdate();
+        // await checkForOTAUpdate();
 
         // Load fonts
         await Font.loadAsync({

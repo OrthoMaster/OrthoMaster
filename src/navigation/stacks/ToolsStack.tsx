@@ -8,6 +8,9 @@ import { FinalQC } from "../../views/tools/components/QueChoisir/FinalView/Final
 import { ContentDisplayer } from '../../views/content/ContentDisplayer';
 import ReturnButtonIcon from '../components/ReturnButton';
 
+import { ChatDomainView } from '../../views/chatbot/ChatDomainView';
+import { ChatView } from '../../views/chatbot/ChatView';
+
 const ToolsStackNav = createStackNavigator();
 
 export const ToolsStack = ({ navigation, route }) => {
@@ -20,9 +23,21 @@ export const ToolsStack = ({ navigation, route }) => {
     >
       <ToolsStackNav.Screen
         name="tools-home"
-        component={ToolsView}
+        component={ChatDomainView}
         options={{ headerShown: false }}
       />
+      <ToolsStackNav.Screen
+        name="chat-view"
+        component={ChatView}
+        options={{ headerShown: false }}
+      />
+
+
+      {/* <ToolsStackNav.Screen
+        name="tools-home"
+        component={ToolsView}
+        options={{ headerShown: false }}
+      /> */}
       <ToolsStackNav.Screen
         name="tools-content"
         component={ContentDisplayer}
