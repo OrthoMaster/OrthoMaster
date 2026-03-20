@@ -40,11 +40,11 @@ interface BodyDomainHotspot {
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const anatomyDomains: BodyDomainHotspot[] = [
-  { id: 'vai_l', name: 'Épaule', xPercentage: 35, yPercentage: 18, labelPosition: 'left', active: true },
-  { id: 'khuyu_l', name: 'Coude', xPercentage: 30, yPercentage: 38, labelPosition: 'left', active: false },
-  { id: 'cot_song', name: 'Colonne vertébrale', xPercentage: 50, yPercentage: 35, labelPosition: 'right', active: true },
-  { id: 'dau_goi_l', name: 'Genou', xPercentage: 42, yPercentage: 71, labelPosition: 'left', active: false },
-  { id: 'co_chan_r', name: 'Cheville', xPercentage: 58, yPercentage: 90, labelPosition: 'right', active: true },
+  { id: 'epaule', name: 'Épaule', xPercentage: 35, yPercentage: 18, labelPosition: 'left', active: true },
+  { id: 'coude', name: 'Coude', xPercentage: 30, yPercentage: 38, labelPosition: 'left', active: false },
+  { id: 'colonne', name: 'Colonne vertébrale', xPercentage: 50, yPercentage: 35, labelPosition: 'right', active: true },
+  { id: 'genou', name: 'Genou', xPercentage: 42, yPercentage: 71, labelPosition: 'left', active: false },
+  { id: 'cheville', name: 'Cheville', xPercentage: 58, yPercentage: 90, labelPosition: 'right', active: true },
 ];
 
 // ── HotspotMarker ─────────────────────────────────────────────────────────────
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(100,116,139,0.25)',
   },
   startButtonActive: {
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.blueDark,
     borderColor: Colors.blue,
     shadowColor: Colors.blue,
     shadowOffset: { width: 0, height: 0 },

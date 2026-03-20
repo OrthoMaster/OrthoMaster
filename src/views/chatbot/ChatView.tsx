@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -15,63 +16,50 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
-import Spacings from '../../../constants/Spacings';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+import {
+  fetchChatHistory,
+  sendMessage,
+  type ChatDayGroup,
+  type ChatMessage,
+} from '../../services/v2/ChatService';
+
 type MessageRole = 'user' | 'ai';
 
-interface Message {
+interface UIMessage {
   id: string;
   role: MessageRole;
   text: string;
   time: string;
 }
 
+interface UIGroup {
+  date: string;
+  label: string;
+  messages: UIMessage[];
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const now = () => {
+const nowTime = () => {
   const d = new Date();
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 };
 
-// ── Demo data ─────────────────────────────────────────────────────────────────
-const DEMO_MESSAGES: Message[] = [
-  {
-    id: '1',
-    role: 'user',
-    text: "J'ai une douleur dans le bas du dos depuis 3 jours, surtout le matin.",
-    time: '09:12',
-  },
-  {
-    id: '2',
-    role: 'ai',
-    text: "Les douleurs matinales dans le bas du dos sont souvent liées à la position de sommeil ou à une raideur articulaire. Depuis combien de temps avez-vous ce problème ?",
-    time: '09:12',
-  },
-  {
-    id: '3',
-    role: 'user',
-    text: "C'est récent, apparu après avoir porté des cartons.",
-    time: '09:14',
-  },
-  {
-    id: '4',
-    role: 'ai',
-    text: "Cela ressemble à une contracture musculaire mécanique. Avez-vous des irradiations dans la jambe, des fourmillements, ou la douleur reste-t-elle localisée dans le dos ?",
-    time: '09:14',
-  },
-  {
-    id: '5',
-    role: 'user',
-    text: "Non, juste dans le dos. Pas de jambe.",
-    time: '09:15',
-  },
-  {
-    id: '6',
-    role: 'ai',
-    text: "Bon signe — l'absence d'irradiation réduit le risque de hernie discale. Je vous conseille repos relatif, application de chaleur et étirements doux. Si la douleur persiste au-delà de 7 jours, une consultation est recommandée.",
-    time: '09:16',
-  },
-];
+/** Chuyển ChatMessage (Laravel) → UIMessage (local) */
+const toUIMessage = (m: ChatMessage): UIMessage => ({
+  id: String(m.id),
+  role: m.role === 'bot' ? 'ai' : 'user',
+  text: m.content,
+  time: m.time,
+});
+
+/** Chuyển ChatDayGroup[] (Laravel) → UIGroup[] (local) */
+const toUIGroups = (groups: ChatDayGroup[]): UIGroup[] =>
+  groups.map((g) => ({
+    date: g.date,
+    label: g.label,
+    messages: g.messages.map(toUIMessage),
+  }));
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 const DateDivider = ({ label }: { label: string }) => (
@@ -88,7 +76,7 @@ const AIAvatar = () => (
   </View>
 );
 
-const MessageBubble = ({ message }: { message: Message }) => {
+const MessageBubble = ({ message }: { message: UIMessage }) => {
   const isUser = message.role === 'user';
   return (
     <View style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowAI]}>
@@ -108,77 +96,188 @@ const MessageBubble = ({ message }: { message: Message }) => {
   );
 };
 
+// ── Main ──────────────────────────────────────────────────────────────────────
 export const ChatView = ({ navigation, route }) => {
-  const domainName = route?.params?.domainName ?? 'Cheville';
+  const domainId = route?.params?.domainId ?? '';
   const planName = 'Starter';
 
   const insets = useSafeAreaInsets();
+  const flatListRef = useRef<FlatList>(null);
 
-  const [messages, setMessages] = useState<Message[]>(DEMO_MESSAGES);
+  // ── State ────────────────────────────────────────────────────────────────────
+  const [groups, setGroups] = useState<UIGroup[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
 
-  // ── Keyboard listeners ──────────────────────────────────────────────────────
+  const conversationIdRef = useRef<string | null>(route?.params?.conversationId ?? null);
+  const nextCursorRef = useRef<number | null>(null);
+  const hasMoreRef = useRef(false);
+  const isLoadingMoreRef = useRef(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(!!conversationIdRef.current);
+
+  // ── Keyboard listeners ────────────────────────────────────────────────────────
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
       setKeyboardOpen(true);
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      scrollToBottom();
     });
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
       setKeyboardOpen(false);
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      scrollToBottom();
     });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
+    return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
   const scrollToBottom = () => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
-  // ── Send ────────────────────────────────────────────────────────────────────
-  const handleSend = () => {
+  // ── Load lịch sử lần đầu (nếu có conversationId từ route) ───────────────────
+  useEffect(() => {
+    if (!conversationIdRef.current) return;
+    loadHistory();
+  }, []);
+
+  const loadHistory = async (cursor?: number | null) => {
+    if (!conversationIdRef.current) return;
+    try {
+      const res = await fetchChatHistory(conversationIdRef.current, cursor);
+      hasMoreRef.current = res.pagination.has_more;
+      nextCursorRef.current = res.pagination.next_cursor;
+
+      if (!cursor) {
+        // Lần đầu: set toàn bộ
+        setGroups(toUIGroups(res.data));
+        setTimeout(scrollToBottom, 200);
+      } else {
+        // Scroll up load thêm: prepend vào đầu, merge group cùng ngày nếu có
+        setGroups((prev) => mergeGroups(toUIGroups(res.data), prev));
+      }
+    } catch (e) {
+      console.error('loadHistory error', e);
+    } finally {
+      setIsInitialLoading(false);
+      setIsLoadingMore(false);
+      isLoadingMoreRef.current = false;
+    }
+  };
+
+  /**
+   * Merge oldGroups (mới load) vào đầu currentGroups.
+   * Nếu ngày cuối của oldGroups trùng ngày đầu của currentGroups → gộp messages.
+   */
+  const mergeGroups = (oldGroups: UIGroup[], currentGroups: UIGroup[]): UIGroup[] => {
+    if (!oldGroups.length) return currentGroups;
+    if (!currentGroups.length) return oldGroups;
+
+    const lastOld = oldGroups[oldGroups.length - 1];
+    const firstCurrent = currentGroups[0];
+
+    if (lastOld.date === firstCurrent.date) {
+      const merged: UIGroup = {
+        ...lastOld,
+        messages: [...lastOld.messages, ...firstCurrent.messages],
+      };
+      return [...oldGroups.slice(0, -1), merged, ...currentGroups.slice(1)];
+    }
+    return [...oldGroups, ...currentGroups];
+  };
+
+  const handleScrollToTop = useCallback(() => {
+    if (isLoadingMoreRef.current || !hasMoreRef.current) return;
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    loadHistory(nextCursorRef.current);
+  }, []);
+
+  // ── Send ─────────────────────────────────────────────────────────────────────
+  const handleSend = async () => {
     const trimmed = inputText.trim();
     if (!trimmed || isSending) return;
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
+    const tempId = `temp-${Date.now()}`;
+    const userMsg: UIMessage = {
+      id: tempId,
       role: 'user',
       text: trimmed,
-      time: now(),
+      time: nowTime(),
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    // Thêm tin user vào today group ngay lập tức (optimistic)
+    appendMessage(userMsg);
     setInputText('');
     setIsSending(true);
     scrollToBottom();
 
-    // TODO: remplacer par vrai appel API
-    setTimeout(() => {
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
+    try {
+      const res = await sendMessage(trimmed, domainId, conversationIdRef.current);
+
+      if (!conversationIdRef.current) {
+        conversationIdRef.current = res.chat_conversation_id;
+      }
+
+      const botMsg: UIMessage = {
+        id: String(res.message_id),
         role: 'ai',
-        text: "Je traite votre question… (réponse IA à intégrer)",
-        time: now(),
+        text: res.answer,
+        time: new Date(res.sent_at).toLocaleTimeString('fr-FR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
       };
-      setMessages(prev => [...prev, aiMsg]);
-      setIsSending(false);
+
+      appendMessage(botMsg);
       scrollToBottom();
-    }, 1200);
+    } catch (e) {
+      console.error('sendMessage error', e);
+      // Hiện lỗi dưới dạng tin bot tạm
+      appendMessage({
+        id: `err-${Date.now()}`,
+        role: 'ai',
+        text: 'Erreur de connexion. Veuillez réessayer.',
+        time: nowTime(),
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
+
+  /**
+   * Thêm message vào group "Hôm nay".
+   * Nếu group chưa tồn tại thì tạo mới.
+   */
+  const appendMessage = (msg: UIMessage) => {
+    const todayDate = new Date().toISOString().split('T')[0]; // "2025-03-20"
+    setGroups((prev) => {
+      const existing = [...prev];
+      const todayIdx = existing.findIndex((g) => g.date === todayDate);
+      if (todayIdx >= 0) {
+        existing[todayIdx] = {
+          ...existing[todayIdx],
+          messages: [...existing[todayIdx].messages, msg],
+        };
+        return existing;
+      }
+      // Tạo group mới cho hôm nay
+      return [...existing, { date: todayDate, label: "Aujourd'hui", messages: [msg] }];
+    });
+  };
+
+  // ── Flatten groups → items cho FlatList ──────────────────────────────────────
+  type FlatItem =
+    | { type: 'divider'; date: string; label: string; key: string }
+    | { type: 'message'; data: UIMessage; key: string };
+
+  const flatItems: FlatItem[] = groups.flatMap((g) => [
+    { type: 'divider', date: g.date, label: g.label, key: `div-${g.date}` },
+    ...g.messages.map((m) => ({ type: 'message' as const, data: m, key: m.id })),
+  ]);
 
   const canSend = inputText.trim().length > 0 && !isSending;
 
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" />
@@ -199,7 +298,7 @@ export const ChatView = ({ navigation, route }) => {
             <View style={styles.activeDot} />
             <Text style={styles.headerDomain} numberOfLines={1}>Oscar</Text>
           </View>
-          <Text style={styles.headerSub}>Assistance IA - Domain {domainName}</Text>
+          <Text style={styles.headerSub}>Assistance IA</Text>
         </View>
 
         <View style={styles.planChip}>
@@ -215,30 +314,53 @@ export const ChatView = ({ navigation, route }) => {
         keyboardVerticalOffset={0}
       >
         {/* ── MESSAGES ── */}
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.messageList}
-          showsVerticalScrollIndicator={false}
-          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-          onContentSizeChange={scrollToBottom}
-          ListHeaderComponent={<DateDivider label="Aujourd'hui" />}
-          renderItem={({ item }) => <MessageBubble message={item} />}
-          ListFooterComponent={
-            isSending ? (
-              <View style={[styles.msgRow, styles.msgRowAI]}>
-                <View style={styles.aiLabelRow}>
-                  <AIAvatar />
-                  <Text style={styles.aiName}>Assistant IA</Text>
+        {isInitialLoading ? (
+          <View style={styles.loadingCenter}>
+            <ActivityIndicator color="#00A3FF" />
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={flatItems}
+            keyExtractor={(item) => item.key}
+            contentContainerStyle={styles.messageList}
+            showsVerticalScrollIndicator={false}
+            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+            onContentSizeChange={scrollToBottom}
+            // Scroll lên đầu → load thêm tin cũ
+            onScrollToIndexFailed={() => {}}
+            onScroll={({ nativeEvent }) => {
+              if (nativeEvent.contentOffset.y < 60) handleScrollToTop();
+            }}
+            scrollEventThrottle={300}
+            ListHeaderComponent={
+              isLoadingMore ? (
+                <View style={styles.loadingMore}>
+                  <ActivityIndicator size="small" color="#00A3FF" />
                 </View>
-                <View style={[styles.bubble, styles.bubbleAI, styles.typingBubble]}>
-                  <Text style={styles.typingDots}>• • •</Text>
+              ) : null
+            }
+            renderItem={({ item }) => {
+              if (item.type === 'divider') {
+                return <DateDivider label={item.label} />;
+              }
+              return <MessageBubble message={item.data} />;
+            }}
+            ListFooterComponent={
+              isSending ? (
+                <View style={[styles.msgRow, styles.msgRowAI]}>
+                  <View style={styles.aiLabelRow}>
+                    <AIAvatar />
+                    <Text style={styles.aiName}>Assistant IA</Text>
+                  </View>
+                  <View style={[styles.bubble, styles.bubbleAI, styles.typingBubble]}>
+                    <Text style={styles.typingDots}>• • •</Text>
+                  </View>
                 </View>
-              </View>
-            ) : null
-          }
-        />
+              ) : null
+            }
+          />
+        )}
 
         {/* ── INPUT ── */}
         <View
@@ -282,11 +404,20 @@ export const ChatView = ({ navigation, route }) => {
   );
 };
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+// ── Styles (không thay đổi so với bản gốc) ───────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.blackBackground,
+  },
+  loadingCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingMore: {
+    paddingVertical: 12,
+    alignItems: 'center',
   },
 
   // ── Header
@@ -474,7 +605,6 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.07)',
     paddingHorizontal: 16,
     paddingTop: 10,
-    // paddingBottom set dynamically via insets
   },
   inputRow: {
     flexDirection: 'row',
