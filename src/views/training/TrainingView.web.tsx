@@ -380,6 +380,7 @@ export const TrainingView = ({ navigation, route }) => {
     return (
       <TouchableOpacity
         onPress={() => handleShowLesson(lesson)}
+        disabled={!lesson.content_id}
         style={[
           styles.lessonItem,
           { marginLeft: `${indentPercentage}%` },
@@ -417,7 +418,14 @@ export const TrainingView = ({ navigation, route }) => {
           />
         </Animated.View>
 
-        <Text style={styles.lessonTitle}>{lesson.title}</Text>
+        {lesson.content_id
+          ? <Text style={styles.lessonTitle}>{lesson.title}</Text>
+          : <>
+            <Text style={[styles.lessonTitle, { marginBottom: Spacings.xs }]}>{lesson.title}</Text>
+            <Text style={styles.lessonCommingSoonTitle}>Bientôt disponible</Text>
+          </>
+        }
+
       </TouchableOpacity>
     );
   };
@@ -855,5 +863,21 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignSelf: 'center',
     position: 'absolute',
+  },
+
+  // Comming soon label
+  lessonCommingSoonTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    fontWeight: '400',
+    marginBottom: Spacings.md,
+    backgroundColor: Colors.yellowDark,
+    color: Colors.white,
+    marginLeft: -20,
+    textAlign: 'center',
+    paddingVertical: Spacings.xxs,
+    paddingHorizontal: Spacings.xs,
+    borderRadius: 8,
+    opacity: 0.7
   },
 });
