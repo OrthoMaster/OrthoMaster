@@ -10,6 +10,8 @@ import { ChangePasswordView } from '../../views/profile/ChangePasswordView';
 import { SettingsView } from '../../views/profile/SettingsView';
 import { DocumentView } from '../../views/profile/DocumentView';
 
+import { InvoiceView } from '../../views/profile/InvoiceView';
+
 import { NewCompanyView } from '../../views/company/NewCompanyView';
 import { NotificationView } from '../../views/notification/NotificationView';
 
@@ -79,6 +81,15 @@ export const ProfileStack = () => {
       <ProfileStackNav.Screen
         name="document-view"
         component={DocumentView}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+
+      <ProfileStackNav.Screen
+        name="invoice-view"
+        component={InvoiceView}
         options={{
           headerShown: false,
           animation: 'slide_from_right',

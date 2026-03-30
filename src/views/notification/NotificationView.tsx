@@ -45,6 +45,7 @@ interface Notification {
   type: string;
   action: string;
   entity_type: string;
+  entity_id: string;
   read_flg: boolean;
   created_at: string;
   actor?: {
@@ -59,6 +60,8 @@ interface SwipeableNotificationProps {
   onMarkAsRead: (id: string) => void;
   onAccept?: (id: string) => void;
   onRefuse?: (id: string) => void;
+  navigation?: any;
+  swipeEnabled?: boolean;
 }
 
 const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
@@ -66,7 +69,9 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
   onDelete,
   onMarkAsRead,
   onAccept,
-  onRefuse
+  onRefuse,
+  navigation,
+  swipeEnabled = true,
 }) => {
   const translateX = useRef(new Animated.Value(0)).current;
   const deleteOpacity = useRef(new Animated.Value(0)).current;
@@ -100,6 +105,7 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
+        if (!swipeEnabled) return false;
         return Math.abs(gestureState.dx) > 5 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
       },
       onPanResponderGrant: () => {
@@ -164,6 +170,10 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
   const handlePress = () => {
     if (!notification.read_flg) {
       onMarkAsRead(notification.id);
+    }
+
+    if (notification.entity_type == 'FifplInvoice') {
+      navigation.navigate('invoice-view', { invoiceId: notification.entity_id });
     }
   };
 
@@ -371,7 +381,7 @@ export const NotificationView = ({ navigation, route }) => {
           style: 'destructive',
           onPress: () => {
             deleteAllNotification();
-            setNotifications([]);
+            refetch();
           }
         }
       ]
@@ -470,6 +480,8 @@ export const NotificationView = ({ navigation, route }) => {
                   onMarkAsRead={handleMarkAsRead}
                   onAccept={() => handleAccept(notification.id, notification.entity_type)}
                   onRefuse={handleRefuse}
+                  navigation={navigation}
+                  swipeEnabled={notification.entity_type !== 'FifplInvoice'}
                 />
               ))}
             </View>

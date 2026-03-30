@@ -356,6 +356,9 @@ export default function App({ navigation }) {
           screens: {
             "home": {
               path: "open/daily-content/:action",
+            },
+            "invoice-view": {
+              path: 'open/invoice/:invoiceId',
             }
           },
         },

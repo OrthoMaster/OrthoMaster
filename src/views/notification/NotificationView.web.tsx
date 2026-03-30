@@ -32,12 +32,13 @@ interface Notification {
   type: string;
   action: string;
   entity_type: string;
+  entity_id: string;
   read_flg: boolean;
   created_at: string;
   actor?: {
     name?: string;
     first_name?: string;
-  }
+  },
 }
 
 interface NotificationItemProps {
@@ -46,6 +47,8 @@ interface NotificationItemProps {
   onMarkAsRead: (id: string) => void;
   onAccept?: (id: string) => void;
   onRefuse?: (id: string) => void;
+  navigation?: any;
+  deletable?: boolean;
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({
@@ -53,11 +56,17 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   onDelete,
   onMarkAsRead,
   onAccept,
-  onRefuse
+  onRefuse,
+  navigation,
+  deletable = true,
 }) => {
   const handlePress = () => {
     if (!notification.read_flg) {
       onMarkAsRead(notification.id);
+    }
+
+    if (notification.entity_type == 'FifplInvoice') {
+      navigation.navigate('invoice-view', { invoiceId: notification.entity_id });
     }
   };
 
@@ -117,12 +126,14 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         </View>
 
         {/* Delete Button */}
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => onDelete(notification.id)}
-        >
-          <Ionicons name="close" size={24} color={Colors.danger} />
-        </TouchableOpacity>
+        {deletable &&
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => onDelete(notification.id)}
+          >
+            <Ionicons name="close" size={24} color={Colors.danger} />
+          </TouchableOpacity>
+        }
       </TouchableOpacity>
     </View>
   );
@@ -202,7 +213,7 @@ export const NotificationView = ({ navigation, route }) => {
   const confirmDeleteAll = () => {
     setShowDeleteAllDialog(false);
     deleteAllNotification();
-    setNotifications([]);
+    refetch();
   };
 
   const handleClose = () => {
@@ -295,6 +306,8 @@ export const NotificationView = ({ navigation, route }) => {
                       onMarkAsRead={handleMarkAsRead}
                       onAccept={() => handleAccept(notification.id, notification.entity_type)}
                       onRefuse={handleRefuse}
+                      navigation={navigation}
+                      deletable={notification.entity_type != 'FifplInvoice'}
                     />
                   ))}
                 </View>

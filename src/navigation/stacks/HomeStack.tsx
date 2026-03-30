@@ -4,7 +4,6 @@ import { Platform } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { HomeView } from '../../views/home/HomeView';
-import SearchView from '../../views/search/SearchView';
 import { QaLayout } from '../../views/home/QaLayout';
 
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
@@ -15,6 +14,8 @@ import ReturnButtonIcon from '../components/ReturnButton';
 import { NotificationView } from '../../views/notification/NotificationView';
 import { LessonContentWithXML } from '../../views/training/LessonContentWithXML';
 import { HomeSearchView } from '../../views/home/HomeSearchView';
+
+import { InvoiceView } from '../../views/profile/InvoiceView';
 
 const forZoomFromCenter = ({ current, layouts }) => {
   return {
@@ -123,6 +124,16 @@ export const HomeStack = () => {
           },
         }}
       />
+
+      <HomeStackNav.Screen
+        name="invoice-view"
+        component={InvoiceView}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+
     </HomeStackNav.Navigator>
   );
 }

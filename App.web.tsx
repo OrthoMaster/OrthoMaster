@@ -140,7 +140,12 @@ export default function App({ navigation }) {
     prefixes: [prefix],
     config: {
       screens: {
-        home: 'home',
+        home: {
+          screens: {
+            'home': 'home',
+            'invoice-view': 'open/invoice/:invoiceId',
+          }
+        },
         training: 'training',
         media: {
           screens: {

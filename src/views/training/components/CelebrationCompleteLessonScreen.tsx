@@ -51,10 +51,6 @@ const successElements = [
     imgUrl: 'https://media.giphy.com/media/1yjZXySg7tSohpcmUM/giphy.gif'
   },
   {
-    message: "Bravo ! Personne ne peut arrêter !",
-    imgUrl: 'https://thumbs.gfycat.com/DizzyInnocentIberianmole-size_restricted.gif'
-  },
-  {
     message: "Tu es en route pour les étoiles !",
     imgUrl: 'https://media.giphy.com/media/sGBMzyeEzKpySD74qv/giphy.gif'
   },

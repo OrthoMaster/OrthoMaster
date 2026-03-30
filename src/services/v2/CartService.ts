@@ -309,3 +309,44 @@ export const signContract = async (signData: any) => {
         throw e;
     });
 };
+
+/**
+ * Invoice
+ */
+export const getFifplInvoice = async (invoiceId: string) => {
+    return axiosInstance.get(`${baseUrl}/payments/invoices/fifpl/${invoiceId}`)
+        .then((response) => {
+            return response.data?.data;
+        }).catch((e: AxiosError) => {
+            throw e;
+        });
+}
+
+export const createFifplPaymentIntent = async (
+    id: string,
+) => {
+    return axiosInstance.post(`${baseUrl}/payments/invoices/fifpl/create-intent`,
+        { id }, {
+        validateStatus: (status) => {
+            // status code 200-499 is success
+            return status >= 200 && status < 500;
+        }
+    }).then((response) => {
+        if (response.data?.success === true) {
+            return {
+                success: true,
+                invoice_id: response.data.invoice_id,
+                client_secret: response.data.client_secret,
+                payment_intent_id: response.data.payment_intent_id,
+                publishable_key: response.data.publishable_key,
+            };
+        }
+
+        return {
+            success: false,
+            message: response.data.message
+        }
+    }).catch((e: AxiosError) => {
+        throw e;
+    });
+};
