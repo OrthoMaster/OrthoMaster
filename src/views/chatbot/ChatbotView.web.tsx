@@ -12,6 +12,8 @@ import {
   Pressable,
 } from "react-native";
 import { Portal, Dialog, Button, ActivityIndicator } from "react-native-paper";
+import { Feather } from '@expo/vector-icons';
+
 import {
   currentSubscription,
   askNotebook,
@@ -367,7 +369,7 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
     <View style={styles.aiRow}>
       <View style={styles.aiMessageContent}>
         {/* Name only — no avatar icon */}
-        <Text style={styles.aiSenderName}>Oscar</Text>
+        <Text style={styles.aiSenderName}>OrthoMaster IA</Text>
         {message.content.length > 0 &&
           <WebMarkdown text={message.content} />
         }
@@ -559,12 +561,17 @@ export const ChatbotView = ({ navigation, route }: any) => {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
+          <TouchableOpacity
+            onPress={() => { navigation.goBack() }}
+          >
+            <Feather name="arrow-left" size={26} color={Colors.primary} />
+          </TouchableOpacity>
           <Text style={styles.brandName}>OrthoMaster IA</Text>
         </View>
         <View style={styles.headerCenter}>
           <View style={styles.contextChip}>
             <View style={styles.contextDot} />
-            <Text style={styles.contextLabel}>Oscar - Cheville</Text>
+            <Text style={styles.contextLabel}>Domaine Cheville</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
@@ -681,7 +688,7 @@ const styles = StyleSheet.create({
   },
   headerBorder: { height: 1, backgroundColor: COLORS.border },
   headerLeft: { flex: 1, flexDirection: "row", alignItems: "center" },
-  brandName: { color: COLORS.accent, fontSize: 26, fontFamily: FONT.bold, letterSpacing: -0.3 },
+  brandName: { color: COLORS.accent, fontSize: 26, fontFamily: FONT.bold, marginLeft: 5 },
   headerCenter: { flex: 1, alignItems: "center" },
   contextChip: {
     flexDirection: "row", alignItems: "center", gap: 7,
