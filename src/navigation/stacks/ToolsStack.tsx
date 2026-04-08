@@ -8,6 +8,8 @@ import { FinalQC } from "../../views/tools/components/QueChoisir/FinalView/Final
 import { ContentDisplayer } from '../../views/content/ContentDisplayer';
 import ReturnButtonIcon from '../components/ReturnButton';
 
+import { ChatbotView } from '../../views/chatbot/ChatbotView';
+
 const ToolsStackNav = createStackNavigator();
 
 export const ToolsStack = ({ navigation, route }) => {
@@ -60,6 +62,11 @@ export const ToolsStack = ({ navigation, route }) => {
         options={{ headerShown: false, title: 'Que choisir ?' }}
       />
 
+      <ToolsStackNav.Screen
+        name={'chatbot-view'}
+        component={ChatbotView}
+        options={{ headerShown: false, title: 'Assitance IA' }}
+      />
     </ToolsStackNav.Navigator>
   );
 }

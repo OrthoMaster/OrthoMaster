@@ -30,7 +30,13 @@ export const QueChoisirButton: React.FC<{ onPress: () => any }> = ({ onPress }) 
         backgroundColor: '#33C0B7',
         padding: 20,
         borderRadius: 15,
-        marginVertical: 10,
+        height: 220,
+        minWidth: 300,
+        shadowColor: '#979797',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.8,
+        shadowRadius: 8,
+        elevation: 4,
       }}
       onPress={onPress}
     >

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StatusBar,
   View,
   StyleSheet,
   Dimensions,
   Text,
-  ScrollView
+  FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
@@ -13,16 +13,42 @@ import Modal from 'react-native-modal';
 import { QueChoisirMenu, QueChoisirButton } from './components/QueChoisir/StartMenu/QueChoisirMenu';
 import { GuidePatientMenu, GuidePatientButton } from './components/GuidePatient/GuidePatientMenu';
 import { LearningSupportMenu, LearningSupportButton } from './components/LearningSupport/LearningSupport';
+import { ChatbotButton } from './components/Chatbot/ChatbotButton';
+
+import { me } from '../../services/v2/AuthService';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 const { width } = Dimensions.get('window');
 
+
 export const ToolsView = ({ navigation }) => {
+
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const fetchUser = async () => {
+      const data = await me();
+      setUser(data);
+      setIsLoading(false);
+    };
+    fetchUser();
+  }, []);
+
   const [showQueChoisirMenu, setShowQueChoisirMenu] = useState(false)
   const [showGuidePatientMenu, setShowGuidePatientMenu] = useState(false)
   const [showLearningSupportMenu, setShowLearningSupportMenu] = useState(false)
+
+  const tools = [
+    { key: 'learning', component: <LearningSupportButton onPress={() => setShowLearningSupportMenu(true)} /> },
+    { key: 'queChoisir', component: <QueChoisirButton onPress={() => setShowQueChoisirMenu(true)} /> },
+    { key: 'guidePatient', component: <GuidePatientButton onPress={() => setShowGuidePatientMenu(true)} /> },
+    ...(user?.has_subscription
+      ? [{ key: 'chatbot', component: <ChatbotButton onPress={() => navigation.navigate('chatbot-view')} /> }]
+      : []
+    ),
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -34,11 +60,19 @@ export const ToolsView = ({ navigation }) => {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView} contentContainerStyle={styles.body}>
-        <LearningSupportButton onPress={() => { setShowLearningSupportMenu(true) }} />
-        <QueChoisirButton onPress={() => { setShowQueChoisirMenu(true) }} />
-        <GuidePatientButton onPress={() => { setShowGuidePatientMenu(true) }} />
-      </ScrollView>
+      <FlatList
+        key={user?.has_subscription ? 'has-subscription' : 'normal'}
+        data={tools}
+        numColumns={2}
+        keyExtractor={(item) => item.key}
+        renderItem={({ item }) => (
+          <View style={styles.column}>
+            {item.component}
+          </View>
+        )}
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+      />
 
       <Modal style={styles.modal} isVisible={showQueChoisirMenu}>
         <QueChoisirMenu onClose={() => {
@@ -57,7 +91,7 @@ export const ToolsView = ({ navigation }) => {
       <Modal style={styles.modal} isVisible={showGuidePatientMenu}>
         <GuidePatientMenu onClose={() => { setShowGuidePatientMenu(false) }} />
       </Modal>
-      
+
       <Modal style={styles.modal} isVisible={showLearningSupportMenu}>
         <LearningSupportMenu
           onClose={() => { setShowLearningSupportMenu(false) }}
@@ -95,17 +129,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
   },
-  scrollView: {
+  column: {
     flex: 1,
-    height: '100%',
+    margin: Spacings.md,
   },
+
   body: {
     gap: Spacings.sm,
     justifyContent: 'center',
     backgroundColor: Colors.grayLight,
     paddingTop: Spacings.xxl,
     paddingBottom: Spacings.lg,
-    paddingHorizontal: (width * 0.3) / 2,
+    paddingHorizontal: Spacings.xxl,
   },
   modal: {
     width: 700,

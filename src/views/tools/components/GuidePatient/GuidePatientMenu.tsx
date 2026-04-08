@@ -28,6 +28,11 @@ export const GuidePatientButton: React.FC<{ onPress: () => any }> = ({ onPress }
       backgroundColor: '#FBB200',
       padding: 20,
       borderRadius: 15,
+      shadowColor: '#979797',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.8,
+      shadowRadius: 8,
+      elevation: 4,
     }}
   >
     <Image

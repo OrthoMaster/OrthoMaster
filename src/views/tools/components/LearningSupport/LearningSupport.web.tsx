@@ -239,6 +239,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLOR,
     padding: Spacings.md,
     borderRadius: 16,
+    height: 220,
+    minWidth: 300,
+    shadowColor: '#979797',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 4,
   },
   bigButtonImage: {
     width: 100,
@@ -249,7 +256,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
     letterSpacing: 1,
     color: Colors.white,
-    fontFamily: 'Poppins-Medium'
+    fontFamily: 'Poppins-Medium',
+    textAlign: "center",
   },
 
   // Loading view
