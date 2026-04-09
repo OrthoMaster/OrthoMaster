@@ -7,7 +7,8 @@ import {
   Image,
   Linking,
   Dimensions,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -18,6 +19,11 @@ import { getProductsBrands } from '../../../../../services/ProductsService';
 import FiltersQC from './components/Filters/FiltersQC';
 import FiltersButton from './components/Filters/FiltersButton';
 import CategoriesSelection from './components/Categories/CategoriesSelection';
+
+import {
+  getSelectedProductBrands,
+  updateSelectedProductBrands
+} from "../../../../../services/v2/ToolService";
 
 const { width: screenWidth } = Dimensions.get('screen');
 const isWeb = Platform.OS === 'web';
@@ -76,25 +82,50 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
       })
       return res
     })
-  })
+  });
 
-  const handleFilters = (newFilters) => {
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const fetchSelectedBrands = async () => {
+      try {
+        const data = await getSelectedProductBrands();
+        if (data) {
+          setFilters(prev => ({
+            ...prev,
+            queChoisir: {
+              ...prev.queChoisir,
+              selected: data
+            }
+          }));
+        }
+      } catch (e) {
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSelectedBrands();
+  }, []);
+
+  const handleFilters = async (newFilters) => {
     setFilters({
       ...filters,
       queChoisir: {
         ...filters.queChoisir,
         selected: newFilters
       }
-    })
+    });
+    if (newFilters.length > 0) {
+      await updateSelectedProductBrands(newFilters);
+    }
   }
 
-  useEffect(() => {
-    AsyncStorage.getItem("qcFilters", (err, result) => {
-      if (result) {
-        handleFilters(result.split(','))
-      }
-    })
-  }, [])
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#fff" />
+      </SafeAreaView>
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container}>

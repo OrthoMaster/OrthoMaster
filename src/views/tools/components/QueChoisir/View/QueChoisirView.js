@@ -297,7 +297,18 @@ export const QueChoisirView = ({ navigation, route }) => {
                                         setQuestionIndex(nextCustomIndex.charCodeAt(0) - 65);
                                     } else {
                                         if (globalSteps.length - 1 == questionIndex) {
-                                            setIsFinished(true)
+                                            if (isFinished) {
+                                                navigation.navigate('tools-que-choisir-final', {
+                                                    content: {
+                                                        userHistory,
+                                                        filtredProducts,
+                                                    },
+                                                    filtersConfig,
+                                                    category
+                                                });
+                                            } else {
+                                                setIsFinished(true);
+                                            }
                                         } else {
                                             setQuestionIndex(questionIndex + 1)
                                         }
