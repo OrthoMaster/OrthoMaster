@@ -9,12 +9,16 @@ import {
   StyleSheet,
   Dimensions,
   Linking,
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
+const COLOR_BLUE = '#0D253E';
+const COLOR_GREEN = '#97D253';
+
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -121,7 +125,7 @@ const SECTIONS: Section[] = [
   {
     id: 'date',
     title: 'DATE ET LIEU',
-    expandable: false,
+    expandable: true,
     content: [
       {
         type: 'text',
@@ -132,7 +136,7 @@ const SECTIONS: Section[] = [
   {
     id: 'inscription',
     title: 'CANDIDATURE ET INSCRIPTION',
-    expandable: false,
+    expandable: true,
     content: [
       {
         type: 'text',
@@ -233,32 +237,81 @@ function AccordionItem({ section }: { section: Section }) {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export function DiplomaModalContent({ onPreReg }: { onPreReg: () => void }) {
+export function DiplomaModalContent({ onPreReg, onClose }: { onPreReg: () => void, onClose: () => void }) {
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Highlight quote */}
-      <View style={[styles.note, { backgroundColor: Colors.blue3 }]}>
-        <Text style={[styles.noteText, { color: Colors.blueDark }]}>
-          « Ce diplôme n'est pas une formation classique, c'est une méthode pour transformer
-          votre activité orthopédie en vrai pôle mobilité rentable,
-          avec des actions concrètes chaque semaine. »
-        </Text>
+    <View style={styles.addPkgInfoModalOverlay}>
+      <View style={styles.addPkgInfoModalContent}>
+        {/* Header */}
+        <View style={styles.addPkgInfoHeader}>
+          <View style={styles.addPreRegTitleWrapper}>
+            <Text style={styles.addPreRegTitle}>DIPLÔME</Text>
+            <Text style={styles.addPreRegTitle}>CONSEILLER EXPERT</Text>
+            <Text style={styles.addPreRegTitle2}>EN ORTHOPÉDIE</Text>
+            <Text style={styles.addPreRegSubTitle}>Le moteur de transformation de{'\n'}
+              votre officine en pôle mobilité{'\n'}
+              par un référent interne</Text>
+          </View>
+          <TouchableOpacity
+            onPress={onClose}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.addPkgInfoCloseButton}
+          >
+            <Ionicons name="close" size={30} color={Colors.gray} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Content */}
+        <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.65 }}
+          contentContainerStyle={{ padding: Spacings.md }}
+          showsVerticalScrollIndicator={false}>
+          <View>
+            <View style={acc.bulletRow2}>
+              <Image
+                style={acc.dotImage}
+                resizeMode="contain"
+                source={require('../../../../assets/v2_images/icon/icon-prereg-diploma-1.png')}
+              />
+              <Text style={acc.bulletText}>58 jours de formation complète et professionnalisante</Text>
+            </View>
+            <View style={acc.bulletRow2}>
+              <Image
+                style={acc.dotImage}
+                resizeMode="contain"
+                source={require('../../../../assets/v2_images/icon/icon-prereg-diploma-2.png')}
+              />
+              <Text style={acc.bulletText}>Expertise clinique, technique et commerciale</Text>
+            </View>
+            <View style={acc.bulletRow2}>
+              <Image
+                style={acc.dotImage}
+                resizeMode="contain"
+                source={require('../../../../assets/v2_images/icon/icon-prereg-diploma-3.png')}
+              />
+              <Text style={acc.bulletText}>Pilotage de l'activité, stratégie et développement</Text>
+            </View>
+            <View style={acc.bulletRow2}>
+              <Image
+                style={acc.dotImage}
+                resizeMode="contain"
+                source={require('../../../../assets/v2_images/icon/icon-prereg-diploma-4.png')}
+              />
+              <Text style={acc.bulletText}>Certification reconnue et valorisante</Text>
+            </View>
+
+            {/* Accordion sections */}
+            {SECTIONS.map((s) => (
+              <AccordionItem key={s.id} section={s} />
+            ))}
+
+            {/* CTA */}
+            <TouchableOpacity style={styles.cta} onPress={onPreReg} activeOpacity={0.8}>
+              <Text style={styles.ctaText}>En savoir plus sur le diplôme</Text>
+            </TouchableOpacity>
+            <Text style={styles.sub}>Sans engagement · Réponse sous 48h</Text>
+          </View>
+        </ScrollView>
       </View>
-
-      {/* Accordion sections */}
-      {SECTIONS.map((s) => (
-        <AccordionItem key={s.id} section={s} />
-      ))}
-
-      {/* CTA */}
-      <TouchableOpacity style={styles.cta} onPress={onPreReg} activeOpacity={0.8}>
-        <Text style={styles.ctaText}>PRÉ-INSCRIPTION</Text>
-        <Ionicons name="paper-plane" size={18} color={Colors.white} />
-      </TouchableOpacity>
-      <Text style={styles.sub}>Sans engagement · Réponse sous 48h</Text>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -301,6 +354,26 @@ const acc = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacings.sm,
+  },
+  bulletRow2: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    marginBottom: Spacings.xs
+  },
+  bulletText: {
+    fontSize: 12,
+    fontFamily: 'Roboto',
+    fontWeight: '500',
+    lineHeight: 14,
+    color: Colors.text
+  },
+  dotImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 15,
+    backgroundColor: COLOR_BLUE,
+    padding: 2
   },
   dot: {
     width: 7,
@@ -366,7 +439,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: Colors.success,
+    backgroundColor: Colors.lgreenDark,
     borderRadius: 10,
     paddingVertical: 14,
     marginTop: 16,
@@ -374,9 +447,8 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     color: Colors.white,
-    fontSize: 15,
-    letterSpacing: 0.5,
-    fontFamily: 'Poppins-Bold'
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium'
   },
   sub: {
     textAlign: 'center',
@@ -385,5 +457,60 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginTop: 8,
     marginBottom: Spacings.sm,
+  },
+
+  // Add Package Info Modal Styles
+  addPkgInfoModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingHorizontal: Spacings.lg,
+  },
+  addPkgInfoModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    width: '100%',
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  addPkgInfoHeader: {
+    flexDirection: 'row',
+    paddingLeft: Spacings.lg,
+    paddingTop: Spacings.lg,
+    paddingBottom: Spacings.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+    backgroundColor: COLOR_BLUE,
+    borderTopEndRadius: 16,
+    borderTopStartRadius: 16,
+  },
+  addPkgInfoCloseButton: {
+    paddingHorizontal: Spacings.md,
+    paddingTop: Spacings.xs
+  },
+  addPreRegTitleWrapper: {
+    flex: 1
+  },
+  addPreRegSubTitle: {
+    fontSize: 14,
+    color: Colors.white,
+    fontFamily: 'Poppins-Regular',
+    marginTop: Spacings.xs,
+    marginBottom: Spacings.sm,
+  },
+  addPreRegTitle: {
+    fontSize: 24,
+    color: Colors.white,
+    fontFamily: 'Poppins-Medium',
+    marginBottom: -5
+  },
+  addPreRegTitle2: {
+    fontSize: 24,
+    color: COLOR_GREEN,
+    fontFamily: 'Poppins-Bold',
   },
 });

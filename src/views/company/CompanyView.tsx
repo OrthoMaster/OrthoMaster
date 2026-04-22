@@ -1015,30 +1015,7 @@ export const CompanyView = ({ navigation, route }) => {
         animationType="fade"
         onRequestClose={() => setShowPreRegDiplomaModal(false)}
       >
-        <View style={styles.addPkgInfoModalOverlay}>
-          <View style={styles.addPkgInfoModalContent}>
-            {/* Header */}
-            <View style={styles.addPkgInfoHeader}>
-              <View style={styles.addPreRegTitleWrapper}>
-                <Text style={styles.addPreRegSubTitle}>Pour la pharmacie, un diplôme unique et inédit</Text>
-                <Text style={styles.addPreRegTitle}>Conseiller expert</Text>
-                <Text style={styles.addPreRegTitle2}>en ORTHOPÉDIE</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setShowPreRegDiplomaModal(false)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={styles.addPkgInfoCloseButton}
-              >
-                <Ionicons name="close" size={24} color={Colors.gray} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Content */}
-            <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.72 }} contentContainerStyle={{ padding: Spacings.md }}>
-              <DiplomaModalContent onPreReg={preReg} />
-            </ScrollView>
-          </View>
-        </View>
+        <DiplomaModalContent onPreReg={preReg} onClose={() => setShowPreRegDiplomaModal(false)}/>
       </Modal>
     </SafeAreaView>
   );
@@ -1722,27 +1699,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-  },
-
-  // Pre-reg
-  addPreRegTitleWrapper: {
-    flex: 1
-  },
-  addPreRegSubTitle: {
-    fontSize: 11,
-    color: Colors.success,
-    fontFamily: 'Poppins-Medium',
-    marginBottom: 4,
-  },
-  addPreRegTitle: {
-    fontSize: 16,
-    color: Colors.success,
-    fontFamily: 'Poppins-Bold',
-    marginBottom: -2
-  },
-  addPreRegTitle2: {
-    fontSize: 20,
-    color: Colors.success,
-    fontFamily: 'Poppins-Bold',
   },
 });
