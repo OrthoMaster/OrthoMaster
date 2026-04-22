@@ -17,13 +17,15 @@ import { Ionicons, AntDesign } from '@expo/vector-icons';
 
 import { hmsToMilliseconds } from "../../../futils";
 import { IVASTObject } from "../../../utils/interfaces";
-import { constructVASTObjectWithUrlFromAdButler, saveVastEvent, sendInterestToAdvertiser } from "../../../utils/vastTools";
+import { constructVASTObjectWithUrlFromAdButler, saveVastEvent } from "../../../utils/vastTools";
 import { useMutation } from "@tanstack/react-query";
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useGetUser } from "../../../hooks/useGetUser.hook";
 
 import Colors from "../../../../constants/Colors";
 import Spacings from "../../../../constants/Spacings";
+
+import { sendInterestToAdvertiser } from "../../../services/v2/ToolService";
 
 const { width: screenWidth, height } = Dimensions.get("screen")
 
@@ -65,7 +67,7 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
       setTimeout(() => {
         setIsSent(false)
         onClose()
-      }, 2000)
+      }, 3000)
   }, [isSent])
 
 
@@ -83,68 +85,72 @@ const InterestModal: React.FC<{ visible: boolean; onClose: () => any; vast: IVAS
     </TouchableWithoutFeedback>
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: Spacings.md }}>
       <View style={{ backgroundColor: Colors.white, borderRadius: 16, padding: Spacings.lg, justifyContent: 'center' }}>
-        <Text style={{ fontFamily: 'Poppins-Bold', fontSize: 16, color: Colors.text }}>Merci pour votre intérêt !</Text>
-        <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: Colors.subtext, marginTop: Spacings.sm }}>Afin d'être contacté par l'annonceur, nous lui communiquerons les informations suivantes relatives à votre compte :</Text>
-        <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: Colors.text, marginTop: Spacings.sm, paddingLeft: Spacings.lg }}>
-          • Nom Prénom{'\n'}
-          • Email{'\n'}
-          • Fonction professionnelle
-        </Text>
+        <View>
+          <Text style={{ fontFamily: 'Poppins-Bold', fontSize: 16, color: Colors.text }}>Merci pour votre intérêt !</Text>
+          <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: Colors.subtext, marginTop: Spacings.sm }}>Afin d'être contacté par l'annonceur, nous lui communiquerons les informations suivantes relatives à votre compte :</Text>
+          <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: Colors.text, marginTop: Spacings.sm, paddingLeft: Spacings.lg }}>
+            • Nom Prénom{'\n'}
+            • Email{'\n'}
+            • Fonction professionnelle
+          </Text>
 
-        <View style={{ flexDirection: 'row', marginTop: Spacings.lg, width: '100%', gap: Spacings.md }}>
-          <TouchableOpacity
-            style={{
-              flex: 1, alignItems: 'center', justifyContent: 'center',
-              paddingVertical: Spacings.xs, borderRadius: 6, backgroundColor: Colors.primary
-            }}
-            onPress={send}>
-            {sendInterest.isPending
-              ? <ActivityIndicator />
-              : <Text style={{
-                color: Colors.white,
+          <View style={{ flexDirection: 'row', marginTop: Spacings.lg, width: '100%', gap: Spacings.md }}>
+            <TouchableOpacity
+              style={{
+                flex: 1, alignItems: 'center', justifyContent: 'center',
+                paddingVertical: Spacings.xs, borderRadius: 6, backgroundColor: Colors.primary
+              }}
+              onPress={send}>
+              {sendInterest.isPending
+                ? <ActivityIndicator />
+                : <Text style={{
+                  color: Colors.white,
+                  textAlign: 'center',
+                  fontFamily: 'Poppins-Medium',
+                  fontSize: 12
+                }}>
+                  Je confirme
+                </Text>
+              }
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                flex: 1, alignItems: 'center', justifyContent: 'center',
+                paddingVertical: Spacings.xs, borderRadius: 6, borderWidth: 2, borderColor: Colors.primary
+              }}
+              onPress={onClose}
+            >
+              <Text style={{
+                color: Colors.primary,
                 textAlign: 'center',
                 fontFamily: 'Poppins-Medium',
                 fontSize: 12
-              }}>
-                Je confirme
-              </Text>
-            }
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              flex: 1, alignItems: 'center', justifyContent: 'center',
-              paddingVertical: Spacings.xs, borderRadius: 6, borderWidth: 2, borderColor: Colors.primary
-            }}
-            onPress={onClose}
-          >
-            <Text style={{
-              color: Colors.primary,
-              textAlign: 'center',
-              fontFamily: 'Poppins-Medium',
-              fontSize: 12
-            }}>Annuler</Text>
-          </TouchableOpacity>
+              }}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         {
           (isSent || isError) &&
           <View style={{
             position: 'absolute',
-            backgroundColor: '#fff',
-            width: "100%", height: "100%",
-            alignItems: 'center', justifyContent: "center"
+            backgroundColor: Colors.white,
+            height: '100%',
+            width: '100%',
+            alignItems: 'center', justifyContent: "center",
+            alignSelf: 'center',
           }}>
             {
               isError &&
-              <AntDesign name="exclamation-circle" size={70} color="#F25151" />
+              <AntDesign name="exclamation-circle" size={70} color={Colors.danger} />
             }
             {
               isSent &&
-              <AntDesign name="check-circle" size={70} color="#6AF28E" />
+              <AntDesign name="check-circle" size={70} color={Colors.success} />
             }
 
             <Text style={{
-              fontSize: 18,
-              fontWeight: 'bold',
+              fontSize: 22,
+              fontFamily: 'Poppins-Medium',
               marginTop: 10
             }}>
               {isSent && "Envoyé"}

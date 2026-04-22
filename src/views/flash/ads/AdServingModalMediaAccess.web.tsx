@@ -15,9 +15,10 @@ import { Ionicons, AntDesign } from '@expo/vector-icons';
 
 import { hmsToMilliseconds } from "../../../futils";
 import { IVASTObject } from "../../../utils/interfaces";
-import { constructVASTObjectWithUrlFromAdButler, saveVastEvent, sendInterestToAdvertiser } from "../../../utils/vastTools";
+import { constructVASTObjectWithUrlFromAdButler, saveVastEvent } from "../../../utils/vastTools";
 import { useMutation } from "@tanstack/react-query";
 import { useGetUser } from "../../../hooks/useGetUser.hook";
+import { sendInterestToAdvertiser } from "../../../services/v2/ToolService";
 
 import Colors from "../../../../constants/Colors";
 import Spacings from "../../../../constants/Spacings";

@@ -26,3 +26,18 @@ export const updateSelectedProductBrands = async (brands) => {
             return null;
         });
 };
+
+export const sendInterestToAdvertiser = async ({ destEmail, adTitle }) => {
+    return axiosInstance
+        .post(`${baseUrl}/ads/interest`, { destEmail, adTitle })
+        .then((response) => {
+            if (response.data?.success == true) {
+                return true;
+            }
+
+            return false;
+        })
+        .catch((e: AxiosError) => {
+            return false;
+        });
+};
