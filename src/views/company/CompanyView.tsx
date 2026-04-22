@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Dimensions,
   Modal,
   Image,
-  Linking
+  Animated,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
@@ -27,10 +27,12 @@ import { Styles } from '../../../constants/Styles';
 import { useQuery } from "@tanstack/react-query";
 import { getCompany } from "../../services/v2/CompanyService";
 import { BouncingDots } from '../../component/LoadingDots';
+import { DiplomaModalContent } from './components/DiplomaModalContent';
 
-import { updateManager, removeMember, inviteMember, removeCompany } from '../../services/v2/CompanyService';
+import { updateManager, removeMember, inviteMember, removeCompany, preRegDiploma } from '../../services/v2/CompanyService';
 import { useGetUser } from '../../../src/hooks/auth.hook';
 
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 const { width } = Dimensions.get('screen');
 const isTablet = Platform.OS !== 'web' && width >= 768;
 
@@ -460,6 +462,43 @@ export const CompanyView = ({ navigation, route }) => {
   }
   /** Add Package - END */
 
+  /** Pre-reg Diploma - STA */
+  const [showPreRegDiplomaModal, setShowPreRegDiplomaModal] = useState(false);
+  const preReg = async () => {
+    setShowPreRegDiplomaModal(false);
+    const result = await preRegDiploma();
+    if (result) {
+      Alert.alert('Pré-inscription', result.message);
+    }
+  }
+  /** Pre-reg Diploma - END */
+
+  // FAB expand state
+  const [isFabOpen, setIsFabOpen] = useState(false);
+  const fabAnimation = useRef(new Animated.Value(0)).current;
+
+  const toggleFab = () => {
+    const toValue = isFabOpen ? 0 : 1;
+    Animated.spring(fabAnimation, {
+      toValue,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 80,
+    }).start();
+    setIsFabOpen(!isFabOpen);
+  };
+
+  const closeFab = () => {
+    if (isFabOpen) {
+      Animated.spring(fabAnimation, {
+        toValue: 0,
+        useNativeDriver: true,
+        friction: 6,
+      }).start();
+      setIsFabOpen(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.purple} />
@@ -501,7 +540,7 @@ export const CompanyView = ({ navigation, route }) => {
       {/* Body */}
       {isLoading && !error &&
         <BouncingDots
-          color={Colors.blue}
+          color={Colors.purpleDark}
           size={10}
           bounceHeight={5}
           containerStyle={{
@@ -554,34 +593,175 @@ export const CompanyView = ({ navigation, route }) => {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Floating Action Buttons - Only show on Membres tab */}
-      {activeTab === 'membres' && !error && (
-        <View style={styles.fabContainer}>
-          <TouchableOpacity
-            style={styles.fabPrimary}
-            onPress={() => setShowAddMemberModal(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="add-sharp" size={36} color={Colors.white} />
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Expandable FAB */}
+      {!error && (
+        <View style={styles.fabContainer} pointerEvents="box-none">
 
-      {/* Floating Action Buttons - Only show on Membres tab */}
-      {activeTab === 'formations' && !error && (
-        <View style={styles.fabContainer}>
+          {/* Backdrop khi mở */}
+          {isFabOpen && (
+            <TouchableOpacity
+              style={styles.fabBackdrop}
+              activeOpacity={1}
+              onPress={closeFab}
+            />
+          )}
+
+          <Animated.View
+            style={[
+              styles.fabChildWrapper,
+              {
+                opacity: fabAnimation,
+                transform: [
+                  {
+                    translateY: fabAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -190],
+                    }),
+                  },
+                  {
+                    scale: fabAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.5, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents={isFabOpen ? 'auto' : 'none'}
+          >
+            <TouchableOpacity
+              style={styles.fabChildRow}
+              onPress={() => {
+                closeFab();
+                setShowPreRegDiplomaModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.fabChildButton}>
+                <Image
+                  style={{ width: 30, height: 30 }}
+                  resizeMode="contain"
+                  source={require('../../../assets/v2_images/icon/add-diploma.png')}
+                />
+              </View>
+              <View style={styles.fabChildLabel}>
+                <Text style={styles.fabChildLabelText}>Pré-inscription diplôme</Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Child FAB: Add Formation */}
+          <Animated.View
+            style={[
+              styles.fabChildWrapper,
+              {
+                opacity: fabAnimation,
+                transform: [
+                  {
+                    translateY: fabAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -130],
+                    }),
+                  },
+                  {
+                    scale: fabAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.5, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents={isFabOpen ? 'auto' : 'none'}
+          >
+            <TouchableOpacity
+              style={styles.fabChildRow}
+              onPress={() => {
+                closeFab();
+                setShowAddPkgInfoModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.fabChildButton}>
+                <Image
+                  style={{ width: 28, height: 22 }}
+                  resizeMode="contain"
+                  source={require('../../../assets/v2_images/icon/add-package.png')}
+                />
+              </View>
+              <View style={styles.fabChildLabel}>
+                <Text style={styles.fabChildLabelText}>Ajouter des formations</Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Child FAB: Add Member */}
+          <Animated.View
+            style={[
+              styles.fabChildWrapper,
+              {
+                opacity: fabAnimation,
+                transform: [
+                  {
+                    translateY: fabAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -70],
+                    }),
+                  },
+                  {
+                    scale: fabAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.5, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents={isFabOpen ? 'auto' : 'none'}
+          >
+            <TouchableOpacity
+              style={styles.fabChildRow}
+              onPress={() => {
+                closeFab();
+                setShowAddMemberModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.fabChildButton}>
+                <Image
+                  style={{ width: 30, height: 30 }}
+                  resizeMode="contain"
+                  source={require('../../../assets/v2_images/icon/add-member.png')}
+                />
+              </View>
+              <View style={styles.fabChildLabel}>
+                <Text style={styles.fabChildLabelText}>Ajouter un membre</Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Main FAB */}
           <TouchableOpacity
-            style={styles.fabSecondary}
-            onPress={() => setShowAddPkgInfoModal(true)}
+            style={[styles.fabPrimary, isFabOpen && styles.fabPrimaryOpen]}
+            onPress={toggleFab}
             activeOpacity={0.8}
           >
-            <Image
-              style={{ width: 45, height: 35 }}
-              resizeMode="contain"
-              source={require('../../../assets/v2_images/icon/add-package.png')}
-            />
-            <Text style={styles.fabSecondaryText}>Ajouter des{'\n'}formations</Text>
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: fabAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '45deg'],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <Ionicons name="add-sharp" size={36} color={Colors.white} />
+            </Animated.View>
           </TouchableOpacity>
+
         </View>
       )}
 
@@ -826,6 +1006,39 @@ export const CompanyView = ({ navigation, route }) => {
 
           </TouchableOpacity>
         </TouchableOpacity>
+      </Modal>
+
+      {/* Pre-reg Diploma */}
+      <Modal
+        visible={showPreRegDiplomaModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPreRegDiplomaModal(false)}
+      >
+        <View style={styles.addPkgInfoModalOverlay}>
+          <View style={styles.addPkgInfoModalContent}>
+            {/* Header */}
+            <View style={styles.addPkgInfoHeader}>
+              <View style={styles.addPreRegTitleWrapper}>
+                <Text style={styles.addPreRegSubTitle}>Pour la pharmacie, un diplôme unique et inédit</Text>
+                <Text style={styles.addPreRegTitle}>Conseiller expert</Text>
+                <Text style={styles.addPreRegTitle2}>en ORTHOPÉDIE</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowPreRegDiplomaModal(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.addPkgInfoCloseButton}
+              >
+                <Ionicons name="close" size={24} color={Colors.gray} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content */}
+            <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.72 }} contentContainerStyle={{ padding: Spacings.md }}>
+              <DiplomaModalContent onPreReg={preReg} />
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -1154,7 +1367,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 2,
-    opacity: 0.7
+    opacity: 0.85
   },
   fabSecondary: {
     flexDirection: 'row',
@@ -1377,7 +1590,7 @@ const styles = StyleSheet.create({
     color: Colors.blue,
   },
   addPkgInfoCloseButton: {
-    paddingHorizontal: Spacings.lg,
+    paddingHorizontal: Spacings.md,
   },
   addPkgInfoBody: {
     padding: Spacings.lg,
@@ -1453,5 +1666,83 @@ const styles = StyleSheet.create({
     color: Colors.subtext2,
     fontFamily: 'Poppins-Regular',
     marginBottom: Spacings.sm,
-  }
+  },
+
+  // Expandable FAB
+  fabBackdrop: {
+    position: 'absolute',
+    top: -9999,
+    left: -9999,
+    right: -9999,
+    bottom: -9999,
+  },
+  fabChildWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  fabChildButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.purpleDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.purpleDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  fabChildLabel: {
+    position: 'absolute',
+    right: 60,
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacings.sm,
+    paddingVertical: Spacings.xs,
+    borderRadius: 8,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  fabChildLabelText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.purple,
+  },
+  fabPrimaryOpen: {
+    backgroundColor: Colors.purple2,
+  },
+  fabChildRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+
+  // Pre-reg
+  addPreRegTitleWrapper: {
+    flex: 1
+  },
+  addPreRegSubTitle: {
+    fontSize: 11,
+    color: Colors.success,
+    fontFamily: 'Poppins-Medium',
+    marginBottom: 4,
+  },
+  addPreRegTitle: {
+    fontSize: 16,
+    color: Colors.success,
+    fontFamily: 'Poppins-Bold',
+    marginBottom: -2
+  },
+  addPreRegTitle2: {
+    fontSize: 20,
+    color: Colors.success,
+    fontFamily: 'Poppins-Bold',
+  },
 });

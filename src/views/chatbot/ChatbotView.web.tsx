@@ -480,7 +480,7 @@ export const ChatbotView = ({ navigation, route }: any) => {
 
       const rawAnswer =
         data.status === "skipped"
-          ? `⚠️ **Out of Knowledge Base:** ${data.message}`
+          ? `${data.message} [${data.reasons}]`
           : data.answer;
 
       const { cleanAnswer, quizData } = parseQuizFromAnswer(rawAnswer);

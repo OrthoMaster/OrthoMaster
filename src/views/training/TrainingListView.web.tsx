@@ -15,19 +15,28 @@ import {
   NativeScrollEvent,
   RefreshControl,
   Dimensions,
-  Image
+  Image,
+  Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
-import Colors from "../../../constants/Colors";
-import Spacings from "../../../constants/Spacings";
+
+import { Portal, Dialog, Button } from 'react-native-paper';
+
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
+import { Styles } from '../../../constants/Styles';
 
 import { BouncingDots } from '../../component/LoadingDots';
 import { useQuery } from "@tanstack/react-query";
 import { getTrainings } from "../../services/v2/TrainingService";
 
+import { preRegDiploma } from '../../services/v2/CompanyService';
+import { DiplomaModalContent } from '../company/components/DiplomaModalContent';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 const HEADER_HEIGHT = 100;
 const SCROLL_THRESHOLD = 5;
 const SCROLL_DOWN_AMOUNT = 400;
@@ -382,6 +391,19 @@ export const TrainingListView = ({ navigation, route }) => {
     }
   };
 
+  /** Pre-reg Diploma - STA */
+  const [showPreRegDiplomaModal, setShowPreRegDiplomaModal] = useState(false);
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(false);
+
+  const preReg = async () => {
+    setShowPreRegDiplomaModal(false);
+    const result = await preRegDiploma();
+    setAlertMessage(result.message);
+    setShowAlertDialog(true);
+  }
+  /** Pre-reg Diploma - END */
+
   return (
     <SafeAreaView
       style={styles.container}
@@ -568,6 +590,35 @@ export const TrainingListView = ({ navigation, route }) => {
                     </Text>
                   </TouchableOpacity>
                 ))}
+
+                {/* Preinscription Diploma */}
+                {training.id == '1' &&
+                  <TouchableOpacity
+                    key={'preinscription'}
+                    style={[styles.pkgItem, { width: itemSize }]}
+                    onPress={() => { setShowPreRegDiplomaModal(true); }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={{
+                      width: itemSize - 6,
+                      height: itemSize - 6,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderWidth: 4,
+                      borderColor: training.color,
+                      borderRadius: itemSize,
+                    }}>
+                      <Image
+                        style={{ width: itemSize * 0.65, height: itemSize * 0.65, marginTop: 10, marginRight: 5}}
+                        resizeMode="contain"
+                        source={require('../../../assets/v2_images/icon/add-diploma.png')}
+                      />
+                    </View>
+                    <Text numberOfLines={2} ellipsizeMode='tail'
+                      style={[styles.pkgTitle, { color: training.color, fontFamily: 'Poppins-Bold' }]}>
+                      Diplôme Pharmacie</Text>
+                  </TouchableOpacity>
+                }
               </View>
             </View>
           </View>
@@ -597,6 +648,66 @@ export const TrainingListView = ({ navigation, route }) => {
           </TouchableOpacity>
         </Animated.View>
       )}
+
+
+      <Portal>
+        {/* Alert Dialog */}
+        <Dialog
+          visible={showAlertDialog}
+          onDismiss={() => setShowAlertDialog(false)}
+          style={Styles.dialogWeb}
+        >
+          <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.warning }]}>Pré-inscription Diplôme</Dialog.Title>
+          <Dialog.Content>
+            <Text style={Styles.dialogWebContent}>{alertMessage}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
+              onPress={() => { setShowAlertDialog(false) }}>Fermer</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* Pre-reg Diploma */}
+      <Modal
+        visible={showPreRegDiplomaModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPreRegDiplomaModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.addPkgInfoModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPreRegDiplomaModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.addPkgInfoModalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <View style={styles.addPkgInfoHeader}>
+              <View style={styles.addPreRegTitleWrapper}>
+                <Text style={styles.addPreRegSubTitle}>Pour la pharmacie, un diplôme unique et inédit</Text>
+                <Text style={styles.addPreRegTitle}>Conseiller expert en orthopédie</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowPreRegDiplomaModal(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.addPkgInfoCloseButton}
+              >
+                <Ionicons name="close" size={24} color={Colors.gray} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content */}
+            <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.75 }} contentContainerStyle={{ padding: Spacings.md }}>
+              <DiplomaModalContent onPreReg={preReg} />
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -793,5 +904,105 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
+  },
+
+  // Add Package Info Modal Styles
+  addPkgInfoModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingHorizontal: Spacings.lg,
+  },
+  addPkgInfoModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 600,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  addPkgInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: Spacings.lg,
+    paddingTop: Spacings.lg,
+    paddingBottom: Spacings.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+  },
+  addPkgInfoIconWrapper: {
+    marginRight: Spacings.sm,
+  },
+  addPkgInfoTitle: {
+    flex: 1,
+    fontSize: 24,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.blue,
+  },
+  addPkgInfoCloseButton: {
+    paddingHorizontal: Spacings.lg,
+  },
+  addPkgInfoBody: {
+    padding: Spacings.lg,
+  },
+  addPkgInfoDescription: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    marginBottom: Spacings.md,
+    textAlign: 'justify',
+  },
+  addPkgInfoSection: {
+    marginBottom: Spacings.xs,
+  },
+  addPkgInfoSectionTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.gray,
+    marginBottom: Spacings.md,
+  },
+  addPkgInfoListContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: Spacings.sm,
+  },
+  addPkgInfoBullet: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    lineHeight: 20,
+    marginLeft: Spacings.xs,
+    flexWrap: 'wrap',
+  },
+  addPkgInfoBulletNumber: {
+    width: 25,
+    alignItems: 'flex-end'
+  },
+  addPkgInfoNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    padding: Spacings.md,
+    borderRadius: 8,
+    marginBottom: Spacings.md,
+  },
+  // Pre-reg
+  addPreRegTitleWrapper: {
+    flex: 1
+  },
+  addPreRegSubTitle: {
+    fontSize: 14,
+    color: Colors.success,
+    fontFamily: 'Poppins-Medium',
+    marginBottom: -2,
+  },
+  addPreRegTitle: {
+    fontSize: 20,
+    color: Colors.success,
+    fontFamily: 'Poppins-Bold',
   },
 });

@@ -191,3 +191,20 @@ export const getPreFormData = async () => {
       };
     });
 }
+
+/**
+ * Send request pre-inscription diploma
+ */
+export const preRegDiploma = async () => {
+  return axiosInstance
+    .post(`${baseUrl}/pre-reg/diploma`)
+    .then((response) => {
+      return response.data;
+    })
+    .catch((e: AxiosError) => {
+      return {
+        success: false,
+        message: (e.response?.data as any)?.message || 'Une erreur est survenue',
+      };
+    });
+};

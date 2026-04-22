@@ -9,7 +9,8 @@ import {
   RefreshControl,
   Modal,
   Image,
-  Linking
+  Linking,
+  Dimensions
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
@@ -25,8 +26,12 @@ import { useQuery } from "@tanstack/react-query";
 import { getCompany } from "../../services/v2/CompanyService";
 import { BouncingDots } from '../../component/LoadingDots';
 
-import { updateManager, removeMember, inviteMember, removeCompany } from '../../services/v2/CompanyService';
+import { DiplomaModalContent } from './components/DiplomaModalContent';
+
+import { updateManager, removeMember, inviteMember, removeCompany, preRegDiploma } from '../../services/v2/CompanyService';
 import { useGetUser } from '../../../src/hooks/auth.hook';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 interface Member {
   id: string;
@@ -339,6 +344,19 @@ export const CompanyView = ({ navigation, route }) => {
   }
   /** Add Package - END */
 
+  /** Pre-reg Diploma - STA */
+  const [showPreRegDiplomaModal, setShowPreRegDiplomaModal] = useState(false);
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(false);
+
+  const preReg = async () => {
+    setShowPreRegDiplomaModal(false);
+    const result = await preRegDiploma();
+    setAlertMessage(result.message);
+    setShowAlertDialog(true);
+  }
+  /** Pre-reg Diploma - END */
+
   // Separate users into managers and members
   const allUsers = data?.users || [];
   const managers = data?.managers || [];
@@ -467,7 +485,11 @@ export const CompanyView = ({ navigation, route }) => {
                   onPress={() => setShowAddMemberModal(true)}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="add" size={24} color={Colors.white} />
+                  <Image
+                    style={{ width: 40, height: 40 }}
+                    resizeMode="contain"
+                    source={require('../../../assets/v2_images/icon/add-member.png')}
+                  />
                   <Text style={styles.actionButtonText}>Ajouter des membres</Text>
                 </TouchableOpacity>
 
@@ -477,12 +499,27 @@ export const CompanyView = ({ navigation, route }) => {
                   activeOpacity={0.8}
                 >
                   <Image
-                    style={{ width: 30, height: 25 }}
+                    style={{ width: 40, height: 40 }}
                     resizeMode="contain"
                     source={require('../../../assets/v2_images/icon/add-package.png')}
                   />
                   <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>
                     Ajouter des formations
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.actionButtonSuccess]}
+                  onPress={() => setShowPreRegDiplomaModal(true)}
+                  activeOpacity={0.8}
+                >
+                  <Image
+                    style={{ width: 40, height: 40 }}
+                    resizeMode="contain"
+                    source={require('../../../assets/v2_images/icon/add-diploma.png')}
+                  />
+                  <Text style={[styles.actionButtonText, styles.actionButtonTextSuccess]}>
+                    Pré-inscription Diplôme
                   </Text>
                 </TouchableOpacity>
 
@@ -775,71 +812,7 @@ export const CompanyView = ({ navigation, route }) => {
         </TouchableOpacity>
       </Modal>
 
-      {/* Dialogs using Portal */}
-      <Portal>
-        {/* Remove Member Confirmation Dialog */}
-        <Dialog
-          visible={showRemoveDialog}
-          onDismiss={() => setShowRemoveDialog(false)}
-          style={Styles.dialogWeb}
-        >
-          <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.danger }]}>Confirmer la suppression</Dialog.Title>
-          <Dialog.Content>
-            <Text style={Styles.dialogWebContent}>Voulez-vous vraiment retirer {selectedMember?.name} de l'équipe ?</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button
-              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
-              onPress={() => {
-                setShowRemoveDialog(false);
-                setShowMemberModal(true);
-              }}>Annuler</Button>
-            <Button onPress={confirmRemoveMember} textColor={Colors.danger} labelStyle={{ fontFamily: 'Poppins-Medium' }}>Supprimer</Button>
-          </Dialog.Actions>
-        </Dialog>
-
-        {/* Promote to Manager Confirmation Dialog */}
-        <Dialog
-          visible={showPromoteDialog}
-          onDismiss={() => setShowPromoteDialog(false)}
-          style={Styles.dialogWeb}
-        >
-          <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.blue }]}>Promouvoir</Dialog.Title>
-          <Dialog.Content>
-            <Text style={Styles.dialogWebContent}>Voulez-vous promouvoir {selectedMember?.name} en tant que responsable ?</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button
-              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
-              onPress={() => {
-                setShowPromoteDialog(false);
-                setShowMemberModal(true);
-              }}>Annuler</Button>
-            <Button
-              textColor={Colors.blue} labelStyle={{ fontFamily: 'Poppins-Medium' }}
-              onPress={confirmPromoteToManager}>Confirmer</Button>
-          </Dialog.Actions>
-        </Dialog>
-
-        {/* Message Dialog */}
-        <Dialog
-          visible={showMessageDialog}
-          onDismiss={() => setShowMessageDialog(false)}
-          style={Styles.dialogWeb}
-        >
-          <Dialog.Title style={[Styles.dialogWebTitle, { color: messageDialog.title == 'Erreur' ? Colors.danger : Colors.success }]}>{messageDialog.title}</Dialog.Title>
-          <Dialog.Content>
-            <Text style={Styles.dialogWebContent}>{messageDialog.message}</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button
-              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
-              onPress={() => setShowMessageDialog(false)}>Fermer</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-
-      {/* Dialogs using Portal */}
+      {/* Dialog using Portal */}
       <Portal>
         {/* Remove Member Confirmation Dialog */}
         <Dialog
@@ -910,7 +883,66 @@ export const CompanyView = ({ navigation, route }) => {
               onPress={() => handleRemoveCompany()}>Supprimer</Button>
           </Dialog.Actions>
         </Dialog>
+
+        {/* Alert Dialog */}
+        <Dialog
+          visible={showAlertDialog}
+          onDismiss={() => setShowAlertDialog(false)}
+          style={Styles.dialogWeb}
+        >
+          <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.warning }]}>Pré-inscription Diplôme</Dialog.Title>
+          <Dialog.Content>
+            <Text style={Styles.dialogWebContent}>{alertMessage}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
+              onPress={() => { setShowAlertDialog(false) }}>Fermer</Button>
+          </Dialog.Actions>
+        </Dialog>
+
+
       </Portal>
+
+      {/* Pre-reg Diploma */}
+      <Modal
+        visible={showPreRegDiplomaModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPreRegDiplomaModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.addPkgInfoModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPreRegDiplomaModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.addPkgInfoModalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <View style={styles.addPkgInfoHeader}>
+              <View style={styles.addPreRegTitleWrapper}>
+                <Text style={styles.addPreRegSubTitle}>Pour la pharmacie, un diplôme unique et inédit</Text>
+                <Text style={styles.addPreRegTitle}>Conseiller expert en orthopédie</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowPreRegDiplomaModal(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.addPkgInfoCloseButton}
+              >
+                <Ionicons name="close" size={24} color={Colors.gray} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content */}
+            <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.75 }} contentContainerStyle={{ padding: Spacings.md }}>
+              <DiplomaModalContent onPreReg={preReg} />
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1034,6 +1066,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.purple,
   },
+  actionButtonSuccess: {
+    backgroundColor: Colors.white,
+    borderWidth: 2,
+    borderColor: Colors.success,
+    shadowColor: Colors.success,
+  },
   actionButtonText: {
     fontSize: 16,
     fontFamily: 'Poppins-Medium',
@@ -1042,10 +1080,14 @@ const styles = StyleSheet.create({
   actionButtonTextSecondary: {
     color: Colors.purple,
   },
+  actionButtonTextSuccess: {
+    color: Colors.success,
+  },
   actionButtonDanger: {
     backgroundColor: Colors.red3,
     borderWidth: 2,
     borderColor: Colors.danger,
+    shadowColor: Colors.danger,
   },
   actionButtonTextDanger: {
     color: Colors.danger,
@@ -1442,5 +1484,21 @@ const styles = StyleSheet.create({
     color: Colors.subtext2,
     fontFamily: 'Poppins-Regular',
     marginBottom: Spacings.sm,
-  }
+  },
+
+  // Pre-reg
+  addPreRegTitleWrapper: {
+    flex: 1
+  },
+  addPreRegSubTitle: {
+    fontSize: 14,
+    color: Colors.success,
+    fontFamily: 'Poppins-Medium',
+    marginBottom: -2,
+  },
+  addPreRegTitle: {
+    fontSize: 20,
+    color: Colors.success,
+    fontFamily: 'Poppins-Bold',
+  },
 });
