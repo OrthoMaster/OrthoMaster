@@ -181,7 +181,10 @@ export const ContractView = ({ navigation, route }) => {
 
       // Show celebration modal
       setShowCelebration(true);
-      await queryClient.invalidateQueries({ queryKey: ['company'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['company'] }),
+        queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+      ]);
 
     } catch (error) {
       setErrorMessage('Échec de l\'envoi : ' + error.message);

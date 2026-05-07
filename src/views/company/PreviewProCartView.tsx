@@ -252,7 +252,10 @@ export const PreviewProCartView = ({ navigation, route }) => {
   const handlePaymentSuccess = async () => {
     setShowPaymentModal(false);
     setShowCelebration(true);
-    await queryClient.invalidateQueries({ queryKey: ['company'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['company'] }),
+      queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+    ]);
   };
 
   const handleSign = () => {

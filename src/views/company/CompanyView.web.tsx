@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,8 @@ import {
   Modal,
   Image,
   Linking,
-  Dimensions
+  Dimensions,
+  Animated
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
@@ -395,6 +396,47 @@ export const CompanyView = ({ navigation, route }) => {
   const managersWithFormations = enrichedUsers.filter(user => managerIds.includes(user.id));
   const membersWithFormations = enrichedUsers.filter(user => !managerIds.includes(user.id));
 
+  // Remind manager - STA
+  const shouldRemindAddPackage =
+    managersWithFormations.length > 0 &&
+    managersWithFormations.every(m => !m.packages || m.packages.length === 0);
+
+  // Animations
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const wiggleAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (shouldRemindAddPackage) {
+      // Red dot pulse (giống AppTab.web.tsx)
+      const pulse = Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: false,
+        })
+      );
+      pulse.start();
+
+      // Wiggle: chờ ~2.7s rồi rung nhẹ ~300ms → tổng cycle ~3s
+      const wiggle = Animated.loop(
+        Animated.sequence([
+          Animated.delay(2700),
+          Animated.timing(wiggleAnim, { toValue: 1, duration: 60, useNativeDriver: false }),
+          Animated.timing(wiggleAnim, { toValue: -1, duration: 60, useNativeDriver: false }),
+          Animated.timing(wiggleAnim, { toValue: 1, duration: 60, useNativeDriver: false }),
+          Animated.timing(wiggleAnim, { toValue: -1, duration: 60, useNativeDriver: false }),
+          Animated.timing(wiggleAnim, { toValue: 0, duration: 60, useNativeDriver: false }),
+        ])
+      );
+      wiggle.start();
+
+      return () => {
+        pulse.stop();
+        wiggle.stop();
+      };
+    }
+  }, [shouldRemindAddPackage]);
+  // Remind manger - END
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.purple} />
@@ -493,20 +535,54 @@ export const CompanyView = ({ navigation, route }) => {
                   <Text style={styles.actionButtonText}>Ajouter des membres</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.actionButtonSecondary]}
-                  onPress={() => setShowAddPkgInfoModal(true)}
-                  activeOpacity={0.8}
+                <Animated.View
+                  style={shouldRemindAddPackage ? {
+                    transform: [{
+                      rotate: wiggleAnim.interpolate({
+                        inputRange: [-1, 0, 1],
+                        outputRange: ['-2deg', '0deg', '2deg'],
+                      })
+                    }]
+                  } : undefined}
                 >
-                  <Image
-                    style={{ width: 40, height: 40 }}
-                    resizeMode="contain"
-                    source={require('../../../assets/v2_images/icon/add-package.png')}
-                  />
-                  <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>
-                    Ajouter des formations
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.actionButtonSecondary]}
+                    onPress={() => setShowAddPkgInfoModal(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Image
+                      style={{ width: 40, height: 40 }}
+                      resizeMode="contain"
+                      source={require('../../../assets/v2_images/icon/add-package.png')}
+                    />
+                    <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>
+                      Ajouter des formations
+                    </Text>
+
+                    {shouldRemindAddPackage && (
+                      <View style={styles.dotWrapper}>
+                        <Animated.View
+                          style={[
+                            styles.redDotRingInline,
+                            {
+                              opacity: pulseAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0.6, 0],
+                              }),
+                              transform: [{
+                                scale: pulseAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [1, 2.5],
+                                })
+                              }]
+                            }
+                          ]}
+                        />
+                        <View style={styles.redDotInline} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </Animated.View>
 
                 <TouchableOpacity
                   style={[styles.actionButton, styles.actionButtonSuccess]}
@@ -911,7 +987,7 @@ export const CompanyView = ({ navigation, route }) => {
         animationType="fade"
         onRequestClose={() => setShowPreRegDiplomaModal(false)}
       >
-        <DiplomaModalContent onPreReg={preReg} onClose={() => setShowPreRegDiplomaModal(false)}/>
+        <DiplomaModalContent onPreReg={preReg} onClose={() => setShowPreRegDiplomaModal(false)} />
       </Modal>
     </SafeAreaView>
   );
@@ -1454,5 +1530,28 @@ const styles = StyleSheet.create({
     color: Colors.subtext2,
     fontFamily: 'Poppins-Regular',
     marginBottom: Spacings.sm,
+  },
+
+  // Remind manager
+  dotWrapper: {
+    position: 'relative',
+    width: 8,
+    height: 8,
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  redDotInline: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.danger,
+  },
+  redDotRingInline: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.danger,
   },
 });

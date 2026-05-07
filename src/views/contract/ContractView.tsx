@@ -51,7 +51,7 @@ export const ContractView = ({ navigation, route }) => {
   });
 
   const [webViewLoading, setWebViewLoading] = useState(false);
-  
+
   // All other state management
   const [selectedOrgIndex, setSelectedOrgIndex] = useState(0);
   const [selectedPdfIndex, setSelectedPdfIndex] = useState(0);
@@ -169,8 +169,10 @@ export const ContractView = ({ navigation, route }) => {
 
               // Show celebration modal
               setShowCelebration(true);
-              await queryClient.invalidateQueries({ queryKey: ['company'] });
-
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['company'] }),
+                queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+              ]);
             } catch (error) {
               Alert.alert('Erreur', 'Échec de l\'envoi : ' + error.message);
             } finally {
@@ -187,14 +189,14 @@ export const ContractView = ({ navigation, route }) => {
     setShowCelebration(false);
     navigation.popToTop();
   };
-  
+
   const handleViewContracts = () => {
     setShowCelebration(false);
     navigation.navigate('profile', { screen: 'document-view' });
   };
 
   // ✅ NOW conditional returns come AFTER all hooks
-  
+
   // Loading state
   if (isLoading) {
     return (
