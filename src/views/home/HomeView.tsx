@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ScrollView,
   StyleSheet,
@@ -31,11 +32,14 @@ import Spacings from '../../../constants/Spacings';
 import { useGetUser } from '../../hooks/auth.hook';
 
 import { DailyQuestionModal } from './components/DailyQuestionModal';
-import { getDailyAction } from '../../services/v2/ContentService';
+import { getDailyAction, countTimesPodcast } from '../../services/v2/ContentService';
 import { getPreFormData, updateSettings, sendError } from '../../services/v2/AuthService';
 
 import { PodcastPlayerModal } from './components/PodcastPlayerModal';
 import { TopicsOnboardingModal } from './components/TopicsOnboardingModal';
+
+import RemindCreateCompanyModal from './components/RemindCreateCompanyModal';
+import RemindAddPackageCompanyModal from './components/RemindAddPackageCompanyModal';
 
 interface Topic {
   id: string;
@@ -242,11 +246,52 @@ export const HomeView = ({ navigation, route }) => {
   // Handle open podcast modal
   const handleOpenPodcast = (podcastData) => {
     setSelectedPodcastData(podcastData);
+    countTimesPodcast(podcastData.podcast.id);
     setShowPodcast(true);
   };
 
+  /** Company - Manager modals */
+  const [showRemind, setShowRemind] = useState(false);
+  const [onboardingResolved, setOnboardingResolved] = useState(false);
+  const checkShouldShowRemind = async () => {
+    if (!user?.remind_manager_to_add_package
+      && !user?.remind_to_create_company
+      && !user?.remind_manager_to_add_member
+      && !user?.remind_to_open_new_package) {
+      return;
+    }
+    try {
+      const value = await AsyncStorage.getItem('@last_time_open_remind_modal');
+      const now = Date.now();
+      const TWO_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+      if (value === null) {
+        await AsyncStorage.setItem('@last_time_open_remind_modal', now.toString());
+        setShowRemind(true);
+        return;
+      }
+
+      const lastTime = parseInt(value, 10);
+
+      if (isNaN(lastTime)) {
+        await AsyncStorage.setItem('@last_time_open_remind_modal', now.toString());
+        setShowRemind(true);
+        return;
+      }
+
+      // More than 2 days
+      if (now - lastTime >= TWO_DAYS_MS) {
+        await AsyncStorage.setItem('@last_time_open_remind_modal', now.toString());
+        setShowRemind(true);
+        return;
+      }
+    } catch (error) {
+      return;
+    }
+  };
+
   /** Topics onboarding */
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [topics, setTopics] = useState<Topic[]>([]);
 
   // Load topics data
@@ -265,7 +310,10 @@ export const HomeView = ({ navigation, route }) => {
   // Check AsyncStorage
   useEffect(() => {
     const checkOnboardingStatus = async () => {
-      if (!user || isLoadingTopics || topics.length === 0) return;
+      if (!user || isLoadingTopics || topics.length === 0) {
+        setOnboardingResolved(true);
+        return;
+      };
 
       try {
         const hasOpened = await storageGet('open-topics-onboarding');
@@ -274,14 +322,26 @@ export const HomeView = ({ navigation, route }) => {
           setTimeout(() => {
             setShowOnboarding(true);
           }, 1000);
+        } else {
+          setOnboardingResolved(true);
         }
       } catch (error) {
         sendError('topics-onboarding-modal', error);
+        setOnboardingResolved(true);
       }
     };
 
     checkOnboardingStatus();
   }, [user, topics, isLoadingTopics]);
+
+  // Triger with show remind popup
+  useFocusEffect(
+    useCallback(() => {
+      if (onboardingResolved && !showOnboarding) {
+        checkShouldShowRemind();
+      }
+    }, [onboardingResolved, showOnboarding])
+  );
 
   // Handle onboarding complete
   const handleOnboardingComplete = async (selectedTopicIds: string[]) => {
@@ -297,14 +357,13 @@ export const HomeView = ({ navigation, route }) => {
         setShowOnboarding(false);
         refetchUser();
       }
-
-      return;
     } catch (error) {
-
       sendError('topics-onboarding-modal', error);
       setShowOnboarding(false);
       refetchUser();
     }
+
+    setOnboardingResolved(true);
   };
 
   // Handle skip onboarding
@@ -315,6 +374,8 @@ export const HomeView = ({ navigation, route }) => {
     } catch (error) {
       setShowOnboarding(false);
     }
+
+    setOnboardingResolved(true);
   };
 
   return (
@@ -471,7 +532,23 @@ export const HomeView = ({ navigation, route }) => {
           onSkip={handleSkipOnboarding}
         />
       }
-    </SafeAreaView >
+
+
+      <RemindCreateCompanyModal
+        visible={showRemind && user?.remind_to_create_company}
+        firstName={user.first_name ?? ''}
+        onCreateTeam={() => navigation.navigate('company')}
+        onClose={() => setShowRemind(false)}
+      />
+
+      <RemindAddPackageCompanyModal
+        visible={showRemind && user?.remind_manager_to_add_package}
+        firstName={user.first_name ?? ''}
+        onUnlockTrainings={() => navigation.navigate('company')}
+        onClose={() => setShowRemind(false)}
+      />
+
+    </SafeAreaView>
   );
 }
 

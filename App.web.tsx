@@ -128,9 +128,16 @@ export default function App({ navigation }) {
     const contentId = params.get('id');
     const isMediaPreview = window.location.pathname.includes('open/media-preview');
 
-    if (!isMediaPreview || !contentId) return;
+    const isEspacePro = window.location.pathname.includes('open/company');
+
+    if (!isMediaPreview || !contentId || !isEspacePro) return;
 
     // Try to open app
+    if (isEspacePro) {
+      window.location.href = `orthomaster://open/company`;
+      return;
+    }
+
     window.location.href = `orthomaster://open/content/${contentId}`;
   }, [appIsReady]);
 
@@ -153,7 +160,11 @@ export default function App({ navigation }) {
           }
         },
         tools: 'tools',
-        company: 'company',
+        company: {
+          screens: {
+            'company-view': 'open/company',
+          }
+        },
         profile: 'profile',
       }
     }

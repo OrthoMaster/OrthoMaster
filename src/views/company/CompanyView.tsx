@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,7 +32,6 @@ import { DiplomaModalContent } from './components/DiplomaModalContent';
 import { updateManager, removeMember, inviteMember, removeCompany, preRegDiploma } from '../../services/v2/CompanyService';
 import { useGetUser } from '../../../src/hooks/auth.hook';
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 const { width } = Dimensions.get('screen');
 const isTablet = Platform.OS !== 'web' && width >= 768;
 
@@ -499,6 +498,77 @@ export const CompanyView = ({ navigation, route }) => {
     }
   };
 
+  /** Reminder Add Package - STA */
+  // Check: managers tồn tại và mọi manager đều không có package
+  const managers = data?.managers || [];
+  const allUsers = data?.users || [];
+  const managerIds = managers.map(m => m.id);
+  const managersWithPackages = allUsers.filter(u => managerIds.includes(u.id));
+  const shouldRemindAddPackage =
+    managersWithPackages.length > 0 &&
+    managersWithPackages.every(m => !m.packages || m.packages.length === 0);
+
+  // Animations
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const wiggleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (shouldRemindAddPackage) {
+      // Pulse cho red dot
+      const pulse = Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: false,
+        })
+      );
+      pulse.start();
+
+      // Wiggle: chờ ~2.7s rồi rung nhẹ ~300ms → tổng cycle ~3s
+      const wiggle = Animated.loop(
+        Animated.sequence([
+          Animated.delay(2700),
+          Animated.timing(wiggleAnim, { toValue: 1, duration: 60, useNativeDriver: true }),
+          Animated.timing(wiggleAnim, { toValue: -1, duration: 60, useNativeDriver: true }),
+          Animated.timing(wiggleAnim, { toValue: 1, duration: 60, useNativeDriver: true }),
+          Animated.timing(wiggleAnim, { toValue: -1, duration: 60, useNativeDriver: true }),
+          Animated.timing(wiggleAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+        ])
+      );
+      wiggle.start();
+
+      return () => {
+        pulse.stop();
+        wiggle.stop();
+      };
+    }
+  }, [shouldRemindAddPackage]);
+
+  // Render red dot có pulse
+  const renderRedDot = (style?: any) => (
+    <View style={[styles.dotWrapper, style]}>
+      <Animated.View
+        style={[
+          styles.redDotRing,
+          {
+            opacity: pulseAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.6, 0],
+            }),
+            transform: [{
+              scale: pulseAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 2.5],
+              })
+            }]
+          }
+        ]}
+      />
+      <View style={styles.redDot} />
+    </View>
+  );
+  /** Reminder Add Package - END */
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.purple} />
@@ -615,7 +685,7 @@ export const CompanyView = ({ navigation, route }) => {
                   {
                     translateY: fabAnimation.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0, -190],
+                      outputRange: [0, -210],
                     }),
                   },
                   {
@@ -639,7 +709,7 @@ export const CompanyView = ({ navigation, route }) => {
             >
               <View style={styles.fabChildButton}>
                 <Image
-                  style={{ width: 30, height: 30 }}
+                  style={styles.fabChildIcon}
                   resizeMode="contain"
                   source={require('../../../assets/v2_images/icon/add-diploma.png')}
                 />
@@ -660,7 +730,7 @@ export const CompanyView = ({ navigation, route }) => {
                   {
                     translateY: fabAnimation.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0, -130],
+                      outputRange: [0, -140],
                     }),
                   },
                   {
@@ -684,14 +754,27 @@ export const CompanyView = ({ navigation, route }) => {
             >
               <View style={styles.fabChildButton}>
                 <Image
-                  style={{ width: 28, height: 22 }}
+                  style={styles.fabChildIcon}
                   resizeMode="contain"
                   source={require('../../../assets/v2_images/icon/add-package.png')}
                 />
+                {shouldRemindAddPackage && renderRedDot({ top: 2, right: 2 })}
               </View>
-              <View style={styles.fabChildLabel}>
+              <Animated.View
+                style={[
+                  styles.fabChildLabel,
+                  shouldRemindAddPackage && {
+                    transform: [{
+                      rotate: wiggleAnim.interpolate({
+                        inputRange: [-1, 0, 1],
+                        outputRange: ['-3deg', '0deg', '3deg'],
+                      })
+                    }]
+                  }
+                ]}
+              >
                 <Text style={styles.fabChildLabelText}>Ajouter des formations</Text>
-              </View>
+              </Animated.View>
             </TouchableOpacity>
           </Animated.View>
 
@@ -729,7 +812,7 @@ export const CompanyView = ({ navigation, route }) => {
             >
               <View style={styles.fabChildButton}>
                 <Image
-                  style={{ width: 30, height: 30 }}
+                  style={styles.fabChildIcon}
                   resizeMode="contain"
                   source={require('../../../assets/v2_images/icon/add-member.png')}
                 />
@@ -758,10 +841,10 @@ export const CompanyView = ({ navigation, route }) => {
                 ],
               }}
             >
-              <Ionicons name="add-sharp" size={36} color={Colors.white} />
+              <Ionicons name="add-sharp" size={36} color={isFabOpen ? Colors.purpleDark : Colors.white} />
             </Animated.View>
+            {shouldRemindAddPackage && !isFabOpen && renderRedDot({ top: 2, right: 2 })}
           </TouchableOpacity>
-
         </View>
       )}
 
@@ -1344,7 +1427,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 2,
-    opacity: 0.85
   },
   fabSecondary: {
     flexDirection: 'row',
@@ -1435,8 +1517,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   coursesEmptyText: {
-    fontSize: 10,
+    fontSize: 14,
     fontFamily: 'Roboto',
+    fontWeight: '400',
     color: Colors.subtext,
     textAlign: 'center',
     marginTop: -4,
@@ -1652,6 +1735,7 @@ const styles = StyleSheet.create({
     left: -9999,
     right: -9999,
     bottom: -9999,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   fabChildWrapper: {
     position: 'absolute',
@@ -1662,10 +1746,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   fabChildButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: Colors.purpleDark,
+    borderWidth: 1,
+    borderColor: Colors.gray,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: Colors.purpleDark,
@@ -1674,13 +1760,18 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
+  fabChildIcon: {
+    width: 36,
+    height: 36,
+  },
   fabChildLabel: {
     position: 'absolute',
     right: 60,
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacings.sm,
-    paddingVertical: Spacings.xs,
-    borderRadius: 8,
+    // backgroundColor: Colors.white,
+    // borderRadius: 8,
+    paddingHorizontal: Spacings.md,
+    // paddingVertical: Spacings.xs,
+    
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -1688,9 +1779,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   fabChildLabelText: {
-    fontSize: 14,
+    fontSize: 17,
     fontFamily: 'Poppins-Medium',
-    color: Colors.purple,
+    color: Colors.white,
   },
   fabPrimaryOpen: {
     backgroundColor: Colors.purple2,
@@ -1699,5 +1790,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
+  },
+
+  // Red dot (cho reminder add package)
+  dotWrapper: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  redDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.danger,
+    borderWidth: 1.5,
+    borderColor: Colors.white,
+  },
+  redDotRing: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.danger,
   },
 });

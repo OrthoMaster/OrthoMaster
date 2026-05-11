@@ -10,7 +10,6 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
-  Platform,
   Modal,
   Keyboard
 } from 'react-native';

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 // 1. IMPORT navigationRef từ file RootNavigation của bạn
@@ -31,6 +31,21 @@ const menuItems = [
 const Sidebar = () => {
   const { data: user } = useGetUser();
   const [activeRoute, setActiveRoute] = useState('home');
+
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (user?.remind_manager_to_add_package) {
+      const pulse = Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: false,
+        })
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [user?.remind_manager_to_add_package]);
 
   useEffect(() => {
     const unsubscribe = navigationRef.current?.addListener('state', () => {
@@ -91,6 +106,28 @@ const Sidebar = () => {
             <Text style={[styles.menuText, { color: activeRoute === item.name ? item.activeColor : item.inactiveColor }]}>
               {item.title}
             </Text>
+            {item.name === 'company' && user?.remind_manager_to_add_package && (
+              <View style={styles.dotWrapper}>
+                <Animated.View
+                  style={[
+                    styles.redDotRingInline,
+                    {
+                      opacity: pulseAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.6, 0],
+                      }),
+                      transform: [{
+                        scale: pulseAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 2.5],
+                        })
+                      }]
+                    }
+                  ]}
+                />
+                <View style={styles.redDotInline} />
+              </View>
+            )}
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -167,5 +204,27 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
     overflow: 'hidden'
+  },
+
+  dotWrapper: {
+    position: 'relative',
+    width: 8,
+    height: 8,
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  redDotInline: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.danger,
+  },
+  redDotRingInline: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.danger,
   },
 });
