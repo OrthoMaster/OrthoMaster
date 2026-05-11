@@ -32,7 +32,7 @@ import Spacings from '../../../constants/Spacings';
 import { useGetUser } from '../../hooks/auth.hook';
 
 import { DailyQuestionModal } from './components/DailyQuestionModal';
-import { getDailyAction } from '../../services/v2/ContentService';
+import { getDailyAction, countTimesPodcast } from '../../services/v2/ContentService';
 import { getPreFormData, updateSettings, sendError } from '../../services/v2/AuthService';
 
 import { PodcastPlayerModal } from './components/PodcastPlayerModal';
@@ -246,6 +246,7 @@ export const HomeView = ({ navigation, route }) => {
   // Handle open podcast modal
   const handleOpenPodcast = (podcastData) => {
     setSelectedPodcastData(podcastData);
+    countTimesPodcast(podcastData.podcast.id);
     setShowPodcast(true);
   };
 
