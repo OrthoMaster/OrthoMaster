@@ -18,32 +18,25 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
       <Image
         source={{ uri: product.images[0] }}
         style={styles.image}
-        resizeMode="cover"
+        resizeMode="contain"
       />
 
       <View style={styles.info}>
         <Text style={styles.manufacturer} numberOfLines={1}>
           {product.manufacturer}
         </Text>
-        <Text style={styles.category} numberOfLines={1}>
-          {product.category}
-        </Text>
         <Text style={styles.name} numberOfLines={2}>
           {product.name}
         </Text>
-
-        <View style={styles.footer}>
-          <Pressable onPress={onPress} hitSlop={6} style={styles.detailsBtn}>
-            <Text style={styles.detailsText}>View details</Text>
-            <Ionicons name="arrow-forward" size={14} color={palette.textPrimary} style={{ marginLeft: 4 }} />
-          </Pressable>
-        </View>
+        <Text style={styles.category} numberOfLines={1}>
+          {product.category}
+        </Text>
       </View>
     </Pressable>
   );
 }
 
-const CARD_HEIGHT = 130;
+const CARD_HEIGHT = 100;
 
 const styles = StyleSheet.create({
   card: {
@@ -77,44 +70,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   manufacturer: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
     color: palette.textMuted,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   category: {
-    fontSize: 11.5,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Roboto',
     color: palette.textSecondary,
-    marginTop: 2,
+    marginTop: 4,
   },
   name: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 16,
+    fontFamily: 'Poppins-Bold',
     color: palette.textPrimary,
-    letterSpacing: -0.2,
-    marginTop: 4,
     lineHeight: 18,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 4,
-  },
-  detailsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: palette.bg,
-  },
-  detailsText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: palette.textPrimary,
-    letterSpacing: 0.1,
   },
 });

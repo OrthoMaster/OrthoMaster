@@ -1,6 +1,10 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { palette } from '../lib/Theme';
+
+// Pressable wrapped with Animated so we can keep the body's animated
+// styling (color/shadow) while still receiving touches.
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type SunProps = {
   x: number;
@@ -8,13 +12,14 @@ type SunProps = {
   radius: number;
   count: number;
   isLit: boolean;       // true when count > 0
+  onPress?: () => void; // when provided, the sun body becomes tappable
 };
 
 // Sun with two states:
 // - Lit: warm bright body, breathing halo, count + label visible
 // - Dim: cold gray body, no halo, "no match" appearance
 // Smooth crossfade between states.
-export function Sun({ x, y, radius, count, isLit }: SunProps) {
+export function Sun({ x, y, radius, count, isLit, onPress }: SunProps) {
   // Two separate Animated.Values driven in parallel:
   // - litColor: JS-driven (for color interpolation in body/text)
   // - litNative: native-driven (for opacity multiplication on halo)
@@ -68,7 +73,7 @@ export function Sun({ x, y, radius, count, isLit }: SunProps) {
   const haloOpacity = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] });
 
   const size = radius * 2;
-  const haloSize = size * 1.1;
+  const haloSize = size * 1.2;
 
   // Color interpolation between lit (warm gold) and dim (cool gray)
   const bodyColor = litColor.interpolate({
@@ -86,7 +91,7 @@ export function Sun({ x, y, radius, count, isLit }: SunProps) {
 
   return (
     <View
-      pointerEvents="none"
+      pointerEvents="box-none"
       style={[styles.wrap, {
         left: x - haloSize / 2,
         top: y - haloSize / 2,
@@ -105,8 +110,12 @@ export function Sun({ x, y, radius, count, isLit }: SunProps) {
         }]}
       />
 
-      {/* Body */}
-      <Animated.View
+      {/* Body — tappable when onPress is provided. When omitted, this still
+          behaves like a normal Animated.View since Pressable without an
+          onPress is effectively inert. */}
+      <AnimatedPressable
+        onPress={onPress}
+        disabled={!onPress}
         style={[styles.body, {
           width: size,
           height: size,
@@ -142,7 +151,7 @@ export function Sun({ x, y, radius, count, isLit }: SunProps) {
         <Animated.Text style={[styles.label, { color: textColor }]}>
           {count === 1 ? 'match' : 'matches'}
         </Animated.Text>
-      </Animated.View>
+      </AnimatedPressable>
     </View>
   );
 }
@@ -180,19 +189,18 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   count: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    lineHeight: 24,
+    fontSize: 30,
+    fontFamily: 'Poppins-Bold',
+    letterSpacing: -0.1,
     zIndex: 2,
   },
   label: {
-    fontSize: 9.5,
-    fontWeight: '600',
-    letterSpacing: 1.5,
+    fontSize: 12,
+    fontFamily: 'Poppins-Bold',
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
     marginTop: 1,
     zIndex: 2,
-    opacity: 0.8,
+    opacity: 0.9,
   },
 });

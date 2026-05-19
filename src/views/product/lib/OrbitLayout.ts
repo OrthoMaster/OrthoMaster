@@ -50,8 +50,8 @@ export function computeOrbitLayout({ nodes, width, height }: LayoutInput): Solar
   const sunY = height / 2;
 
   const dim = Math.min(width, height);
-  const sunRadius = dim * 0.105;
-  const planetSize = dim * 0.115;
+  const sunRadius = dim * 0.17;
+  const planetSize = dim * 0.45;
 
   const planets = new Map<string, PlanetLayout>();
 
@@ -62,7 +62,7 @@ export function computeOrbitLayout({ nodes, width, height }: LayoutInput): Solar
 
   // Speed: scale with canvas size. ~ 4-7% of canvas dim per second feels lively
   // but not chaotic.
-  const baseSpeed = dim * 0.15;
+  const baseSpeed = dim * 0.04;
 
   nodes.forEach((node, i) => {
     const seed = hashSeed(node.id);

@@ -76,7 +76,7 @@ function NodeSection({
         </Text>
         <View style={{ flex: 1 }} />
         <Text style={styles.sectionMeta}>
-          {isMulti ? 'multiple' : 'one only'}
+          {isMulti ? 'multiple' : 'un seul'}
         </Text>
       </View>
 
@@ -187,7 +187,7 @@ export function OptionsSheet({
               <Text style={styles.title}>{rootNode.title}</Text>
               {totalSelections > 0 && (
                 <Text style={styles.subtitle}>
-                  {totalSelections} selection{totalSelections > 1 ? 's' : ''}
+                  {totalSelections} sélection{totalSelections > 1 ? 's' : ''}
                 </Text>
               )}
             </View>
@@ -226,7 +226,7 @@ export function OptionsSheet({
           {/* Done + Next row */}
           <View style={styles.actionRow}>
             <TouchableOpacity style={[styles.doneBtn, { backgroundColor: accent.strong }]} onPress={onClose} activeOpacity={0.85}>
-              <Text style={styles.doneText}>Done</Text>
+              <Text style={styles.doneText}>Fermer</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.nextBtn, { borderColor: accent.strong }]}
@@ -291,15 +291,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 19,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
     color: palette.textPrimary,
-    letterSpacing: -0.4,
   },
   subtitle: {
     fontSize: 12,
+    fontFamily: 'Poppins-Regular',
     color: palette.textSecondary,
-    marginTop: 2,
   },
   scroll: {
     maxHeight: 480,
@@ -327,19 +326,19 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Poppins-Medium',
     color: palette.textPrimary,
     letterSpacing: -0.2,
   },
   sectionTitleLinked: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Medium',
     color: palette.textSecondary,
   },
   sectionMeta: {
     fontSize: 10,
     color: palette.textMuted,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Medium',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
@@ -358,12 +357,12 @@ const styles = StyleSheet.create({
   },
   pillCheck: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Poppins-Medium',
     marginRight: 5,
   },
   pillText: {
-    fontSize: 13.5,
-    fontWeight: '500',
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
   },
   empty: {
     fontStyle: 'italic',
@@ -381,7 +380,6 @@ const styles = StyleSheet.create({
   doneText: {
     color: palette.fabText,
     fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+    fontFamily: 'Poppins-Bold',
   },
 });

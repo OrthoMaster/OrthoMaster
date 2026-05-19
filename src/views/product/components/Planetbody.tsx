@@ -35,26 +35,6 @@ export function PlanetBody({
   selectedLabels, isActive, hasSelection,
   accent, onPress,
 }: PlanetProps) {
-  // Pulse ring on active
-  const pulse = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!isActive) {
-      pulse.setValue(0);
-      return;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1100, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
-        Animated.timing(pulse, { toValue: 0, duration: 0, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [isActive, pulse]);
-
-  const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.45] });
-  const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.65, 0] });
-
   // Breathing halo when has selection
   const breathe = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -94,6 +74,7 @@ export function PlanetBody({
 
   return (
     <View
+      pointerEvents="box-none"
       style={[styles.wrap, {
         left: cx - haloSize / 2,
         top: cy - haloSize / 2,
@@ -130,23 +111,6 @@ export function PlanetBody({
             <Circle cx={haloSize / 2} cy={haloSize / 2} r={haloSize / 2} fill={`url(#halo-${nodeId})`} />
           </Svg>
         </Animated.View>
-      )}
-
-      {/* Pulse ring on active */}
-      {isActive && (
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.pulseRing, {
-            width: size * 1.25,
-            height: size * 1.25,
-            borderRadius: size * 0.625,
-            borderColor: hasSelection ? accent.strong : palette.textSecondary,
-            top: (haloSize - size * 1.25) / 2,
-            left: (haloSize - size * 1.25) / 2,
-            transform: [{ scale: ringScale }],
-            opacity: ringOpacity,
-          }]}
-        />
       )}
 
       {/* Sphere */}
@@ -214,29 +178,35 @@ export function PlanetBody({
             opacity: bodyOpacity * (hasSelection ? 0.6 : 0.45),
           }]}
         />
+
+        {/* Title centered ON the sphere — rendered last so it sits above
+            all the shading layers. The fill-area takes the whole sphere
+            so flexbox can center the text both ways. */}
+        <View pointerEvents="none" style={[styles.titleInSphere, { width: size, height: size }]}>
+          <Text
+            style={[
+              styles.titleCentered,
+              { color: hasSelection ? accent.textOn : '#FFFFFF' },
+              isActive && styles.titleActive,
+            ]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {title}
+          </Text>
+        </View>
       </Pressable>
 
-      {/* Title + chips below */}
-      <View
-        pointerEvents="none"
-        style={[styles.labelWrap, {
-          top: haloSize - 8,
-          width: Math.max(140, size + 80),
-          left: (haloSize - Math.max(140, size + 80)) / 2,
-        }]}
-      >
-        <Text
-          style={[
-            styles.title,
-            !hasSelection && styles.titleDim,
-            isActive && styles.titleActive,
-          ]}
-          numberOfLines={2}
-          ellipsizeMode="tail"
+      {/* Chips below — title is now on the sphere */}
+      {selectedLabels.length > 0 && (
+        <View
+          pointerEvents="none"
+          style={[styles.labelWrap, {
+            top: haloSize - 8,
+            width: Math.max(140, size + 80),
+            left: (haloSize - Math.max(140, size + 80)) / 2,
+          }]}
         >
-          {title}
-        </Text>
-        {selectedLabels.length > 0 && (
           <View style={styles.chipRow}>
             {selectedLabels.slice(0, 3).map((lbl, i) => (
               <View
@@ -259,8 +229,8 @@ export function PlanetBody({
               </View>
             )}
           </View>
-        )}
-      </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -292,16 +262,12 @@ const styles = StyleSheet.create({
   },
   halo: {
     position: 'absolute',
-    opacity: 0.55,
+    opacity: 0.75,
   },
   haloWrap: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  pulseRing: {
-    position: 'absolute',
-    borderWidth: 2.5,
   },
   spherePos: {
     position: 'absolute',
@@ -313,9 +279,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
   },
+  titleInSphere: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  titleCentered: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Bold',
+    textAlign: 'center',
+    lineHeight: 14,
+    marginTop: 10
+  },
   title: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Medium',
     color: palette.textPrimary,
     letterSpacing: -0.1,
     textAlign: 'center',
@@ -332,7 +313,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: -15,
     gap: 4,
   },
   chip: {
@@ -343,8 +324,8 @@ const styles = StyleSheet.create({
     maxWidth: 110,
   },
   chipText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 11,
+    fontFamily: 'Poppins-Medium',
     textAlign: 'center',
   },
 });

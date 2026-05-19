@@ -116,7 +116,7 @@ export function FilterSummaryModal({
           <View style={styles.handle} />
 
           <View style={styles.header}>
-            <Text style={styles.title}>Selected pathology filters</Text>
+            <Text style={styles.title}>Filtres de pathologie sélectionnés</Text>
             <TouchableOpacity onPress={onClose} hitSlop={12}>
               <Ionicons name="close" size={22} color={palette.textSecondary} />
             </TouchableOpacity>
@@ -162,11 +162,11 @@ export function FilterSummaryModal({
           {/* Footer actions */}
           <View style={styles.actions}>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.85}>
-              <Text style={styles.closeText}>Close</Text>
+              <Text style={styles.closeText}>Fermer</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.resetBtn} onPress={onReset} activeOpacity={0.85}>
               <Ionicons name="refresh" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-              <Text style={styles.resetText}>Reset filters</Text>
+              <Text style={styles.resetText}>Réinitialiser</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: 'Poppins-Medium',
     color: palette.textPrimary,
     letterSpacing: -0.3,
   },
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Medium',
     color: palette.textPrimary,
     marginBottom: 6,
   },
@@ -252,8 +252,8 @@ const styles = StyleSheet.create({
     maxWidth: 200,
   },
   chipText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
   },
   actions: {
     flexDirection: 'row',
@@ -272,12 +272,12 @@ const styles = StyleSheet.create({
   },
   closeText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Medium',
     color: palette.textSecondary,
     letterSpacing: 0.2,
   },
   resetBtn: {
-    flex: 1,
+    flex: 2,
     paddingVertical: 13,
     borderRadius: 14,
     alignItems: 'center',
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   resetText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Poppins-Medium',
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },

@@ -10,6 +10,30 @@ export type ProductListItem = {
   image: string | null;
 };
 
+// Size structures mirror the JSON column on the backend.
+//
+// One product has up to N "dimensions" (Tour de taille, Hauteur, ...).
+// Each dimension has options (S/M/L or 1/2/3). Each option either has
+// a flat filter_keys array (simple AND match) OR variants (an OR of
+// conditional AND-groups, e.g. "Nam+32-36 OR Nữ+20").
+export type ProductDetailSizeVariant = {
+  filter_keys: string[];
+  range?: string;
+};
+export type ProductDetailSizeOption = {
+  label: string;
+  range?: string;
+  filter_keys?: string[];
+  variants?: ProductDetailSizeVariant[];
+};
+export type ProductDetailSizeDimension = {
+  name: string;
+  options: ProductDetailSizeOption[];
+};
+export type ProductDetailSizes = {
+  dimensions: ProductDetailSizeDimension[];
+};
+
 export type ProductDetail = {
   id: string;
   name: string;
@@ -18,6 +42,7 @@ export type ProductDetail = {
   images: string[];
   tags: string[];
   description_tabs: { title: string; content_markdown: string }[];
+  sizes?: ProductDetailSizes | null;
 };
 
 // Filters come in as a flat list of childIds. URLSearchParams.toString()
@@ -44,6 +69,8 @@ export const filterProducts = async (
 export const countFilteredProducts = async (
   filters: string[],
 ): Promise<number> => {
+  console.log(filters);
+
   return axiosInstance
     .get(`${baseUrl}/products/count${buildFilterQuery(filters)}`)
     .then((response) => response.data?.count ?? 0)

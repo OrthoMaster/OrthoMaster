@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   StatusBar, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
@@ -9,25 +10,42 @@ import { Sun } from './components/Sun';
 
 import { isNodeVisible, MainNode, Selections, toggleSelection } from './lib/Logic';
 import { computeOrbitLayout, PlanetLayout, tickOrbits } from './lib/OrbitLayout';
-import { SAMPLE_NODES } from './lib/SampleData';
+import { SAMPLE_NODES } from './lib/SampleRules';
 import { accentForIndex, palette } from './lib/Theme';
 
-// Replace with real product matcher.
-function fakeProductCount(selections: Selections): number {
-  // Heuristic: more specific selections → fewer matches.
-  // Counts only "leaf" selections (non-indicator).
-  let count = 0;
-  for (const v of Object.values(selections)) count += v.length;
-  if (count === 0) return 0;
-  return Math.max(0, 18 - count * 2);
+import { countFilteredProducts } from '../../services/v2/ProductService';
+
+// Flatten Selections (nodeId → childId[]) to a flat list of childIds.
+// The backend expands parents itself based on rules.json.
+function flattenSelections(selections: Selections): string[] {
+  return Object.values(selections).flat();
+}
+
+// Build the default selection state: every multi root node has ALL its
+// children pre-selected. This unlocks dependent nodes (e.g. selecting all
+// Patient indicators reveals Type / Âge / Activité) so the user can fill
+// them in without having to first activate the indicator group.
+//
+// Root = no visibilityRule. Multi = selectionType === 'multi'.
+function buildDefaultSelections(): Selections {
+  const result: Selections = {};
+  for (const node of SAMPLE_NODES) {
+    if (node.visibilityRule == null && node.selectionType === 'multi') {
+      result[node.id] = node.children.map(c => c.id);
+    }
+  }
+  return result;
 }
 
 export const SolarFilterScreen = ({ navigation, route }) => {
-  const [selections, setSelections] = useState<Selections>({});
+  const [selections, setSelections] = useState<Selections>(buildDefaultSelections);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [canvas, setCanvas] = useState({ w: 0, h: 0 });
   const [tickFrame, setTickFrame] = useState(0);
   const startRef = useRef<number>(Date.now());
+
+  // Live product count from backend. Starts at 0 until first fetch.
+  const [productCount, setProductCount] = useState<number>(0);
 
   // Only ROOT nodes become planets. Conditional/linked nodes surface in
   // the bottom sheet of their parent planet, never on canvas.
@@ -86,6 +104,25 @@ export const SolarFilterScreen = ({ navigation, route }) => {
     return () => cancelAnimationFrame(raf);
   }, [baseLayout]);
 
+  // Fetch product count whenever selections change.
+  // Debounced 300ms to avoid spamming the backend while the user is
+  // tapping pills rapidly. Race-safe via a request counter — only the
+  // latest fetch is allowed to update state.
+  const fetchSeqRef = useRef(0);
+  useEffect(() => {
+    const mySeq = ++fetchSeqRef.current;
+    const flat = flattenSelections(selections);
+
+    const timer = setTimeout(async () => {
+      const count = await countFilteredProducts(flat);
+      // Drop stale responses: only the latest call wins
+      if (mySeq !== fetchSeqRef.current) return;
+      setProductCount(typeof count === 'number' ? count : 0);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [selections]);
+
   // ---------- handlers ----------
   const handlePlanetPress = useCallback((nodeId: string) => {
     setActiveNodeId(nodeId);
@@ -95,7 +132,7 @@ export const SolarFilterScreen = ({ navigation, route }) => {
     setSelections(prev => toggleSelection(SAMPLE_NODES, prev, nodeId, childId));
   }, []);
 
-  const handleReset = () => setSelections({});
+  const handleReset = () => setSelections(buildDefaultSelections());
 
   const didAutoOpenRef = useRef(false);
 
@@ -103,7 +140,7 @@ export const SolarFilterScreen = ({ navigation, route }) => {
   // "Reset filters" in the summary modal there).
   useEffect(() => {
     if (route?.params?.reset) {
-      setSelections({});
+      setSelections(buildDefaultSelections());
       didAutoOpenRef.current = false;        // allow auto-open again
       // Clear the param so it doesn't re-trigger on next focus
       navigation.setParams({ reset: undefined });
@@ -130,9 +167,24 @@ export const SolarFilterScreen = ({ navigation, route }) => {
     setActiveNodeId(rootNodes[0].id);
   }, [baseLayout, rootNodes]);
 
-  const handleViewProducts = () => {
+  const handleViewProducts = useCallback(() => {
     navigation.navigate('products-view', { selections });
-  };
+  }, [navigation, selections]);
+
+  // Open the first planet's sheet — used both by the header "Commencer"
+  // button and the filter icon next to the disabled "no products" button.
+  const handleOpenFirstNode = useCallback(() => {
+    if (rootNodes[0]) setActiveNodeId(rootNodes[0].id);
+  }, [rootNodes]);
+
+  // Sun tap → same action as the View Products bottom button, but only
+  // when there are products to show. When there's nothing, the tap is
+  // a no-op (Sun is visually dim anyway, signaling "not actionable").
+  const handleSunPress = useCallback(() => {
+    if (productCount > 0) {
+      handleViewProducts();
+    }
+  }, [productCount, handleViewProducts]);
 
   // ---------- derived ----------
   const activeNode = activeNodeId
@@ -142,8 +194,20 @@ export const SolarFilterScreen = ({ navigation, route }) => {
     ? accentForIndex(rootNodes.indexOf(activeNode))
     : null;
 
-  const productCount = fakeProductCount(selections);
-  const totalSelected = Object.values(selections).reduce((s, a) => s + a.length, 0);
+  // Count selections WITHOUT root-node options. Root multi indicators
+  // (like Patient) are auto-selected on init and don't represent a real
+  // user choice — only sub-node values (Homme, 15-25, Modéré, etc.) should
+  // bump this number. Used for header / footer button enabling.
+  const totalSelected = useMemo(() => {
+    let count = 0;
+    for (const [nodeId, arr] of Object.entries(selections)) {
+      const node = SAMPLE_NODES.find(n => n.id === nodeId);
+      if (!node) continue;
+      if (node.visibilityRule == null) continue;   // root — skip
+      count += arr.length;
+    }
+    return count;
+  }, [selections]);
 
   // Build the list of selected labels per planet:
   //   - multi-select planet (indicator like "Patient"): show ALL leaf values
@@ -155,8 +219,6 @@ export const SolarFilterScreen = ({ navigation, route }) => {
   const selectedLabelsForPlanet = (planet: MainNode): string[] => {
     const isIndicator = planet.selectionType === 'multi';
 
-    // Collect all linked nodes (transitive — Segment, Localisation, etc.)
-    // ordered shallow → deep by traversal order.
     const collectLinked = (root: MainNode): MainNode[] => {
       const result: MainNode[] = [];
       const inResult = new Set<string>([root.id]);
@@ -177,7 +239,6 @@ export const SolarFilterScreen = ({ navigation, route }) => {
     };
 
     if (isIndicator) {
-      // Indicator: aggregate values from all linked nodes (one chip each)
       const labels: string[] = [];
       collectLinked(planet).forEach(n => {
         const sels = selections[n.id] || [];
@@ -188,10 +249,7 @@ export const SolarFilterScreen = ({ navigation, route }) => {
       });
       return labels;
     } else {
-      // Single-select: find the DEEPEST linked node that has a selection
       const linked = collectLinked(planet);
-      // Walk from deepest (last in array, since BFS expands shallow first)
-      // backwards to find first one with a selection.
       for (let i = linked.length - 1; i >= 0; i--) {
         const n = linked[i];
         const sels = selections[n.id] || [];
@@ -200,7 +258,6 @@ export const SolarFilterScreen = ({ navigation, route }) => {
           if (child) return [child.label];
         }
       }
-      // No linked node has a selection — fall back to planet's own choice
       const ownSels = selections[planet.id] || [];
       if (ownSels.length > 0) {
         const child = planet.children.find(c => c.id === ownSels[0]);
@@ -210,7 +267,6 @@ export const SolarFilterScreen = ({ navigation, route }) => {
     }
   };
 
-  // Helper: does rule reference any nodeId in the given set?
   const refsAnyOf = (rule: any, set: Set<string>): boolean => {
     if (!rule) return false;
     if ('kind' in rule) {
@@ -228,11 +284,8 @@ export const SolarFilterScreen = ({ navigation, route }) => {
     return false;
   };
 
-  // Has any selection (on planet or linked nodes) → planet is "lit"
   const planetHasSelection = (planet: MainNode): boolean => {
     if ((selections[planet.id]?.length || 0) > 0) {
-      // For indicator: treat as having selection only if linked nodes
-      // ALSO have values picked
       if (planet.selectionType === 'multi') {
         return SAMPLE_NODES.some(n => {
           if (n.id === planet.id) return false;
@@ -256,12 +309,19 @@ export const SolarFilterScreen = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.eyebrow}>Patient profile</Text>
-            <Text style={styles.title}>Tap a planet to filter</Text>
+            <Text style={styles.eyebrow}>Que Choisir</Text>
+            <Text style={styles.title}>Médicaux Orthopédiques</Text>
           </View>
-          {totalSelected > 0 && (
+          {totalSelected > 0 ? (
             <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
-              <Text style={styles.resetText}>Reset</Text>
+              <Text style={styles.resetText}>Réinitialiser</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={handleOpenFirstNode}
+              style={styles.resetBtn}
+            >
+              <Text style={styles.resetText}>Commencer</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -280,13 +340,16 @@ export const SolarFilterScreen = ({ navigation, route }) => {
             <>
               {/* Sun first (background obstacle), then all planets on top.
                   No more occlusion logic — planets can't go behind the sun
-                  because they bounce off it. */}
+                  because they bounce off it.
+                  When products are available, tapping the sun navigates to
+                  the products list (same as the bottom Voir button). */}
               <Sun
                 x={layout.sunX}
                 y={layout.sunY}
                 radius={layout.sunRadius}
                 count={productCount}
                 isLit={sunIsLit}
+                onPress={productCount > 0 ? handleSunPress : undefined}
               />
 
               {[...layout.planets.values()].map(p => {
@@ -318,39 +381,52 @@ export const SolarFilterScreen = ({ navigation, route }) => {
         <View style={styles.actionArea}>
           <Text style={styles.hint}>
             {totalSelected === 0
-              ? 'Tap a planet to begin'
+              ? 'Appuyez sur la boule pour régler le filtre'
               : `${totalSelected} selection${totalSelected > 1 ? 's' : ''}`}
           </Text>
 
           <View style={styles.actionRow}>
             {totalSelected > 0 ? (
-              <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
-                <Text style={styles.resetText}>Reset</Text>
-              </TouchableOpacity>
+              <>
+                {productCount === 0 && (
+                  <TouchableOpacity
+                    style={styles.filterIconBtn}
+                    onPress={handleOpenFirstNode}
+                    activeOpacity={0.85}
+                  >
+                    <MaterialCommunityIcons name="filter-plus-outline" size={22} color="#FFFFFF" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[
+                    styles.viewProductsBtn,
+                    productCount === 0 && styles.viewProductsBtnDisabled,
+                  ]}
+                  onPress={handleViewProducts}
+                  disabled={productCount === 0}
+                  activeOpacity={0.85}
+                >
+                  <Text
+                    style={[
+                      styles.viewProductsText,
+                      productCount === 0 && styles.viewProductsTextDisabled,
+                    ]}
+                  >
+                    {productCount === 0
+                      ? 'Aucun produit ne correspond'
+                      : `Voir ${productCount} produit${productCount > 1 ? 's' : ''}`}
+                  </Text>
+                </TouchableOpacity>
+              </>
             ) : (
-              <View style={{ flex: 0 }} />
-            )}
-
-            <TouchableOpacity
-              style={[
-                styles.viewProductsBtn,
-                productCount === 0 && styles.viewProductsBtnDisabled,
-              ]}
-              onPress={handleViewProducts}
-              disabled={productCount === 0}
-              activeOpacity={0.85}
-            >
-              <Text
-                style={[
-                  styles.viewProductsText,
-                  productCount === 0 && styles.viewProductsTextDisabled,
-                ]}
+              <TouchableOpacity
+                style={styles.viewProductsBtn}
+                onPress={handleOpenFirstNode}
+                activeOpacity={0.85}
               >
-                {productCount === 0
-                  ? 'No products match'
-                  : `View ${productCount} product${productCount > 1 ? 's' : ''}`}
-              </Text>
-            </TouchableOpacity>
+                <Text style={styles.viewProductsText}>Commencer</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -473,5 +549,18 @@ const styles = StyleSheet.create({
   viewProductsTextDisabled: {
     color: '#9CA3AF',
     fontWeight: '600',
+  },
+  filterIconBtn: {
+    aspectRatio: 1,
+    borderRadius: 999,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+    width: 50,
   },
 });

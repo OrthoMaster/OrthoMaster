@@ -14,15 +14,7 @@ export const SAMPLE_NODES: MainNode[] = [
       },
       {
         "id": "age",
-        "label": "Âge",
-        "visibilityRule": {
-          "op": "NOT",
-          "rule": {
-            "kind": "selected",
-            "nodeId": "type",
-            "childId": "enfant"
-          }
-        }
+        "label": "Âge"
       },
       {
         "id": "activite",
@@ -82,22 +74,9 @@ export const SAMPLE_NODES: MainNode[] = [
       }
     ],
     "visibilityRule": {
-      "op": "AND",
-      "rules": [
-        {
-          "kind": "selected",
-          "nodeId": "patient",
-          "childId": "age"
-        },
-        {
-          "op": "NOT",
-          "rule": {
-            "kind": "selected",
-            "nodeId": "type",
-            "childId": "enfant"
-          }
-        }
-      ]
+      "kind": "selected",
+      "nodeId": "patient",
+      "childId": "age"
     }
   },
   {
@@ -734,7 +713,7 @@ export const SAMPLE_NODES: MainNode[] = [
         }
       },
       {
-        "id": "cer-rhu-art",
+        "id": "",
         "label": "Arthrose cervicale",
         "visibilityRule": {
           "op": "AND",
@@ -775,6 +754,157 @@ export const SAMPLE_NODES: MainNode[] = [
     "visibilityRule": {
       "kind": "any_selected",
       "nodeId": "path_type"
+    }
+  },
+  {
+    "id": "mesure_poignet",
+    "title": "Tour de poignet",
+    "selectionType": "single",
+    "children": [
+      {
+        "id": "poignet-s",
+        "label": "Petit (< 17 cm)"
+      },
+      {
+        "id": "poignet-m",
+        "label": "Moyen (17-20 cm)"
+      },
+      {
+        "id": "poignet-l",
+        "label": "Grand (> 20 cm)"
+      }
+    ],
+    "visibilityRule": {
+      "kind": "selected",
+      "nodeId": "zone",
+      "childId": "mem-sup"
+    }
+  },
+  {
+    "id": "mesure_coude",
+    "title": "Tour de coude",
+    "selectionType": "single",
+    "children": [
+      {
+        "id": "coude-s",
+        "label": "Petit (< 26 cm)"
+      },
+      {
+        "id": "coude-m",
+        "label": "Moyen (26-30 cm)"
+      },
+      {
+        "id": "coude-l",
+        "label": "Grand (> 30 cm)"
+      }
+    ],
+    "visibilityRule": {
+      "kind": "selected",
+      "nodeId": "zone",
+      "childId": "mem-sup"
+    }
+  },
+  {
+    "id": "mesure_genou",
+    "title": "Tour de genou",
+    "selectionType": "single",
+    "children": [
+      {
+        "id": "genou-s",
+        "label": "Petit (< 36 cm)"
+      },
+      {
+        "id": "genou-m",
+        "label": "Moyen (36-42 cm)"
+      },
+      {
+        "id": "genou-l",
+        "label": "Grand (> 42 cm)"
+      }
+    ],
+    "visibilityRule": {
+      "kind": "selected",
+      "nodeId": "zone",
+      "childId": "mem-inf"
+    }
+  },
+  {
+    "id": "mesure_cheville",
+    "title": "Tour de cheville",
+    "selectionType": "single",
+    "children": [
+      {
+        "id": "cheville-s",
+        "label": "Petit (< 22 cm)"
+      },
+      {
+        "id": "cheville-m",
+        "label": "Moyen (22-26 cm)"
+      },
+      {
+        "id": "cheville-l",
+        "label": "Grand (> 26 cm)"
+      }
+    ],
+    "visibilityRule": {
+      "kind": "selected",
+      "nodeId": "zone",
+      "childId": "mem-inf"
+    }
+  },
+  {
+    "id": "mesure_taille",
+    "title": "Tour de taille",
+    "selectionType": "single",
+    "children": [
+      {
+        "id": "taille-s",
+        "label": "Petit (< 75 cm)"
+      },
+      {
+        "id": "taille-m",
+        "label": "Moyen (75-90 cm)"
+      },
+      {
+        "id": "taille-l",
+        "label": "Grand (90-105 cm)"
+      },
+      {
+        "id": "taille-xl",
+        "label": "Très grand (> 105 cm)"
+      }
+    ],
+    "visibilityRule": {
+      "kind": "selected",
+      "nodeId": "zone",
+      "childId": "tronc"
+    }
+  },
+  {
+    "id": "mesure_hauteur",
+    "title": "Hauteur",
+    "selectionType": "single",
+    "children": [
+      {
+        "id": "hauteur-s",
+        "label": "Petit (< 160 cm)"
+      },
+      {
+        "id": "hauteur-m",
+        "label": "Moyen (160-175 cm)"
+      },
+      {
+        "id": "hauteur-l",
+        "label": "Grand (175-185 cm)"
+      },
+      {
+        "id": "hauteur-xl",
+        "label": "Très grand (> 185 cm)"
+      }
+    ],
+    "visibilityRule": {
+      "kind": "any_selected",
+      "nodeId": "zone"
     }
   }
 ]
