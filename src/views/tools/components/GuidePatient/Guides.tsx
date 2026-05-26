@@ -11,7 +11,7 @@ const isWeb = Platform.OS == 'web';
 export const GUIDES = [{
   name: 'Ceinture lombaire',
   s3_guide_path: "tools/Guide patient/QR guide patient CSL.png",
-  stickers_url: 'https://drive.google.com/uc?export=download&id=1Tn-8eX8cTRNkMUhb6wvbyOcnz7sxM41W',
+  stickers_url: 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/tool-images/lombaire.pdf',
   redirect_link: 'https://www.orthomasterpatient.fr/s-projects-side-by-side'
 }]
 
@@ -22,7 +22,7 @@ const GuideCard = ({ config, showGuide }) => {
   const onShare = async () => {
     const url = config.stickers_url;
     const safeName = config.name.replace(/\s+/g, '-').toLowerCase();
-    const fileName = `guide-patient-${safeName}.png`;
+    const fileName = `guide-patient-${safeName}.pdf`;
 
     if (isWeb) {
       try {
@@ -50,15 +50,15 @@ const GuideCard = ({ config, showGuide }) => {
       }
     } else {
       try {
-        const uniqueFileName = `guide-patient-${safeName}-${Date.now()}.png`;
+        const uniqueFileName = `guide-patient-${safeName}-${Date.now()}.pdf`;
         const destination = new File(Paths.cache, uniqueFileName);
 
         const output = await File.downloadFileAsync(url, destination);
 
         if (output.exists) {
           await Sharing.shareAsync(output.uri, {
-            UTI: 'public.png',
-            mimeType: 'image/png',
+            UTI: 'com.adobe.pdf',
+            mimeType: 'application/pdf',
             dialogTitle: "Partager l'image",
           });
         }
