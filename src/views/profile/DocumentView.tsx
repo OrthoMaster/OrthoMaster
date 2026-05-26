@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 import Colors from '../../../constants/Colors';
@@ -99,28 +100,28 @@ export const DocumentView = ({ navigation }) => {
   };
 
   const downloadFile = async (url: string) => {
-  try {
-    const fileName = url.split('/').pop() || `document_${Date.now()}.pdf`;
-    const fileUri = FileSystem.documentDirectory + fileName;
-    const downloadResumable = FileSystem.createDownloadResumable(
-      url,
-      fileUri,
-      {},
-      null
-    );
+    try {
+      const originalName = url.split('/').pop() || 'document.pdf';
+      const dotIndex = originalName.lastIndexOf('.');
+      const baseName = dotIndex > 0 ? originalName.slice(0, dotIndex) : originalName;
+      const extension = dotIndex > 0 ? originalName.slice(dotIndex) : '.pdf';
+      const uniqueFileName = `${baseName}-${Date.now()}${extension}`;
 
-    const { uri } = await downloadResumable.downloadAsync();
-    if (uri) {
-      await Sharing.shareAsync(uri, {
-        UTI: 'com.adobe.pdf',
-        mimeType: 'application/pdf',
-      });
+      const destination = new File(Paths.cache, uniqueFileName);
+
+      const output = await File.downloadFileAsync(url, destination);
+
+      if (output.exists) {
+        await Sharing.shareAsync(output.uri, {
+          UTI: 'com.adobe.pdf',
+          mimeType: 'application/pdf',
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
     }
-  } catch (err) {
-    console.error(err);
-    Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
-  }
-};
+  };
 
   return (
     <SafeAreaView style={styles.container}
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: isTablet ? 100 : 60, 
+    height: isTablet ? 100 : 60,
   },
   backButton: {
     padding: 4,

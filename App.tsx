@@ -149,7 +149,7 @@ export default function App({ navigation }) {
     async function prepare() {
       try {
         // Check OTA update
-        await checkForOTAUpdate().catch(() => {});
+        await checkForOTAUpdate().catch(() => { });
 
         // Load fonts
         await Font.loadAsync({
@@ -177,6 +177,15 @@ export default function App({ navigation }) {
     }
 
     prepare();
+
+    // Clear notification badge
+    Notifications.setBadgeCountAsync(0);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        Notifications.setBadgeCountAsync(0);
+      }
+    });
+    sub.remove();
   }, []);
 
   // Safety timeout for splash

@@ -3,35 +3,69 @@ import { FlatList, StyleSheet, ActivityIndicator, Alert, Image, Linking, Text, T
 import { useQuery } from "@tanstack/react-query";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import { getS3Image } from "../../../../services/S3Service";
-import * as FileSystem from 'expo-file-system';
-import { orthomasterShareFile } from "../../../../futils";
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 const isWeb = Platform.OS == 'web';
 
 export const GUIDES = [{
   name: 'Ceinture lombaire',
   s3_guide_path: "tools/Guide patient/QR guide patient CSL.png",
-  stickers_url: 'https://drive.google.com/file/d/1Tn-8eX8cTRNkMUhb6wvbyOcnz7sxM41W/view?usp=sharing',
+  stickers_url: 'https://drive.google.com/uc?export=download&id=1Tn-8eX8cTRNkMUhb6wvbyOcnz7sxM41W',
   redirect_link: 'https://www.orthomasterpatient.fr/s-projects-side-by-side'
 }]
 
 
 const GuideCard = ({ config, showGuide }) => {
   const guide = useQuery({ queryKey: ['Guide patient', 'GET', 'QR', config.name], queryFn: () => getS3Image(config.s3_guide_path) })
-  const fileUri = FileSystem.cacheDirectory + `guide-patient-${config.name.replace(' ', '-')}.png`
 
   const onShare = async () => {
-    try {
-      const options = {
-        mimeType: 'image/png',
-        dialogTitle: "Partager l'image",
-        UTI: 'image/png',
-      };
-      FileSystem.downloadAsync(guide.data, fileUri)
-      orthomasterShareFile(fileUri, options, 'qr-guide-' + config.name.replace(' ', '-').toLowerCase())
+    const url = config.stickers_url;
+    const safeName = config.name.replace(/\s+/g, '-').toLowerCase();
+    const fileName = `guide-patient-${safeName}.png`;
 
-    } catch (error) {
-      Alert.alert(error.message);
+    if (isWeb) {
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error('Erreur lors du téléchargement du fichier');
+        }
+
+        const blob = await response.blob();
+
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+
+        document.body.appendChild(link);
+        link.click();
+
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      } catch (err) {
+        console.error(err);
+        Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
+      }
+    } else {
+      try {
+        const uniqueFileName = `guide-patient-${safeName}-${Date.now()}.png`;
+        const destination = new File(Paths.cache, uniqueFileName);
+
+        const output = await File.downloadFileAsync(url, destination);
+
+        if (output.exists) {
+          await Sharing.shareAsync(output.uri, {
+            UTI: 'public.png',
+            mimeType: 'image/png',
+            dialogTitle: "Partager l'image",
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
+      }
     }
   };
 
@@ -48,7 +82,7 @@ const GuideCard = ({ config, showGuide }) => {
             source={{ uri: guide.data }}
             style={{
               width: isWeb ? 100 : "100%",
-              height: isWeb ? 100 : "100%", 
+              height: isWeb ? 100 : "100%",
               resizeMode: 'contain'
             }}
           />
@@ -94,12 +128,10 @@ const GuideCard = ({ config, showGuide }) => {
   </View>
 }
 
-
 const Guides: React.FC<{ onSelect?: (guideUrl: string) => any }> = ({ onSelect }) => {
   return (<View style={{
     width: '100%'
   }}>
-
     <FlatList
       data={GUIDES}
       keyExtractor={(item, index) => index.toString()}

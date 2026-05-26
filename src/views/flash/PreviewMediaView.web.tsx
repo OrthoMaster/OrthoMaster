@@ -12,9 +12,10 @@ import { useGetUser } from "../../hooks/useGetUser.hook";
 import { getS3Image } from "../../services/S3Service";
 import { IContent } from "../../utils/interfaces";
 import { orthomasterShare } from "../../futils";
-import { AdServingModalMediaAccess } from "./ads/AdServingModalMediaAccess";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+
+import VideoAdsModal from "./ads/VideoAdsModal";
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -119,7 +120,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
       </View>
 
       {showAds && (
-        <AdServingModalMediaAccess
+        <VideoAdsModal
           enabled={showAds}
           onClose={() => {
             setShowAds(false);
