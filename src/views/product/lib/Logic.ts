@@ -24,6 +24,7 @@ export type MainNode = {
   selectionType: 'single' | 'multi';
   children: ChildNode[];
   visibilityRule?: Rule | null;
+  parentNodeId?: string; 
 };
 
 // ---------- evaluator ----------

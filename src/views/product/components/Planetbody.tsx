@@ -11,7 +11,7 @@ type PlanetProps = {
   nodeId: string;
   title: string;
   // Each chosen value (across the planet's own selections + linked
-  // children) becomes a chip below the title.
+  // children) is shown inside the sphere when present.
   selectedLabels: string[];
   // Active = options sheet is open for this node.
   isActive: boolean;
@@ -28,7 +28,8 @@ type PlanetProps = {
 //   3. Sphere body (color)
 //   4. Sphere highlight (top-left lightened crescent)
 //   5. Specular dot (top-left small white)
-//   6. Title + chips below
+//   6. In-sphere content: title (big when no selection, small caption
+//      when there are selected labels) + joined labels block.
 export function PlanetBody({
   cx, cy, size, zDepth,
   nodeId, title,
@@ -179,58 +180,51 @@ export function PlanetBody({
           }]}
         />
 
-        {/* Title centered ON the sphere — rendered last so it sits above
-            all the shading layers. The fill-area takes the whole sphere
-            so flexbox can center the text both ways. */}
-        <View pointerEvents="none" style={[styles.titleInSphere, { width: size, height: size }]}>
-          <Text
-            style={[
-              styles.titleCentered,
-              { color: hasSelection ? accent.textOn : '#FFFFFF' },
-              isActive && styles.titleActive,
-            ]}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            {title}
-          </Text>
+        {/* Inner content of the sphere — adaptive layout:
+            - No selection: title fills the centre (big).
+            - With selection: title shrinks to a small uppercase caption at
+              the top and selected labels render as a joined string just
+              below it, wrapping inside the sphere area. */}
+        <View pointerEvents="none" style={[styles.sphereContent, { width: size, height: size }]}>
+          {selectedLabels.length === 0 ? (
+            <Text
+              style={[
+                styles.titleCentered,
+                { color: hasSelection ? accent.textOn : '#FFFFFF' },
+                isActive && styles.titleActive,
+              ]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {title}
+            </Text>
+          ) : (
+            <>
+              <Text
+                style={[
+                  styles.titleSmall,
+                  { color: hasSelection ? accent.textOn : '#FFFFFF' },
+                  isActive && styles.titleActive,
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {title}
+              </Text>
+              <Text
+                style={[
+                  styles.labelsInline,
+                  { color: hasSelection ? accent.textOn : '#FFFFFF' },
+                ]}
+                numberOfLines={3}
+                ellipsizeMode="tail"
+              >
+                {selectedLabels.join(' · ')}
+              </Text>
+            </>
+          )}
         </View>
       </Pressable>
-
-      {/* Chips below — title is now on the sphere */}
-      {selectedLabels.length > 0 && (
-        <View
-          pointerEvents="none"
-          style={[styles.labelWrap, {
-            top: haloSize - 8,
-            width: Math.max(140, size + 80),
-            left: (haloSize - Math.max(140, size + 80)) / 2,
-          }]}
-        >
-          <View style={styles.chipRow}>
-            {selectedLabels.slice(0, 3).map((lbl, i) => (
-              <View
-                key={i}
-                style={[styles.chip, { backgroundColor: accent.soft, borderColor: accent.strong }]}
-              >
-                <Text
-                  style={[styles.chipText, { color: accent.text }]}
-                  numberOfLines={1}
-                >
-                  {lbl}
-                </Text>
-              </View>
-            ))}
-            {selectedLabels.length > 3 && (
-              <View style={[styles.chip, { backgroundColor: accent.soft, borderColor: accent.strong }]}>
-                <Text style={[styles.chipText, { color: accent.text }]}>
-                  +{selectedLabels.length - 3}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      )}
     </View>
   );
 }
@@ -275,57 +269,48 @@ const styles = StyleSheet.create({
   sphereLayer: {
     position: 'absolute',
   },
-  labelWrap: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  titleInSphere: {
+
+  // Container for in-sphere content. Centers the column; padding keeps
+  // text from touching the round edge.
+  sphereContent: {
     position: 'absolute',
     top: 0,
     left: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
+
+  // Big title — when there are no selected labels (centred in sphere)
   titleCentered: {
     fontSize: 14,
     fontFamily: 'Poppins-Bold',
     textAlign: 'center',
-    lineHeight: 14,
-    marginTop: 10
-  },
-  title: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Medium',
-    color: palette.textPrimary,
-    letterSpacing: -0.1,
-    textAlign: 'center',
     lineHeight: 16,
   },
-  titleDim: {
-    color: palette.textMuted,
-    fontWeight: '500',
+
+  // Small title — when selected labels exist (sits above the labels block)
+  titleSmall: {
+    fontSize: 10,
+    fontFamily: 'Poppins-Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    textAlign: 'center',
+    opacity: 0.85,
+    marginBottom: 3,
   },
-  titleActive: {
-    fontWeight: '700',
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: -15,
-    gap: 4,
-  },
-  chip: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    borderWidth: 1,
-    maxWidth: 110,
-  },
-  chipText: {
+
+  // Joined labels — "A · B · C". Wraps up to 3 lines inside the sphere
+  // area; overflowing the last line gets a tail ellipsis.
+  labelsInline: {
     fontSize: 11,
     fontFamily: 'Poppins-Medium',
     textAlign: 'center',
+    lineHeight: 14,
+  },
+
+  titleActive: {
+    fontWeight: '700',
   },
 });

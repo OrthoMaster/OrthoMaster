@@ -878,7 +878,8 @@ export const SAMPLE_NODES: MainNode[] = [
       "kind": "selected",
       "nodeId": "zone",
       "childId": "tronc"
-    }
+    },
+    "parentNodeId": "patient"
   },
   {
     "id": "mesure_hauteur",
@@ -905,7 +906,8 @@ export const SAMPLE_NODES: MainNode[] = [
     "visibilityRule": {
       "kind": "any_selected",
       "nodeId": "zone"
-    }
+    },
+    "parentNodeId": "patient"
   }
 ]
 ;

@@ -76,7 +76,7 @@ function NodeSection({
         </Text>
         <View style={{ flex: 1 }} />
         <Text style={styles.sectionMeta}>
-          {isMulti ? 'multiple' : 'un seul'}
+          {isMulti ? 'multiple' : 'one only'}
         </Text>
       </View>
 
@@ -100,15 +100,37 @@ function NodeSection({
 }
 
 // Find all nodes transitively unlocked starting from rootNode.
-// A node N is included if its visibility rule references rootNode OR any
-// node already in the result set, AND it's currently visible.
-// This is a topological walk: we expand the frontier until no more nodes
-// are added. Returned in dependency order (parents before children).
+//
+// Default behavior (no `parentNodeId` set on a node): BFS — a node N is
+// included if its visibility rule references rootNode OR any node already
+// in the result set, AND it's currently visible.
+//
+// Override (`parentNodeId` set on a node):
+//   - If parentNodeId points at a valid root planet (a node with no
+//     visibilityRule), the node is FORCED into that planet's sheet only.
+//     It will NOT appear in any other sheet, regardless of BFS.
+//   - If parentNodeId is invalid (node not found, or points at a non-root
+//     node), the override is ignored and the node falls back to BFS.
+//
+// Returned in dependency order (parents before children).
 function findLinkedNodes(
   rootNode: MainNode,
   allNodes: MainNode[],
   selections: Selections,
 ): MainNode[] {
+  // Pre-compute which nodes have a VALID parent override and what that
+  // override resolves to. Invalid overrides → treated as if absent.
+  const rootIds = new Set(
+    allNodes.filter(n => n.visibilityRule == null).map(n => n.id),
+  );
+  const effectiveParent = new Map<string, string>(); // nodeId → resolved parentRootId
+  for (const n of allNodes) {
+    const p = (n as any).parentNodeId;
+    if (typeof p === 'string' && p !== '' && rootIds.has(p)) {
+      effectiveParent.set(n.id, p);
+    }
+  }
+
   const result: MainNode[] = [];
   const inResult = new Set<string>([rootNode.id]);
 
@@ -118,7 +140,23 @@ function findLinkedNodes(
     for (const n of allNodes) {
       if (inResult.has(n.id)) continue;
       if (!isNodeVisible(n, selections)) continue;
-      // Does this node reference any node already in our result set?
+
+      // Honor parent override first — wins over BFS.
+      const override = effectiveParent.get(n.id);
+      if (override !== undefined) {
+        // Node has a valid parent override; include ONLY when we are
+        // currently rendering that parent's sheet.
+        if (override === rootNode.id) {
+          result.push(n);
+          inResult.add(n.id);
+          changed = true;
+        }
+        // If override points at a different planet, skip — never include
+        // here even if BFS would have hit this node.
+        continue;
+      }
+
+      // No override → original BFS behavior.
       const refs = collectRuleRefs(n.visibilityRule);
       const referencesAny = [...refs].some(r => inResult.has(r));
       if (referencesAny) {
@@ -187,7 +225,7 @@ export function OptionsSheet({
               <Text style={styles.title}>{rootNode.title}</Text>
               {totalSelections > 0 && (
                 <Text style={styles.subtitle}>
-                  {totalSelections} sélection{totalSelections > 1 ? 's' : ''}
+                  {totalSelections} selection{totalSelections > 1 ? 's' : ''}
                 </Text>
               )}
             </View>
@@ -200,7 +238,7 @@ export function OptionsSheet({
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={{ paddingBottom: 8 }}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
           >
             <NodeSection
               node={rootNode}
@@ -225,8 +263,8 @@ export function OptionsSheet({
 
           {/* Done + Next row */}
           <View style={styles.actionRow}>
-            <TouchableOpacity style={[styles.doneBtn, { backgroundColor: accent.strong }]} onPress={onClose} activeOpacity={0.85}>
-              <Text style={styles.doneText}>Fermer</Text>
+            <TouchableOpacity style={styles.doneBtn} onPress={onClose} activeOpacity={0.85}>
+              <Text style={styles.doneText}>Done</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.nextBtn, { borderColor: accent.strong }]}
@@ -291,14 +329,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 19,
+    fontWeight: '700',
     color: palette.textPrimary,
+    letterSpacing: -0.4,
   },
   subtitle: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular',
     color: palette.textSecondary,
+    marginTop: 2,
   },
   scroll: {
     maxHeight: 480,
@@ -326,19 +365,19 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontWeight: '700',
     color: palette.textPrimary,
     letterSpacing: -0.2,
   },
   sectionTitleLinked: {
     fontSize: 13,
-    fontFamily: 'Poppins-Medium',
+    fontWeight: '600',
     color: palette.textSecondary,
   },
   sectionMeta: {
     fontSize: 10,
     color: palette.textMuted,
-    fontFamily: 'Poppins-Medium',
+    fontWeight: '600',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
@@ -357,12 +396,12 @@ const styles = StyleSheet.create({
   },
   pillCheck: {
     fontSize: 13,
-    fontFamily: 'Poppins-Medium',
+    fontWeight: '700',
     marginRight: 5,
   },
   pillText: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 13.5,
+    fontWeight: '500',
   },
   empty: {
     fontStyle: 'italic',
@@ -380,6 +419,7 @@ const styles = StyleSheet.create({
   doneText: {
     color: palette.fabText,
     fontSize: 15,
-    fontFamily: 'Poppins-Bold',
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
 });

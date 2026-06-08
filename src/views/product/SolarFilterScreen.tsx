@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AntDesign, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import {
   StatusBar, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CameraScannerModal } from './components/CameraScannerModal';
 import { OptionsSheet } from './components/OptionsSheet';
 import { PlanetBody } from './components/Planetbody';
+import { SearchFilterModal } from './components/SearchFilterModal';
 import { Sun } from './components/Sun';
 
 import { isNodeVisible, MainNode, Selections, toggleSelection } from './lib/Logic';
@@ -40,6 +42,8 @@ function buildDefaultSelections(): Selections {
 export const SolarFilterScreen = ({ navigation, route }) => {
   const [selections, setSelections] = useState<Selections>(buildDefaultSelections);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [canvas, setCanvas] = useState({ w: 0, h: 0 });
   const [tickFrame, setTickFrame] = useState(0);
   const startRef = useRef<number>(Date.now());
@@ -219,6 +223,20 @@ export const SolarFilterScreen = ({ navigation, route }) => {
   const selectedLabelsForPlanet = (planet: MainNode): string[] => {
     const isIndicator = planet.selectionType === 'multi';
 
+    // Pre-compute valid parent overrides. A node's parentNodeId is honored
+    // only if it points at an existing root node (no visibilityRule);
+    // otherwise it's silently ignored and BFS fallback applies.
+    const rootIds = new Set(
+      SAMPLE_NODES.filter(n => n.visibilityRule == null).map(n => n.id),
+    );
+    const effectiveParent = new Map<string, string>();
+    for (const n of SAMPLE_NODES) {
+      const p = (n as any).parentNodeId;
+      if (typeof p === 'string' && p !== '' && rootIds.has(p)) {
+        effectiveParent.set(n.id, p);
+      }
+    }
+
     const collectLinked = (root: MainNode): MainNode[] => {
       const result: MainNode[] = [];
       const inResult = new Set<string>([root.id]);
@@ -228,6 +246,20 @@ export const SolarFilterScreen = ({ navigation, route }) => {
         for (const n of SAMPLE_NODES) {
           if (inResult.has(n.id)) continue;
           if (!isNodeVisible(n, selections)) continue;
+
+          // Parent override wins over BFS. If override points at a
+          // different planet, skip — this node will never appear here.
+          const override = effectiveParent.get(n.id);
+          if (override !== undefined) {
+            if (override === root.id) {
+              result.push(n);
+              inResult.add(n.id);
+              changed = true;
+            }
+            continue;
+          }
+
+          // No override → default BFS by rule reference.
           if (refsAnyOf(n.visibilityRule, inResult)) {
             result.push(n);
             inResult.add(n.id);
@@ -312,18 +344,36 @@ export const SolarFilterScreen = ({ navigation, route }) => {
             <Text style={styles.eyebrow}>Que Choisir</Text>
             <Text style={styles.title}>Médicaux Orthopédiques</Text>
           </View>
-          {totalSelected > 0 ? (
-            <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
-              <Text style={styles.resetText}>Réinitialiser</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handleOpenFirstNode}
-              style={styles.resetBtn}
-            >
-              <Text style={styles.resetText}>Commencer</Text>
-            </TouchableOpacity>
-          )}
+
+          {/* Right-side action group: 3 stacked-icon buttons separated by
+              vertical dividers. Order (left → right): keywords, scanner,
+              clear. Clear is only active when there are selections. */}
+          <View style={styles.headerActions}>
+            <HeaderIconButton
+              label="Keywords"
+              icon={<Ionicons name="search" size={20} color={palette.textPrimary} />}
+              onPress={() => setSearchOpen(true)}
+            />
+            <View style={styles.headerDivider} />
+            <HeaderIconButton
+              label="Scanner"
+              icon={<MaterialCommunityIcons name="qrcode-scan" size={20} color={palette.textPrimary} />}
+              onPress={() => setScannerOpen(true)}
+            />
+            <View style={styles.headerDivider} />
+            <HeaderIconButton
+              label="Clear"
+              icon={
+                <AntDesign
+                  name="clear"
+                  size={20}
+                  color={totalSelected > 0 ? palette.textPrimary : palette.textMuted}
+                />
+              }
+              onPress={handleReset}
+              disabled={totalSelected === 0}
+            />
+          </View>
         </View>
 
         {/* Canvas — top section */}
@@ -379,12 +429,6 @@ export const SolarFilterScreen = ({ navigation, route }) => {
 
         {/* Action area — bottom section */}
         <View style={styles.actionArea}>
-          <Text style={styles.hint}>
-            {totalSelected === 0
-              ? 'Appuyez sur la boule pour régler le filtre'
-              : `${totalSelected} selection${totalSelected > 1 ? 's' : ''}`}
-          </Text>
-
           <View style={styles.actionRow}>
             {totalSelected > 0 ? (
               <>
@@ -441,6 +485,25 @@ export const SolarFilterScreen = ({ navigation, route }) => {
         onToggle={handleToggle}
         onNext={handleNextPlanet}
       />
+
+      <SearchFilterModal
+        visible={searchOpen}
+        allNodes={SAMPLE_NODES}
+        selections={selections}
+        onClose={() => setSearchOpen(false)}
+        onSelect={handleToggle}
+      />
+
+      <CameraScannerModal
+        visible={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanned={(data) => {
+          // TODO: parse the URL and load its filters.
+          // For now we just close — wire this to a route loader later.
+          console.log('Scanned QR:', data);
+          setScannerOpen(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -456,6 +519,33 @@ function ruleReferences(rule: any, targetId: string): boolean {
     if (rule.op === 'NOT') return ruleReferences(rule.rule, targetId);
   }
   return false;
+}
+
+// Stacked-icon header button: icon on top, label underneath, no border.
+// Used in the right-side action group; vertical dividers are rendered by
+// the parent View between buttons.
+function HeaderIconButton({
+  label, icon, onPress, disabled,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.headerBtn, disabled && styles.headerBtnDisabled]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
+      hitSlop={4}
+    >
+      {icon}
+      <Text style={[styles.headerBtnLabel, disabled && styles.headerBtnLabelDisabled]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -481,19 +571,37 @@ const styles = StyleSheet.create({
     color: palette.textPrimary,
     letterSpacing: -0.4,
   },
-  resetBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1.5,
-    borderColor: palette.border,
+
+  // Right-side action group in header — 3 icon+label buttons separated
+  // by vertical dividers.
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
   },
-  resetText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: palette.textSecondary,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+  headerBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minWidth: 56,
+  },
+  headerBtnDisabled: {
+    opacity: 0.45,
+  },
+  headerBtnLabel: {
+    fontSize: 10,
+    fontFamily: 'Poppins-Medium',
+    color: palette.textPrimary,
+    marginTop: 3,
+    letterSpacing: 0.2,
+  },
+  headerBtnLabelDisabled: {
+    color: palette.textMuted,
+  },
+  headerDivider: {
+    width: 1,
+    backgroundColor: palette.border,
+    marginVertical: 6,
   },
   canvas: {
     flex: 1,
@@ -506,14 +614,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: palette.border,
     backgroundColor: palette.cardBg,
-  },
-  hint: {
-    fontSize: 12,
-    color: palette.textSecondary,
-    fontWeight: '500',
-    letterSpacing: 0.2,
-    textAlign: 'center',
-    marginBottom: 12,
   },
   actionRow: {
     flexDirection: 'row',
