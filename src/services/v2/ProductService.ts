@@ -1,4 +1,5 @@
 import { AxiosError } from 'axios';
+import { MainNode } from '../../views/product/lib/Logic';
 import axiosInstance, { baseUrl } from './axiosInstance';
 
 // Match the inline-shape returned by API/ProductController.php
@@ -10,28 +11,25 @@ export type ProductListItem = {
   image: string | null;
 };
 
-// Size structures mirror the JSON column on the backend.
-//
-// One product has up to N "dimensions" (Tour de taille, Hauteur, ...).
-// Each dimension has options (S/M/L or 1/2/3). Each option either has
-// a flat filter_keys array (simple AND match) OR variants (an OR of
-// conditional AND-groups, e.g. "Nam+32-36 OR Nữ+20").
-export type ProductDetailSizeVariant = {
-  filter_keys: string[];
-  range?: string;
+// One numeric measurement on a size option. Mirrors the backend's
+// normalizeSizes() output — `displayRange` is the raw cell text the
+// admin (or markdown parser) saved, preserved for display.
+export type ProductDetailMeasurement = {
+  min: number;
+  max: number;
+  displayRange?: string;
 };
+
+// One size option, e.g. "Taille 1". Measurements is keyed by dimensionKey
+// (e.g. "tour_de_cheville") and matches the rules.json tree.
 export type ProductDetailSizeOption = {
   label: string;
-  range?: string;
-  filter_keys?: string[];
-  variants?: ProductDetailSizeVariant[];
+  displayRange?: string;
+  measurements: Record<string, ProductDetailMeasurement>;
 };
-export type ProductDetailSizeDimension = {
-  name: string;
-  options: ProductDetailSizeOption[];
-};
+
 export type ProductDetailSizes = {
-  dimensions: ProductDetailSizeDimension[];
+  options: ProductDetailSizeOption[];
 };
 
 export type ProductDetail = {
@@ -43,6 +41,7 @@ export type ProductDetail = {
   tags: string[];
   description_tabs: { title: string; content_markdown: string }[];
   sizes?: ProductDetailSizes | null;
+  sub?: string | null;
 };
 
 // Filters come in as a flat list of childIds. URLSearchParams.toString()
@@ -69,8 +68,6 @@ export const filterProducts = async (
 export const countFilteredProducts = async (
   filters: string[],
 ): Promise<number> => {
-  console.log(filters);
-
   return axiosInstance
     .get(`${baseUrl}/products/count${buildFilterQuery(filters)}`)
     .then((response) => response.data?.count ?? 0)
@@ -85,9 +82,24 @@ export const getProduct = async (
 ): Promise<ProductDetail | null> => {
   return axiosInstance
     .get(`${baseUrl}/products/${productId}`)
-    .then((response) => response.data?.data ?? null)
+    .then((response) => {
+      return response.data?.data ?? null
+    })
     .catch((e: AxiosError) => {
       console.warn('getProduct failed', e.message);
       return null;
+    });
+};
+
+// Fetch the rules tree (formerly imported as SAMPLE_NODES). Callers
+// typically wrap this in useQuery({ queryKey: ['product-rules'], ... })
+// so the result is shared across screens via React Query's cache.
+export const getRules = async (): Promise<MainNode[]> => {
+  return axiosInstance
+    .get(`${baseUrl}/rules/products`)
+    .then((response) => Array.isArray(response.data) ? response.data : [])
+    .catch((e: AxiosError) => {
+      console.warn('getRules failed', e.message);
+      return [];
     });
 };

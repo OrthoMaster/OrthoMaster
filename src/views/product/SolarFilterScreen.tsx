@@ -4,6 +4,7 @@ import {
   StatusBar, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
 import { CameraScannerModal } from './components/CameraScannerModal';
 import { OptionsSheet } from './components/OptionsSheet';
 import { PlanetBody } from './components/Planetbody';
@@ -12,10 +13,9 @@ import { Sun } from './components/Sun';
 
 import { isNodeVisible, MainNode, Selections, toggleSelection } from './lib/Logic';
 import { computeOrbitLayout, PlanetLayout, tickOrbits } from './lib/OrbitLayout';
-import { SAMPLE_NODES } from './lib/SampleRules';
 import { accentForIndex, palette } from './lib/Theme';
 
-import { countFilteredProducts } from '../../services/v2/ProductService';
+import { countFilteredProducts, getRules } from '../../services/v2/ProductService';
 
 // Flatten Selections (nodeId → childId[]) to a flat list of childIds.
 // The backend expands parents itself based on rules.json.
@@ -23,15 +23,16 @@ function flattenSelections(selections: Selections): string[] {
   return Object.values(selections).flat();
 }
 
-// Build the default selection state: every multi root node has ALL its
-// children pre-selected. This unlocks dependent nodes (e.g. selecting all
-// Patient indicators reveals Type / Âge / Activité) so the user can fill
-// them in without having to first activate the indicator group.
+// Build the default selection state from a rules array: every multi root
+// node has ALL its children pre-selected. This unlocks dependent nodes
+// (e.g. selecting all Patient indicators reveals Type / Âge / Activité)
+// so the user can fill them in without having to first activate the
+// indicator group.
 //
 // Root = no visibilityRule. Multi = selectionType === 'multi'.
-function buildDefaultSelections(): Selections {
+function buildDefaultSelections(nodes: MainNode[]): Selections {
   const result: Selections = {};
-  for (const node of SAMPLE_NODES) {
+  for (const node of nodes) {
     if (node.visibilityRule == null && node.selectionType === 'multi') {
       result[node.id] = node.children.map(c => c.id);
     }
@@ -40,7 +41,16 @@ function buildDefaultSelections(): Selections {
 }
 
 export const SolarFilterScreen = ({ navigation, route }) => {
-  const [selections, setSelections] = useState<Selections>(buildDefaultSelections);
+  // Rules tree from backend. Empty array while loading so the rest of
+  // the component renders harmlessly with no planets.
+  const { data: rules = [] } = useQuery({
+    queryKey: ['product-rules'],
+    queryFn: () => getRules(),
+    retry: 1,
+    retryDelay: 1000,
+  });
+
+  const [selections, setSelections] = useState<Selections>({});
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -51,16 +61,30 @@ export const SolarFilterScreen = ({ navigation, route }) => {
   // Live product count from backend. Starts at 0 until first fetch.
   const [productCount, setProductCount] = useState<number>(0);
 
+  // Apply defaults once rules arrive. We delay this until rules.length > 0
+  // because buildDefaultSelections() over an empty tree returns {}, which
+  // would later be overwritten — but in the meantime the auto-open effect
+  // might fire and immediately re-set state, causing flicker. Guarding on
+  // a `didInitDefaults` ref keeps the dance simple.
+  const didInitDefaultsRef = useRef(false);
+  useEffect(() => {
+    if (didInitDefaultsRef.current) return;
+    if (rules.length === 0) return;
+    didInitDefaultsRef.current = true;
+    setSelections(buildDefaultSelections(rules));
+  }, [rules]);
+
   // Only ROOT nodes become planets. Conditional/linked nodes surface in
   // the bottom sheet of their parent planet, never on canvas.
   const rootNodes = useMemo(
-    () => SAMPLE_NODES.filter(n => n.visibilityRule == null),
-    [],
+    () => rules.filter(n => n.visibilityRule == null),
+    [rules],
   );
 
-  // Layout depends only on canvas + root list (root list is static here).
+  // Layout depends only on canvas + root list.
   const baseLayout = useMemo(() => {
     if (!canvas.w || !canvas.h) return null;
+    if (rootNodes.length === 0) return null;
     return computeOrbitLayout({
       nodes: rootNodes,
       width: canvas.w,
@@ -133,10 +157,12 @@ export const SolarFilterScreen = ({ navigation, route }) => {
   }, []);
 
   const handleToggle = useCallback((nodeId: string, childId: string) => {
-    setSelections(prev => toggleSelection(SAMPLE_NODES, prev, nodeId, childId));
-  }, []);
+    setSelections(prev => toggleSelection(rules, prev, nodeId, childId));
+  }, [rules]);
 
-  const handleReset = () => setSelections(buildDefaultSelections());
+  const handleReset = useCallback(() => {
+    setSelections(buildDefaultSelections(rules));
+  }, [rules]);
 
   const didAutoOpenRef = useRef(false);
 
@@ -144,12 +170,12 @@ export const SolarFilterScreen = ({ navigation, route }) => {
   // "Reset filters" in the summary modal there).
   useEffect(() => {
     if (route?.params?.reset) {
-      setSelections(buildDefaultSelections());
+      setSelections(buildDefaultSelections(rules));
       didAutoOpenRef.current = false;        // allow auto-open again
       // Clear the param so it doesn't re-trigger on next focus
       navigation.setParams({ reset: undefined });
     }
-  }, [route?.params?.reset, navigation]);
+  }, [route?.params?.reset, navigation, rules]);
 
   // Cycle to next planet — wraps around to first when at the end.
   const handleNextPlanet = useCallback(() => {
@@ -192,7 +218,7 @@ export const SolarFilterScreen = ({ navigation, route }) => {
 
   // ---------- derived ----------
   const activeNode = activeNodeId
-    ? SAMPLE_NODES.find(n => n.id === activeNodeId) || null
+    ? rules.find(n => n.id === activeNodeId) || null
     : null;
   const activeAccent = activeNode
     ? accentForIndex(rootNodes.indexOf(activeNode))
@@ -205,13 +231,13 @@ export const SolarFilterScreen = ({ navigation, route }) => {
   const totalSelected = useMemo(() => {
     let count = 0;
     for (const [nodeId, arr] of Object.entries(selections)) {
-      const node = SAMPLE_NODES.find(n => n.id === nodeId);
+      const node = rules.find(n => n.id === nodeId);
       if (!node) continue;
       if (node.visibilityRule == null) continue;   // root — skip
       count += arr.length;
     }
     return count;
-  }, [selections]);
+  }, [selections, rules]);
 
   // Build the list of selected labels per planet:
   //   - multi-select planet (indicator like "Patient"): show ALL leaf values
@@ -227,10 +253,10 @@ export const SolarFilterScreen = ({ navigation, route }) => {
     // only if it points at an existing root node (no visibilityRule);
     // otherwise it's silently ignored and BFS fallback applies.
     const rootIds = new Set(
-      SAMPLE_NODES.filter(n => n.visibilityRule == null).map(n => n.id),
+      rules.filter(n => n.visibilityRule == null).map(n => n.id),
     );
     const effectiveParent = new Map<string, string>();
-    for (const n of SAMPLE_NODES) {
+    for (const n of rules) {
       const p = (n as any).parentNodeId;
       if (typeof p === 'string' && p !== '' && rootIds.has(p)) {
         effectiveParent.set(n.id, p);
@@ -243,7 +269,7 @@ export const SolarFilterScreen = ({ navigation, route }) => {
       let changed = true;
       while (changed) {
         changed = false;
-        for (const n of SAMPLE_NODES) {
+        for (const n of rules) {
           if (inResult.has(n.id)) continue;
           if (!isNodeVisible(n, selections)) continue;
 
@@ -319,7 +345,7 @@ export const SolarFilterScreen = ({ navigation, route }) => {
   const planetHasSelection = (planet: MainNode): boolean => {
     if ((selections[planet.id]?.length || 0) > 0) {
       if (planet.selectionType === 'multi') {
-        return SAMPLE_NODES.some(n => {
+        return rules.some(n => {
           if (n.id === planet.id) return false;
           if (!ruleReferences(n.visibilityRule, planet.id)) return false;
           return (selections[n.id]?.length || 0) > 0;
@@ -478,7 +504,7 @@ export const SolarFilterScreen = ({ navigation, route }) => {
       <OptionsSheet
         visible={!!activeNode}
         rootNode={activeNode}
-        allNodes={SAMPLE_NODES}
+        allNodes={rules}
         selections={selections}
         accent={activeAccent}
         onClose={() => setActiveNodeId(null)}
@@ -488,7 +514,7 @@ export const SolarFilterScreen = ({ navigation, route }) => {
 
       <SearchFilterModal
         visible={searchOpen}
-        allNodes={SAMPLE_NODES}
+        allNodes={rules}
         selections={selections}
         onClose={() => setSearchOpen(false)}
         onSelect={handleToggle}

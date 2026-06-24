@@ -1,18 +1,28 @@
 // ============================================================
-// Product domain types + mock data + matcher.
-// In production, swap mockProducts with an API call. The matcher
-// signature stays the same.
+// Product domain types.
+// Sizes follow the NEW flat schema:
+//   { options: [{ label, displayRange, measurements: {dimKey: {min,max,displayRange}} }] }
 // ============================================================
 
 import { Selections } from './Logic';
 
-// One size entry. filter_key references a childId in rules.json under
-// a "mesure_*" node — used by ProductDetailModal to highlight the
-// matching row when the user has that filter selected.
-export type ProductSize = {
-  label: string;             // "S", "M", "1", "2" — admin-defined
-  range?: string | null;     // "14-16 cm" — display only, optional
-  filter_key?: string | null; // childId like "poignet-m", optional
+// One numeric measurement on a size option.
+export type ProductMeasurement = {
+  min: number;
+  max: number;
+  displayRange?: string;     // raw cell text, e.g. "19 cm - 21 cm"
+};
+
+// One size option (e.g. "Taille 1") with per-dimension measurements
+// keyed by dimensionKey (e.g. "tour_de_cheville").
+export type ProductSizeOption = {
+  label: string;
+  displayRange?: string;     // compact summary, e.g. "19-21 cm" or "19-21 / 30-34 cm"
+  measurements: Record<string, ProductMeasurement>;
+};
+
+export type ProductSizes = {
+  options: ProductSizeOption[];
 };
 
 export type Product = {
@@ -24,7 +34,8 @@ export type Product = {
   tags: string[];
   description?: string;
   description_tabs?: { title: string; content_markdown: string }[];
-  sizes?: ProductSize[];
+  sizes?: ProductSizes | null;
+  sub?: string | null;
 };
 
 // Flatten selections into a Set of all selected childIds for fast lookup.
@@ -36,12 +47,9 @@ function flattenSelections(selections: Selections): Set<string> {
   return out;
 }
 
-// Match a product against current pathology filters.
-// Rule: a product matches if ANY of its tags are in the selection set.
-// If selections are empty, return all products.
-//
-// Replace this with your real matching logic — typed constraints,
-// pregnancy exclusions, age ranges, etc.
+// Local fallback matcher (still tag-set intersection). The real filter
+// runs server-side now via /api/products?filters[]=. This helper exists
+// for tests or in-memory scenarios; production code calls the API.
 export function matchProducts(
   products: Product[],
   selections: Selections,

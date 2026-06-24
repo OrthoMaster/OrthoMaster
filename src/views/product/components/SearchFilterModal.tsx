@@ -16,9 +16,8 @@ import { palette } from '../lib/Theme';
 type SearchFilterModalProps = {
   visible: boolean;
   allNodes: MainNode[];
-  // Current selections — used to determine which results are currently
-  // reachable. Rows whose parent node's visibility rule doesn't match
-  // the user's selections are rendered disabled.
+  // Current selections — passed to handlePick so we can decide which
+  // ancestor steps need to be applied vs already set.
   selections: Selections;
   onClose: () => void;
   // Called when user taps a result. Parent decides what to do with it
@@ -50,29 +49,14 @@ export function SearchFilterModal({
   );
 
   // Filter by query (only after >= 2 chars), case-insensitive substring on label.
-  // Then split into reachable vs disabled:
-  //   - Disabled when the result's parent rule conflicts with the user's
-  //     current selections (they picked a value in a referenced node that
-  //     doesn't include the required child).
-  //   - Empty selection on a referenced node = "not decided yet" = NOT a
-  //     conflict. Such rows stay enabled so the user can still go pick
-  //     them; clicking will toggle them anyway (parent toggle handler
-  //     decides what to do).
+  // No more conflict detection — every match is clickable. When a row's
+  // selection conflicts with an existing single-choice value in the main
+  // screen, picking it OVERRIDES the existing one (per spec).
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (q.length < 2) return [] as Array<SearchResult & { disabled: boolean }>;
-
-    const matched = allResults.filter(r => r.label.toLowerCase().includes(q));
-
-    const reachable: Array<SearchResult & { disabled: boolean }> = [];
-    const blocked:   Array<SearchResult & { disabled: boolean }> = [];
-    for (const r of matched) {
-      const node = byId.get(r.nodeId);
-      const conflict = node ? hasConflict(node.visibilityRule, selections) : false;
-      (conflict ? blocked : reachable).push({ ...r, disabled: conflict });
-    }
-    return [...reachable, ...blocked];
-  }, [query, allResults, byId, selections]);
+    if (q.length < 2) return [] as SearchResult[];
+    return allResults.filter(r => r.label.toLowerCase().includes(q));
+  }, [query, allResults]);
 
   const inputRef = useRef<TextInput>(null);
 
@@ -90,9 +74,33 @@ export function SearchFilterModal({
     inputRef.current?.focus();
   };
 
-  const handlePick = (r: SearchResult & { disabled: boolean }) => {
-    if (r.disabled) return;
-    onSelect(r.nodeId, r.childId);
+  const handlePick = (r: SearchResult) => {
+    // The row's leaf alone isn't enough: if its node has a visibility rule
+    // depending on ancestor selections, pruneInvalidSelections will remove
+    // the leaf the moment we set it. So we walk the visibility chain and
+    // pre-fill every required ancestor too.
+    //
+    // For each step we either:
+    //   - skip if the value is already set (no need to toggle off), or
+    //   - call onSelect to set it. For single-choice nodes with a
+    //     different existing value, the parent's toggleSelection will
+    //     OVERRIDE — that's the spec: pressing a search row replaces
+    //     whatever's there.
+    //
+    // We rely on React's batching: each onSelect goes through the parent's
+    // setSelections(prev => toggleSelection(rules, prev, ...)), so calls
+    // chain correctly through the latest state even though `selections`
+    // here is the snapshot from the current render.
+    const chain: Array<{ nodeId: string; childId: string }> = [];
+    collectAncestorChain(r.nodeId, r.childId, byId, chain, new Set());
+    chain.push({ nodeId: r.nodeId, childId: r.childId });
+
+    for (const step of chain) {
+      const existing = selections[step.nodeId] ?? [];
+      if (existing.includes(step.childId)) continue;        // already set
+      onSelect(step.nodeId, step.childId);
+    }
+
     onClose();
   };
 
@@ -138,30 +146,19 @@ export function SearchFilterModal({
         keyExtractor={r => r.key}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.row, item.disabled && styles.rowDisabled]}
+            style={styles.row}
             onPress={() => handlePick(item)}
-            activeOpacity={item.disabled ? 1 : 0.7}
-            disabled={item.disabled}
+            activeOpacity={0.7}
           >
             <View style={{ flex: 1 }}>
-              <Text
-                style={[styles.rowLabel, item.disabled && styles.rowLabelDisabled]}
-                numberOfLines={1}
-              >
+              <Text style={styles.rowLabel} numberOfLines={2}>
                 {item.label}
               </Text>
-              <Text
-                style={[styles.rowPath, item.disabled && styles.rowPathDisabled]}
-                numberOfLines={1}
-              >
-                {item.pathSegments.map(truncateCrumb).join(' › ')}
+              <Text style={styles.rowPath} numberOfLines={2}>
+                {item.pathSegments.join(' › ')}
               </Text>
             </View>
-            {item.disabled ? (
-              <Ionicons name="lock-closed-outline" size={16} color={palette.textMuted} />
-            ) : (
-              <Ionicons name="chevron-forward" size={18} color={palette.textMuted} />
-            )}
+            <Ionicons name="chevron-forward" size={18} color={palette.textMuted} />
           </TouchableOpacity>
         )}
         keyboardShouldPersistTaps="handled"
@@ -272,14 +269,6 @@ function buildSearchIndex(allNodes: MainNode[]) {
   return { byId, allResults };
 }
 
-// Truncate a breadcrumb segment to MAX_CRUMB chars with a hard cut +
-// ellipsis. Applied only to row-2 crumbs, not the main label (row 1).
-const MAX_CRUMB = 12;
-function truncateCrumb(s: string): string {
-  if (s.length <= MAX_CRUMB) return s;
-  return s.slice(0, MAX_CRUMB) + '...';
-}
-
 // Build ancestor crumb chains for a node by walking its visibility rule.
 // Returns a list of paths (each path is an array of crumb strings).
 //
@@ -369,58 +358,86 @@ function pathsOfRule(
   return [];
 }
 
-// Does the rule conflict with the user's current selections?
-// Conflict = an explicit contradiction. An EMPTY referenced selection is
-// NOT a conflict (user hasn't decided yet — picking the searched option
-// might still be reachable after they pick the right ancestor).
+// Walk a node's visibility rule (and the rules of every required
+// ancestor) and emit the (nodeId, childId) pairs that must be set so
+// the leaf survives pruneInvalidSelections. Recursively goes deeper —
+// e.g. localisation requires segment=tronc-rac-hau, which itself
+// requires zone=tronc. The result is ordered deepest-first (zone before
+// segment before localisation) so caller can apply each in order.
 //
-//   - kind 'selected': conflict when user picked something for rule.nodeId
-//     but that something doesn't include rule.childId.
-//   - kind 'any_selected': never a conflict — empty = undecided (ok),
-//     non-empty = condition met.
-//   - AND: conflict if ANY sub-rule conflicts.
-//   - OR: conflict only when ALL sub-rules conflict (one live path is
-//     enough to keep the option reachable).
-//   - NOT: conflict when the inner rule is definitely satisfied (the
-//     negation can never hold). For non-atomic inners we under-approximate
-//     by saying "no conflict" — safer to leave a row enabled than to
-//     wrongly hide it.
-function hasConflict(rule: any, selections: Selections): boolean {
-  if (!rule) return false;
+// Cycle-safe via the `visited` set. We walk BOTH the node-level
+// visibilityRule AND the specific child's visibilityRule (children can
+// add extra constraints beyond what the node requires — e.g. segment
+// node only needs any_selected zone, but child tronc-rac-hau requires
+// the concrete zone=tronc).
+function collectAncestorChain(
+  nodeId: string,
+  childId: string | null,
+  byId: Map<string, MainNode>,
+  chain: Array<{ nodeId: string; childId: string }>,
+  visited: Set<string>,
+): void {
+  const visitKey = childId ? `${nodeId}:${childId}` : nodeId;
+  if (visited.has(visitKey)) return;
+  visited.add(visitKey);
 
-  if ('kind' in rule) {
-    if (rule.kind === 'selected') {
-      const sels = selections[rule.nodeId] ?? [];
-      if (sels.length === 0) return false;              // undecided → ok
-      return !sels.includes(rule.childId);              // picked something else
+  const node = byId.get(nodeId);
+  if (!node) return;
+
+  // Node-level rule first.
+  const nodeReqs = collectRequiredFromRule(node.visibilityRule);
+
+  // Child-specific rule, if we have a target child.
+  const childReqs: Array<{ nodeId: string; childId: string }> = [];
+  if (childId) {
+    const child = node.children.find(c => c.id === childId);
+    if (child) {
+      childReqs.push(...collectRequiredFromRule(child.visibilityRule));
     }
-    if (rule.kind === 'any_selected') {
-      // Even if empty, undecided ≠ conflict. Never blocks.
-      return false;
-    }
-    return false;
   }
 
+  const allReqs = [...nodeReqs, ...childReqs];
+
+  for (const req of allReqs) {
+    // Recurse first so deeper ancestors are added before this one.
+    // Pass req.childId so we walk THAT specific child's rule too.
+    collectAncestorChain(req.nodeId, req.childId, byId, chain, visited);
+    // De-dupe: rules may reference the same (node, child) via multiple paths.
+    if (!chain.some(s => s.nodeId === req.nodeId && s.childId === req.childId)) {
+      chain.push(req);
+    }
+  }
+}
+
+// Extract the concrete (nodeId, childId) requirements from a rule. Only
+// `selected` references give us a specific child to fill; `any_selected`
+// doesn't (we'd have to invent a child), so it's skipped.
+//   - AND: all branches required, return union.
+//   - OR: just take the first branch with concrete requirements
+//     (simplest heuristic; if user needs smarter logic for OR, refine here).
+//   - NOT: skipped — negation isn't fillable.
+function collectRequiredFromRule(rule: any): Array<{ nodeId: string; childId: string }> {
+  if (!rule) return [];
+  if ('kind' in rule) {
+    if (rule.kind === 'selected' && rule.childId) {
+      return [{ nodeId: rule.nodeId, childId: rule.childId }];
+    }
+    return [];
+  }
   if ('op' in rule) {
     if (rule.op === 'AND') {
-      return rule.rules.some((r: any) => hasConflict(r, selections));
+      return (rule.rules || []).flatMap((r: any) => collectRequiredFromRule(r));
     }
     if (rule.op === 'OR') {
-      // No sub-rules → vacuously not in conflict
-      if (!rule.rules.length) return false;
-      return rule.rules.every((r: any) => hasConflict(r, selections));
-    }
-    if (rule.op === 'NOT') {
-      // Atomic 'selected' inner: conflict if user has picked exactly that child
-      if (rule.rule && 'kind' in rule.rule && rule.rule.kind === 'selected') {
-        const sels = selections[rule.rule.nodeId] ?? [];
-        return sels.includes(rule.rule.childId);
+      for (const sub of (rule.rules || [])) {
+        const res = collectRequiredFromRule(sub);
+        if (res.length > 0) return res;
       }
-      // Conservative for compound inners: don't claim conflict
-      return false;
+      return [];
     }
+    if (rule.op === 'NOT') return [];
   }
-  return false;
+  return [];
 }
 
 const styles = StyleSheet.create({
@@ -497,28 +514,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
   },
-  rowDisabled: {
-    opacity: 0.5,
-    backgroundColor: 'transparent',
-    borderStyle: 'dashed',
-  },
   rowLabel: {
     fontSize: 14,
     fontFamily: 'Poppins-Bold',
     color: palette.textPrimary,
     marginBottom: 2,
-  },
-  rowLabelDisabled: {
-    color: palette.textSecondary,
+    lineHeight: 18,
   },
   rowPath: {
     fontSize: 11.5,
     fontFamily: 'Poppins-Medium',
     color: palette.textMuted,
     letterSpacing: 0.2,
-  },
-  rowPathDisabled: {
-    fontStyle: 'italic',
+    lineHeight: 15,
   },
 
   empty: {

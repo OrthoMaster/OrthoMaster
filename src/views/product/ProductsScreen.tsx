@@ -87,7 +87,8 @@ function detailToModalProduct(d: ProductDetail): Product {
     images: d.images,
     tags: d.tags,
     description_tabs: d.description_tabs,
-    sizes: d.sizes
+    sizes: d.sizes,
+    sub: d.sub
   } as Product;
 }
 
@@ -266,7 +267,7 @@ export const ProductsScreen = ({ navigation, route }) => {
                   disabled={totalSelected === 0}
                 >
                   <Ionicons
-                    name="eye-outline"
+                    name="list"
                     size={18}
                     color={totalSelected === 0 ? palette.textMuted : palette.textPrimary}
                   />
@@ -276,7 +277,7 @@ export const ProductsScreen = ({ navigation, route }) => {
                       { color: totalSelected === 0 ? palette.textMuted : palette.textPrimary },
                     ]}
                   >
-                    Voir
+                    Détails
                   </Text>
                 </TouchableOpacity>
 
