@@ -83,7 +83,6 @@ const GuideCard = ({ config, guideIndex, showGuide }) => {
   };
 
   if (guide.isLoading)
-    return <ActivityIndicator />
   return <View style={styles.subToolContainer}>
     <View style={{ flex: 1, flexGrow: isWeb ? 1 : 0.6, justifyContent: 'center' }}>
       <View style={{
@@ -102,6 +101,7 @@ const GuideCard = ({ config, guideIndex, showGuide }) => {
         </TouchableOpacity>
       </View>
     </View>
+  </View>
 
   return (
     <View style={styles.subToolContainer}>
