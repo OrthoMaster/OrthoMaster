@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   StatusBar,
   StyleSheet,
   Text,
@@ -35,18 +37,26 @@ const SHARE_URL_BASE = 'https://orthomastaer.fr/products';
 
 // Fixed list of manufacturers. Adjust to match your real lookup table.
 const ALL_MANUFACTURERS: string[] = [
+  'Innothera-Gibaud',
+  'Enovis-Donjoy',
   'Thuasne',
-  'Donjoy',
-  'Gibaud',
-  'Sidas',
-  'Bauerfeind',
-  'Medi',
-  'BSN Medical',
   'Orliman',
+  'Medi',
+  'L&R-Velpeau',
+  'Cooper-Salva',
+  'Bauerfeind',
+  'Sigvaris-Mobilis',
+  'Cizeta',
+  'Essity-Actimovee',
 ];
 
 // AsyncStorage key for the saved priority order.
 const MFG_PRIORITY_KEY = '@orthomaster/manufacturer_priority';
+
+// Pixel threshold past which the scroll-to-top FAB becomes visible.
+// Tuned so it doesn't appear on the first card or two — only after the
+// user has scrolled far enough to genuinely want a fast way back up.
+const SCROLL_TOP_THRESHOLD = 300;
 
 // Flatten Selections (nodeId → childId[]) to a flat list of childIds.
 function flattenSelections(selections: Selections): string[] {
@@ -71,6 +81,7 @@ function listItemToCardProduct(item: ProductListItem): Product {
   return {
     id: item.id,
     name: item.name,
+    sub: item.sub ?? null,
     manufacturer: item.manufacturer ?? '',
     category: item.category,
     images: item.image ? [item.image] : [],
@@ -82,13 +93,13 @@ function detailToModalProduct(d: ProductDetail): Product {
   return {
     id: d.id,
     name: d.name,
+    sub: d.sub ?? null,
     manufacturer: d.manufacturer ?? '',
     category: d.category,
     images: d.images,
     tags: d.tags,
     description_tabs: d.description_tabs,
-    sizes: d.sizes,
-    sub: d.sub
+    sizes: d.sizes
   } as Product;
 }
 
@@ -109,6 +120,22 @@ export const ProductsScreen = ({ navigation, route }) => {
       : String(raw).split(',').map(s => s.trim()).filter(Boolean);
     return flatToSelections(flat, SAMPLE_NODES);
   }, [route?.params?.selections, route?.params?.filters]);
+
+  // Protocol group filter — when set, the backend narrows the product
+  // list to those tagged with this group id. Two entry points:
+  //   1. route.params.groupId    (from ProtocolScreen — in-app nav)
+  //   2. route.params.group      (from QR deep link — URL param `group=`)
+  // groupLabel is only carried in-app; QR scans don't have it. When
+  // missing, the header falls back to the default "Products" title.
+  const groupId: string | null = useMemo(() => {
+    const g = route?.params?.groupId ?? route?.params?.group;
+    return typeof g === 'string' && g !== '' ? g : null;
+  }, [route?.params?.groupId, route?.params?.group]);
+
+  const groupLabel: string | null = useMemo(() => {
+    const l = route?.params?.groupLabel;
+    return typeof l === 'string' && l !== '' ? l : null;
+  }, [route?.params?.groupLabel]);
 
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -150,21 +177,45 @@ export const ProductsScreen = ({ navigation, route }) => {
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
+  // Scroll-to-top FAB state. The button is rendered absolutely over the
+  // list and fades in once the user has scrolled past SCROLL_TOP_THRESHOLD.
+  const listRef = useRef<FlatList>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const onListScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const shouldShow = y > SCROLL_TOP_THRESHOLD;
+    // Guard against same-value re-renders.
+    setShowScrollTop(prev => (prev === shouldShow ? prev : shouldShow));
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
+
   const totalSelected = Object.values(selections).reduce(
     (s, a) => s + a.length,
     0,
   );
 
-  // Build the URL the QR code will encode. Only pathology filters go in.
+  // Build the URL the QR code will encode. Both pathology filters AND
+  // the active group go in — when the same QR is later scanned, the
+  // backend resolves the group standalone (no need for the pathology
+  // selection to trigger a protocol for the group to apply).
   const flatFilters = useMemo(() => flattenSelections(selections), [selections]);
   const userFilters = useMemo(() => new Set(flatFilters), [flatFilters]);
-  const shareUrl = useMemo(
-    () =>
-      flatFilters.length === 0
-        ? SHARE_URL_BASE
-        : `${SHARE_URL_BASE}?filters=${encodeURIComponent(flatFilters.join(','))}`,
-    [flatFilters],
-  );
+  const shareUrl = useMemo(() => {
+    const params: string[] = [];
+    if (flatFilters.length > 0) {
+      params.push(`filters=${encodeURIComponent(flatFilters.join(','))}`);
+    }
+    if (groupId) {
+      params.push(`group=${encodeURIComponent(groupId)}`);
+    }
+    return params.length === 0
+      ? SHARE_URL_BASE
+      : `${SHARE_URL_BASE}?${params.join('&')}`;
+  }, [flatFilters, groupId]);
 
   const fetchSeqRef = useRef(0);
   const fetchList = () => {
@@ -172,7 +223,7 @@ export const ProductsScreen = ({ navigation, route }) => {
     setListLoading(true);
     setListError(false);
 
-    filterProducts(flatFilters)
+    filterProducts(flatFilters, groupId)
       .then(items => {
         if (mySeq !== fetchSeqRef.current) return;
         setProducts(items);
@@ -188,7 +239,7 @@ export const ProductsScreen = ({ navigation, route }) => {
   useEffect(() => {
     fetchList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selections]);
+  }, [selections, groupId]);
 
   // Sort products by manufacturer priority. Prioritized manufacturers come
   // first in their saved order; everything else keeps its original order
@@ -243,7 +294,7 @@ export const ProductsScreen = ({ navigation, route }) => {
 
             <View style={{ flex: 1 }}>
               <Text style={styles.title} numberOfLines={1}>
-                Products
+                {groupLabel ?? 'Products'}
               </Text>
               <Text style={styles.bannerText} numberOfLines={1}>
                 {listLoading
@@ -255,6 +306,10 @@ export const ProductsScreen = ({ navigation, route }) => {
                       : `${products.length} produit${products.length > 1 ? 's' : ''} trouvé${products.length > 1 ? 's' : ''}`}
               </Text>
             </View>
+
+            {/* Vertical divider between the title block and the right-side
+                action group. Keeps the two sections visually distinct. */}
+            <View style={styles.topVerticalDivider} />
 
             {/* Right side: labeled group with two icon+text actions */}
             <View style={styles.rightGroup}>
@@ -306,80 +361,104 @@ export const ProductsScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* Row 2 — secondary filter pills (manufacturer, country) */}
-        <View style={styles.pillsRow}>
-          {/* Fabricant — active when at least one is in priority */}
-          <TouchableOpacity
-            style={[styles.pill, mfgPriority.length > 0 && styles.pillActive]}
-            activeOpacity={0.7}
-            onPress={() => setMfgModalOpen(true)}
-          >
-            <Ionicons
-              name="business-outline"
-              size={14}
-              color={mfgPriority.length > 0 ? '#3B82F6' : palette.textSecondary}
-              style={{ marginRight: 6 }}
+        {/* Body container — owns palette.bg so the screen body has the
+            tinted backdrop while the SafeAreaView top/bottom insets fall
+            through to root's white. */}
+        <View style={styles.bodyContainer}>
+          {/* Row 2 — secondary filter pills (manufacturer, country) */}
+          <View style={styles.pillsRow}>
+            {/* Fabricant — active when at least one is in priority */}
+            <TouchableOpacity
+              style={[styles.pill, mfgPriority.length > 0 && styles.pillActive]}
+              activeOpacity={0.7}
+              onPress={() => setMfgModalOpen(true)}
+            >
+              <Ionicons
+                name="business-outline"
+                size={14}
+                color={mfgPriority.length > 0 ? '#3B82F6' : palette.textSecondary}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.pillText, mfgPriority.length > 0 && styles.pillTextActive]}>
+                Fabricant
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={14}
+                color={mfgPriority.length > 0 ? '#3B82F6' : palette.textMuted}
+                style={{ marginLeft: 4 }}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Body */}
+          {listLoading ? (
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={palette.fabBg} />
+            </View>
+          ) : listError ? (
+            <View style={styles.empty}>
+              <Ionicons name="cloud-offline-outline" size={36} color={palette.textMuted} />
+              <Text style={styles.emptyTitle}>Erreur réseau</Text>
+              <Text style={styles.emptySub}>
+                Nous n'avons pas pu joindre le serveur. Veuillez réessayer.
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyBtn}
+                onPress={fetchList}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.emptyBtnText}>Veuillez réessayer</Text>
+              </TouchableOpacity>
+            </View>
+          ) : products.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="search-outline" size={36} color={palette.textMuted} />
+              <Text style={styles.emptyTitle}>Aucun résultat trouvé.</Text>
+              <Text style={styles.emptySub}>
+                Ajustez vos filtres de pathologie pour voir les résultats.
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyBtn}
+                onPress={onBack}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.emptyBtnText}>Retour aux filtres</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <FlatList
+              ref={listRef}
+              data={sortedProducts}
+              keyExtractor={p => p.id}
+              renderItem={({ item }) => (
+                <ProductCard
+                  product={listItemToCardProduct(item)}
+                  onPress={() => handleOpenDetail(item)}
+                />
+              )}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              onScroll={onListScroll}
+              scrollEventThrottle={64}
             />
-            <Text style={[styles.pillText, mfgPriority.length > 0 && styles.pillTextActive]}>
-              Fabricant
-            </Text>
-            <Ionicons
-              name="chevron-down"
-              size={14}
-              color={mfgPriority.length > 0 ? '#3B82F6' : palette.textMuted}
-              style={{ marginLeft: 4 }}
-            />
-          </TouchableOpacity>
+          )}
         </View>
 
-        {/* Body */}
-        {listLoading ? (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color={palette.fabBg} />
-          </View>
-        ) : listError ? (
-          <View style={styles.empty}>
-            <Ionicons name="cloud-offline-outline" size={36} color={palette.textMuted} />
-            <Text style={styles.emptyTitle}>Erreur réseau</Text>
-            <Text style={styles.emptySub}>
-              Nous n'avons pas pu joindre le serveur. Veuillez réessayer.
-            </Text>
-            <TouchableOpacity
-              style={styles.emptyBtn}
-              onPress={fetchList}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.emptyBtnText}>Veuillez réessayer</Text>
-            </TouchableOpacity>
-          </View>
-        ) : products.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="search-outline" size={36} color={palette.textMuted} />
-            <Text style={styles.emptyTitle}>Aucun résultat trouvé.</Text>
-            <Text style={styles.emptySub}>
-              Ajustez vos filtres de pathologie pour voir les résultats.
-            </Text>
-            <TouchableOpacity
-              style={styles.emptyBtn}
-              onPress={onBack}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.emptyBtnText}>Retour aux filtres</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={sortedProducts}
-            keyExtractor={p => p.id}
-            renderItem={({ item }) => (
-              <ProductCard
-                product={listItemToCardProduct(item)}
-                onPress={() => handleOpenDetail(item)}
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
+        {/* Scroll-to-top FAB. Rendered last inside the SafeAreaView so it
+            floats above the FlatList and respects bottom safe-area inset.
+            Visibility is driven by onListScroll; we don't animate the
+            mount/unmount to keep things light. */}
+        {showScrollTop && (
+          <TouchableOpacity
+            style={styles.scrollTopBtn}
+            onPress={scrollToTop}
+            activeOpacity={0.85}
+            hitSlop={6}
+            accessibilityLabel="Remonter en haut"
+          >
+            <Ionicons name="arrow-up" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
         )}
 
         {detailLoading && (
@@ -424,7 +503,15 @@ export const ProductsScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: palette.bg },
+  // White outer container — the SafeAreaView's top/bottom insets fall
+  // through to this color, giving the status-bar and home-indicator
+  // areas a clean white surface. The body itself sits in a separate
+  // container styled with palette.bg.
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
+
+  // Body wrapper between topBar and the SafeAreaView's bottom — owns
+  // the tinted palette.bg color for the list / empty / loading states.
+  bodyContainer: { flex: 1, backgroundColor: palette.bg },
 
   topBar: {
     paddingHorizontal: 16,
@@ -457,6 +544,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: palette.textSecondary,
     marginTop: 1,
+  },
+
+  // Thin vertical line separating the left title block from the
+  // right-side action group. Stretches to topRow's height via alignSelf.
+  topVerticalDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: palette.border,
+    marginHorizontal: 10,
   },
 
   // Right-side grouped actions (label + two icon+text buttons)
@@ -496,7 +592,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Poppins-Regular',
     marginTop: 0,
-    letterSpacing: 0.2
+    letterSpacing: 0.2,
   },
 
   // Secondary filter pills (row 2)
@@ -574,15 +670,40 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
+  // Loading indicator shown while a product detail is being fetched.
+  // Floats at the bottom-center so the scroll-to-top FAB can own the
+  // bottom-right corner. Centering trick: left:'50%' plus a negative
+  // marginLeft equal to half the width.
   detailLoader: {
     position: 'absolute',
     bottom: 22,
-    right: 22,
+    left: '50%',
+    marginLeft: -22,
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: 'rgba(0,0,0,0.7)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Scroll-to-top FAB. Sits in the bottom-right corner — formerly the
+  // detail-loader's spot. The two no longer overlap because the loader
+  // moved to bottom-center.
+  scrollTopBtn: {
+    position: 'absolute',
+    bottom: 22,
+    right: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(59, 130, 246, 0.88)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });

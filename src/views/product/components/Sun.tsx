@@ -12,6 +12,7 @@ type SunProps = {
   radius: number;
   count: number;
   isLit: boolean;       // true when count > 0
+  showCount: boolean;   // hide count + label when user has no filters set
   onPress?: () => void; // when provided, the sun body becomes tappable
 };
 
@@ -19,7 +20,7 @@ type SunProps = {
 // - Lit: warm bright body, breathing halo, count + label visible
 // - Dim: cold gray body, no halo, "no match" appearance
 // Smooth crossfade between states.
-export function Sun({ x, y, radius, count, isLit, onPress }: SunProps) {
+export function Sun({ x, y, radius, count, isLit, showCount, onPress }: SunProps) {
   // Two separate Animated.Values driven in parallel:
   // - litColor: JS-driven (for color interpolation in body/text)
   // - litNative: native-driven (for opacity multiplication on halo)
@@ -73,7 +74,7 @@ export function Sun({ x, y, radius, count, isLit, onPress }: SunProps) {
   const haloOpacity = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] });
 
   const size = radius * 2;
-  const haloSize = size * 1.2;
+  const haloSize = size * 1.5;
 
   // Color interpolation between lit (warm gold) and dim (cool gray)
   const bodyColor = litColor.interpolate({
@@ -144,13 +145,19 @@ export function Sun({ x, y, radius, count, isLit, onPress }: SunProps) {
           left: size * 0.22,
         }]} />
 
-        {/* Count text */}
-        <Animated.Text style={[styles.count, { color: textColor }]}>
-          {count}
-        </Animated.Text>
-        <Animated.Text style={[styles.label, { color: textColor }]}>
-          {count === 1 ? 'match' : 'matches'}
-        </Animated.Text>
+        {/* Count text — hidden until the user has actively picked at
+            least one filter beyond the initial defaults. Before that,
+            a big number would be misleading (it's just the total DB). */}
+        {showCount && (
+          <>
+            <Animated.Text style={[styles.count, { color: textColor }]}>
+              {count}
+            </Animated.Text>
+            <Animated.Text style={[styles.label, { color: textColor }]}>
+              {count === 1 ? 'produit' : 'produits'}
+            </Animated.Text>
+          </>
+        )}
       </AnimatedPressable>
     </View>
   );

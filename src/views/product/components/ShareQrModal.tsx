@@ -65,7 +65,7 @@ export function ShareQrModal({ visible, onClose, url, caption }: ShareQrModalPro
         <Pressable style={styles.sheet} onPress={() => {}}>
           {/* QR card — this is the View that gets captured */}
           <View ref={qrCardRef} collapsable={false} style={styles.qrCard}>
-            <Text style={styles.title}>Partager les filtres</Text>
+            <Text style={styles.title}>Partager la liste des produits</Text>
             {!!caption && <Text style={styles.caption}>{caption}</Text>}
 
             <View style={styles.qrWrap}>

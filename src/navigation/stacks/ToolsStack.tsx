@@ -10,6 +10,7 @@ import ReturnButtonIcon from '../components/ReturnButton';
 
 import { SolarFilterScreen } from '../../views/product/SolarFilterScreen';
 import { ProductsScreen } from '../../views/product/ProductsScreen';
+import { ProtocolScreen } from '../../views/product/ProtocolScreen';
 
 const ToolsStackNav = createStackNavigator();
 
@@ -17,8 +18,8 @@ export const ToolsStack = ({ navigation, route }) => {
 
   return (
     <ToolsStackNav.Navigator
-      id={"tools-stack" as undefined}
-      initialRouteName='new-que-choisir'
+      id={"tools-stack"}
+      initialRouteName='tools-home'
       screenOptions={{ title: 'Outils' }}
     >
       <ToolsStackNav.Screen
@@ -71,6 +72,11 @@ export const ToolsStack = ({ navigation, route }) => {
       <ToolsStackNav.Screen
         name={'products-view'}
         component={ProductsScreen}
+        options={{ headerShown: false }}
+      />
+      <ToolsStackNav.Screen
+        name={'protocol-view'}
+        component={ProtocolScreen}
         options={{ headerShown: false }}
       />
     </ToolsStackNav.Navigator>

@@ -16,6 +16,10 @@ export type ChildNode = {
   id: string;
   label: string;
   visibilityRule?: Rule | null;
+  // When set, selecting this child triggers a treatment-protocol screen
+  // (phases + groups) before the product list. Points to a protocol id
+  // in protocols.json. Multiple children may share the same protocol id.
+  protocolId?: string;
 };
 
 export type MainNode = {
@@ -24,7 +28,6 @@ export type MainNode = {
   selectionType: 'single' | 'multi';
   children: ChildNode[];
   visibilityRule?: Rule | null;
-  parentNodeId?: string; 
 };
 
 // ---------- evaluator ----------

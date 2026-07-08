@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   Dimensions,
   FlatList,
   Image,
@@ -16,10 +17,32 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {
+  GestureHandlerRootView,
+  PanGestureHandler,
+  PinchGestureHandler,
+  State,
+} from 'react-native-gesture-handler';
+import { SvgUri, SvgXml } from 'react-native-svg';
 import { MainNode } from '../lib/Logic';
 import { Product, ProductSizeOption } from '../lib/Products';
 import { palette } from '../lib/Theme';
 import { getRules } from '../../../services/v2/ProductService';
+
+// Cached at module load for use inside StyleSheet.create. Portrait-only
+// app so this won't get stale on orientation change; if that ever
+// changes, move width into a useWindowDimensions() call inside the
+// component instead.
+const SCREEN_W = Dimensions.get('window').width;
+
+// Aspect-ratio threshold at which markdown media renders edge-to-edge
+// (banner-style). Below this — squares and portraits — media is
+// contained and centered so it doesn't stretch into a giant block.
+const LANDSCAPE_MIN_RATIO = 1.3;
+
+// Max side length for contained (non-landscape) media. Balances against
+// a typical phone width without dominating the tab vertically.
+const CONTAINED_MAX = 280;
 
 type ProductDetailModalProps = {
   visible: boolean;
@@ -35,7 +58,7 @@ type ProductDetailModalProps = {
 // the structured sizes table from one tabs array.
 type TabItem =
   | { kind: 'markdown'; title: string; content: string }
-  | { kind: 'sizes';    title: string; options: ProductSizeOption[] };
+  | { kind: 'sizes'; title: string; options: ProductSizeOption[] };
 
 // Numeric description of a measurement bucket the user picked.
 type ActiveBucket = { dimKey: string; min: number; max: number };
@@ -62,7 +85,7 @@ export function ProductDetailModal({
   const MODAL_H = screenHeight * 0.9;
   const IMAGE_H = screenWidth;
   const TITLE_H = 250;
-  const TABS_H  = 50;
+  const TABS_H = 50;
   const TAB_CONTENT_H = MODAL_H - TITLE_H - TABS_H;
 
   // Fetch rules — shared cache via React Query under a stable key.
@@ -155,7 +178,7 @@ export function ProductDetailModal({
                   <Image
                     source={{ uri: item }}
                     style={{ width: screenWidth, height: IMAGE_H }}
-                    resizeMode="cover"
+                    resizeMode="contain"
                   />
                 )}
               />
@@ -175,9 +198,9 @@ export function ProductDetailModal({
               <Text style={styles.name} numberOfLines={2}>
                 {product.name}
               </Text>
-              {(
+              {!!product.sub && (
                 <Text style={styles.sub} numberOfLines={2}>
-                  {!!product.sub ? product.sub : product.category}
+                  {product.sub}
                 </Text>
               )}
             </View>
@@ -302,6 +325,11 @@ function SizesTabContent({
     [userFilters, rules],
   );
 
+  // Dimension title map — dimKey → node title from rules.json. Used to
+  // label each measurement row on an option. Rebuilds only when rules
+  // change (which is rare — cached via React Query).
+  const dimTitleMap = useMemo(() => buildDimTitleMap(rules), [rules]);
+
   // Per-option highlight state. An option is "matched" when:
   //   - The user has at least one active measurement bucket, AND
   //   - For EVERY active bucket dimension, the option has a measurement
@@ -342,79 +370,179 @@ function SizesTabContent({
         )}
       </View>
 
-      {rows.map((row, i) => (
-        <OptionCard key={`${row.opt.label}-${i}`} row={row} />
-      ))}
+      <SizesTable rows={rows} dimTitleMap={dimTitleMap} />
     </ScrollView>
   );
 }
 
-// One option card. Renders label + summary + a stack of per-measurement
-// rows. Card border lights up when the option overall matched; the
-// matching measurement rows get an inline check icon.
-function OptionCard({ row }: { row: RowState }) {
-  const { opt, matched, perDim } = row;
-  const measurementKeys = Object.keys(opt.measurements || {});
+// ===============================================================
+// SizesTable — table layout instead of per-option cards.
+//   Layout: fixed "Taille" column on the left + horizontally
+//   scrollable data columns on the right. Row highlighting (matched)
+//   applies on both sides at once so a highlighted row stays aligned
+//   when the user scrolls the data columns.
+// ===============================================================
+function SizesTable({
+  rows, dimTitleMap,
+}: {
+  rows: RowState[];
+  dimTitleMap: Map<string, string>;
+}) {
+  // Union of every measurement key across all options — one column per
+  // dim. Preserve first-appearance order so the layout is stable and
+  // predictable rather than alphabetised.
+  const dimColumns = useMemo(() => {
+    const seen = new Set<string>();
+    const order: string[] = [];
+    for (const row of rows) {
+      for (const k of Object.keys(row.opt.measurements || {})) {
+        if (!seen.has(k)) {
+          seen.add(k);
+          order.push(k);
+        }
+      }
+    }
+    return order;
+  }, [rows]);
+
+  // Measure the horizontal ScrollView's visible width so we can decide
+  // whether to stretch the data columns (few dims → fill the area) or
+  // keep them at their min width and let the user scroll (many dims →
+  // overflow). Set once on layout; recomputed on orientation changes.
+  const [scrollAreaWidth, setScrollAreaWidth] = useState(0);
+
+  const DATA_COL_MIN = 120;
+  const numCols = dimColumns.length;
+  const naturalWidth = numCols * DATA_COL_MIN;
+  const dataColWidth =
+    numCols > 0 && scrollAreaWidth > 0 && naturalWidth < scrollAreaWidth
+      ? Math.floor(scrollAreaWidth / numCols)
+      : DATA_COL_MIN;
 
   return (
-    <View style={[styles.optionCard, matched && styles.optionCardMatched]}>
-      <View style={styles.optionHeader}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-          {matched && (
-            <Ionicons
-              name="checkmark-circle"
-              size={18}
-              color="#3B82F6"
-              style={{ marginRight: 6 }}
-            />
-          )}
-          <Text style={[styles.optionLabel, matched && styles.optionLabelMatched]}>
-            {opt.label}
-          </Text>
-        </View>
-        {matched && (
-          <View style={styles.recommendedBadge}>
-            <Text style={styles.recommendedText}>Recommandée</Text>
+    <View style={styles.sizesTable}>
+      {/* Left: fixed Taille column. Not inside the horizontal ScrollView
+          so it stays visible while the user scrolls the data columns. */}
+      <View style={styles.sizesFixedCol}>
+        {/* Header */}
+        <View style={[styles.sizesTableRow, styles.sizesTableHeaderRow]}>
+          <View style={[styles.sizesCell, styles.sizesTailleCol]}>
+            <Text style={styles.sizesHeaderText} numberOfLines={1}>Taille</Text>
           </View>
-        )}
-      </View>
-
-      {/* Per-measurement rows. Each row = one dimension on this option. */}
-      {measurementKeys.length === 0 ? (
-        <Text style={styles.noMeasurements}>—</Text>
-      ) : (
-        measurementKeys.map(dimKey => {
-          const m = opt.measurements[dimKey];
-          const isHit = !!perDim[dimKey];
+        </View>
+        {/* Body */}
+        {rows.map((row, ri) => {
+          const matched = row.matched;
+          const isLastRow = ri === rows.length - 1;
           return (
             <View
-              key={dimKey}
-              style={[styles.measurementRow, isHit && styles.measurementRowHit]}
+              key={`${row.opt.label}-${ri}`}
+              style={[
+                styles.sizesTableRow,
+                matched && styles.sizesTableRowMatched,
+                !isLastRow && styles.sizesRowBorder,
+              ]}
             >
-              <Text
-                style={[styles.measurementDim, isHit && styles.measurementHit]}
-                numberOfLines={1}
-              >
-                {humanizeDimKey(dimKey)}
-              </Text>
-              <Text
-                style={[styles.measurementRange, isHit && styles.measurementHit]}
-                numberOfLines={1}
-              >
-                {m.displayRange || `${m.min}–${m.max}`}
-              </Text>
-              {isHit && (
-                <Ionicons
-                  name="checkmark"
-                  size={14}
-                  color="#1D4ED8"
-                  style={{ marginLeft: 4 }}
-                />
-              )}
+              {/* Body Taille cell — centered (inherits justifyContent
+                  from sizesCell). Icon + label appear as a group in
+                  the middle of the cell. */}
+              <View style={[styles.sizesCell, styles.sizesTailleCol]}>
+                {matched && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={13}
+                    color="#3B82F6"
+                    style={{ marginRight: 4 }}
+                  />
+                )}
+                <Text
+                  style={[styles.sizesTailleText, matched && styles.sizesTailleTextMatched]}
+                  numberOfLines={1}
+                >
+                  {row.opt.label}
+                </Text>
+              </View>
             </View>
           );
-        })
-      )}
+        })}
+      </View>
+
+      {/* Right: horizontally scrollable data columns. flex:1 makes the
+          ScrollView take the remaining outer width; onLayout captures
+          it so we can size the data columns to match. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
+        style={{ flex: 1 }}
+        onLayout={(e) => setScrollAreaWidth(e.nativeEvent.layout.width)}
+      >
+        <View>
+          {/* Header row */}
+          <View style={[styles.sizesTableRow, styles.sizesTableHeaderRow]}>
+            {dimColumns.map((dk, ci) => {
+              const isLast = ci === dimColumns.length - 1;
+              return (
+                <View
+                  key={dk}
+                  style={[
+                    styles.sizesCell,
+                    { width: dataColWidth },
+                    !isLast && styles.sizesCellBorder,
+                  ]}
+                >
+                  <Text style={styles.sizesHeaderText} numberOfLines={2}>
+                    {dimTitleMap.get(dk) || humanizeDimKey(dk)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Body rows */}
+          {rows.map((row, ri) => {
+            const matched = row.matched;
+            const isLastRow = ri === rows.length - 1;
+            return (
+              <View
+                key={`${row.opt.label}-${ri}`}
+                style={[
+                  styles.sizesTableRow,
+                  matched && styles.sizesTableRowMatched,
+                  !isLastRow && styles.sizesRowBorder,
+                ]}
+              >
+                {dimColumns.map((dk, ci) => {
+                  const m = row.opt.measurements?.[dk];
+                  const isHit = !!row.perDim[dk];
+                  const isLast = ci === dimColumns.length - 1;
+                  return (
+                    <View
+                      key={dk}
+                      style={[
+                        styles.sizesCell,
+                        { width: dataColWidth },
+                        !isLast && styles.sizesCellBorder,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.sizesCellText,
+                          isHit && styles.sizesCellTextHit,
+                          !m && styles.sizesCellTextMissing,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {m ? (m.displayRange || `${m.min}–${m.max}`) : '—'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -429,8 +557,10 @@ function OptionCard({ row }: { row: RowState }) {
 //   - table  | a | b |  với dòng phân cách | --- |
 //   - [text](url) → link, bấm mở ngoài (mọi url)
 //   - [](url) text rỗng + url ảnh   → hiển thị ảnh inline
+//   - [](url) text rỗng + url .svg  → render bằng react-native-svg (SvgUri)
 //   - [](url) text rỗng + url youtube → thumbnail, bấm mở ngoài
 //   - [](url) text rỗng + url khác  → coi như link mở ngoài
+//   - khối <svg>...</svg> thô        → render bằng react-native-svg (SvgXml)
 // ===============================================================
 
 // ---- Inline segments (bold / italic / link) ----
@@ -440,11 +570,18 @@ type Seg =
 
 // Mở url ra ngoài (web browser / app tương ứng của hệ điều hành).
 function openExternal(url: string) {
-  Linking.openURL(url).catch(() => {});
+  Linking.openURL(url).catch(() => { });
 }
 
+// URL trỏ tới file .svg — tách riêng để render bằng react-native-svg thay
+// vì <Image> (RN Image không vẽ được .svg).
+function isSvgUrl(url: string): boolean {
+  return /\.svg(\?.*)?$/i.test(url.trim());
+}
+
+// URL ảnh raster thông thường — CHÚ Ý: không gồm 'svg' nữa, svg đi nhánh riêng.
 function isImageUrl(url: string): boolean {
-  return /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url.trim());
+  return /\.(png|jpe?g|gif|webp|bmp)(\?.*)?$/i.test(url.trim());
 }
 
 function isYoutubeUrl(url: string): boolean {
@@ -524,35 +661,267 @@ function splitTableRow(line: string): string[] {
   return s.split('|').map(c => c.trim());
 }
 
-// Một block đứng-riêng = ảnh hoặc youtube (text rỗng, đúng 1 token).
-// Trả về 'image' | 'youtube' | null.
-function standaloneMedia(trimmed: string): { type: 'image' | 'youtube'; url: string } | null {
+// Một block đứng-riêng = ảnh / svg / youtube (text rỗng, đúng 1 token).
+// Trả về 'image' | 'svg' | 'youtube' | null.
+function standaloneMedia(
+  trimmed: string,
+): { type: 'image' | 'svg' | 'youtube'; url: string } | null {
   const m = trimmed.match(/^\[\s*\]\(([^)]*)\)$/);
   if (!m) return null;
   const url = m[1].trim();
+  // Kiểm tra .svg TRƯỚC ảnh raster để url .svg không bị nuốt vào nhánh Image.
+  if (isSvgUrl(url)) return { type: 'svg', url };
   if (isImageUrl(url)) return { type: 'image', url };
   if (isYoutubeUrl(url)) return { type: 'youtube', url };
   return null;
 }
 
+// ===============================================================
+// ImageLightbox — full-screen viewer with pinch-to-zoom and pan.
+// Uses react-native-gesture-handler (PinchGestureHandler +
+// PanGestureHandler in parallel via simultaneousHandlers) plus the
+// classic Animated.Value pattern (base * pinch) so the transforms can
+// run natively via useNativeDriver.
+//
+// Zoom is clamped to [1x, 5x]. Pan uses setOffset so translations
+// carry across successive drags. Close button + backdrop tap dismiss.
+// ===============================================================
+function ImageLightbox({ url, visible, onClose }: {
+  url: string;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  // Scale is (baseScale * pinchScale). baseScale holds the committed
+  // zoom between gestures; pinchScale is the live multiplier during
+  // one pinch. On gesture end we fold pinchScale into baseScale and
+  // reset pinch to 1 so the next gesture starts clean.
+  const baseScale = useRef(new Animated.Value(1)).current;
+  const pinchScale = useRef(new Animated.Value(1)).current;
+  const scale = Animated.multiply(baseScale, pinchScale);
+  const lastScale = useRef(1);
+
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  const lastTranslateX = useRef(0);
+  const lastTranslateY = useRef(0);
+
+  const pinchRef = useRef(null);
+  const panRef = useRef(null);
+
+  const onPinchEvent = Animated.event(
+    [{ nativeEvent: { scale: pinchScale } }],
+    { useNativeDriver: true },
+  );
+
+  const onPinchStateChange = (event: any) => {
+    if (event.nativeEvent.oldState === State.ACTIVE) {
+      const next = lastScale.current * event.nativeEvent.scale;
+      const clamped = Math.max(1, Math.min(next, 5));
+      lastScale.current = clamped;
+      baseScale.setValue(clamped);
+      pinchScale.setValue(1);
+    }
+  };
+
+  const onPanEvent = Animated.event(
+    [{ nativeEvent: { translationX: translateX, translationY: translateY } }],
+    { useNativeDriver: true },
+  );
+
+  const onPanStateChange = (event: any) => {
+    if (event.nativeEvent.oldState === State.ACTIVE) {
+      lastTranslateX.current += event.nativeEvent.translationX;
+      lastTranslateY.current += event.nativeEvent.translationY;
+      translateX.setOffset(lastTranslateX.current);
+      translateY.setOffset(lastTranslateY.current);
+      translateX.setValue(0);
+      translateY.setValue(0);
+    }
+  };
+
+  // Reset transforms every time the lightbox closes so re-opening
+  // starts back at 1x, centred.
+  useEffect(() => {
+    if (!visible) {
+      lastScale.current = 1;
+      baseScale.setValue(1);
+      pinchScale.setValue(1);
+      lastTranslateX.current = 0;
+      lastTranslateY.current = 0;
+      translateX.setOffset(0);
+      translateY.setOffset(0);
+      translateX.setValue(0);
+      translateY.setValue(0);
+    }
+  }, [visible]);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      {/* GestureHandlerRootView is required inside RN Modal — the
+          modal renders in a separate root view that gesture-handler
+          doesn't auto-instrument on Android. */}
+      <GestureHandlerRootView style={styles.lightboxRoot}>
+        <View style={styles.lightboxBackdrop}>
+          <PanGestureHandler
+            ref={panRef}
+            simultaneousHandlers={pinchRef}
+            onGestureEvent={onPanEvent}
+            onHandlerStateChange={onPanStateChange}
+          >
+            <Animated.View style={styles.lightboxGestureArea}>
+              <PinchGestureHandler
+                ref={pinchRef}
+                simultaneousHandlers={panRef}
+                onGestureEvent={onPinchEvent}
+                onHandlerStateChange={onPinchStateChange}
+              >
+                <Animated.View
+                  style={[
+                    styles.lightboxImageWrap,
+                    {
+                      transform: [
+                        { translateX },
+                        { translateY },
+                        { scale },
+                      ],
+                    },
+                  ]}
+                >
+                  <Image
+                    source={{ uri: url }}
+                    style={styles.lightboxImage}
+                    resizeMode="contain"
+                  />
+                </Animated.View>
+              </PinchGestureHandler>
+            </Animated.View>
+          </PanGestureHandler>
+
+          {/* Close button absolutely positioned so it sits above the
+              gesture area. Its own touch target isn't relayed to the
+              gesture handlers thanks to being outside them. */}
+          <TouchableOpacity
+            style={styles.lightboxClose}
+            onPress={onClose}
+            hitSlop={12}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="close" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </GestureHandlerRootView>
+    </Modal>
+  );
+}
+
 function MarkdownImage({ url }: { url: string }) {
   const [ratio, setRatio] = useState(16 / 9);
+  const [zoomOpen, setZoomOpen] = useState(false);
+
   useEffect(() => {
     let alive = true;
     Image.getSize(
       url,
       (w, h) => { if (alive && h > 0) setRatio(w / h); },
-      () => {},
+      () => { },
     );
     return () => { alive = false; };
   }, [url]);
+
   return (
-    <Image
-      source={{ uri: url }}
-      style={[styles.mdImage, { aspectRatio: ratio }]}
-      resizeMode="cover"
-    />
+    <>
+      {/* Tap on the image opens the full-screen zoom viewer. Sizing/
+          aspect handled on the TouchableOpacity so the touch target
+          matches the image's visible box exactly. */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => setZoomOpen(true)}
+        style={[styles.mdImage, { aspectRatio: ratio }]}
+      >
+        <Image
+          source={{ uri: url }}
+          style={styles.mdImageInner}
+          resizeMode="cover"
+        />
+      </TouchableOpacity>
+      <ImageLightbox
+        url={url}
+        visible={zoomOpen}
+        onClose={() => setZoomOpen(false)}
+      />
+    </>
   );
+}
+
+// Tính tỉ lệ w/h từ chuỗi SVG thô: ưu tiên viewBox, fallback width/height.
+// Trả về 1 (vuông) nếu không đọc được.
+function svgAspectRatio(xml: string): number {
+  const vb = xml.match(/viewBox\s*=\s*["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i);
+  if (vb) {
+    const w = parseFloat(vb[1]);
+    const h = parseFloat(vb[2]);
+    if (w > 0 && h > 0) return w / h;
+  }
+  const wM = xml.match(/\bwidth\s*=\s*["']?\s*([\d.]+)/i);
+  const hM = xml.match(/\bheight\s*=\s*["']?\s*([\d.]+)/i);
+  if (wM && hM) {
+    const w = parseFloat(wM[1]);
+    const h = parseFloat(hM[1]);
+    if (w > 0 && h > 0) return w / h;
+  }
+  return 1; // mặc định vuông
+}
+
+// Render một khối SVG thô (<svg>...</svg>) bằng react-native-svg.
+// Đọc width/height (hoặc viewBox) để giữ đúng tỉ lệ trong khung full-width.
+function MarkdownSvg({ xml }: { xml: string }) {
+  const ratio = useMemo(() => svgAspectRatio(xml), [xml]);
+
+  return (
+    <View style={[styles.mdSvg, { aspectRatio: ratio }]}>
+      <SvgXml xml={xml} width="100%" height="100%" />
+    </View>
+  );
+}
+
+// Render SVG từ một URL .svg. Fetch nội dung để đọc viewBox → giữ đúng tỉ
+// lệ (SvgUri không tự biết tỉ lệ nội tại). Trong lúc tải hiển thị khung
+// giữ chỗ để layout không nhảy; nếu fetch lỗi, fallback sang SvgUri thẳng.
+function MarkdownSvgUri({ url }: { url: string }) {
+  const [xml, setXml] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setXml(null);
+    setFailed(false);
+    fetch(url)
+      .then(r => r.text())
+      .then(t => { if (alive) setXml(t); })
+      .catch(() => { if (alive) setFailed(true); });
+    return () => { alive = false; };
+  }, [url]);
+
+  // Fetch được nội dung: tái dùng MarkdownSvg (đã tự tính aspectRatio).
+  if (xml) return <MarkdownSvg xml={xml} />;
+
+  // Fetch lỗi: vẫn thử render trực tiếp qua SvgUri, tỉ lệ mặc định vuông.
+  if (failed) {
+    return (
+      <View style={[styles.mdSvg, { aspectRatio: 1 }]}>
+        <SvgUri uri={url} width="100%" height="100%" />
+      </View>
+    );
+  }
+
+  // Đang tải: khung giữ chỗ vuông.
+  return <View style={[styles.mdSvg, { aspectRatio: 1 }]} />;
 }
 
 function YoutubeThumb({ url }: { url: string }) {
@@ -592,6 +961,23 @@ function SimpleMarkdown({ content }: { content: string }) {
       continue;
     }
 
+    // ---- SVG block: gom từ dòng mở <svg đến dòng có </svg> ----
+    if (/<svg[\s>]/i.test(trimmed)) {
+      let j = i;
+      const buf: string[] = [];
+      while (j < lines.length) {
+        buf.push(lines[j]);
+        if (/<\/svg>/i.test(lines[j])) break;
+        j++;
+      }
+      // Chỉ render khi tìm thấy thẻ đóng; nếu không, coi như văn bản thường.
+      if (j < lines.length) {
+        blocks.push(<MarkdownSvg key={key++} xml={buf.join('\n')} />);
+        i = j;
+        continue;
+      }
+    }
+
     // ---- Table: dòng hiện tại + dòng kế là divider ----
     if (
       isTableRow(trimmed) &&
@@ -610,18 +996,26 @@ function SimpleMarkdown({ content }: { content: string }) {
       continue;
     }
 
-    // ---- Standalone media: [](url) ảnh / youtube ----
+    // ---- Standalone media: [](url) ảnh / svg / youtube ----
     const media = standaloneMedia(trimmed);
     if (media) {
       blocks.push(
         media.type === 'image'
           ? <MarkdownImage key={key++} url={media.url} />
-          : <YoutubeThumb key={key++} url={media.url} />,
+          : media.type === 'svg'
+            ? <MarkdownSvgUri key={key++} url={media.url} />
+            : <YoutubeThumb key={key++} url={media.url} />,
       );
       continue;
     }
 
     // ---- Headings ----
+    // Ordered most-specific first so `#### foo` doesn't get consumed
+    // by the `### ` prefix check.
+    if (trimmed.startsWith('#### ')) {
+      blocks.push(<InlineText key={key++} segs={parseInline(trimmed.slice(5))} style={styles.mdH4} />);
+      continue;
+    }
     if (trimmed.startsWith('### ')) {
       blocks.push(<InlineText key={key++} segs={parseInline(trimmed.slice(4))} style={styles.mdH3} />);
       continue;
@@ -699,6 +1093,22 @@ function buildBucketIndex(rules: MainNode[]): Map<string, ActiveBucket> {
       const max = (child as any).max;
       if (typeof min !== 'number' || typeof max !== 'number') continue;
       map.set(child.id, { dimKey, min, max });
+    }
+  }
+  return map;
+}
+
+// Walk the rules tree to build a map: dimensionKey → node title.
+// Used to render a human label for each measurement row on an option
+// (e.g. "tour_de_cheville" → "Tour de cheville") straight from the
+// source of truth — no more heuristic underscore splitting.
+function buildDimTitleMap(rules: MainNode[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const node of rules) {
+    const dimKey = (node as any).dimensionKey as string | undefined;
+    if (!dimKey || typeof dimKey !== 'string') continue;
+    if (typeof node.title === 'string' && node.title.trim() !== '') {
+      map.set(dimKey, node.title);
     }
   }
   return map;
@@ -934,6 +1344,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 4,
   },
+  mdH4: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    fontWeight: '700',
+    color: palette.textPrimary,
+    lineHeight: 19,
+    marginTop: 8,
+    marginBottom: 4,
+  },
   mdParagraph: {
     fontSize: 14,
     lineHeight: 21,
@@ -1012,22 +1431,33 @@ const styles = StyleSheet.create({
   },
 
   // Image
+  // Media styles below use negative horizontal margins to break out of
+  // tabBody's paddingHorizontal (20) and render edge-to-edge across the
+  // full modal width. borderRadius is dropped for the same reason —
+  // rounded corners at the modal edges look awkward.
   mdImage: {
     width: '100%',
-    borderRadius: 10,
+    maxHeight: 220,
+    alignSelf: 'center',
     marginBottom: 12,
     backgroundColor: palette.bg,
   },
+  // Image inner — the actual Image element inside the tappable
+  // wrapper. Fills the wrapper's aspectRatio-driven box exactly.
+  mdImageInner: {
+    width: '100%',
+    height: '100%',
+  },
+
+  // SVG
+  mdSvg: {
+    width: SCREEN_W,
+    marginHorizontal: -20,
+    marginBottom: 12,
+  },
 
   // Youtube
-  mdYoutube: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginBottom: 12,
-    backgroundColor: '#000',
-  },
+  mdYoutube: { width: '100%', aspectRatio: 16 / 9, borderRadius: 10, overflow: 'hidden', marginBottom: 12, backgroundColor: '#000', },
   mdYoutubeThumb: {
     width: '100%',
     height: '100%',
@@ -1104,73 +1534,102 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  optionCard: {
-    borderRadius: 12,
-    backgroundColor: palette.bg,
+  // Sizes table — outer wrapper is now a flex-row so the left "Taille"
+  // column stays fixed while the right side scrolls horizontally.
+  sizesTable: {
+    flexDirection: 'row',
     borderWidth: 1,
     borderColor: palette.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: palette.cardBg,
     marginBottom: 8,
   },
-  optionCardMatched: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#3B82F6',
-    borderWidth: 1.5,
+  // Fixed left column — vertical separator between it and the scrollable
+  // area is a right border so the two feel connected but distinct.
+  sizesFixedCol: {
+    borderRightWidth: 1,
+    borderRightColor: palette.border,
+    backgroundColor: palette.cardBg,
   },
-  optionHeader: {
+  sizesTableRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
+    minHeight: 44,
   },
-  optionLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: palette.textPrimary,
+  // Header row is a fixed height so left/right sides stay lined up even
+  // when a dim title wraps to two lines. The bottom border creates a
+  // clean separator between the header band and the first data row.
+  sizesTableHeaderRow: {
+    backgroundColor: palette.bg,
+    height: 56,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
   },
-  optionLabelMatched: {
-    color: '#1D4ED8',
+  sizesTableRowMatched: {
+    backgroundColor: '#EFF6FF',
   },
-  recommendedBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: '#3B82F6',
-  },
-  recommendedText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
+  sizesRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
   },
 
-  measurementRow: {
+  // Base cell — flex row so icon + text align in the same line.
+  sizesCell: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 3,
-    gap: 6,
   },
-  measurementRowHit: {
-    // Just bold the text — no extra bg, the option card already lights up.
+  sizesCellBorder: {
+    borderRightWidth: 1,
+    borderRightColor: palette.border,
   },
-  measurementDim: {
-    fontSize: 12,
+
+  // Column width tokens — Taille col has fixed width, data cols are
+  // sized dynamically (see SizesTable's dataColWidth computation). When
+  // the total data column width would fit inside the visible scroll
+  // area, they stretch to fill; otherwise they stay at DATA_COL_MIN
+  // and the ScrollView handles overflow.
+  sizesTailleCol: {
+    width: 110,
+  },
+
+  sizesHeaderText: {
+    fontSize: 11.5,
+    fontWeight: '700',
     color: palette.textSecondary,
-    minWidth: 130,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+    flexShrink: 1,
   },
-  measurementRange: {
+
+  // Taille (first column) — bold, primary text. Centered inline by the
+  // cell's flex layout; textAlign centers wrapped lines too. Matched
+  // rows tint blue.
+  sizesTailleText: {
     fontSize: 13,
+    fontWeight: '700',
+    color: palette.textPrimary,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+  sizesTailleTextMatched: {
+    color: '#1D4ED8',
+  },
+
+  // Data cells — range text. Base is muted; hit rows go bold blue.
+  sizesCellText: {
+    fontSize: 12.5,
     color: palette.textSecondary,
     fontWeight: '500',
-    flex: 1,
   },
-  measurementHit: {
+  sizesCellTextHit: {
     color: '#1D4ED8',
     fontWeight: '700',
   },
-  noMeasurements: {
-    fontSize: 12,
+  sizesCellTextMissing: {
     color: palette.textMuted,
     fontStyle: 'italic',
   },
@@ -1197,5 +1656,42 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: 4,
     textAlign: 'center',
+  },
+
+  // Full-screen image lightbox. Root wraps the Modal contents in a
+  // GestureHandlerRootView so pinch/pan work inside the modal on
+  // Android. Backdrop is near-opaque black.
+  lightboxRoot: {
+    flex: 1,
+  },
+  lightboxBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+  },
+  // Gesture area fills the backdrop; transforms are applied to the
+  // image wrap inside so the whole image scales/pans as one unit.
+  lightboxGestureArea: {
+    flex: 1,
+  },
+  lightboxImageWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxImage: {
+    width: '100%',
+    height: '100%',
+  },
+  lightboxClose: {
+    position: 'absolute',
+    top: 44,
+    right: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
 });

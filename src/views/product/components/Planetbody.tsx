@@ -17,6 +17,9 @@ type PlanetProps = {
   isActive: boolean;
   // Has at least one selection on this planet OR any linked node.
   hasSelection: boolean;
+  // Has some selections but not every reachable filter node is filled
+  // yet — triggers a small "!" badge to hint "you can add more here".
+  hasMoreToChoose?: boolean;
   accent: Accent;
   onPress: () => void;
 };
@@ -33,7 +36,7 @@ type PlanetProps = {
 export function PlanetBody({
   cx, cy, size, zDepth,
   nodeId, title,
-  selectedLabels, isActive, hasSelection,
+  selectedLabels, isActive, hasSelection, hasMoreToChoose,
   accent, onPress,
 }: PlanetProps) {
   // Breathing halo when has selection
@@ -224,6 +227,31 @@ export function PlanetBody({
             </>
           )}
         </View>
+
+        {/* "!" badge — top-right of the sphere. Amber warning tint
+            signals "you can add more filters here" without alarming
+            the user. Sized proportionally to the planet, min 20px so
+            small planets still show a legible glyph. */}
+        {hasMoreToChoose && (() => {
+          const badgeSize = Math.max(14, size * 0.196);
+          return (
+            <View
+              pointerEvents="none"
+              style={[styles.moreBadge, {
+                width: badgeSize,
+                height: badgeSize,
+                borderRadius: badgeSize / 2,
+                top: size * 0.04,
+                right: size * 0.04,
+              }]}
+            >
+              <Text style={[styles.moreBadgeText, {
+                fontSize: badgeSize * 0.6,
+                lineHeight: badgeSize * 0.75,
+              }]}>+</Text>
+            </View>
+          );
+        })()}
       </Pressable>
     </View>
   );
@@ -284,7 +312,7 @@ const styles = StyleSheet.create({
 
   // Big title — when there are no selected labels (centred in sphere)
   titleCentered: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: 'Poppins-Bold',
     textAlign: 'center',
     lineHeight: 16,
@@ -304,13 +332,38 @@ const styles = StyleSheet.create({
   // Joined labels — "A · B · C". Wraps up to 3 lines inside the sphere
   // area; overflowing the last line gets a tail ellipsis.
   labelsInline: {
-    fontSize: 11,
+    fontSize: 16,
     fontFamily: 'Poppins-Medium',
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 18,
   },
 
   titleActive: {
     fontWeight: '700',
+  },
+
+  // Warning badge in the top-right corner of the sphere. Signals
+  // "planet has some but not all reachable filters filled". Amber tint
+  // + white border to pop against any accent color. Sized inline in
+  // JSX because it scales with planet size.
+  moreBadge: {
+    position: 'absolute',
+    backgroundColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  moreBadgeText: {
+    color: '#FFFFFF',
+    fontFamily: 'Poppins-Bold',
+    fontWeight: '800',
+    textAlign: 'center',
   },
 });

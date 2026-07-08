@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
@@ -95,6 +95,63 @@ function NodeSection({
           ))
         )}
       </View>
+    </View>
+  );
+}
+
+// ScrollView with a custom scrollbar that stays visible whenever content
+// overflows the viewport. Native RN scroll indicators can't be styled and
+// only appear briefly while scrolling, so we draw our own track + thumb.
+function ScrollableBody({ children }: { children: React.ReactNode }) {
+  const [trackH, setTrackH] = useState(0);       // viewport height
+  const [contentH, setContentH] = useState(0);   // content height
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  const overflowing = contentH > trackH + 1;
+  const MIN_THUMB = 32;
+
+  // Thumb height proportional to the visible fraction of content.
+  const thumbH = overflowing
+    ? Math.max((trackH * trackH) / contentH, MIN_THUMB)
+    : 0;
+
+  // Max distance the thumb can travel inside the track.
+  const maxThumbTravel = Math.max(trackH - thumbH, 0);
+  const maxScroll = Math.max(contentH - trackH, 1);
+
+  const thumbTranslate = scrollY.interpolate({
+    inputRange: [0, maxScroll],
+    outputRange: [0, maxThumbTravel],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <View style={styles.scrollWrap}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={{ paddingBottom: 8, paddingRight: 16 }}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onLayout={e => setTrackH(e.nativeEvent.layout.height)}
+        onContentSizeChange={(_, h) => setContentH(h)}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false },
+        )}
+      >
+        {children}
+      </ScrollView>
+
+      {overflowing && (
+        <View style={styles.scrollTrack} pointerEvents="none">
+          <Animated.View
+            style={[
+              styles.scrollThumb,
+              { height: thumbH, transform: [{ translateY: thumbTranslate }] },
+            ]}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -235,11 +292,7 @@ export function OptionsSheet({
           </View>
 
           {/* Content — scroll if linked sections push it long */}
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={{ paddingBottom: 8 }}
-            showsVerticalScrollIndicator={true}
-          >
+          <ScrollableBody>
             <NodeSection
               node={rootNode}
               selections={selections}
@@ -259,7 +312,7 @@ export function OptionsSheet({
                 isPrimary={false}
               />
             ))}
-          </ScrollView>
+          </ScrollableBody>
 
           {/* Done + Next row */}
           <View style={styles.actionRow}>
@@ -339,9 +392,32 @@ const styles = StyleSheet.create({
     color: palette.textSecondary,
     marginTop: 2,
   },
+  scrollWrap: {
+    position: 'relative',
+    marginTop: 10,
+    // Bleed past the card's horizontal padding (22) so the track can sit
+    // near the screen edge. Content keeps its inset via paddingRight below.
+    marginRight: -22,
+    paddingRight: 22,
+  },
   scroll: {
     maxHeight: 480,
-    marginTop: 10,
+  },
+  scrollTrack: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    right: 4,               // ~4px from the screen edge
+    width: 5,
+    borderRadius: 3,
+    backgroundColor: palette.border,
+    opacity: 0.35,
+  },
+  scrollThumb: {
+    width: 5,
+    borderRadius: 3,
+    backgroundColor: palette.textMuted,
+    opacity: 0.9,
   },
   section: {
     marginBottom: 16,

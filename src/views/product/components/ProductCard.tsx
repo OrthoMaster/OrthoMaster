@@ -75,13 +75,14 @@ const styles = StyleSheet.create({
     color: palette.textMuted,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
+    marginBottom: 3
   },
   category: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
     fontFamily: 'Roboto',
     color: palette.textSecondary,
-    marginTop: 4,
+    marginTop: 3,
   },
   name: {
     fontSize: 16,
