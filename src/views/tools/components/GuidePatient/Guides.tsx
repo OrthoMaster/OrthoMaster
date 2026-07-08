@@ -3,9 +3,7 @@ import { FlatList, StyleSheet, ActivityIndicator, Alert, Image, Linking, Text, T
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { getS3Image } from "../../../../services/S3Service";
-import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-
 import { File, Paths } from 'expo-file-system';
 import PrintView from './PrintView';
 
