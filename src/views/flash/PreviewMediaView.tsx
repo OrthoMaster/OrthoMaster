@@ -23,7 +23,8 @@ import { Ionicons, Feather, FontAwesome, AntDesign } from '@expo/vector-icons';
 import { LinearGradient } from "expo-linear-gradient";
 import { fetchSearchList } from "../../services/SearchService";
 import { orthomasterShare } from "../../futils";
-import { AdServingModalMediaAccess } from "./ads/AdServingModalMediaAccess";
+
+import VideoAdsModal from "./ads/VideoAdsModal";
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -243,7 +244,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
         </View>
       </ScrollView>
       {showAds && (
-        <AdServingModalMediaAccess
+        <VideoAdsModal
           enabled={showAds}
           onClose={() => {
             setShowAds(false);

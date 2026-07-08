@@ -3,8 +3,8 @@ import { FlatList, StyleSheet, ActivityIndicator, Alert, Image, Linking, Text, T
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { getS3Image } from "../../../../services/S3Service";
-import * as FileSystem from 'expo-file-system';
-import { orthomasterShareFile } from "../../../../futils";
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 import { File, Paths } from 'expo-file-system';
 import PrintView from './PrintView';
@@ -25,56 +25,85 @@ export const GUIDES = [{
 {
   name: 'Béquilles',
   s3_guide_path: "tools/Guide patient/QR guide patient CSL.png",
-  stickers_url: 'https://drive.google.com/file/d/1Tn-8eX8cTRNkMUhb6wvbyOcnz7sxM41W/view?usp=sharing',
-  redirect_link: 'https://www.orthomasterpatient.fr/bequilles'
+  stickers_url: 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/tool-images/lombaire.pdf',
+  redirect_link: 'https://www.orthomasterpatient.fr/s-projects-side-by-side'
 }]
 
 
 const GuideCard = ({ config, guideIndex, showGuide }) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const guide = useQuery({ queryKey: ['Guide patient', 'GET', 'QR', config.name], queryFn: () => getS3Image(config.s3_guide_path) })
-  // const fileUri = FileSystem.cacheDirectory + `guide-patient-${config.name.replace(' ', '-')}.png`
-
 
   const onShare = async () => {
-    try {
-      if (isWeb) {
-        if (navigator.share) {
-          await navigator.share({
-            title: config.name,
-            text: `Guide patient - ${config.name}`,
-            url: config.stickers_url,
-          });
-        } else {
-          await navigator.clipboard.writeText(guide.data);
+    const url = config.stickers_url;
+    const safeName = config.name.replace(/\s+/g, '-').toLowerCase();
+    const fileName = `guide-patient-${safeName}.pdf`;
+
+    if (isWeb) {
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error('Erreur lors du téléchargement du fichier');
         }
-        return;
+
+        const blob = await response.blob();
+
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+
+        document.body.appendChild(link);
+        link.click();
+
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      } catch (err) {
+        console.error(err);
+        Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
       }
+    } else {
+      try {
+        const uniqueFileName = `guide-patient-${safeName}-${Date.now()}.pdf`;
+        const destination = new File(Paths.cache, uniqueFileName);
 
-      const fileName = `guide-patient-${config.name.replace(' ', '-')}.png`;
-      const file = new File(Paths.cache, fileName);
-      if (!file.exists) {
-        await File.downloadFileAsync(guide.data, file);
+        const output = await File.downloadFileAsync(url, destination);
+
+        if (output.exists) {
+          await Sharing.shareAsync(output.uri, {
+            UTI: 'com.adobe.pdf',
+            mimeType: 'application/pdf',
+            dialogTitle: "Partager l'image",
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        Alert.alert('Erreur', "Une erreur s'est produite lors du téléchargement");
       }
-
-      const options = {
-        mimeType: 'image/png',
-        dialogTitle: "Partager l'image",
-        UTI: 'image/png',
-      };
-
-      await orthomasterShareFile(
-        file.uri,
-        options,
-        'qr-guide-' + config.name.replace(' ', '-').toLowerCase()
-      );
-    } catch (error) {
-      Alert.alert(error.message);
     }
   };
 
   if (guide.isLoading)
-    return <ActivityIndicator color={Colors.primaryLight} />
+    return <ActivityIndicator />
+  return <View style={styles.subToolContainer}>
+    <View style={{ flex: 1, flexGrow: isWeb ? 1 : 0.6, justifyContent: 'center' }}>
+      <View style={{
+        width: 100, height: 100, borderRadius: 100, shadowOpacity: 0.30,
+        shadowOffset: { width: 3, height: 3 }, shadowRadius: 5
+      }}>
+        <TouchableOpacity onPress={() => { showGuide(guide.data) }}>
+          <Image
+            source={{ uri: guide.data }}
+            style={{
+              width: isWeb ? 100 : "100%",
+              height: isWeb ? 100 : "100%",
+              resizeMode: 'contain'
+            }}
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
 
   return (
     <View style={styles.subToolContainer}>
@@ -145,25 +174,22 @@ const GuideCard = ({ config, guideIndex, showGuide }) => {
   )
 }
 
-
 const Guides: React.FC<{ onSelect?: (guideUrl: string) => any }> = ({ onSelect }) => {
-  return (
-    <View style={styles.container}>
-      <FlatList
-        data={GUIDES}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => (
-          <GuideCard
-            config={item}
-            guideIndex={index}
-            showGuide={(guide) => { onSelect(guide) }}
-          />
-        )}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-      />
-    </View>
-  );
+  return (<View style={{
+    width: '100%'
+  }}>
+    <FlatList
+      data={GUIDES}
+      keyExtractor={(item, index) => index.toString()}
+      renderItem={(item) => (<GuideCard config={item.item} showGuide={(guide) => {
+        onSelect(guide)
+      }} />)
+      }
+      scrollEnabled={false}
+      style={{ width: '100%' }}
+      contentContainerStyle={{ alignItems: 'center' }}
+    />
+  </View>);
 }
 
 const styles = StyleSheet.create({

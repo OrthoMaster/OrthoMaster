@@ -146,7 +146,7 @@ export const LoginView = ({ navigation, route }) => {
               multiline={false}
               scrollEnabled={false}
               numberOfLines={1}
-              maxLength={40}
+              maxLength={120}
               mode="outlined"
               label="Email"
               value={formData.email}

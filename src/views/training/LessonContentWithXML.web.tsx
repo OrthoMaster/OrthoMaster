@@ -30,7 +30,8 @@ import CelebrationCompleteLessonScreen from './components/CelebrationCompleteLes
 
 import { useGlobal } from '../../component/GlobalContext';
 import { useGetUser } from '../../hooks/useGetUser.hook';
-import { AdServingModalMediaAccess } from "../flash/ads/AdServingModalMediaAccess";
+
+import VideoAdsModal from "../flash/ads/VideoAdsModal";
 
 const HEADER_HEIGHT = 100;
 const SCROLL_THRESHOLD = 5;
@@ -217,9 +218,8 @@ export const LessonContentWithXML = ({ navigation, route }) => {
     <SafeAreaView style={Styles.container} edges={['top', 'left', 'right']}>
       {/* Ads overlay */}
       {showAds &&
-        <AdServingModalMediaAccess
+        <VideoAdsModal
           enabled={showAds}
-          closable={true}
           onClose={handeAdsClose}
           grantAccess={handleAdsAfterWatched}
         />}
