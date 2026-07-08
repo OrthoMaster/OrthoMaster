@@ -119,7 +119,10 @@
         }
       ],
       "./expo-plugins/withAndroidPermissionsFix.js",
-      "expo-localization"
+      "expo-localization",
+      ["expo-camera", {
+        "cameraPermission": "La caméra est utilisée pour scanner QR codes."
+      }]
     ],
     "updates": {
       "url": "https://u.expo.dev/276593fa-b663-4367-8b00-3d86821c874a",

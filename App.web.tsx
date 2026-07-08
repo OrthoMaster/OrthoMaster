@@ -124,6 +124,13 @@ export default function App({ navigation }) {
 
     if (!isNotDesktop) return;
 
+    // Products deep link — try to open in native app, fall back to web
+    if (window.location.pathname.includes('/products')) {
+      const queryString = window.location.search;
+      window.location.href = `orthomaster://products${queryString}`;
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const contentId = params.get('id');
     const isMediaPreview = window.location.pathname.includes('open/media-preview');
@@ -159,7 +166,11 @@ export default function App({ navigation }) {
             'flash-media-home': 'open/media-preview/:id?',
           }
         },
-        tools: 'tools',
+        tools: {
+          screens: {
+            'products-view': 'tools/products-view',
+          }
+        },
         company: {
           screens: {
             'company-view': 'open/company',
