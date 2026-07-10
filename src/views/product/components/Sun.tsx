@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   label: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Bold',
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
     marginTop: 1,
