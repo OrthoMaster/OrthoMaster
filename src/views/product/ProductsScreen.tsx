@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CommonActions } from '@react-navigation/native';
 import {
   ActivityIndicator,
   FlatList,
@@ -33,7 +34,7 @@ import {
 
 // Base URL for QR-encoded deep links. Change to your real domain.
 // React Navigation linking config should match this prefix.
-const SHARE_URL_BASE = 'https://orthomastaer.fr/products';
+const SHARE_URL_BASE = 'https://go.orthomaster.fr/open/products-view';
 
 // Fixed list of manufacturers. Adjust to match your real lookup table.
 const ALL_MANUFACTURERS: string[] = [
@@ -257,7 +258,28 @@ export const ProductsScreen = ({ navigation, route }) => {
     });
   }, [products, mfgPriority]);
 
-  const onBack = () => navigation.goBack();
+  const handleBack = useCallback(() => {
+    const state = navigation.getState();
+    const hasSolarFilterInStack = state.routes.some(r => r.name === 'new-que-choisir');
+
+    if (hasSolarFilterInStack) {
+      navigation.goBack();
+      return;
+    }
+
+    // Deep link entry — replace with SolarFilter, pass raw params so
+    // SolarFilter's deep-link effect fills the state without a full reset.
+    navigation.dispatch(CommonActions.reset({
+      index: 0,
+      routes: [{
+        name: 'new-que-choisir',
+        params: {
+          filters: route?.params?.filters,
+          group: route?.params?.group,
+        },
+      }],
+    }));
+  }, [navigation, route]);
 
   const handleResetFilters = () => {
     setSummaryOpen(false);
@@ -284,7 +306,7 @@ export const ProductsScreen = ({ navigation, route }) => {
           {/* Row 1 — back + title + filter count + share QR */}
           <View style={styles.topRow}>
             <TouchableOpacity
-              onPress={onBack}
+              onPress={handleBack}
               style={styles.backBtn}
               hitSlop={10}
               activeOpacity={0.7}
@@ -420,7 +442,7 @@ export const ProductsScreen = ({ navigation, route }) => {
               </Text>
               <TouchableOpacity
                 style={styles.emptyBtn}
-                onPress={onBack}
+                onPress={handleBack}
                 activeOpacity={0.85}
               >
                 <Text style={styles.emptyBtnText}>Retour aux filtres</Text>

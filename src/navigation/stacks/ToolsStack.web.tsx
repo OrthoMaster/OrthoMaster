@@ -10,6 +10,10 @@ import ReturnButtonIcon from '../components/ReturnButton';
 
 import { ChatbotView } from '../../views/chatbot/ChatbotView';
 
+import { SolarFilterScreen } from '../../views/product/SolarFilterScreen';
+import { ProductsScreen } from '../../views/product/ProductsScreen';
+import { ProtocolScreen } from '../../views/product/ProtocolScreen';
+
 const ToolsStackNav = createStackNavigator();
 
 export const ToolsStack = ({ navigation, route }) => {
@@ -66,6 +70,22 @@ export const ToolsStack = ({ navigation, route }) => {
         name={'chatbot-view'}
         component={ChatbotView}
         options={{ headerShown: false, title: 'Assitance IA' }}
+      />
+
+      <ToolsStackNav.Screen
+        name={'new-que-choisir'}
+        component={SolarFilterScreen}
+        options={{ headerShown: false }}
+      />
+      <ToolsStackNav.Screen
+        name={'products-view'}
+        component={ProductsScreen}
+        options={{ headerShown: false }}
+      />
+      <ToolsStackNav.Screen
+        name={'protocol-view'}
+        component={ProtocolScreen}
+        options={{ headerShown: false }}
       />
     </ToolsStackNav.Navigator>
   );

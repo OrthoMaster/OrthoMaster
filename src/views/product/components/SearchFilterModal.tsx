@@ -154,7 +154,7 @@ export function SearchFilterModal({
               <Text style={styles.rowLabel} numberOfLines={2}>
                 {item.label}
               </Text>
-              <Text style={styles.rowPath} numberOfLines={2}>
+              <Text style={styles.rowPath} numberOfLines={1} ellipsizeMode="middle">
                 {item.pathSegments.join(' › ')}
               </Text>
             </View>
@@ -232,27 +232,23 @@ function buildSearchIndex(allNodes: MainNode[]) {
   const allResults: SearchResult[] = [];
 
   for (const node of allNodes) {
-    // Each path of this node = a chain of ancestor crumbs.
-    // For a multi-condition rule we get multiple chains (one per branch).
-    const ancestorPaths = pathsOfNode(node, byId, new Set([node.id]));
-    // Ensure at least one path exists (root node → empty ancestor list)
-    const paths = ancestorPaths.length > 0 ? ancestorPaths : [[]];
-
-    // Whether to include THIS node's title in the crumb. Consistent with
-    // pathsOfRule: keep title only for multi-select nodes. Single-select
-    // nodes are represented by the chosen child label coming from their
-    // referrers (or omitted entirely for the leaf node — the leaf's
-    // option becomes the row label in row 1, not a crumb).
     const includeOwnTitle = node.selectionType === 'multi';
 
     for (const child of node.children) {
       const childLabel = child.label || child.id;
-      // For every ancestor path, emit one row appended with the leaf crumb.
+
+      // Dựng path theo rule CỦA CHÍNH CHILD nếu có, không thì mới dùng rule của node.
+      // Đây là điểm mấu chốt: segment/localisation để ràng buộc cụ thể
+      // (zone=tronc, segment=mem-sup-epa...) ở child.visibilityRule.
+      const effectiveRule = (child as any).visibilityRule ?? node.visibilityRule;
+      const childPaths = effectiveRule
+        ? pathsOfRule(effectiveRule, byId, new Set([node.id]))
+        : [];
+      const paths = childPaths.length > 0 ? childPaths : [[]];
+
       paths.forEach((anc, pi) => {
         const segments = [...anc];
-        if (includeOwnTitle) {
-          segments.push(node.title);
-        }
+        if (includeOwnTitle) segments.push(node.title);
         segments.push(childLabel);
 
         allResults.push({
@@ -333,9 +329,8 @@ function pathsOfRule(
   }
 
   if ('op' in rule) {
-    if (rule.op === 'AND' || rule.op === 'OR') {
-      // Each sub-rule produces its own set of chains. Flatten them —
-      // one row per branch keeps the UI legible.
+    if (rule.op === 'OR') {
+      // OR: các nhánh là lựa chọn thay thế → mỗi nhánh một chain riêng.
       const all: string[][] = [];
       for (const sub of rule.rules) {
         for (const chain of pathsOfRule(sub, byId, visiting)) {
@@ -343,6 +338,25 @@ function pathsOfRule(
         }
       }
       return all;
+    }
+    if (rule.op === 'AND') {
+      // AND: mọi điều kiện đều bắt buộc → cartesian product, nối crumb lại
+      // thành MỘT chain duy nhất. Nhờ đó hai child cùng label nhưng khác
+      // một nhánh (traumato vs rhumato) sẽ có breadcrumb khác nhau, và
+      // không sinh ra dòng trùng.
+      let combos: string[][] = [[]];
+      for (const sub of rule.rules) {
+        const subChains = pathsOfRule(sub, byId, visiting);
+        if (subChains.length === 0) continue; // nhánh không đóng góp crumb
+        const nextCombos: string[][] = [];
+        for (const base of combos) {
+          for (const sc of subChains) {
+            nextCombos.push([...base, ...sc]);
+          }
+        }
+        combos = nextCombos;
+      }
+      return combos;
     }
     if (rule.op === 'NOT') {
       // NOT is hard to display in a breadcrumb; emit the inner path

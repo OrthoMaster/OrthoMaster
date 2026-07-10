@@ -357,7 +357,7 @@ export default function App({ navigation }) {
   // Link to screen
   const routeNameRef = React.useRef<string | undefined>(null);
   const linking = {
-    prefixes: [prefix, 'https://app.orthomaster.fr'],
+    prefixes: [prefix],
     config: {
       screens: {
         'home': {
@@ -407,7 +407,7 @@ export default function App({ navigation }) {
         },
         'tools': {
           screens: {
-            'products-view': 'tools/products-view',
+            'products-view': 'open/products-view',
           }
         }
       }

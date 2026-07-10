@@ -58,7 +58,7 @@ export const SolarFilterScreen = ({ navigation, route }: any) => {
     retryDelay: 1000,
   });
 
-useEffect(() => {
+  useEffect(() => {
     const paramSels = route?.params?.selections as Selections | undefined;
     if (paramSels && typeof paramSels === 'object' && Object.keys(paramSels).length > 0) {
       setSelections(paramSels);
@@ -106,7 +106,7 @@ useEffect(() => {
     [rules],
   );
 
-// Layout depends only on canvas + root list.
+  // Layout depends only on canvas + root list.
   const baseLayout = useMemo(() => {
     if (!canvas.w || !canvas.h) return null;
     if (rootNodes.length === 0) return null;
@@ -157,7 +157,7 @@ useEffect(() => {
     return () => cancelAnimationFrame(raf);
   }, [baseLayout]);
 
-// Fetch product count whenever selections change.
+  // Fetch product count whenever selections change.
   // Debounced 300ms to avoid spamming the backend while the user is
   // tapping pills rapidly. Race-safe via a request counter — only the
   // latest fetch is allowed to update state.
@@ -235,7 +235,7 @@ useEffect(() => {
     );
   }, [navigation, rules, protocols]);
 
-const didAutoOpenRef = useRef(false);
+  const didAutoOpenRef = useRef(false);
 
   // Listen for `reset` flag from ProductsScreen (set when user clicks
   // "Reset filters" in the summary modal there).
@@ -274,7 +274,7 @@ const didAutoOpenRef = useRef(false);
       return;
     }
 
-    setActiveNodeId(rootNodes[0].id);
+    // setActiveNodeId(rootNodes[0].id);
   }, [baseLayout, rootNodes, route?.params?.selections]);
 
   const handleViewProducts = useCallback(() => {
@@ -315,7 +315,7 @@ const didAutoOpenRef = useRef(false);
     : null;
 
 
-// Count selections WITHOUT root-node options. Root multi indicators
+  // Count selections WITHOUT root-node options. Root multi indicators
   // (like Patient) are auto-selected on init and don't represent a real
   // user choice — only sub-node values (Homme, 15-25, Modéré, etc.) should
   // bump this number. Used for header / footer button enabling.
@@ -355,6 +355,7 @@ const didAutoOpenRef = useRef(false);
     }
 
     const collectLinked = (root: MainNode): MainNode[] => {
+      if (n.id.startsWith('mesure_')) return;
       const result: MainNode[] = [];
       const inResult = new Set<string>([root.id]);
       let changed = true;
@@ -416,7 +417,7 @@ const didAutoOpenRef = useRef(false);
     }
   };
 
-const refsAnyOf = (rule: any, set: Set<string>): boolean => {
+  const refsAnyOf = (rule: any, set: Set<string>): boolean => {
     if (!rule) return false;
     if ('kind' in rule) {
       if (rule.kind === 'selected' || rule.kind === 'any_selected') {
@@ -515,7 +516,7 @@ const refsAnyOf = (rule: any, set: Set<string>): boolean => {
     return false;
   };
 
-const layout = liveLayoutRef.current || baseLayout;
+  const layout = liveLayoutRef.current || baseLayout;
   const sunIsLit = productCount > 0;
 
   // ---------- render ----------
@@ -614,7 +615,7 @@ const layout = liveLayoutRef.current || baseLayout;
           )}
         </View>
 
-{/* Action area — bottom section */}
+        {/* Action area — bottom section */}
         <View style={styles.actionArea}>
           <View style={styles.actionRow}>
             {totalSelected > 0 ? (
@@ -662,7 +663,7 @@ const layout = liveLayoutRef.current || baseLayout;
         </View>
       </View>
 
-<OptionsSheet
+      <OptionsSheet
         visible={!!activeNode}
         rootNode={activeNode}
         allNodes={rules}

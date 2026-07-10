@@ -125,9 +125,9 @@ export default function App({ navigation }) {
     if (!isNotDesktop) return;
 
     // Products deep link — try to open in native app, fall back to web
-    if (window.location.pathname.includes('/products')) {
+    if (window.location.pathname.includes('/products-view')) {
       const queryString = window.location.search;
-      window.location.href = `orthomaster://products${queryString}`;
+      window.location.href = `orthomaster://open/products-view${queryString}`;
       return;
     }
 
@@ -168,7 +168,7 @@ export default function App({ navigation }) {
         },
         tools: {
           screens: {
-            'products-view': 'tools/products-view',
+            'products-view': 'open/products-view',
           }
         },
         company: {
