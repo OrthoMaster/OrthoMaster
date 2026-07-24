@@ -38,9 +38,9 @@ export const ToolsView = ({ navigation }) => {
       <View style={styles.body}>
         <LearningSupportButton onPress={() => { setShowLearningSupportMenu(true) }} />
         <View style={{ height: Spacings.md }} />
-        {/* <QueChoisirButton onPress={() => { setShowQueChoisirMenu(true) }} /> */}
+        <QueChoisirButton onPress={() => { setShowQueChoisirMenu(true) }} />
 
-        <QueChoisirButton onPress={() => { navigation.navigate('new-que-choisir') }} />
+        {/* <QueChoisirButton onPress={() => { navigation.navigate('new-que-choisir') }} /> */}
 
         <View style={{ height: Spacings.md }} />
         <GuidePatientButton onPress={() => { setShowGuidePatientMenu(true) }} />
