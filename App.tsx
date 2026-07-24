@@ -2,13 +2,12 @@ import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as Linking from "expo-linking"
+import * as Linking from 'expo-linking';
 const prefix = Linking.createURL('/');
 
 import * as Updates from 'expo-updates';
-
 import * as Notifications from 'expo-notifications';
-import { AppState, Platform, View, Animated } from 'react-native';
+import { AppState, Platform, View, Animated, StyleSheet } from 'react-native';
 
 import { AppTab } from './src/navigation/AppTab';
 import { AuthStack } from './src/navigation/stacks/AuthStack';
@@ -45,13 +44,14 @@ if (Platform.OS === 'android') {
 // Constants for app reset logic
 const LAST_ACTIVE_KEY = '@app_last_active_time';
 const LAST_DATE_KEY = '@app_last_date';
-const INACTIVE_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+const INACTIVE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 
 const queryClient = new QueryClient();
 
-export default function App({ navigation }) {
+function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
   const [appIsReady, setAppIsReady] = useState(false);
+
   // Animation overlay
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const [showOverlay, setShowOverlay] = useState(false);
@@ -60,7 +60,18 @@ export default function App({ navigation }) {
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const previousUserRef = useRef(null);
 
-  // Check and apply OTA update from EAS
+  // FIX #5: deep link đang chờ xử lý → không cho reset đè lên
+  const pendingDeepLink = useRef(false);
+
+  // FIX #3: điều hướng bị hoãn khi navigation chưa ready
+  const pendingNavigation = useRef<any>(null);
+
+  const appState = useRef(AppState.currentState);
+  const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
+  const responseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
+  const routeNameRef = useRef<string | undefined>(null);
+
+  // ---------- OTA ----------
   const checkForOTAUpdate = async () => {
     if (__DEV__) return;
     const update = await Updates.checkForUpdateAsync();
@@ -70,7 +81,7 @@ export default function App({ navigation }) {
     }
   };
 
-  // Check if app should reset based on inactivity or new day
+  // ---------- Reset logic ----------
   const checkIfShouldResetApp = async () => {
     try {
       const lastActive = await AsyncStorage.getItem(LAST_ACTIVE_KEY);
@@ -80,12 +91,10 @@ export default function App({ navigation }) {
 
       let shouldReset = false;
 
-      // Check 1: Different day
       if (lastDate && lastDate !== today) {
         shouldReset = true;
       }
 
-      // Check 2: Inactive for more than 2 hours
       if (lastActive && !shouldReset) {
         const timeDiff = now - parseInt(lastActive);
         if (timeDiff > INACTIVE_DURATION) {
@@ -96,46 +105,45 @@ export default function App({ navigation }) {
       if (shouldReset) {
         await resetAppData();
       } else {
-        // Update last active time and date
         await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
         await AsyncStorage.setItem(LAST_DATE_KEY, today);
       }
-
     } catch (error) {
       sendError('reset-app', error);
     }
   };
 
-  // Reset app data and navigation
   const resetInProgress = useRef(false);
   const resetAppData = async () => {
     if (resetInProgress.current) return;
+
+    // FIX #5: deep link ưu tiên hơn reset — không điều hướng về home đè lên link
+    if (pendingDeepLink.current) {
+      const now = Date.now();
+      await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+      await AsyncStorage.setItem(LAST_DATE_KEY, new Date().toDateString());
+      return;
+    }
+
     resetInProgress.current = true;
 
     try {
-      // Show splash
       setShowSplash(true);
 
-      // Reload data
       await queryClient.invalidateQueries({ queryKey: ['current-user'] });
       await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
 
-      // Update timestamps
       const now = Date.now();
       const today = new Date().toDateString();
       await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
       await AsyncStorage.setItem(LAST_DATE_KEY, today);
 
-      // Navigate to home using deep link
-      // Navigation phải đợi NavigationContainer ready
+      // FIX #3: navigate trực tiếp thay vì Linking.openURL
       if (navigationRef.current?.isReady()) {
-        const homeUrl = Linking.createURL('open/home');
-        await Linking.openURL(homeUrl);
+        navigationRef.current.navigate('home', { screen: 'home' });
       }
 
-      // Wait for data to load
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setShowSplash(false);
+      await new Promise((resolve) => setTimeout(resolve, 800));
     } catch (error) {
       sendError('reset-app', error);
     } finally {
@@ -144,14 +152,33 @@ export default function App({ navigation }) {
     }
   };
 
-  // Font loading and initialization
+  // ---------- FIX #5: theo dõi deep link ----------
+  useEffect(() => {
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        pendingDeepLink.current = true;
+        setTimeout(() => {
+          pendingDeepLink.current = false;
+        }, 5000);
+      }
+    });
+
+    const sub = Linking.addEventListener('url', () => {
+      pendingDeepLink.current = true;
+      setTimeout(() => {
+        pendingDeepLink.current = false;
+      }, 3000);
+    });
+
+    return () => sub.remove();
+  }, []);
+
+  // ---------- Font loading & init ----------
   useEffect(() => {
     async function prepare() {
       try {
-        // Check OTA update
         await checkForOTAUpdate().catch(() => { });
 
-        // Load fonts
         await Font.loadAsync({
           Roboto: require('./assets/fonts/Roboto-VariableFont_wdth,wght.ttf'),
           'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
@@ -167,7 +194,6 @@ export default function App({ navigation }) {
           queryClient.setQueryData(['current-user'], JSON.parse(savedUser));
         }
 
-        // Check if app should reset on startup
         await checkIfShouldResetApp();
       } catch (error) {
         sendError('prepare-app', error);
@@ -178,17 +204,18 @@ export default function App({ navigation }) {
 
     prepare();
 
-    // Clear notification badge
+    // FIX #1: listener phải remove trong cleanup, không gọi ngay
     Notifications.setBadgeCountAsync(0);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         Notifications.setBadgeCountAsync(0);
       }
     });
-    sub.remove();
+
+    return () => sub.remove();
   }, []);
 
-  // Safety timeout for splash
+  // ---------- Safety timeout for splash ----------
   useEffect(() => {
     if (appIsReady) {
       const timeout = setTimeout(() => {
@@ -198,164 +225,142 @@ export default function App({ navigation }) {
     }
   }, [appIsReady]);
 
-  // Save user id to know this is the first time login
+  // ---------- Track user ----------
   useEffect(() => {
-    // First time
     if (user && previousUserRef.current !== user?.id) {
       setShowSessionExpired(false);
     }
-
-    // Save current user id
     previousUserRef.current = user?.id || null;
   }, [user]);
 
-  // Force login on unauthorized
+  // ---------- Force login on unauthorized ----------
   useEffect(() => {
     const handleUnauthorized = () => {
-      if (user) {
-        setShowSessionExpired(true);
-      }
+      if (user) setShowSessionExpired(true);
     };
 
     authEvents.on('unauthorized', handleUnauthorized);
     return () => {
       authEvents.off('unauthorized', handleUnauthorized);
     };
-  }, [queryClient, user]);
+  }, [user]);
 
   const handleLoginPress = () => {
     setShowSessionExpired(false);
-    // Clear React Query cache
     queryClient.clear();
   };
 
-  const appState = useRef(AppState.currentState);
-  const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
-  const responseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
+  // ---------- Register device ----------
+  const handleRegisterDevice = async () => {
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
 
-  // Register device when user login and app ready
+      if (existingStatus === 'undetermined') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') return;
+      if (!user) return;
+
+      if (user.settings.notifications === null) {
+        await updateNotiPermission({ notifications: true });
+      }
+    } catch (error) {
+      sendError('register-device', error);
+    }
+  };
+
   useEffect(() => {
     if (user && appIsReady) {
       handleRegisterDevice();
     }
   }, [user, appIsReady]);
 
-  // Listen app state changes - handle reset and re-register
+  // ---------- AppState changes ----------
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
-      // When app goes to background
       if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
-        // Save timestamp when app goes inactive
         const now = Date.now();
         await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
       }
 
-      // When app comes to foreground
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // Check OTA update
-        await checkForOTAUpdate();
-
-        // Check if should reset app
+        // FIX #6: bọc catch để không chặn các bước phía sau khi mất mạng
+        await checkForOTAUpdate().catch(() => { });
         await checkIfShouldResetApp();
 
-        // Re-register device for notifications if user exists
-        if (user) {
-          handleRegisterDevice();
-        }
+        if (user) handleRegisterDevice();
       }
 
       appState.current = nextAppState;
     });
 
-    return () => {
-      subscription.remove();
-    };
+    return () => subscription.remove();
   }, [user]);
 
-  // Register device for notification
-  const handleRegisterDevice = async () => {
-    try {
-      // Check permission status
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+  // ---------- FIX #3 + #4: notification navigation ----------
+  const handleNotificationNavigation = (data: any) => {
+    const action = data?.action || 'notification';
 
-      // Ask permission if not reject (undetermined)
-      if (existingStatus === 'undetermined') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
+    if (action === 'media') {
+      const id = data?.id ?? data?.id_content ?? data?.media_id;
+      const target: [string, any] = ['media', { screen: 'flash-media-home', params: { id: id ? String(id) : undefined } }];
 
-      // If no permission -> return
-      if (finalStatus !== 'granted') {
-        return;
+      if (navigationRef.current?.isReady()) {
+        navigationRef.current.navigate(target[0] as never, target[1] as never);
+      } else {
+        pendingNavigation.current = target;
       }
+      return;
+    }
 
-      if (!user) {
-        return;
-      }
+    const routes: Record<string, [string, any]> = {
+      'training': ['training', { screen: 'training-list' }],
+      'document': ['profile', { screen: 'document-view' }],
+      'company': ['company', { screen: 'company-view' }],
+      'daily-question': ['home', { screen: 'home', params: { action: 'daily-question' } }],
+      'podcast': ['home', { screen: 'home', params: { action: 'podcast' } }],
+    };
 
-      if (user.settings.notifications === null) {
-        await updateNotiPermission({ notifications: true });
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'enregistrement de l\'appareil:', error);
+    const target = routes[action] || ['profile', { screen: 'notification-list' }];
+    const [tab, params] = target;
+
+    if (navigationRef.current?.isReady()) {
+      navigationRef.current.navigate(tab as never, params as never);
+    } else {
+      // hoãn lại, flush trong onReady
+      pendingNavigation.current = target;
     }
   };
 
-  // Listener notification
   useEffect(() => {
-    // Listen notification (app openning)
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => { });
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        const data = response.notification.request.content.data;
+        pendingDeepLink.current = true; // chặn reset đè lên
+        handleNotificationNavigation(data);
+        setTimeout(() => {
+          pendingDeepLink.current = false;
+        }, 5000);
+      }
+    });
 
-    // Listen action tab into notification
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      // Get notification
+    notificationListener.current = Notifications.addNotificationReceivedListener(() => { });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
-
-      // Handle navigation
       handleNotificationNavigation(data);
     });
 
-    // Cleanup when unmount
     return () => {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, [user]);
+  }, []);
 
-  // Handle navigation when click to notification
-  const handleNotificationNavigation = (data: any) => {
-    if (!user) return;
-
-    const action = data.action || 'notification';
-    let path = 'open/profile-view/notification-list';
-    switch (action) {
-      case 'training':
-        path = 'open/training-list';
-        break;
-      case 'document':
-        path = 'open/documents';
-        break;
-      case 'company':
-        path = 'open/company';
-        break;
-      case 'daily-question':
-        path = 'open/daily-content/daily-question';
-        break;
-      case 'podcast':
-        path = 'open/daily-content/podcast';
-        break;
-      default:
-        path = 'open/profile-view/notification-list';
-        break;
-    }
-
-    const url = Linking.createURL(path);
-    Linking.openURL(url);
-  };
-
-  // Link to screen
-  const routeNameRef = React.useRef<string | undefined>(null);
+  // ---------- Linking config ----------
   const linking = {
     prefixes: [prefix],
     config: {
@@ -363,97 +368,66 @@ export default function App({ navigation }) {
         'home': {
           path: 'open/home',
           screens: {
-            "home": {
-              path: "open/daily-content/:action",
-            },
-            "invoice-view": {
-              path: 'open/invoice/:invoiceId',
-            }
+            'home': { path: 'open/daily-content/:action' },
+            'invoice-view': { path: 'open/invoice/:invoiceId' },
           },
         },
         'media': {
           screens: {
-            'flash-media-home': {
-              path: "open/media-preview/:id"
-            }
-          }
+            // FIX: :id? optional để match cả ?id=632 lẫn /632
+            'flash-media-home': { path: 'open/media-preview/:id?' },
+          },
         },
         'training': {
           screens: {
-            "training-list": {
-              path: "open/training-list"
-            }
-          }
+            'training-list': { path: 'open/training-list' },
+          },
         },
         'company': {
           screens: {
-            "company-view": {
-              path: "open/company"
-            }
-          }
+            'company-view': { path: 'open/company' },
+          },
         },
         'profile': {
           screens: {
-            "profile-view": {
-              path: "open/profile-view/:screen"
-            },
-            "notification-list": {
-              path: "open/notifications"
-            },
-            "document-view": {
-              path: "open/documents"
-            }
+            'profile-view': { path: 'open/profile-view/:screen' },
+            'notification-list': { path: 'open/notifications' },
+            'document-view': { path: 'open/documents' },
           },
-        }
-      }
-    }
+        },
+        'tools': {
+          screens: {
+            'products-view': 'tools/products-view',
+          },
+        },
+      },
+    },
   };
 
   return (
     <>
-      {/* CustomSplash - z-index: 9999 */}
-      {(!appIsReady || showSplash) && (
-        <CustomSplashScreen
-          appIsReady={appIsReady}
-          onFinish={() => {
-            setShowOverlay(true);
-
-            Animated.timing(overlayOpacity, {
-              toValue: 1,
-              duration: 1000,
-              useNativeDriver: true,
-            }).start(() => {
-              setShowSplash(false);
-
-              setTimeout(() => {
-                Animated.timing(overlayOpacity, {
-                  toValue: 0,
-                  duration: 400,
-                  useNativeDriver: true,
-                }).start();
-              }, 100);
-            });
-          }}
-        />
-      )}
-
-      {/* NavigationContainer - z-index: 0 */}
-      {appIsReady && !showSplash && (
+      {/* FIX #2: NavigationContainer luôn mount ngay khi ready → nhận initial URL */}
+      {appIsReady && (
         <NavigationContainer
           linking={linking}
           ref={navigationRef}
           onReady={() => {
-            routeNameRef.current = navigationRef.current.getCurrentRoute().name;
+            routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+
+            // flush điều hướng bị hoãn
+            if (pendingNavigation.current) {
+              const [tab, params] = pendingNavigation.current;
+              pendingNavigation.current = null;
+              navigationRef.current?.navigate(tab as never, params as never);
+            }
           }}
-          onStateChange={async () => {
-            const currentRouteName = navigationRef.current.getCurrentRoute().name;
-            // Save the current route name for later comparison
-            routeNameRef.current = currentRouteName;
+          onStateChange={() => {
+            routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
           }}
         >
           <GlobalProvider>
             <Provider>
-              {user ?
+              {user ? (
                 <UseCaptureGuard>
                   <AppTab />
                   <SessionExpiredScreen
@@ -461,23 +435,47 @@ export default function App({ navigation }) {
                     onLoginPress={handleLoginPress}
                   />
                 </UseCaptureGuard>
-                :
+              ) : (
                 <AuthStack />
-              }
+              )}
             </Provider>
           </GlobalProvider>
         </NavigationContainer>
+      )}
+
+      {/* Splash overlay — phủ LÊN navigation, không thay thế */}
+      {(!appIsReady || showSplash) && (
+        <View style={[StyleSheet.absoluteFill, { zIndex: 9999 }]}>
+          <CustomSplashScreen
+            appIsReady={appIsReady}
+            onFinish={() => {
+              setShowOverlay(true);
+
+              Animated.timing(overlayOpacity, {
+                toValue: 1,
+                duration: 1000,
+                useNativeDriver: true,
+              }).start(() => {
+                setShowSplash(false);
+
+                setTimeout(() => {
+                  Animated.timing(overlayOpacity, {
+                    toValue: 0,
+                    duration: 400,
+                    useNativeDriver: true,
+                  }).start(() => setShowOverlay(false));
+                }, 100);
+              });
+            }}
+          />
+        </View>
       )}
 
       {/* Animated overlay */}
       {showOverlay && (
         <Animated.View
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            ...StyleSheet.absoluteFillObject,
             backgroundColor: '#000',
             opacity: overlayOpacity,
             zIndex: 10000,
@@ -487,5 +485,12 @@ export default function App({ navigation }) {
       )}
     </>
   );
+}
 
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
+  );
 }
