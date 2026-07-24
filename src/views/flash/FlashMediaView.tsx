@@ -117,24 +117,20 @@ export const FlashMediaView = ({ navigation, route }) => {
   }
 
   const verifyRoute = async () => {
-    if (route.path && route.path.includes("open/media-preview/")) {
-      if (route.params && route.params.id) {
-        handleOpenMediaLink(route.params.id)
-          .then((media) => {
-            setOpenMediaIsLoading(false)
-            navigation.push('flash-media-preview', {
-              media: media
-            } as PreviewMediaParams)
-          })
-          .catch(errorMessage => {
-            setOpenMediaErrorMessage(errorMessage)
-            setTimeout(() => {
-              setOpenMediaIsLoading(false)
-            }, 1000);
-          })
-      }
-    }
-  }
+    const id = route.params?.id;
+    if (!id) return;
+    handleOpenMediaLink(Number(id))
+      .then((media) => {
+        setOpenMediaIsLoading(false);
+        navigation.push('flash-media-preview', { media } as PreviewMediaParams);
+        navigation.setParams({ id: undefined });   // tránh mở lại khi quay về tab
+      })
+      .catch(errorMessage => {
+        setOpenMediaErrorMessage(errorMessage);
+        navigation.setParams({ id: undefined });
+        setTimeout(() => setOpenMediaIsLoading(false), 1000);
+      });
+  };
 
   const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
