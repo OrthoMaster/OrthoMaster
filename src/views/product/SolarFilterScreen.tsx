@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { CameraScannerModal } from './components/CameraScannerModal';
 import { OptionsSheet } from './components/OptionsSheet';
-import { PlanetBody } from './components/PlanetBody';
+import { PlanetBody } from './components/Planetbody';
 import { SearchFilterModal } from './components/SearchFilterModal';
 import { Sun } from './components/Sun';
 
@@ -355,7 +355,6 @@ export const SolarFilterScreen = ({ navigation, route }: any) => {
     }
 
     const collectLinked = (root: MainNode): MainNode[] => {
-      if (n.id.startsWith('mesure_')) return;
       const result: MainNode[] = [];
       const inResult = new Set<string>([root.id]);
       let changed = true;
