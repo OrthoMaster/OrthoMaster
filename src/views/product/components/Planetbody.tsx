@@ -173,7 +173,7 @@ export function PlanetBody({
         />
 
         {/* Specular */}
-        <View
+        {/* <View
           style={[styles.sphereLayer, {
             width: size * 0.22,
             height: size * 0.22,
@@ -183,7 +183,7 @@ export function PlanetBody({
             backgroundColor: '#FFFFFF',
             opacity: bodyOpacity * (hasSelection ? 0.6 : 0.45),
           }]}
-        />
+        /> */}
 
         {/* Inner content of the sphere — adaptive layout:
             - No selection: title fills the centre (big).

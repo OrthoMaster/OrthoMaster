@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { CameraScannerModal } from './components/CameraScannerModal';
 import { OptionsSheet } from './components/OptionsSheet';
-import { PlanetBody } from './components/Planetbody';
+import { PlanetBody } from './components/PlanetBody';
 import { SearchFilterModal } from './components/SearchFilterModal';
 import { Sun } from './components/Sun';
 

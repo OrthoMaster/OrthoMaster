@@ -83,6 +83,13 @@ export type Protocol = {
   phases: ProtocolPhase[];
 };
 
+export type PathologySummary = {
+  id: string;
+  code: string;
+  title: string;
+  segment: string;
+  content: string;
+};
 // ============================================================
 // Query string builders
 // ============================================================
@@ -112,7 +119,6 @@ export const filterProducts = async (
     .get(`${baseUrl}/products${buildFilterQuery(filters, groupId)}`)
     .then((response) => response.data?.data ?? [])
     .catch((e: AxiosError) => {
-      console.warn('filterProducts failed', e.message);
       return [];
     });
 };
@@ -125,7 +131,6 @@ export const countFilteredProducts = async (
     .get(`${baseUrl}/products/count${buildFilterQuery(filters, groupId)}`)
     .then((response) => response.data?.count ?? 0)
     .catch((e: AxiosError) => {
-      console.warn('countFilteredProducts failed', e.message);
       return 0;
     });
 };
@@ -152,7 +157,6 @@ export const getRules = async (): Promise<MainNode[]> => {
     .get(`${baseUrl}/rules/products`)
     .then((response) => Array.isArray(response.data) ? response.data : [])
     .catch((e: AxiosError) => {
-      console.warn('getRules failed', e.message);
       return [];
     });
 };
@@ -200,7 +204,22 @@ export const getGroupCounts = async (
     .get(`${baseUrl}/products/counts-by-group${query}`)
     .then((response) => (response.data && typeof response.data === 'object') ? response.data : {})
     .catch((e: AxiosError) => {
-      console.warn('getGroupCounts failed', e.message);
       return {};
+    });
+};
+
+
+//
+export const getPathologySummary = async (
+  dbId: string | number
+): Promise<PathologySummary | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/rules/pathology-summary/${dbId}`)
+    .then((response) => {
+      const d = response.data;
+      return d && typeof d === 'object' && d.id != null ? (d as PathologySummary) : null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
     });
 };
