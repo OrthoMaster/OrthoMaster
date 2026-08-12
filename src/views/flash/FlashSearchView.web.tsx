@@ -194,7 +194,7 @@ export const FlashSearchView = ({ navigation }) => {
       }}
     >
       <View style={styles.thumbnailContainer}>
-        {(item.s3_path) ?
+        {(item.thumbnail) ?
           <Image
             source={{ uri: item.thumbnail }}
             style={styles.thumbnail}
