@@ -32,7 +32,7 @@ import Spacings from '../../../constants/Spacings';
 import { useGetUser } from '../../hooks/auth.hook';
 
 import { DailyQuestionModal } from './components/DailyQuestionModal';
-import { getDailyAction, countTimesPodcast } from '../../services/v2/ContentService';
+import { getDailyAction, countTimesPodcast, getNewests } from '../../services/v2/ContentService';
 import { getPreFormData, updateSettings, sendError } from '../../services/v2/AuthService';
 
 import { PodcastPlayerModal } from './components/PodcastPlayerModal';
@@ -114,13 +114,12 @@ export const HomeView = ({ navigation, route }) => {
 
   /** Videos */
   const { data: videoData, isLoading: isLoadingVideo, isFetching: isFetchingVideo, isError: isErrorVideo, refetch: refetchVideos } = useQuery({
-    queryKey: ['flash-preview'],
-    queryFn: () =>
-      fetchMedias({
-        limit: 6,
-      }),
+    queryKey: ['newest-media'],
+    queryFn: getNewests,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+    retry: 2,
+    retryDelay: 2000
   });
 
   const isVideoLoading = isLoadingVideo || isFetchingVideo;

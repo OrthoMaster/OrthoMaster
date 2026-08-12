@@ -9,8 +9,6 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import { useQuery } from "@tanstack/react-query";
-import { getS3Image } from '../services/S3Service';
 
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Colors from '../../constants/Colors';
@@ -22,6 +20,8 @@ export interface MediaItem {
   author: string;
   s3_path: string;
   duration: string;
+  thumbnail: string;
+  expert_names: string;
 }
 
 interface CarousselCardProps {
@@ -35,11 +35,6 @@ const isWeb = Platform.OS === 'web';
 const isTablet = Platform.OS !== 'web' && width >= 768;
 
 const CarousselCard: FC<CarousselCardProps> = ({ item, onPress, imageWidth }) => {
-  const imageUrl = useQuery<string>({
-    queryKey: ['Home', 'GET', 'contentThumbnail', item.id_content, item.title],
-    queryFn: () => getS3Image(`${item.s3_path}/${item.title}/logo.png`)
-  });
-
   const imageHeight = imageWidth ? imageWidth * (9 / 16) : undefined;
 
   // --- VERSION WEB ---
@@ -47,15 +42,15 @@ const CarousselCard: FC<CarousselCardProps> = ({ item, onPress, imageWidth }) =>
     return (
       <TouchableOpacity style={styles.cardWeb} onPress={onPress} activeOpacity={0.8}>
         <View style={styles.imageContainerWeb}>
-          {imageUrl.data ? (
-            <Image style={styles.thumbnail} source={{ uri: imageUrl.data }} />
+          {item.thumbnail ? (
+            <Image style={styles.thumbnail} source={{ uri: item.thumbnail }} />
           ) : (
             <View style={[styles.thumbnail, { backgroundColor: Colors.grayLight }]} />
           )}
         </View>
         <View style={styles.detailWeb}>
           <View style={styles.metaRow}>
-            <Text style={styles.author} numberOfLines={1} ellipsizeMode='tail'>{item.author}</Text>
+            <Text style={styles.author} numberOfLines={1} ellipsizeMode='tail'>{item.expert_names ? item.expert_names : 'OrthoMaster'}</Text>
             <View style={styles.durationBadge}>
               <AntDesign name="clock-circle" size={10} color={Colors.gray} style={{ marginRight: 4 }} />
               <Text style={styles.metaText}>{item.duration}</Text>
@@ -81,15 +76,15 @@ const CarousselCard: FC<CarousselCardProps> = ({ item, onPress, imageWidth }) =>
         styles.imageContainerMobile,
         imageWidth && imageHeight && { width: imageWidth, height: imageHeight }
       ]}>
-        {imageUrl.data ? (
-          <Image style={styles.thumbnailMobile} source={{ uri: imageUrl.data }} />
+        {item.thumbnail ? (
+            <Image style={styles.thumbnail} source={{ uri: item.thumbnail }} />
         ) : (
           <View style={[styles.thumbnailMobile, { backgroundColor: Colors.grayLight }]} />
         )}
       </View>
       <View style={styles.detailMobile}>
         <View style={styles.metaRow}>
-          <Text style={styles.author} numberOfLines={1}>{item.author}</Text>
+          <Text style={styles.author} numberOfLines={1}>{item.expert_names ? item.expert_names : 'OrthoMaster'}</Text>
           <View style={styles.durationBadge}>
             <AntDesign name="clock-circle" size={10} color={Colors.gray} style={{ marginRight: 4 }} />
             <Text style={styles.metaText}>{item.duration}</Text>

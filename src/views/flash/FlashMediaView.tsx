@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   StatusBar,
@@ -15,86 +15,46 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from "@tanstack/react-query";
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
-import { fetchMedias } from '../../services/FlashMediasService';
 import { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarousel';
-import { IContent, IEvent } from '../../utils/interfaces';
+import { IContent } from '../../utils/interfaces';
 import { PreviewMediaParams } from './PreviewMediaView';
-import { getCdnContentAccessUrl } from '../../services/ContentService';
 
-import { getEvents } from '../../services/v2/ContentService';
+import { getEvents, getNewests, getTrends, getCategories, getContent } from '../../services/v2/ContentService';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-const LIMIT_LAST_RELEASE = 5;
 const { width: screenWidth } = Dimensions.get('screen');
 const isTablet = Platform.OS !== 'web' && screenWidth >= 768;
 
-type EventCardProp = {
-  event: IEvent, onSelect: (event: IEvent) => any
-}
-const EventCard: React.FC<EventCardProp> = ({ event, onSelect }) => {
-
-  const logo_url = useQuery({
-    queryKey: ['event-logo', event.id],
-    queryFn: () => getCdnContentAccessUrl(event.logo_url),
-    enabled: !!event.logo_url
-  })
-  return <TouchableOpacity style={{
-    width: screenWidth / 4, height: '100%',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    // backgroundColor: '#fff',
-  }}
-    onPress={() => {
-      onSelect({
-        ...event,
-        logo_url: logo_url.data
-      } as IEvent)
-    }}>
-    <View style={{
-      width: screenWidth / 4,
-      height: screenWidth / 4,
-
-    }}>
-      <Image
-        source={{ uri: logo_url.data }}
-        style={{
-          backgroundColor: '#fff',
-          width: '100%', height: '100%',
-          objectFit: 'contain',
-          borderRadius: 10
-        }}
-      />
-    </View>
-    <Text style={{
-      textAlign: 'center',
-      fontSize: 10,
-      fontWeight: 'bold',
-      marginTop: 5,
-      color: '#fff',
-    }}>{event.name}</Text>
-  </TouchableOpacity>
-}
-
-
 export const FlashMediaView = ({ navigation, route }) => {
+  const queryClient = useQueryClient();
 
-  const lastRelease = useQuery({
-    queryKey: ["media-last-release"],
-    queryFn: () => fetchMedias({ limit: LIMIT_LAST_RELEASE })
-  })
-  const categories = useQuery({
-    queryKey: ["medias-categories-content"],
-    queryFn: () => fetchMedias({ group_by: "category" })
-  })
+  const { data: trendContent, isLoading: trendIsLoading, isError: trendIsError } = useQuery({
+    queryKey: ["trend-media"],
+    queryFn: getTrends
+  });
+
+  const { data: newestContent, isLoading: newIsLoading, isError: newIsError } = useQuery({
+    queryKey: ['newest-media'],
+    queryFn: getNewests,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    retry: 2,
+    retryDelay: 2000
+  });
+
+  const { data: mCategories, isLoading: cateIsLoading, isError: cateIsError } = useQuery({
+    queryKey: ["categories-media"],
+    queryFn: getCategories
+  });
 
   const [openMediaIsLoading, setOpenMediaIsLoading] = useState<boolean>(false)
-  const [openMediaErrorMessage, setOpenMediaErrorMessage] = useState<string>(null)
-  const [isSearching, setIsSearching] = useState(false)
+  const [openMediaErrorMessage, setOpenMediaErrorMessage] = useState<string>('')
 
   const handleNavigation = (card: IContent) => {
     navigation.push('flash-media-preview', {
@@ -103,27 +63,31 @@ export const FlashMediaView = ({ navigation, route }) => {
   }
 
   const handleOpenMediaLink = async (id: number) => {
-    return new Promise(async (resolve, reject) => {
-      setOpenMediaIsLoading(true)
-      for await (const category of Object.keys(categories.data)) {
-        for await (const media of categories.data[category] as IContent[]) {
-          if (media.id_content == id) {
-            return resolve(media)
-          }
-        }
-      }
-      return reject("Média introuvable")
-    })
-  }
+    const media = await queryClient.fetchQuery({
+      queryKey: ["mediaContent", id],
+      queryFn: () => getContent(id),
+      retry: 2,
+      retryDelay: 1000,
+    });
+
+    if (!media) {
+      throw new Error("Média introuvable");
+    }
+
+    return media;
+  };
 
   const verifyRoute = async () => {
     const id = route.params?.id;
     if (!id) return;
+
+    // Action
+    setOpenMediaIsLoading(true);
     handleOpenMediaLink(Number(id))
       .then((media) => {
         setOpenMediaIsLoading(false);
         navigation.push('flash-media-preview', { media } as PreviewMediaParams);
-        navigation.setParams({ id: undefined });   // tránh mở lại khi quay về tab
+        navigation.setParams({ id: undefined });
       })
       .catch(errorMessage => {
         setOpenMediaErrorMessage(errorMessage);
@@ -168,11 +132,10 @@ export const FlashMediaView = ({ navigation, route }) => {
     navigation.navigate("flash-media-channel", params)
   }
 
+  // Deeplink: Open direct
   useEffect(() => {
-    if (categories.data) {
-      verifyRoute()
-    }
-  }, [route.params, categories.data])
+    verifyRoute();
+  }, [route.params?.id]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -192,25 +155,24 @@ export const FlashMediaView = ({ navigation, route }) => {
 
       <ScrollView
         style={styles.body}
-        scrollEnabled={!isSearching}
+        scrollEnabled={true}
         nestedScrollEnabled={true}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2, paddingBottom: 30, marginTop: 0 }]}>
-          <Text style={[styles.categoryTitle, styles.categoryTrending]}>Tendances sur OrthoMaster</Text>
-          {
-            lastRelease.isLoading ?
-              <ActivityIndicator />
-              : lastRelease.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                : <PanoramaCarousel onSelect={handleNavigation} data={lastRelease.data} />
-          }
-        </View>
+        {/* Trends */}
+        {!trendIsError &&
+          <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2, paddingBottom: 30, marginTop: 0 }]}>
+            <Text style={[styles.categoryTitle, styles.categoryTrending]}>Tendances sur OrthoMaster</Text>
+            {
+              trendIsLoading ?
+                <ActivityIndicator />
+                : <PanoramaCarousel onSelect={handleNavigation} data={trendContent} />
+            }
+          </View>
+        }
 
         {/* Events */}
-        <View style={[styles.sectionContainer, { paddingTop: Spacings.lg }]}>
+        <View style={[styles.sectionContainer, { paddingVertical: Spacings.lg }]}>
           {
             !eventsError && !eventsLoading &&
             <>
@@ -239,61 +201,25 @@ export const FlashMediaView = ({ navigation, route }) => {
             </>
           }
 
-          <Text style={[styles.categoryTitle]}>Les derniers contenus</Text>
-          {
-            categories.isLoading ?
-              <ActivityIndicator />
-              : categories.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                : <SimpleContentCarousel data={categories.data["Congrès"].slice(0, 15)} nbElement2Display={2.2} onSelect={handleNavigation} />
-
-          }
+          {/* Newests */}
+          {!newIsLoading && !newIsError && !!newestContent?.length && (
+            <>
+              <Text style={[styles.categoryTitle]}>Les derniers contenus</Text>
+              <SimpleContentCarousel data={newestContent} nbElement2Display={2.2} onSelect={handleNavigation} />
+            </>
+          )}
         </View>
 
-        <View style={styles.sectionContainer}>
-          <Text style={styles.categoryTitle}>Travaux pratiques</Text>
-          {
-            categories.isLoading ?
-              <ActivityIndicator color={Colors.white} />
-              : categories.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                : <SimpleContentCarousel data={categories.data["Travaux pratiques"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-          }
-        </View>
-
-        <View style={styles.sectionContainer}>
-          <Text style={styles.categoryTitle}>Entretiens</Text>
-          {
-            categories.isLoading ?
-              <ActivityIndicator />
-              : categories.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                : <SimpleContentCarousel data={categories.data["Entretiens"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-          }
-
-        </View>
-
-        <View style={[styles.sectionContainer, { minHeight: Dimensions.get("screen").width / 2.2 }]}>
-          <Text style={styles.categoryTitle}>Reportages</Text>
-          {
-            categories.isLoading ?
-              <ActivityIndicator />
-              : categories.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                : <SimpleContentCarousel data={categories.data["Reportages"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-          }
-
-        </View>
-
-        <View style={{ height: Spacings.xl }}></View>
+        {/* Categories */}
+        {!cateIsLoading && !cateIsError && !!mCategories?.length && (
+          mCategories.map((category) => (
+            <View key={category.id} style={styles.sectionContainer}>
+              <Text style={styles.categoryTitle}>{category.name}</Text>
+              <SimpleContentCarousel data={category.medias} nbElement2Display={2.2} onSelect={handleNavigation} />
+            </View>
+          ))
+        )}
+        <View style={{ height: Spacings.xxxl + Spacings.xl }}></View>
       </ScrollView>
       <Modal isVisible={openMediaIsLoading}
         backdropColor='#999999'

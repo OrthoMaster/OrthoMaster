@@ -30,19 +30,7 @@ export const ToolsStack = ({ navigation, route }) => {
       <ToolsStackNav.Screen
         name="tools-content"
         component={ContentDisplayer}
-        options={
-          Platform.OS == 'web'
-            ? {
-              headerShown: false,
-            }
-            : {
-              headerShown: true,
-              headerTitle: "",
-              headerBackButtonDisplayMode: "minimal",
-              headerTintColor: '#000',
-              headerTransparent: true,
-              headerBackImage: () => (<ReturnButtonIcon />)
-            }}
+        options={{ headerShown: false }}
       />
       <ToolsStackNav.Screen
         name="tools-que-choisir"
@@ -55,7 +43,6 @@ export const ToolsStack = ({ navigation, route }) => {
           headerTransparent: true,
           headerBackImage: () => (<ReturnButtonIcon />)
         }}
-
       />
 
       <ToolsStackNav.Screen

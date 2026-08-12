@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from "../../../../constants/Colors";
 
 import { fetchVideoAccess } from '../../../services/v2/ContentService';
+import { useVideoTracking } from '../../../hooks/useVideoTracking';
 
 // ─── Types & Constants ────────────────────────────────────────────────────────
 
@@ -34,6 +35,8 @@ export type VideoPlayerProps = {
   videoCode?: string;
   navigation?: any;
   embedWidth?: number;
+  showChapters?: boolean;
+  trackingId?: number | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -143,6 +146,7 @@ const CorePlayer = ({ player }: CorePlayerProps) => {
         nativeControls={true}
         contentFit="contain"
         allowsPictureInPicture={true}
+        allowsVideoFrameAnalysis={false}
       />
     </View>
   );
@@ -154,12 +158,16 @@ type VideoPlayerReadyProps = {
   videoData: VideoData;
   embedWidth: number;
   embedHeight: number;
+  showChapters: boolean;
+  trackingId?: number | null;
 };
 
-const VideoPlayerReady = ({ videoData, embedWidth, embedHeight }: VideoPlayerReadyProps) => {
+const VideoPlayerReady = ({ videoData, embedWidth, embedHeight, showChapters, trackingId }: VideoPlayerReadyProps) => {
   const player = useVideoPlayer(videoData.url, p => {
     // p.play();
   });
+
+  useVideoTracking(trackingId ?? null, player);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -205,7 +213,7 @@ const VideoPlayerReady = ({ videoData, embedWidth, embedHeight }: VideoPlayerRea
       </View>
 
       {/* Embedded Sommaire - Only show in portrait (not fullscreen) */}
-      {!isLandscape && videoData.highlights.length > 0 && (
+      {showChapters && !isLandscape && videoData.highlights.length > 0 && (
         <EmbeddedSommaire
           highlights={videoData.highlights}
           currentTime={currentTime}
@@ -219,7 +227,7 @@ const VideoPlayerReady = ({ videoData, embedWidth, embedHeight }: VideoPlayerRea
 
 // ─── VideoPlayer ──────────────────────────────────────────────────────────────
 
-export const VideoPlayer = ({ videoCode, navigation, embedWidth }: VideoPlayerProps) => {
+export const VideoPlayer = ({ videoCode, navigation, embedWidth, showChapters = true, trackingId }: VideoPlayerProps) => {
   const [videoData, setVideoData] = useState<VideoData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -250,6 +258,8 @@ export const VideoPlayer = ({ videoCode, navigation, embedWidth }: VideoPlayerPr
       videoData={videoData}
       embedWidth={width}
       embedHeight={height}
+      showChapters={showChapters}
+      trackingId={trackingId}
     />
   );
 };

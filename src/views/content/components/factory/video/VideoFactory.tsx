@@ -149,7 +149,7 @@ export const VideoFactory = ({ video, contentInfos }) => {
   const videoSummary = video.children.length > 0 && video.children.find(item => item.name === "summary")
   const [videoSeekTo, setVideoSeekTo] = useState(0)
   const videoUrl = useQuery({
-    queryKey: ['video', video.attributes['src']],
+    queryKey: ['video', contentInfos.aws_object_path],
     queryFn: () => getCdnContentAccessUrl(contentInfos.aws_object_path + video.attributes['src']),
     enabled: contentInfos.aws_object_path !== null
   })

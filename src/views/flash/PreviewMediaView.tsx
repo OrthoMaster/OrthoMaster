@@ -16,20 +16,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from "@tanstack/react-query";
 
 import { useGetUser } from "../../hooks/useGetUser.hook";
-import { getS3Image } from "../../services/S3Service";
 import { IContent } from "../../utils/interfaces";
 import { Ionicons, Feather, FontAwesome, AntDesign } from '@expo/vector-icons';
 
 import { LinearGradient } from "expo-linear-gradient";
-import { fetchSearchList } from "../../services/SearchService";
 import { orthomasterShare } from "../../futils";
+
+import { getRelated } from "../../services/v2/ContentService";
 
 import VideoAdsModal from "./ads/VideoAdsModal";
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-const {width, height} = Dimensions.get("screen");
+const { width, height } = Dimensions.get("screen");
 const isTablet = Platform.OS !== 'web' && width >= 768;
 
 type SimilarMediasContentCardProp = {
@@ -40,39 +40,23 @@ const SimilarMediasContentCard: React.FC<SimilarMediasContentCardProp> = ({
   media,
   onSelect,
 }): React.ReactNode => {
-  const imageUrl = useQuery({
-    queryKey: ["contentThumbnail", media.id_content, media.title],
-    queryFn: () => getS3Image(`${media.s3_path}/${media.title}/logo.png`),
-  });
-
   return (
     <TouchableOpacity
       style={styles.videoContainer}
       onPress={() => onSelect(media)}
     >
       <Image
-        source={{ uri: imageUrl.data }}
+        source={{ uri: media.thumbnail }}
         style={styles.videoImage}
       />
       <View style={styles.videoDescription}>
+        <Text style={styles.videoAuthor}>{media.expert_names ? media.expert_names : 'OrthoMaster'}</Text>
         <Text style={styles.videoTitle} numberOfLines={2} ellipsizeMode="tail">{media.title}</Text>
-        {media.author &&
-          <Text style={styles.videoAuthor}>{media.author}</Text>
-        }
+
         <View style={styles.videoMetadata}>
           <AntDesign name="clock-circle" size={14} color={Colors.subtext2} />
           <Text style={styles.videoMetatext}>{media.duration}</Text>
         </View>
-        <Text style={styles.videoTag} numberOfLines={1} ellipsizeMode="tail">
-          {media.tags?.split(";").map((value, index) => {
-            return (
-              <Text key={index}>
-                {String(value).charAt(0).toUpperCase() + String(value).slice(1)}
-                ,{" "}
-              </Text>
-            );
-          })}
-        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -84,23 +68,9 @@ export type PreviewMediaParams = {
 
 export const PreviewMediaView = ({ navigation, route }) => {
   const { media }: PreviewMediaParams = route.params;
-  const [similarTags, setSimilarTags] = useState<string>(null);
-  const imageUrl = useQuery({
-    queryKey: ["contentThumbnail", media.id_content, media.title],
-    queryFn: () => getS3Image(`${media.s3_path}/${media.title}/logo.png`),
-  });
-  const similarContent = useQuery({
-    queryKey: ["search-similar-media", media.id_content],
-    queryFn: () =>
-      fetchSearchList(
-        {
-          searchText: similarTags,
-          contentType: ["flash"],
-        },
-        1,
-        6
-      ),
-    enabled: similarTags !== null,
+  const { data: similarContent, isLoading } = useQuery({
+    queryKey: ["related-media", media.id_content],
+    queryFn: () => getRelated(media.id_content)
   });
   const { data: user, ...userQuery } = useGetUser();
   const [showAds, setShowAds] = useState(false);
@@ -134,35 +104,13 @@ export const PreviewMediaView = ({ navigation, route }) => {
     }
   }, [showAds, grantingAcces]);
 
-  useEffect(() => {
-    const shuffleArray = (arr: string[]): string[] => {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const temp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = temp;
-      }
-      return arr;
-    };
-    let finalStr: string;
-    if (media.tags) {
-      let tags: string[] = media.tags.split(";");
-      tags = shuffleArray(tags);
-      tags = tags.slice(0, 5);
-      finalStr = tags.join(" ");
-    } else {
-      finalStr = "";
-    }
-    setSimilarTags(finalStr);
-  }, []);
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScrollView style={{ flex: 1 }}>
         <View style={styles.mediaSection}>
           <View style={styles.heroContainer}>
             <Image
-              source={{ uri: imageUrl.data }}
+              source={{ uri: media.thumbnail }}
               style={styles.heroImage}
             />
             <LinearGradient
@@ -170,23 +118,20 @@ export const PreviewMediaView = ({ navigation, route }) => {
               style={styles.gradient}
             />
             <View style={styles.heroInfoContainer}>
-              {media.author && (
-                <Text style={styles.heroAuthor}>{media.author}</Text>
-              )}
+              <Text style={styles.heroAuthor}>{media.expert_names ? media.expert_names : 'OrthoMaster'}</Text>
               <Text style={styles.heroTitle}>{media.title}</Text>
               <View style={styles.heroDurationContainer}>
                 <AntDesign name="clock-circle" size={14} color={Colors.white} />
                 <Text style={styles.heroDuration}>{media.duration}</Text>
               </View>
-              {media.description && (
-                <Text style={styles.mediaDescription}>{media.description}</Text>
-              )}
 
               {/* Buttons inside hero */}
               <View style={styles.heroButtonsContainer}>
                 <TouchableOpacity
                   style={styles.primaryButton}
-                  onPress={() => setShowAds(true)}
+                  onPress={() => {
+                    user?.closable_ads ? setGrantingAcces(true) : setShowAds(true)
+                  }}
                 >
                   <FontAwesome name="play" size={16} color={Colors.white} />
                   <Text style={styles.primaryButtonText}>Accéder</Text>
@@ -204,6 +149,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
           </View>
         </View>
 
+
         <View style={{ paddingVertical: Spacings.lg, backgroundColor: Colors.darkBackground }}>
           <Text
             style={{
@@ -214,16 +160,13 @@ export const PreviewMediaView = ({ navigation, route }) => {
               width: "100%",
             }}
           >
-            À voir aussi
+            {!isLoading && similarContent?.length > 0 ? "À voir aussi" : ""}
           </Text>
-          {similarContent.isLoading ? (
+          {isLoading ? (
             <ActivityIndicator />
           ) : (
             <FlatList
-              data={similarContent.data?.filter(
-                (m: { id_content: number }) => m.id_content != media.id_content
-              )}
-              keyExtractor={(item: any, index: number) => index.toString()}
+              data={similarContent}
               scrollEnabled={false}
               contentContainerStyle={{
                 width: "100%",
@@ -310,7 +253,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 20,
+    fontSize: 22,
     color: '#fff',
     textAlign: 'left',
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
@@ -321,7 +264,7 @@ const styles = StyleSheet.create({
   heroAuthor: {
     fontFamily: 'Roboto',
     fontWeight: '500',
-    fontSize: 14,
+    fontSize: 16,
     color: Colors.primary,
     textAlign: 'left',
   },
@@ -424,13 +367,14 @@ const styles = StyleSheet.create({
   },
   videoTitle: {
     fontFamily: 'Poppins-Medium',
-    fontSize: isTablet ? 16 : 14,
+    fontSize: isTablet ? 18 : 15,
     color: Colors.white,
   },
   videoAuthor: {
-    fontSize: isTablet ? 14 : 12,
+    marginTop: Spacings.xs,
+    fontSize: isTablet ? 16 : 13,
     color: Colors.primary,
-    fontWeight: "400",
+    fontWeight: "500",
     fontFamily: 'Roboto'
   },
   videoMetadata: {
@@ -441,7 +385,7 @@ const styles = StyleSheet.create({
   },
   videoMetatext: {
     fontFamily: 'Poppins-Medium',
-    fontSize: isTablet ? 12 : 10,
+    fontSize: isTablet ? 14 : 12,
     color: Colors.subtext2
   },
   videoTag: {

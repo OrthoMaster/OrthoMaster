@@ -244,7 +244,7 @@ export const LessonContentWithXML = ({ navigation, route }) => {
           </TouchableOpacity>
           <View>
             <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerSubTitle}>
-              {trainingName + (pkgName && ' • ') + pkgName}
+              {trainingName} {!!pkgName ? (' • ' + pkgName) : ''}
             </Text>
             <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerTitle}>
               {lessonTitle}

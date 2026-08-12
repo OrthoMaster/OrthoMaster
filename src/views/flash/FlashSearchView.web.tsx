@@ -333,7 +333,7 @@ export const FlashSearchView = ({ navigation }) => {
                   onSubmitEditing={handleSubmit}
                   placeholderTextColor={Colors.gray}
                   returnKeyType="search"
-                  maxLength={20}
+                  maxLength={100}
                 />
                 {/* Clear button */}
                 {searchQuery.length > 0 && (

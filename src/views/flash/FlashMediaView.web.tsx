@@ -11,6 +11,7 @@ import {
 import Modal from 'react-native-modal';
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from "@tanstack/react-query";
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
@@ -18,22 +19,24 @@ import { fetchMedias } from '../../services/FlashMediasService';
 import { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarouselWeb';
 import { IContent } from '../../utils/interfaces';
 import { PreviewMediaParams } from './PreviewMediaView';
-import { getEvents } from '../../services/v2/ContentService';
+
+import { getEvents, getNewests, getTrends, getCategories, getContent } from '../../services/v2/ContentService';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-const LIMIT_LAST_RELEASE = 5
-
 export const FlashMediaView = ({ navigation, route }) => {
-  const lastRelease = useQuery({
-    queryKey: ["media-last-release"],
-    queryFn: () => fetchMedias({ limit: LIMIT_LAST_RELEASE })
-  })
-  const categories = useQuery({
-    queryKey: ["medias-categories-content"],
-    queryFn: () => fetchMedias({ group_by: "category" })
-  })
+  const queryClient = useQueryClient();
+
+  const { data: trendContent, isLoading: trendIsLoading } = useQuery({
+    queryKey: ["trend-media"],
+    queryFn: getTrends
+  });
+
+  const { data: mCategories, isLoading: cateIsLoading, isError: cateIsError } = useQuery({
+    queryKey: ["categories-media"],
+    queryFn: getCategories
+  });
 
   const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -59,7 +62,7 @@ export const FlashMediaView = ({ navigation, route }) => {
   }, []);
 
   const [openMediaIsLoading, setOpenMediaIsLoading] = useState<boolean>(false);
-  const [openMediaErrorMessage, setOpenMediaErrorMessage] = useState<string>(null);
+  const [openMediaErrorMessage, setOpenMediaErrorMessage] = useState<string>('');
 
   const handleNavigation = (card: IContent) => {
     navigation.push('flash-media-preview', {
@@ -68,17 +71,18 @@ export const FlashMediaView = ({ navigation, route }) => {
   }
 
   const handleOpenMediaLink = async (id: number) => {
-    return new Promise(async (resolve, reject) => {
-      setOpenMediaIsLoading(true)
-      for await (const category of Object.keys(categories.data)) {
-        for await (const media of categories.data[category] as IContent[]) {
-          if (media.id_content == id) {
-            return resolve(media)
-          }
-        }
-      }
-      return reject("Média introuvable")
-    })
+    const media = await queryClient.fetchQuery({
+      queryKey: ["mediaContent", id],
+      queryFn: () => getContent(id),
+      retry: 2,
+      retryDelay: 1000,
+    });
+
+    if (!media) {
+      throw new Error("Média introuvable");
+    }
+
+    return media;
   }
 
   const handleOpenEvent = (item: CarouselItem) => {
@@ -97,6 +101,7 @@ export const FlashMediaView = ({ navigation, route }) => {
   const verifyRoute = async () => {
     if (route.path && route.path.includes("media-preview")) {
       if (route.params && route.params.id) {
+        setOpenMediaIsLoading(true);
         handleOpenMediaLink(route.params.id)
           .then((media) => {
             setOpenMediaIsLoading(false)
@@ -115,10 +120,8 @@ export const FlashMediaView = ({ navigation, route }) => {
   }
 
   useEffect(() => {
-    if (categories.data) {
-      verifyRoute()
-    }
-  }, [route.params, categories.data])
+    verifyRoute();
+  }, [route.params?.id]);
 
   return (
     <View style={styles.container}>
@@ -140,19 +143,14 @@ export const FlashMediaView = ({ navigation, route }) => {
         <View style={styles.sectionContainer}>
           <Text style={styles.categoryTitle}>Tendances sur OrthoMaster</Text>
           {
-            lastRelease.isLoading ?
+            trendIsLoading ?
               <ActivityIndicator color={Colors.white} />
-              : lastRelease.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                : <PanoramaCarousel onSelect={handleNavigation} data={lastRelease.data} />
+              : <PanoramaCarousel onSelect={handleNavigation} data={trendContent} />
           }
         </View>
 
         <View style={styles.sectionContainer}>
           <Text style={styles.categoryTitle}>Congrès</Text>
-          <Text style={styles.categorySubTitle}>Les sociétés savantes</Text>
           {
             eventsLoading ?
               <ActivityIndicator color={Colors.white} />
@@ -184,51 +182,15 @@ export const FlashMediaView = ({ navigation, route }) => {
           }
         </View>
 
-        <View style={styles.sectionContainer}>
-          <Text style={styles.categoryTitle}>Travaux pratiques</Text>
-          {
-            categories.isLoading ?
-              <ActivityIndicator color={Colors.white} />
-              : categories.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                :
-                <SimpleContentCarousel data={categories.data["Travaux pratiques"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-          }
-
-        </View>
-
-        <View style={styles.sectionContainer}>
-          <Text style={styles.categoryTitle}>Entretiens</Text>
-          {
-            categories.isLoading ?
-              <ActivityIndicator color={Colors.white} />
-              : categories.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                :
-                <SimpleContentCarousel data={categories.data["Entretiens"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-
-          }
-
-        </View>
-
-        <View style={styles.sectionContainer}>
-          <Text style={styles.categoryTitle}>Reportages</Text>
-          {
-            categories.isLoading ?
-              <ActivityIndicator color={Colors.white} />
-              : categories.isError ?
-                <View>
-                  <Text style={styles.errorText}>Une erreur s'est produite lors du chargement</Text>
-                </View>
-                :
-                <SimpleContentCarousel data={categories.data["Reportages"]} nbElement2Display={2.2} onSelect={handleNavigation} />
-          }
-
-        </View>
+        {/* Categories */}
+        {!cateIsLoading && !cateIsError && !!mCategories?.length && (
+          mCategories.map((category) => (
+            <View key={category.id} style={styles.sectionContainer}>
+              <Text style={styles.categoryTitle}>{category.name}</Text>
+              <SimpleContentCarousel data={category.medias} nbElement2Display={2.2} onSelect={handleNavigation} />
+            </View>
+          ))
+        )}
       </ScrollView>
 
       <Modal isVisible={openMediaIsLoading}

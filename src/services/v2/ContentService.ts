@@ -257,3 +257,132 @@ export const fetchVideoAccess = async (videoCode: string) => {
       return null;
     });
 };
+
+/**
+ * Get newest media
+ */
+export const getNewests = async () => {
+  return axiosInstance
+    .get(`${baseUrl}/media/newests`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}
+
+/**
+ * Get related media
+ */
+export const getRelated = async (id: number) => {
+  return axiosInstance
+    .get(`${baseUrl}/media/${id}/related`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}
+
+/**
+ * Get trend media
+ */
+export const getTrends = async () => {
+  return axiosInstance
+    .get(`${baseUrl}/media/trends`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}
+
+/**
+ * Get media by categories
+ */
+export const getCategories = async () => {
+  return axiosInstance
+    .get(`${baseUrl}/media/categories`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}
+
+/**
+ * Get event media
+ */
+export const getEventMedias = async (id: number) => {
+  return axiosInstance
+    .get(`${baseUrl}/media/events/${id}/content`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}
+
+/**
+ * Track media
+ */
+export const trackMedia = async (id: number) => {
+  return axiosInstance
+    .post(`${baseUrl}/media/${id}/track`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}
+
+/**
+ * Track progress
+ */
+export const trackProgress = async (
+  id: number,
+  payload: { watched_seconds: number; max_position: number; duration?: number }
+) => {
+  return axiosInstance
+    .post(`${baseUrl}/media/track/${id}/progress`, payload)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return true;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+}
