@@ -194,14 +194,11 @@ export const FlashSearchView = ({ navigation }) => {
       }}
     >
       <View style={styles.thumbnailContainer}>
-        {(item.s3_path) ?
           <Image
             source={{ uri: item.thumbnail }}
             style={styles.thumbnail}
             resizeMode="cover"
           />
-          : <MaterialCommunityIcons name="play-circle" size={50} color={Colors.grayLight} />
-        }
       </View>
 
       <View style={styles.videoInfo}>

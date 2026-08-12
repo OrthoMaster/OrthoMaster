@@ -36,7 +36,7 @@ export const FlashMediaView = ({ navigation, route }) => {
 
   const { data: trendContent, isLoading: trendIsLoading, isError: trendIsError } = useQuery({
     queryKey: ["trend-media"],
-    queryFn: getTrends
+    queryFn: getTrends,
   });
 
   const { data: newestContent, isLoading: newIsLoading, isError: newIsError } = useQuery({
