@@ -14,11 +14,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchLessonContent } from "../../services/ContentService";
+import { getContent, trackMedia } from "../../services/v2/ContentService";
 import { runContent } from "../../actions/contentAction";
 import { Ionicons } from '@expo/vector-icons';
 
 import { getCurrentDate } from "../../futils";
 import { ContentFactory } from "./components/ContentFactory";
+import { MediaBlockRenderer } from "../media/components/MediaBlockRenderer";
+import { MediaContentHeader } from "../media/components/MediaContentHeader";
 
 import { useSelector } from "react-redux";
 import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
@@ -33,7 +36,122 @@ import { saveLogtimeOnLesson } from "../../services/LogsService";
 import Colors from "../../../constants/Colors";
 import Spacings from '../../../constants/Spacings';
 
+/**
+ * Contenu média en version 2 : blocs Editor.js.
+ * Aucun suivi de progression ni de quiz sur ce format.
+ */
+function ContentDisplayerV2({ content, navigation, trackingId, trackingReady }) {
+
+  const [blocks, setBlocks] = useState<any[]>([]);
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ["mediaContent", content.id_content],
+    queryFn: () => getContent(content.id_content),
+    retry: 2,
+    retryDelay: 1000,
+  });
+
+  useEffect(() => {
+    if (!data) return;
+
+    try {
+      const raw = data?.block?.content;
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+      setBlocks(Array.isArray(parsed?.blocks) ? parsed.blocks : []);
+    } catch (e) {
+      setBlocks([]);
+    }
+  }, [data]);
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <UseCaptureGuard>
+        {/* Back button */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={25} color={Colors.text} />
+        </TouchableOpacity>
+
+        <ScrollView
+          overScrollMode="never"
+          contentContainerStyle={styles.scrollContainerV2}
+          refreshControl={
+            <RefreshControl refreshing={isFetching} onRefresh={refetch} />
+          }
+        >
+          {error && !isLoading && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                Impossible de charger le contenu. Réessayez ou contactez-nous si le problème persiste.
+              </Text>
+            </View>
+          )}
+
+          {/* On attend le tracking : le lecteur ne doit être monté qu'une fois */}
+          {isLoading || !trackingReady ? (
+            <ActivityIndicator size={'large'} color={Colors.gray} style={{ marginTop: Spacings.xxl }} />
+          ) : (
+            <>
+              <MediaContentHeader
+                title={data?.video?.title || content.title}
+                eventName={data?.event?.name}
+                editionYear={data?.past_event?.edition_year}
+                experts={data?.experts}
+              />
+
+              <MediaBlockRenderer
+                blocks={blocks}
+                navigation={navigation}
+                trackingId={trackingId}
+              />
+            </>
+          )}
+        </ScrollView>
+      </UseCaptureGuard>
+    </SafeAreaView>
+  );
+}
+
 export function ContentDisplayer({ route, navigation }) {
+  var { content, formation, demoMode } = route.params;
+
+  const [trackingId, setTrackingId] = useState<number | null>(null);
+  const [trackingReady, setTrackingReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    trackMedia(content.id_content)
+      .then((id) => {
+        if (cancelled) return;
+        setTrackingId(id ?? null);
+        setTrackingReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setTrackingReady(true);
+      });
+
+    return () => { cancelled = true; };
+  }, [content.id_content]);
+
+  // Les médias en v2 suivent un rendu par blocs, sans suivi de progression
+  if (content?.version === 'v2') {
+    return (
+      <ContentDisplayerV2
+        content={content}
+        navigation={navigation}
+        trackingId={trackingId}
+        trackingReady={trackingReady}
+      />
+    );
+  }
+
+  return <ContentDisplayerV1 route={route} navigation={navigation} />;
+}
+
+/**
+ * Contenu historique au format XML.
+ */
+function ContentDisplayerV1({ route, navigation }) {
   var { content, formation, demoMode } = route.params;
   const dispatch = useAppDispatch();
 
@@ -52,6 +170,7 @@ export function ContentDisplayer({ route, navigation }) {
     });
     dispatch(runContent(content, nbQuiz));
   };
+
   const xmlContent = useQuery({
     queryKey: ["Content", "GET", "lessonContent", content.s3_path],
     queryFn: () =>
@@ -149,6 +268,7 @@ export function ContentDisplayer({ route, navigation }) {
   }, []);
 
   if (lessonIsFinish || contentIsRunning == false) return;
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <UseCaptureGuard>
@@ -249,6 +369,10 @@ var styles = StyleSheet.create({
     flex: 1,
   },
   scrollContainer: {},
+  scrollContainerV2: {
+    paddingTop: 80,
+    paddingBottom: Spacings.xxl,
+  },
   buttonContainer: {
     backgroundColor: "#E85C0A",
     width: "70%",
@@ -278,5 +402,22 @@ var styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999
+  },
+  errorContainer: {
+    marginTop: Spacings.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    color: Colors.danger,
+    textAlign: 'center',
+    backgroundColor: Colors.dangerBackground,
+    marginHorizontal: Spacings.lg,
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.md,
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.danger,
   },
 });

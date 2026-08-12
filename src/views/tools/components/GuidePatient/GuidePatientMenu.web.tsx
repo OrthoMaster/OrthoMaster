@@ -11,10 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { AntDesign } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import PurchaseStickerView from './PurchaseStickerView';
-import PrintView from './PrintView';
 import Guides from './Guides';
 
 const { width: screenWidth } = Dimensions.get('screen');
@@ -48,7 +46,6 @@ export const GuidePatientButton: React.FC<{ onPress: () => any }> = ({ onPress }
   </TouchableOpacity>)
 }
 
-
 export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) => {
   const [purchaseSticker, setPurchaseSticker] = useState(false)
   const [showPrintModal, setShowPrintModal] = useState(false)
@@ -63,7 +60,6 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
     >
 
       <View style={{ width: '100%', height: '100%', alignItems: 'center' }}>
-
         {
           (guideToDisplay != null && showPrintModal == false && purchaseSticker == false) &&
           <Image
@@ -74,10 +70,6 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
         {
           (purchaseSticker == true && showPrintModal == false && guideToDisplay == null) &&
           <PurchaseStickerView />
-        }
-        {
-          (showPrintModal == true && purchaseSticker == false && guideToDisplay == null) &&
-          <PrintView />
         }
         {
           (showPrintModal == false && purchaseSticker == false && guideToDisplay == null) &&
@@ -98,7 +90,8 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
               }}
             />
             <View style={{
-              width: '100%', flex: 1,
+              width: '100%',
+              flex: 1,
               alignItems: 'center',
               justifyContent: 'center'
             }}>
@@ -113,31 +106,26 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
               borderRadius: 100,
               position: 'absolute',
               right: 10,
-              top: 10,
+              top: 70,
               shadowOpacity: 0.25,
               shadowOffset: { width: 5, height: 5 }
             }]}
-              onPress={() => {
-                setPurchaseSticker(true)
-              }}>
-              <AntDesign name="shopping-cart" size={24} color="#FBB200" />
-
+              onPress={() => { setPurchaseSticker(true) }}>
+              <Ionicons name="cart" size={24} color="#FBB200" />
             </TouchableOpacity>
-
+            
             <TouchableOpacity style={[{
               backgroundColor: '#fff',
               padding: 10,
               borderRadius: 100,
               position: 'absolute',
               right: 10,
-              top: 70,
+              top: 10,
               shadowOpacity: 0.25,
               shadowOffset: { width: 5, height: 5 }
             }]}
-              onPress={() => {
-                setShowPrintModal(true)
-              }}>
-              <AntDesign name="printer" size={20} color="#FBB200" />
+              onPress={onClose}>
+              <Ionicons name="close" size={24} color="#FBB200" />
 
             </TouchableOpacity>
           </View>
@@ -164,16 +152,6 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
           </TouchableOpacity>
         }
       </View>
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          bottom: 10,
-          alignSelf: 'center',
-        }}
-        onPress={onClose}
-      >
-        <Ionicons name="close-circle" size={34} color="#fff" />
-      </TouchableOpacity>
     </LinearGradient>
   </SafeAreaView>
 }

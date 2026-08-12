@@ -21,6 +21,8 @@ export interface IContent {
     event_edition_year: string | null;
     id_media_category: number | null;
     category_name: string;
+    thumbnail: string | null;
+    expert_names: string | null;
 }
 
 export interface ISearchContent extends IContent {

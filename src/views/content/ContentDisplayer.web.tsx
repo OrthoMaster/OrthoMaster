@@ -1,12 +1,11 @@
 /**
  * @author Francis
  */
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  Animated,
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
@@ -21,18 +20,20 @@ import { Styles } from "../../../constants/Styles";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getContent, getToolContent } from "../../services/v2/ContentService";
+import { getContent, trackMedia, getToolContent } from "../../services/v2/ContentService";
 import { ContentFactory } from "../content/components/ContentFactory";
+import { MediaBlockRenderer } from '../media/components/MediaBlockRenderer';
+import { MediaContentHeader } from '../media/components/MediaContentHeader';
 import LessonSkeleton from '../training/components/LessonSkeleton';
 
 const HEADER_HEIGHT = 100;
-const SCROLL_THRESHOLD = 5;
-
-type ScrollDirection = 'up' | 'down' | null;
 
 export const ContentDisplayer = ({ navigation, route }) => {
   const { content, type = 'flash' } = route.params;
+
   const [showContent, setShowContent] = useState(null);
+  const [blocks, setBlocks] = useState<any[]>([]);
+  const [trackingId, setTrackingId] = useState<number | null>(null);
 
   // Get first data
   const { data, isLoading, error, refetch, isFetching } = useQuery({
@@ -42,127 +43,56 @@ export const ContentDisplayer = ({ navigation, route }) => {
     retryDelay: 1000,
   });
 
+  // Tracking
   useEffect(() => {
-    if (data?.xml_content) {
-      const parsed = new XMLParser().parseFromString(data.xml_content);
-      setShowContent(parsed);
-    }
-  }, [data]);
+    let cancelled = false;
 
-  // Handle scrolls
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(0)).current;
-  const [lastScrollY, setLastScrollY] = useState<number>(0);
-  const [scrollDirection, setScrollDirection] = useState<ScrollDirection>(null);
-
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(1)).current;
-  const headerScale = useRef(new Animated.Value(1)).current;
-  const headerBackgroundOpacity = scrollY.interpolate({
-    inputRange: [0, HEADER_HEIGHT / 3, HEADER_HEIGHT],
-    outputRange: [0.9, 0.95, 1],
-    extrapolate: 'clamp',
-  });
-
-  // Handle scroll direction changes
-  useEffect(() => {
-    const listenerId = scrollY.addListener(({ value }: { value: number }) => {
-      const diff = value - lastScrollY;
-      // Fix scroll down to reload of scroll view
-      if (value <= 0) {
-        setScrollDirection('up');
-      }
-
-      if (Math.abs(diff) > SCROLL_THRESHOLD) {
-        const newDirection: ScrollDirection = diff > 0 ? 'down' : 'up';
-        if (newDirection !== scrollDirection) {
-          setScrollDirection(newDirection);
-          animateHeader(newDirection, value);
-        }
-        setLastScrollY(value);
-      }
+    trackMedia(content.id_content).then((id) => {
+      if (!cancelled) setTrackingId(id ?? null);
     });
 
-    return () => scrollY.removeListener(listenerId);
-  }, [lastScrollY, scrollDirection, scrollY]);
+    return () => { cancelled = true; };
+  }, [content.id_content]);
 
-  const animateHeader = (direction: ScrollDirection, scrollValue: number): void => {
-    const shouldHideHeader = direction === 'down' && scrollValue > 20;
-    const toValue = shouldHideHeader ? -HEADER_HEIGHT : 0;
-    const opacityValue = shouldHideHeader ? 0.3 : 1;
-    const scaleValue = shouldHideHeader ? 0.95 : 1;
+  useEffect(() => {
+    // v1 : contenu XML historique
+    if (data?.version == 'v1' && data?.xml_content) {
+      const parsed = new XMLParser().parseFromString(data.xml_content);
+      setShowContent(parsed);
+      setBlocks([]);
+      return;
+    }
 
-    Animated.parallel([
-      Animated.spring(headerTranslateY, {
-        toValue,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }),
-      Animated.timing(headerOpacity, {
-        toValue: opacityValue,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(headerScale, {
-        toValue: scaleValue,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }),
-    ]).start();
-  };
+    // v2 : blocs Editor.js stockés dans `blocks.content`
+    if (data?.version == 'v2') {
+      setShowContent(null);
+
+      try {
+        const raw = data?.block?.content;
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+        setBlocks(Array.isArray(parsed?.blocks) ? parsed.blocks : []);
+      } catch (e) {
+        setBlocks([]);
+      }
+    }
+  }, [data]);
 
   // Handle close modal
   const closeScreen = (): void => {
     navigation.goBack();
   };
 
-
   return (
     <SafeAreaView style={Styles.container} edges={['top', 'left', 'right']}>
-      {/* Enhanced Animated Header */}
-      <Animated.View
-        style={[
-          styles.header,
-          {
-            backgroundColor: Colors.white,
-            transform: [
-              { translateY: headerTranslateY },
-              { scale: headerScale }
-            ],
-            opacity: Animated.multiply(headerOpacity, headerBackgroundOpacity),
-          },
-        ]}
-      >
+      {/* Header fixe : bouton retour uniquement */}
+      <View style={styles.header}>
         <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.backButton} onPress={closeScreen}>
-            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+          <TouchableOpacity style={styles.backButton} onPress={closeScreen} activeOpacity={0.8}>
+            <Ionicons name="arrow-back" size={30} color={Colors.text} />
           </TouchableOpacity>
-          <View>
-            {/* <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerSubTitle}>
-              {trainingName + (pkgName && ' • ') + pkgName}
-            </Text> */}
-            <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerTitle}>
-              {content.title}
-            </Text>
-          </View>
         </View>
-
-        {/* Header bottom border with animation */}
-        <Animated.View
-          style={[
-            styles.headerBorder,
-            {
-              opacity: scrollY.interpolate({
-                inputRange: [0, 80, 120],
-                outputRange: [0, 0.5, 1],
-                extrapolate: 'clamp',
-              }),
-            },
-          ]}
-        />
-      </Animated.View>
+      </View>
 
       {/* Content */}
       <ScrollView
@@ -170,7 +100,6 @@ export const ContentDisplayer = ({ navigation, route }) => {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         bounces={true}
-        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={isFetching}
@@ -181,7 +110,7 @@ export const ContentDisplayer = ({ navigation, route }) => {
           />
         }
       >
-        {/* Show error  */}
+        {/* Show error */}
         {error && !isLoading &&
           <View style={[Styles.container, styles.errorContainer]}>
             <Text style={styles.errorText}>Impossible de charger le contenu. Réessayez ou contactez-nous si le problème persiste.</Text>
@@ -193,15 +122,34 @@ export const ContentDisplayer = ({ navigation, route }) => {
           <LessonSkeleton numberOfObjects={2} />
         }
 
-        {/* Render data */}
+        {/* v1 : rendu XML */}
         {showContent && (
-        <View style={styles.lessonContent}>
-          <ContentFactory
-            component={showContent}
-            contentInfos={data}
-            onQuizCompleted={() => {}}
-          />
-        </View>
+          <View style={styles.lessonContent}>
+            <ContentFactory
+              component={showContent}
+              contentInfos={data}
+              onQuizCompleted={() => { }}
+            />
+          </View>
+        )}
+
+        {/* v2 : en-tête + blocs */}
+        {!isLoading && data?.version == 'v2' && (
+          <View style={styles.lessonContent}>
+            <MediaContentHeader
+              title={data?.video?.title || content.title}
+              eventName={data?.event?.name}
+              editionYear={data?.past_event?.edition_year}
+              experts={data?.experts}
+            />
+
+            <MediaBlockRenderer
+              blocks={blocks}
+              navigation={navigation}
+              contentWidth={900}
+              trackingId={trackingId}
+            />
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -215,64 +163,37 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
-    shadowColor: Colors.gray,
-    elevation: 5,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    height: HEADER_HEIGHT
+    height: HEADER_HEIGHT,
+    justifyContent: 'center',
   },
   headerContent: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: Spacings.lg,
   },
   backButton: {
-    paddingRight: Spacings.md,
-  },
-  headerSubTitle: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.subtext,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.text,
-  },
-  headerBorder: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
   },
   scrollContainer: {
-    paddingTop: HEADER_HEIGHT + Spacings.xl,
-    paddingBottom: Spacings.xxl,
+    paddingTop: HEADER_HEIGHT,
+    paddingBottom: Spacings.xxxxl,
   },
   lessonContent: {
     alignSelf: 'center',
     width: 900,
-    paddingTop: Spacings.lg
-  },
-  blockText: {
-    fontSize: 14,
-    color: Colors.text,
-    fontFamily: 'Roboto',
-    height: 200
+    paddingTop: Spacings.lg,
   },
 
   // Loading and error styles
-  loadingFooter: {
-    paddingVertical: Spacings.lg,
-    alignItems: 'center',
-  },
   errorContainer: {
     marginTop: Spacings.md,
     justifyContent: 'center',

@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { View, Text, Image, Dimensions, StyleSheet, TouchableOpacity, Platform } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { getS3Image } from "../../services/S3Service";
 import Carousel, { Pagination } from "react-native-reanimated-carousel";
 import { useSharedValue } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,15 +10,10 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 const Card = ({ data, onPress }) => {
-  const imageUrl = useQuery({
-    queryKey: ['contentThumbnail', data.id_content, data.title],
-    queryFn: () => getS3Image(`${data.s3_path}/${data.title}/logo.png`)
-  })
-
   return <TouchableOpacity style={styles.card}
     onPress={onPress}
   >
-    <Image source={{ uri: imageUrl.data }} style={styles.image} />
+    <Image source={{ uri: data.thumbnail }} style={styles.image} />
     <LinearGradient colors={["transparent", 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.8)']}
       style={{
         width: '100%',
@@ -34,8 +27,9 @@ const Card = ({ data, onPress }) => {
       left: isTablet ? Spacings.lg : Spacings.md,
       width: '70%'
     }}>
-      <Text style={{ color: Colors.primary, fontFamily: 'Roboto', fontWeight: '500', fontSize: isTablet ? 18 : 14, textAlign: 'left' }}>{data.author ? data.author : 'OrthoMaster'}</Text>
-      <Text style={{ color: Colors.white, fontFamily: 'Poppins-Medium', fontSize: isTablet ? 24 : 16, textAlign: 'left' }}>{data.title}</Text>
+      <Text style={{ color: Colors.primary, fontFamily: 'Roboto', fontWeight: '500', fontSize: isTablet ? 18 : 16, textAlign: 'left' }}>{data.expert_names ? data.expert_names : 'OrthoMaster'}</Text>
+      <Text style={{ color: Colors.white, fontFamily: 'Poppins-Medium', fontSize: isTablet ? 24 : 18, textAlign: 'left' }}>{data.title}</Text>
+      <Text style={{ color: Colors.subtext, fontFamily: 'Roboto', fontSize: isTablet ? 15 : 13, textAlign: 'left', marginTop: Spacings.xs }}>{data.duration}</Text>
     </View>
   </TouchableOpacity>
 }

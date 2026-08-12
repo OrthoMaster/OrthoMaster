@@ -27,10 +27,6 @@ export type PreviewMediaParams = {
 
 export const PreviewMediaView = ({ navigation, route }) => {
   const { media }: PreviewMediaParams = route.params;
-  const imageUrl = useQuery({
-    queryKey: ["contentThumbnail", media.id_content, media.title],
-    queryFn: () => getS3Image(`${media.s3_path}/${media.title}/logo.png`),
-  });
 
   const { data: user, ...userQuery } = useGetUser();
   const [showAds, setShowAds] = useState(false);
@@ -73,7 +69,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
         <View style={styles.mediaSection}>
           {/* Background Thumbnail */}
           <Image
-            source={{ uri: imageUrl.data }}
+            source={{ uri: media.thumbnail }}
             style={styles.backgroundThumbnail}
           />
           
@@ -86,22 +82,18 @@ export const PreviewMediaView = ({ navigation, route }) => {
           {/* Content Overlay */}
           <View style={styles.contentOverlay}>
             <View style={styles.mediaInfo}>
-              {media.author && (
-                <Text style={styles.mediaAuthor}>{media.author}</Text>
-              )}
+              <Text style={styles.mediaAuthor}>{media.expert_names ? media.expert_names : 'OrthoMaster'}</Text>
               <Text style={styles.mediaTitle}>{media.title}</Text>
-              {media.description && (
-                <Text style={styles.mediaDescription}>
-                  {media.description}
-                </Text>
-              )}
+              <Text style={styles.mediaDuration}>{media.duration}</Text>
             </View>
 
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={styles.accessButton}
-                onPress={() => setShowAds(true)}
+                onPress={() => {
+                  user?.closable_ads ? setGrantingAcces(true) : setShowAds(true)
+                }}
               >
                 <Ionicons name="play" size={20} color={Colors.white} />
                 <Text style={styles.accessButtonText}>Accéder</Text>
@@ -197,7 +189,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.lg,
   },
   mediaTitle: {
-    width: '45%',
+    width: '55%',
     fontSize: 50,
     fontFamily: 'Poppins-Bold',
     color: '#fff',
@@ -205,14 +197,15 @@ const styles = StyleSheet.create({
   },
   mediaAuthor: {
     width: '45%',
-    fontSize: 25,
+    fontSize: 28,
     fontFamily: 'Roboto',
     fontWeight: '600',
     color: Colors.primary,
     marginBottom: Spacings.xs,
   },
   mediaDuration: {
-    fontSize: 14,
+    fontSize: 18,
+    fontFamily: 'Poppins-Regular',
     color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: Spacings.md,
   },

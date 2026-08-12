@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { View, Text, Image, TouchableOpacity, Linking, StyleSheet, ScrollView } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { fetchMedias } from "../../services/FlashMediasService";
-import { fetchPastEvents } from "../../services/EventsService";
 import { IContent } from "../../utils/interfaces";
 import SimpleCarousel from "../../component/carousel/SimpleContentCarousel";
+
+import { getEventMedias } from '../../services/v2/ContentService';
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Colors from '../../../constants/Colors';
@@ -129,62 +129,15 @@ export interface ChannelMediaViewParams {
   website: string;
 }
 
-interface PastEvent {
-  id: number;
-  edition_year: string;
-}
-
 const ChannelMediaView = ({ navigation, route }) => {
   const channelParams = route.params;
 
-  const { data: allMediaFromChannel, isLoading: isLoadingMedia, error: errorMedia } = useQuery({
-    queryKey: ['medias-channel'],
-    queryFn: () => fetchMedias({ event: channelParams.targetId }),
+  const { data: eventContent, isLoading: isLoading, isError: isError } = useQuery({
+    queryKey: ['media-event', channelParams.targetId],
+    queryFn: () => getEventMedias(channelParams.targetId),
+    retry: 2,
+    retryDelay: 2000
   });
-
-  const { data: pastEvents, isLoading: isLoadingPastEvent, error: errorPastEvent } = useQuery({
-    queryKey: ['past-events'],
-    queryFn: () => fetchPastEvents({ eventID: channelParams.targetId }),
-  });
-
-  const [eventCarousels, setEventCarousels] = useState<React.ReactNode[]>([]);
-
-  const getEventCarousels = async (): Promise<void> => {
-    if (!pastEvents || !allMediaFromChannel) return;
-
-    let carousels: React.ReactNode[] = [];
-    for (const pastEventsElem of pastEvents) {
-      let contents = allMediaFromChannel.filter(
-        (ct: IContent) => ct.id_past_event === pastEventsElem.id
-      );
-
-      carousels.push(
-        <View key={pastEventsElem.id} style={styles.carouselSection}>
-          <View style={styles.carouselTitleContainer}>
-            <Text style={styles.carouselTitle}>{pastEventsElem.edition_year}</Text>
-          </View>
-          <View style={styles.carouselWrapper}>
-            <CarouselWithArrows
-              data={contents}
-              nbElement2Display={2}
-              onSelect={(content: IContent) => {
-                navigation.push("flash-media-preview", {
-                  media: content
-                });
-              }}
-            />
-          </View>
-        </View>
-      );
-    }
-    setEventCarousels(carousels);
-  };
-
-  useEffect(() => {
-    if (allMediaFromChannel && pastEvents) {
-      getEventCarousels();
-    }
-  }, [allMediaFromChannel, pastEvents]);
 
   return (
     <View style={styles.container}>
@@ -222,7 +175,26 @@ const ChannelMediaView = ({ navigation, route }) => {
       </View>
 
       <ScrollView style={styles.carouselsContainer}>
-        {eventCarousels}
+        {!isLoading && !isError && !!eventContent?.length && (
+          eventContent.map((event) => (
+            <View key={event.id} style={styles.carouselSection}>
+              <View style={styles.carouselTitleContainer}>
+                <Text style={styles.carouselTitle}>{event.edition_year}</Text>
+              </View>
+              <View style={styles.carouselWrapper}>
+                <CarouselWithArrows
+                  data={event.medias}
+                  nbElement2Display={2}
+                  onSelect={(content: IContent) => {
+                    navigation.push("flash-media-preview", {
+                      media: content
+                    });
+                  }}
+                />
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
     </View>
   );

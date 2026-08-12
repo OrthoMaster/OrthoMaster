@@ -54,12 +54,6 @@ const Card = ({ data, onSelect }) => {
     }
   }, []);
 
-
-  const imageUrl = useQuery({
-    queryKey: ['contentThumbnail', data.id_content, data.title],
-    queryFn: () => getS3Image(`${data.s3_path}/${data.title}/logo.png`)
-  })
-
   const [imgDimensions, setImgDimensions] = useState({
     width: CARD_WIDTH,
     height: CARD_WIDTH * (9 / 16)
@@ -76,15 +70,22 @@ const Card = ({ data, onSelect }) => {
         })
       }}
     >
-      <Image
-        source={{ uri: imageUrl.data }}
-        style={[styles.image, {
-          width: imgDimensions.width,
-          height: imgDimensions.height
-        }]}
-      />
+      <View style={styles.thumbnailWrapper}>
+        <Image
+          source={{ uri: data.thumbnail }}
+          style={[styles.image, {
+            width: imgDimensions.width,
+            height: imgDimensions.height
+          }]}
+        />
+        {!!data.duration && (
+          <View style={styles.durationBadge}>
+            <Text style={styles.durationText}>{data.duration}</Text>
+          </View>
+        )}
+      </View>
 
-      <Text style={styles.authorText}>{data.author}</Text>
+      <Text style={styles.authorText}>{data.expert_names ? data.expert_names : 'OrthoMaster'}</Text>
       <Text style={styles.title} numberOfLines={2}>
         {data.title}
       </Text>
@@ -225,6 +226,26 @@ const styles = StyleSheet.create({
   },
   rightArrow: {
     right: Spacings.md,
+  },
+  thumbnailWrapper: {
+    position: 'relative',
+  },
+  durationBadge: {
+    position: 'absolute',
+    right: 6,
+    bottom: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  durationText: {
+    color: Colors.white,
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.3,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
   },
 });
 

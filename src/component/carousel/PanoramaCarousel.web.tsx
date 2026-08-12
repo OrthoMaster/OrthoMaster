@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { getS3Image } from "../../services/S3Service";
 import { LinearGradient } from "expo-linear-gradient";
 
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -12,11 +11,6 @@ import Spacings from '../../../constants/Spacings';
 const BREAKPOINT_LARGE = 1440;
 
 const Card = ({ data, isCenter, onPress, isVisible = true, screenWidth, screenHeight, isShowThreeCards }) => {
-  const imageUrl = useQuery({
-    queryKey: ['contentThumbnail', data.id_content, data.title],
-    queryFn: () => getS3Image(`${data.s3_path}/${data.title}/logo.png`)
-  });
-
   const CENTER_CARD_HEIGHT = screenHeight * 0.6;
   const CENTER_CARD_WIDTH = CENTER_CARD_HEIGHT * 16 / 9;
   const SIDE_CARD_WIDTH = CENTER_CARD_WIDTH * 0.7;
@@ -41,18 +35,19 @@ const Card = ({ data, isCenter, onPress, isVisible = true, screenWidth, screenHe
       onPress={onPress}
       activeOpacity={0.9}
     >
-      <Image source={{ uri: imageUrl.data }} style={styles.image} />
+      <Image source={{ uri: data.thumbnail }} style={styles.image} />
       <LinearGradient
         colors={["transparent", "rgba(0,0,0,0.6)", "rgba(0,0,0,0.9)"]}
         style={styles.gradient}
       />
       <View style={styles.textContainer}>
         <Text style={[styles.authorText, { fontSize: isCenter ? 20 : 14 }]}>
-          <Text style={styles.authorName}>{data.author}</Text>
+          <Text style={styles.authorName}>{data.expert_names ? data.expert_names : 'OrthoMaster'}</Text>
         </Text>
         <Text style={[styles.title, { fontSize: isCenter ? 30 : 16 }]} numberOfLines={2}>
           {data.title}
         </Text>
+        <Text style={[styles.meta, { fontSize: isCenter ? 16 : 12 }]}>{data.duration}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -367,11 +362,17 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+    marginBottom: 6,
   },
   authorName: {
     color: Colors.primary,
     fontFamily: 'Roboto',
     fontWeight: '500'
+  },
+  meta: {
+    color: Colors.subtext,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
   },
   arrowButton: {
     position: 'absolute',
