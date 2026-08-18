@@ -392,8 +392,14 @@ function AppContent() {
       'training': () => ['training', { screen: 'training-list' }],
       'document': () => ['profile', { screen: 'document-view' }],
       'company': () => ['company', { screen: 'company-view' }],
-      'podcast': () => ['home', { screen: 'home' }],
-      'daily-question': () => ['home', { screen: 'home' }],
+      'podcast': (d) => {
+        const id = d?.id ?? d?.podcastId;
+        return ['home', { screen: 'podcast', params: { podcastId: id ? String(id) : undefined } }];
+      },
+      'daily-question': (d) => {
+        const id = d?.id ?? d?.questionId;
+        return ['home', { screen: 'daily-question', params: { questionId: id ? String(id) : undefined } }];
+      },
     };
 
     const buildTarget = routes[action];
@@ -439,6 +445,8 @@ function AppContent() {
         'home': {
           screens: {
             'home': 'home',
+            'podcast': 'open/podcast/:podcastId',
+            'daily-question': 'open/daily-question/:questionId',
             'invoice-view': { path: 'open/invoice/:invoiceId' },
           },
         },
