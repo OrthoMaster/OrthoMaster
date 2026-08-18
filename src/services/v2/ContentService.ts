@@ -39,6 +39,42 @@ export const answerDailyQuestion = async (questionId: string, answerId: string) 
 }
 
 /**
+ * Get podcast by id
+ */
+export const getQuestionById = async (id: string | number) => {
+  return axiosInstance
+    .get(`${baseUrl}/daily-question/${id}`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data?.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+};
+
+/**
+ * Get podcast by id
+ */
+export const getPodcastById = async (id: string | number) => {
+  return axiosInstance
+    .get(`${baseUrl}/podcast/${id}`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data?.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+};
+
+/**
  * Count times the podcast is played
  */
 export const countTimesPodcast = async (podcastId: string) => {

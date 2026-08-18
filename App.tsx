@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, StackActions } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 const prefix = Linking.createURL('/');
@@ -60,16 +60,72 @@ function AppContent() {
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const previousUserRef = useRef(null);
 
-  // FIX #5: deep link đang chờ xử lý → không cho reset đè lên
   const pendingDeepLink = useRef(false);
 
-  // FIX #3: điều hướng bị hoãn khi navigation chưa ready
-  const pendingNavigation = useRef<any>(null);
+  // Điều hướng bị hoãn khi navigation chưa ready -> lưu hẳn 1 callback
+  const pendingNavigation = useRef<(() => void) | null>(null);
 
   const appState = useRef(AppState.currentState);
   const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
   const responseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
   const routeNameRef = useRef<string | undefined>(null);
+
+  /* ------------------------------------------------------------------ */
+  /* Điều hướng vào HomeStack                                            */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * navigate('home', { screen: 'podcast' }) bị nuốt khi tab 'home' ĐANG focus:
+   * tab router xử lý xong ở cấp của nó, stack con không nhận được action nào.
+   * Nên phải dispatch thẳng vào stack con qua `target`.
+   */
+  const pushToHomeStack = (screen: string, params: any): boolean => {
+    const nav = navigationRef.current;
+    if (!nav?.isReady()) return false;
+
+    // focus tab home trước
+    nav.navigate('home' as never);
+
+    const homeRoute = nav.getRootState().routes.find((r) => r.name === 'home');
+    const homeStackKey = homeRoute?.state?.key;
+
+    if (homeStackKey) {
+      nav.dispatch({
+        ...StackActions.push(screen, params),
+        target: homeStackKey,
+      });
+      return true;
+    }
+
+    // Cold start: stack con chưa khởi tạo -> params lồng vẫn chạy đúng
+    nav.navigate('home' as never, { screen, params } as never);
+    return true;
+  };
+
+  const runOrQueue = (fn: () => void) => {
+    if (navigationRef.current?.isReady()) {
+      fn();
+    } else {
+      pendingNavigation.current = fn;
+    }
+  };
+
+  /** Bắt tay URL cho 2 route nằm trong HomeStack (không khai trong linking config) */
+  const handleDeepLink = (url: string) => {
+    const { path } = Linking.parse(url);
+    if (!path) return;
+
+    const seg = path.split('/').filter(Boolean); // ['open', 'podcast', '1']
+    if (seg[0] !== 'open') return;
+
+    if (seg[1] === 'podcast' && seg[2]) {
+      const id = String(seg[2]);
+      runOrQueue(() => pushToHomeStack('podcast', { podcastId: id }));
+    } else if (seg[1] === 'daily-question' && seg[2]) {
+      const id = String(seg[2]);
+      runOrQueue(() => pushToHomeStack('daily-question', { questionId: id }));
+    }
+  };
 
   // ---------- OTA ----------
   const checkForOTAUpdate = async () => {
@@ -117,7 +173,7 @@ function AppContent() {
   const resetAppData = async () => {
     if (resetInProgress.current) return;
 
-    // FIX #5: deep link ưu tiên hơn reset — không điều hướng về home đè lên link
+    // deep link ưu tiên hơn reset — không điều hướng về home đè lên link
     if (pendingDeepLink.current) {
       const now = Date.now();
       await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
@@ -138,7 +194,6 @@ function AppContent() {
       await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
       await AsyncStorage.setItem(LAST_DATE_KEY, today);
 
-      // FIX #3: navigate trực tiếp thay vì Linking.openURL
       if (navigationRef.current?.isReady()) {
         navigationRef.current.navigate('home', { screen: 'home' });
       }
@@ -152,7 +207,7 @@ function AppContent() {
     }
   };
 
-  // ---------- FIX #5: theo dõi deep link ----------
+  // ---------- Deep link ----------
   useEffect(() => {
     Linking.getInitialURL().then((url) => {
       if (url) {
@@ -160,14 +215,18 @@ function AppContent() {
         setTimeout(() => {
           pendingDeepLink.current = false;
         }, 5000);
+
+        handleDeepLink(url);
       }
     });
 
-    const sub = Linking.addEventListener('url', () => {
+    const sub = Linking.addEventListener('url', (event) => {
       pendingDeepLink.current = true;
       setTimeout(() => {
         pendingDeepLink.current = false;
       }, 3000);
+
+      handleDeepLink(event.url);
     });
 
     return () => sub.remove();
@@ -204,7 +263,6 @@ function AppContent() {
 
     prepare();
 
-    // FIX #1: listener phải remove trong cleanup, không gọi ngay
     Notifications.setBadgeCountAsync(0);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
@@ -287,7 +345,6 @@ function AppContent() {
       }
 
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // FIX #6: bọc catch để không chặn các bước phía sau khi mất mạng
         await checkForOTAUpdate().catch(() => { });
         await checkIfShouldResetApp();
 
@@ -300,50 +357,59 @@ function AppContent() {
     return () => subscription.remove();
   }, [user]);
 
-  // ---------- FIX #3 + #4: notification navigation ----------
+  // ---------- Notification navigation ----------
+  type NavTarget = [string, any];
+
   const handleNotificationNavigation = (data: any) => {
     const action = data?.action || 'notification';
 
-    if (action === 'media') {
-      const id = data?.id ?? data?.id_content ?? data?.media_id;
-      const target: [string, any] = ['media', { screen: 'flash-media-home', params: { id: id ? String(id) : undefined } }];
+    // notification ưu tiên hơn reset app
+    pendingDeepLink.current = true;
+    setTimeout(() => { pendingDeepLink.current = false; }, 5000);
 
-      if (navigationRef.current?.isReady()) {
-        navigationRef.current.navigate(target[0] as never, target[1] as never);
-      } else {
-        pendingNavigation.current = target;
+    // 2 route trong HomeStack -> đi qua pushToHomeStack, không dùng params lồng
+    if (action === 'podcast') {
+      const podcastId = data?.podcastId ?? data?.podcast_id ?? data?.id;
+      if (podcastId) {
+        runOrQueue(() => pushToHomeStack('podcast', { podcastId: String(podcastId) }));
+        return;
       }
-      return;
     }
 
-    const routes: Record<string, [string, any]> = {
-      'training': ['training', { screen: 'training-list' }],
-      'document': ['profile', { screen: 'document-view' }],
-      'company': ['company', { screen: 'company-view' }],
-      'daily-question': ['home', { screen: 'home', params: { action: 'daily-question' } }],
-      'podcast': ['home', { screen: 'home', params: { action: 'podcast' } }],
+    if (action === 'daily-question') {
+      const questionId = data?.questionId ?? data?.question_id ?? data?.id;
+      if (questionId) {
+        runOrQueue(() => pushToHomeStack('daily-question', { questionId: String(questionId) }));
+        return;
+      }
+    }
+
+    const routes: Record<string, (d?: any) => NavTarget> = {
+      'media': (d) => {
+        const id = d?.id ?? d?.id_content ?? d?.media_id;
+        return ['media', { screen: 'flash-media-home', params: { id: id ? String(id) : undefined } }];
+      },
+      'training': () => ['training', { screen: 'training-list' }],
+      'document': () => ['profile', { screen: 'document-view' }],
+      'company': () => ['company', { screen: 'company-view' }],
+      'podcast': () => ['home', { screen: 'home' }],
+      'daily-question': () => ['home', { screen: 'home' }],
     };
 
-    const target = routes[action] || ['profile', { screen: 'notification-list' }];
-    const [tab, params] = target;
+    const buildTarget = routes[action];
+    const target: NavTarget = buildTarget
+      ? buildTarget(data)
+      : ['profile', { screen: 'notification-list' }];
 
-    if (navigationRef.current?.isReady()) {
-      navigationRef.current.navigate(tab as never, params as never);
-    } else {
-      // hoãn lại, flush trong onReady
-      pendingNavigation.current = target;
-    }
+    runOrQueue(() => {
+      navigationRef.current?.navigate(target[0] as never, target[1] as never);
+    });
   };
 
   useEffect(() => {
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (response) {
-        const data = response.notification.request.content.data;
-        pendingDeepLink.current = true; // chặn reset đè lên
-        handleNotificationNavigation(data);
-        setTimeout(() => {
-          pendingDeepLink.current = false;
-        }, 5000);
+        handleNotificationNavigation(response.notification.request.content.data);
       }
     });
 
@@ -361,20 +427,24 @@ function AppContent() {
   }, []);
 
   // ---------- Linking config ----------
+  /**
+   * 'podcast' và 'daily-question' KHÔNG khai ở đây.
+   * Chúng nằm trong HomeStack (tab mặc định) nên cơ chế path lồng của
+   * React Navigation bị nuốt khi tab home đang focus -> xử lý tay ở handleDeepLink.
+   */
   const linking = {
     prefixes: [prefix],
     config: {
       screens: {
         'home': {
-          path: 'open/home',
           screens: {
-            'home': { path: 'open/daily-content/:action' },
+            'home': 'home',
             'invoice-view': { path: 'open/invoice/:invoiceId' },
           },
         },
+
         'media': {
           screens: {
-            // FIX: :id? optional để match cả ?id=632 lẫn /632
             'flash-media-home': { path: 'open/media-preview/:id?' },
           },
         },
@@ -406,7 +476,6 @@ function AppContent() {
 
   return (
     <>
-      {/* FIX #2: NavigationContainer luôn mount ngay khi ready → nhận initial URL */}
       {appIsReady && (
         <NavigationContainer
           linking={linking}
@@ -416,9 +485,9 @@ function AppContent() {
 
             // flush điều hướng bị hoãn
             if (pendingNavigation.current) {
-              const [tab, params] = pendingNavigation.current;
+              const run = pendingNavigation.current;
               pendingNavigation.current = null;
-              navigationRef.current?.navigate(tab as never, params as never);
+              run();
             }
           }}
           onStateChange={() => {

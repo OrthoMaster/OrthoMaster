@@ -6,7 +6,7 @@ import {
 import { CommonActions } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { CameraScannerModal } from './components/CameraScannerModal';
+// import { CameraScannerModal } from './components/CameraScannerModal';
 import { OptionsSheet } from './components/OptionsSheet';
 import { PlanetBody } from './components/PlanetBody';
 import { SearchFilterModal } from './components/SearchFilterModal';
@@ -681,11 +681,11 @@ const layout = liveLayoutRef.current || baseLayout;
         onSelect={handleToggle}
       />
 
-      <CameraScannerModal
+      {/* <CameraScannerModal
         visible={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onDetected={handleScanned}
-      />
+      /> */}
     </SafeAreaView>
   );
 }

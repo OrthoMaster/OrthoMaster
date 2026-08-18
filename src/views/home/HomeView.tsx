@@ -18,7 +18,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useQuery } from "@tanstack/react-query"
-import { fetchMedias } from '../../services/FlashMediasService';
 import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 
@@ -31,11 +30,9 @@ import Spacings from '../../../constants/Spacings';
 
 import { useGetUser } from '../../hooks/auth.hook';
 
-import { DailyQuestionModal } from './components/DailyQuestionModal';
-import { getDailyAction, countTimesPodcast, getNewests } from '../../services/v2/ContentService';
+import { getDailyAction, getNewests } from '../../services/v2/ContentService';
 import { getPreFormData, updateSettings, sendError } from '../../services/v2/AuthService';
 
-import { PodcastPlayerModal } from './components/PodcastPlayerModal';
 import { TopicsOnboardingModal } from './components/TopicsOnboardingModal';
 
 import RemindCreateCompanyModal from './components/RemindCreateCompanyModal';
@@ -94,6 +91,15 @@ export const HomeView = ({ navigation, route }) => {
     }
   }, []);
 
+  // Show bottom nav when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'flex' }
+      });
+    }, [navigation])
+  );
+
   const storageGet = async (key: string): Promise<string | null> => {
     if (Platform.OS === 'web') {
       return localStorage.getItem(key);
@@ -145,39 +151,6 @@ export const HomeView = ({ navigation, route }) => {
 
   const hasDailyQuestions = dailyContentData?.questions && dailyContentData.questions.length > 0;
   const hasDailyPodcasts = dailyContentData?.podcasts && dailyContentData.podcasts.length > 0;
-
-  // Daily question
-  const [showDailyQuestion, setShowDailyQuestion] = useState(false);
-  const [selectedQuestionData, setSelectedQuestionData] = useState(null);
-
-  // Podcast
-  const [showPodcast, setShowPodcast] = useState(false);
-  const [selectedPodcastData, setSelectedPodcastData] = useState(null);
-
-  // Handle open modal from pushing notification
-  useEffect(() => {
-    // Daily question - Open
-    if (actionChangeScreen == 'daily-question' && hasDailyQuestions) {
-      const timeout = setTimeout(() => {
-        setSelectedQuestionData(dailyContentData.questions[0]);
-        setShowDailyQuestion(true);
-      }, 1000);
-
-      return () => clearTimeout(timeout);
-    }
-
-    // Podcast - Open
-    if (actionChangeScreen == 'podcast' && hasDailyPodcasts) {
-      const timeout = setTimeout(() => {
-        setSelectedPodcastData(dailyContentData.podcasts[0]);
-        setShowPodcast(true);
-      }, 1000);
-
-      return () => clearTimeout(timeout);
-    }
-
-    return;
-  }, [actionChangeScreen, hasDailyQuestions, hasDailyPodcasts]);
 
   /** Handle reload screen */
   const reload = () => {
@@ -236,17 +209,18 @@ export const HomeView = ({ navigation, route }) => {
     outputRange: ['0deg', '-10deg', '0deg', '10deg', '0deg'],
   });
 
-  // Handle open question modal
-  const handleOpenQuestion = (questionData) => {
-    setSelectedQuestionData(questionData);
-    setShowDailyQuestion(true);
+  // Handle open podcast
+  const handleOpenPodcast = (podcastData) => {
+    navigation.navigate('podcast', {
+      podcastId: String(podcastData.podcast.id),
+    });
   };
 
-  // Handle open podcast modal
-  const handleOpenPodcast = (podcastData) => {
-    setSelectedPodcastData(podcastData);
-    countTimesPodcast(podcastData.podcast.id);
-    setShowPodcast(true);
+  // Handle open question
+  const handleOpenQuestion = (questionData) => {
+    navigation.navigate('daily-question', {
+      questionId: String(questionData.question.id),
+    });
   };
 
   /** Company - Manager modals */
@@ -483,44 +457,6 @@ export const HomeView = ({ navigation, route }) => {
           )}
         </View>
       </ScrollView >
-
-
-      {/* Daily question modal */}
-      {selectedQuestionData && (
-        <DailyQuestionModal
-          visible={showDailyQuestion}
-          data={{
-            question: selectedQuestionData.question,
-            user_answer_id: selectedQuestionData.user_answer_id,
-            has_answered: selectedQuestionData.has_answered,
-            has_topic_question: selectedQuestionData.has_topic,
-          }}
-          onClose={() => {
-            if (!selectedQuestionData.has_answered) {
-              refetchDailyContent();
-            }
-            setShowDailyQuestion(false);
-            setSelectedQuestionData(null);
-          }}
-        />
-      )}
-
-      {/* Podcast modal */}
-      {selectedPodcastData && (
-        <PodcastPlayerModal
-          visible={showPodcast}
-          onClose={() => {
-            setShowPodcast(false);
-            setSelectedPodcastData(null);
-          }}
-          audioUrl={selectedPodcastData.podcast.link}
-          thumbnailUrl={selectedPodcastData.podcast.image}
-          title={selectedPodcastData.podcast.title}
-          subtitle={selectedPodcastData.podcast.author}
-          topic={selectedPodcastData.podcast.topic}
-          isSubcribed={selectedPodcastData.has_topic}
-        />
-      )}
 
       {/* Topics Onboarding Modal */}
       {user.settings?.topics?.length == 0 && topics.length > 0 &&

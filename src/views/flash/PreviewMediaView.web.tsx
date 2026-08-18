@@ -42,7 +42,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
           " par " +
           media2share.author +
           "\n\n" +
-          "https://go.orthomaster.fr/open/media-preview?id=" +
+          "https://go.orthomaster.fr/open/media-preview/" +
           media2share.id_content,
       },
       "média",
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
     top: Spacings.lg,
-    right: Spacings.lg,
+    left: Spacings.lg,
     width: 50,
     height: 50,
     borderRadius: 25,

@@ -63,8 +63,6 @@ export const getCdnContentAccessUrl = async (path) => {
   // const config = await restoreLocalConfigAsync()
   // const authHeader = 'Bearer ' + config.JWT;
 
-  console.log(path);
-
   return axios
   .get(baseurl + "/cdn/", {
     // headers: { Authorization: authHeader },

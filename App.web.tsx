@@ -1,3 +1,4 @@
+// App.web.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import { Dimensions, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -120,33 +121,43 @@ export default function App({ navigation }) {
 
     const isTouchDevice = /iPhone|iPad|Android/i.test(navigator.userAgent) ||
       (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-    const isNotDesktop = isTouchDevice && windowWidth < 1024;
+    if (!isTouchDevice || windowWidth >= 1024) return;
 
-    if (!isNotDesktop) return;
+    const path = window.location.pathname;
+    const search = window.location.search;
 
-    // Products deep link — try to open in native app, fall back to web
-    if (window.location.pathname.includes('/products')) {
-      const queryString = window.location.search;
-      window.location.href = `orthomaster://products${queryString}`;
+    // Products
+    if (path.includes('/products')) {
+      window.location.href = `orthomaster://products${search}`;
       return;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const contentId = params.get('id');
-    const isMediaPreview = window.location.pathname.includes('open/media-preview');
+    // Podcast
+    const podcastMatch = path.match(/open\/podcast\/([^/]+)/);
+    if (podcastMatch) {
+      window.location.href = `orthomaster://open/podcast/${podcastMatch[1]}`;
+      return;
+    }
 
-    const isEspacePro = window.location.pathname.includes('open/company');
+    // Daily question
+    const questionMatch = path.match(/open\/daily-question\/([^/]+)/);
+    if (questionMatch) {
+      window.location.href = `orthomaster://open/daily-question/${questionMatch[1]}`;
+      return;
+    }
 
-    if (!isMediaPreview || !contentId || !isEspacePro) return;
-
-    // Try to open app
-    if (isEspacePro) {
+    // Espace pro
+    if (path.includes('open/company')) {
       window.location.href = `orthomaster://open/company`;
       return;
     }
 
-    window.location.href = `orthomaster://open/content/${contentId}`;
-  }, [appIsReady]);
+    // Media preview
+    const contentId = new URLSearchParams(search).get('id');
+    if (path.includes('open/media-preview') && contentId) {
+      window.location.href = `orthomaster://open/content/${contentId}`;
+    }
+  }, [appIsReady, windowWidth]);
 
   // Link to screen
   const routeNameRef = React.useRef<string | undefined>(null);
@@ -157,6 +168,8 @@ export default function App({ navigation }) {
         home: {
           screens: {
             'home': 'home',
+            'podcast': 'open/podcast/:podcastId',
+            'daily-question': 'open/daily-question/:questionId',
             'invoice-view': 'open/invoice/:invoiceId',
           }
         },
