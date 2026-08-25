@@ -8,9 +8,11 @@ import { FinalQC } from "../../views/tools/components/QueChoisir/FinalView/Final
 import { ContentDisplayer } from '../../views/content/ContentDisplayer';
 import ReturnButtonIcon from '../components/ReturnButton';
 
+import { FunnelFilterScreen } from '../../views/product/FunnelFilterScreen';
 // import { SolarFilterScreen } from '../../views/product/SolarFilterScreen';
-// import { ProductsScreen } from '../../views/product/ProductsScreen';
-// import { ProtocolScreen } from '../../views/product/ProtocolScreen';
+
+import { ProductsScreen } from '../../views/product/ProductsScreen';
+import { ProtocolScreen } from '../../views/product/ProtocolScreen';
 
 const ToolsStackNav = createStackNavigator();
 
@@ -51,11 +53,18 @@ export const ToolsStack = ({ navigation, route }) => {
         options={{ headerShown: false, title: 'Que choisir ?' }}
       />
 
+      <ToolsStackNav.Screen
+        name={'new-que-choisir'}
+        component={FunnelFilterScreen}
+        options={{ headerShown: false }}
+      />
+
       {/* <ToolsStackNav.Screen
         name={'new-que-choisir'}
         component={SolarFilterScreen}
         options={{ headerShown: false }}
-      />
+      /> */}
+
       <ToolsStackNav.Screen
         name={'products-view'}
         component={ProductsScreen}
@@ -65,7 +74,7 @@ export const ToolsStack = ({ navigation, route }) => {
         name={'protocol-view'}
         component={ProtocolScreen}
         options={{ headerShown: false }}
-      /> */}
+      />
     </ToolsStackNav.Navigator>
   );
 }

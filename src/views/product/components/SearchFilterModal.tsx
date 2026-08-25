@@ -104,6 +104,15 @@ export function SearchFilterModal({
     onClose();
   };
 
+  // Show only the last two crumbs — the deep end of the chain is what
+  // tells two same-named pathologies apart, while the top of it (Tronc ›
+  // Rachis bas › …) is the same across most rows and just eats the line.
+  // The leading ellipsis signals that something was dropped.
+  function formatPath(segments: string[]): string {
+    const tail = segments.slice(-2).join(' › ');
+    return segments.length > 2 ? `… › ${tail}` : tail;
+  }
+
   // What to show in the body depending on query state
   const renderBody = () => {
     const q = query.trim();
@@ -111,8 +120,8 @@ export function SearchFilterModal({
     if (q.length === 0) {
       return (
         <View style={styles.empty}>
-          <Ionicons name="search-outline" size={32} color={palette.textMuted} />
-          <Text style={styles.emptyTitle}>Rechercher des filtres</Text>
+          <Ionicons name="search-outline" size={40} color={palette.textMuted} />
+          <Text style={styles.emptyTitle}>Chercher par mots-clés</Text>
           <Text style={styles.emptySub}>
             Tapez au moins 2 caractères pour trouver une option parmi tous les filtres.
           </Text>
@@ -154,8 +163,8 @@ export function SearchFilterModal({
               <Text style={styles.rowLabel} numberOfLines={2}>
                 {item.label}
               </Text>
-              <Text style={styles.rowPath} numberOfLines={2}>
-                {item.pathSegments.join(' › ')}
+              <Text style={styles.rowPath} numberOfLines={1} ellipsizeMode="middle">
+                {formatPath(item.pathSegments)}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={palette.textMuted} />
@@ -177,11 +186,9 @@ export function SearchFilterModal({
           {/* Header — title + close */}
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.title}>Recherche de filtres</Text>
+              <Text style={styles.title}>Chercher par mots-clés</Text>
               <Text style={styles.subtext}>
-                Les résultats dépendent des filtres déjà sélectionnés. Pour
-                une recherche complète, effacez vos filtres avant de
-                chercher.
+                Les résultats affichés tiennent compte des filtres actifs. Réinitialisez-les pour une recherche complète.
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} hitSlop={12}>
@@ -196,7 +203,7 @@ export function SearchFilterModal({
               ref={inputRef}
               value={query}
               onChangeText={setQuery}
-              placeholder="Tapez pour rechercher une option …"
+              placeholder="Tapez pour chercher une option …"
               placeholderTextColor={palette.textMuted}
               style={styles.input}
               autoCapitalize="none"
@@ -227,32 +234,35 @@ export function SearchFilterModal({
 // node has a compound rule with multiple references.
 function buildSearchIndex(allNodes: MainNode[]) {
   const byId = new Map<string, MainNode>();
+  // Every node still goes in byId — the breadcrumb builder and
+  // collectAncestorChain need to resolve references to zone, segment,
+  // localisation, etc. even though those aren't searchable themselves.
   allNodes.forEach(n => byId.set(n.id, n));
 
   const allResults: SearchResult[] = [];
 
-  for (const node of allNodes) {
-    // Each path of this node = a chain of ancestor crumbs.
-    // For a multi-condition rule we get multiple chains (one per branch).
-    const ancestorPaths = pathsOfNode(node, byId, new Set([node.id]));
-    // Ensure at least one path exists (root node → empty ancestor list)
-    const paths = ancestorPaths.length > 0 ? ancestorPaths : [[]];
+  // Only pathology nodes are searchable. Everything else in the tree is
+  // navigation the user reaches by narrowing down, not by name.
+  const searchable = allNodes.filter(n => /^path_/.test(n.id) && n.id !== 'path_type');
 
-    // Whether to include THIS node's title in the crumb. Consistent with
-    // pathsOfRule: keep title only for multi-select nodes. Single-select
-    // nodes are represented by the chosen child label coming from their
-    // referrers (or omitted entirely for the leaf node — the leaf's
-    // option becomes the row label in row 1, not a crumb).
+  for (const node of searchable) {
     const includeOwnTitle = node.selectionType === 'multi';
 
     for (const child of node.children) {
       const childLabel = child.label || child.id;
-      // For every ancestor path, emit one row appended with the leaf crumb.
+
+      // Dựng path theo rule CỦA CHÍNH CHILD nếu có, không thì mới dùng rule của node.
+      // Đây là điểm mấu chốt: segment/localisation để ràng buộc cụ thể
+      // (zone=tronc, segment=mem-sup-epa...) ở child.visibilityRule.
+      const effectiveRule = (child as any).visibilityRule ?? node.visibilityRule;
+      const childPaths = effectiveRule
+        ? pathsOfRule(effectiveRule, byId, new Set([node.id]))
+        : [];
+      const paths = childPaths.length > 0 ? childPaths : [[]];
+
       paths.forEach((anc, pi) => {
         const segments = [...anc];
-        if (includeOwnTitle) {
-          segments.push(node.title);
-        }
+        if (includeOwnTitle) segments.push(node.title);
         segments.push(childLabel);
 
         allResults.push({
@@ -333,9 +343,8 @@ function pathsOfRule(
   }
 
   if ('op' in rule) {
-    if (rule.op === 'AND' || rule.op === 'OR') {
-      // Each sub-rule produces its own set of chains. Flatten them —
-      // one row per branch keeps the UI legible.
+    if (rule.op === 'OR') {
+      // OR: các nhánh là lựa chọn thay thế → mỗi nhánh một chain riêng.
       const all: string[][] = [];
       for (const sub of rule.rules) {
         for (const chain of pathsOfRule(sub, byId, visiting)) {
@@ -343,6 +352,25 @@ function pathsOfRule(
         }
       }
       return all;
+    }
+    if (rule.op === 'AND') {
+      // AND: mọi điều kiện đều bắt buộc → cartesian product, nối crumb lại
+      // thành MỘT chain duy nhất. Nhờ đó hai child cùng label nhưng khác
+      // một nhánh (traumato vs rhumato) sẽ có breadcrumb khác nhau, và
+      // không sinh ra dòng trùng.
+      let combos: string[][] = [[]];
+      for (const sub of rule.rules) {
+        const subChains = pathsOfRule(sub, byId, visiting);
+        if (subChains.length === 0) continue; // nhánh không đóng góp crumb
+        const nextCombos: string[][] = [];
+        for (const base of combos) {
+          for (const sc of subChains) {
+            nextCombos.push([...base, ...sc]);
+          }
+        }
+        combos = nextCombos;
+      }
+      return combos;
     }
     if (rule.op === 'NOT') {
       // NOT is hard to display in a breadcrumb; emit the inner path
@@ -453,7 +481,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 8,
     paddingBottom: 24,
-    height: '80%',
+    height: '90%',
   },
   handle: {
     alignSelf: 'center',
@@ -474,10 +502,9 @@ const styles = StyleSheet.create({
     color: palette.textPrimary,
   },
   subtext: {
-    fontSize: 11.5,
-    fontFamily: 'Poppins-Medium',
-    color: palette.textMuted,
-    lineHeight: 16,
+    fontSize: 13,
+    fontFamily: 'Poppins-Regular',
+    color: palette.textSecondary,
     marginTop: 4,
     paddingRight: 10,
   },
@@ -532,18 +559,18 @@ const styles = StyleSheet.create({
   empty: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 30,
     paddingVertical: 40,
   },
   emptyTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Poppins-Bold',
     color: palette.textSecondary,
     marginTop: 10,
   },
   emptySub: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Poppins-Medium',
     color: palette.textMuted,
     textAlign: 'center',

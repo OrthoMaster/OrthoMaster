@@ -181,7 +181,7 @@ export default function App({ navigation }) {
         },
         tools: {
           screens: {
-            'products-view': 'tools/products-view',
+            'products-view': 'open/products-view',
           }
         },
         company: {

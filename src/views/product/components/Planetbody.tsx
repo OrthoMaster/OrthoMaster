@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Accent, palette } from '../lib/Theme';
+
+const isWeb = Platform.OS === 'web';
 
 type PlanetProps = {
   cx: number;
@@ -171,7 +173,7 @@ export function PlanetBody({
         />
 
         {/* Specular */}
-        <View
+        {/* <View
           style={[styles.sphereLayer, {
             width: size * 0.22,
             height: size * 0.22,
@@ -181,7 +183,7 @@ export function PlanetBody({
             backgroundColor: '#FFFFFF',
             opacity: bodyOpacity * (hasSelection ? 0.6 : 0.45),
           }]}
-        />
+        /> */}
 
         {/* Inner content of the sphere — adaptive layout:
             - No selection: title fills the centre (big).
@@ -312,15 +314,15 @@ const styles = StyleSheet.create({
 
   // Big title — when there are no selected labels (centred in sphere)
   titleCentered: {
-    fontSize: 12,
+    fontSize: isWeb ? 20 : 12,
     fontFamily: 'Poppins-Bold',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: isWeb ? 24 : 16,
   },
 
   // Small title — when selected labels exist (sits above the labels block)
   titleSmall: {
-    fontSize: 10,
+    fontSize: isWeb ? 16 : 10,
     fontFamily: 'Poppins-Bold',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -332,10 +334,11 @@ const styles = StyleSheet.create({
   // Joined labels — "A · B · C". Wraps up to 3 lines inside the sphere
   // area; overflowing the last line gets a tail ellipsis.
   labelsInline: {
-    fontSize: 16,
+    fontSize: isWeb ? 26 : 16,
     fontFamily: 'Poppins-Medium',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: isWeb ? 34 : 20,
+    letterSpacing: 1.1,
   },
 
   titleActive: {

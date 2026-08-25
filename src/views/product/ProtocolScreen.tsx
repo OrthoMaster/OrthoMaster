@@ -31,7 +31,7 @@ import { GuidePatientModal } from './components/GuidePatientModal';
 // protocol carries its own guide asset. Until then, every protocol
 // shows the same fake QR and URL.
 const GUIDE_PATIENT_QR_URL = 'https://placehold.co/300x300/000000/FFFFFF/png?text=QR+GUIDE';
-const GUIDE_PATIENT_LINK   = 'https://orthomastaer.fr/guides/patient';
+const GUIDE_PATIENT_LINK   = 'https://app.orthomaster.fr/guides/patient';
 
 // ============================================================
 // Grid sizing — fixed per screen width. Computed once at module load

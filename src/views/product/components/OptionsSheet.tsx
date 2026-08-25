@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { ChildNode, isChildVisible, isNodeVisible, MainNode, Selections } from '../lib/Logic';
 import { Accent, palette } from '../lib/Theme';
+import { PathologySummaryModal } from './PathologySummaryModal';
 
 type OptionsSheetProps = {
   visible: boolean;
@@ -17,16 +18,38 @@ type OptionsSheetProps = {
   onNext: () => void;                 // cycle to next planet
 };
 
-// Tappable choice pill — same look as previous version.
+// Tappable choice pill. Children carrying a db_id (pathology rows) get
+// an extra info button once selected — it opens the pathology summary
+// sheet. The button is a nested Pressable: RN gives the inner one
+// priority, so tapping it never toggles the pill.
 function ChoicePill({
-  child, selected, accent, onPress,
+  child, selected, accent, onPress, onInfoPress,
 }: {
   child: ChildNode;
   selected: boolean;
   accent: Accent;
   onPress: () => void;
+  onInfoPress: () => void;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
+  const showInfo = selected && !!child.db_id;
+
+  // Entrance animation for the info badge.
+  const infoAnim = useRef(new Animated.Value(showInfo ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.spring(infoAnim, {
+      toValue: showInfo ? 1 : 0,
+      useNativeDriver: true,
+      speed: 14,
+      bounciness: 10,
+    }).start();
+  }, [showInfo, infoAnim]);
+
+  const infoScale = infoAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.4, 1],
+  });
+
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
@@ -38,6 +61,7 @@ function ChoicePill({
           selected
             ? { backgroundColor: accent.strong, borderColor: accent.strong }
             : { backgroundColor: accent.soft, borderColor: 'transparent' },
+          showInfo && styles.pillWithInfo,
         ]}
       >
         {selected && <Text style={[styles.pillCheck, { color: accent.textOn }]}>✓</Text>}
@@ -48,6 +72,21 @@ function ChoicePill({
         ]}>
           {child.label}
         </Text>
+
+        {showInfo && (
+          <Animated.View
+            style={{ opacity: infoAnim, transform: [{ scale: infoScale }] }}
+          >
+            <Pressable
+              onPress={onInfoPress}
+              hitSlop={10}
+              style={styles.infoBtn}
+              accessibilityLabel={`Informations sur ${child.label}`}
+            >
+              <Ionicons name="information" size={14} color="#FFFFFF" />
+            </Pressable>
+          </Animated.View>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -55,12 +94,13 @@ function ChoicePill({
 
 // Render one section of options for a given node.
 function NodeSection({
-  node, selections, accent, onToggle, isPrimary,
+  node, selections, accent, onToggle, onInfo, isPrimary,
 }: {
   node: MainNode;
   selections: Selections;
   accent: Accent;
   onToggle: (nodeId: string, childId: string) => void;
+  onInfo: (child: ChildNode) => void;
   isPrimary: boolean;
 }) {
   const sels = selections[node.id] || [];
@@ -76,13 +116,13 @@ function NodeSection({
         </Text>
         <View style={{ flex: 1 }} />
         <Text style={styles.sectionMeta}>
-          {isMulti ? 'multiple' : 'one only'}
+          {isMulti ? 'plusieurs' : 'un seul'}
         </Text>
       </View>
 
       <View style={styles.options}>
         {visibleChildren.length === 0 ? (
-          <Text style={styles.empty}>No options available</Text>
+          <Text style={styles.empty}>Aucune option disponible</Text>
         ) : (
           visibleChildren.map(child => (
             <ChoicePill
@@ -91,6 +131,7 @@ function NodeSection({
               selected={sels.includes(child.id)}
               accent={accent}
               onPress={() => onToggle(node.id, child.id)}
+              onInfoPress={() => onInfo(child)}
             />
           ))
         )}
@@ -182,7 +223,7 @@ function findLinkedNodes(
   );
   const effectiveParent = new Map<string, string>(); // nodeId → resolved parentRootId
   for (const n of allNodes) {
-    const p = (n as any).parentNodeId;
+    const p = n.parentNodeId;
     if (typeof p === 'string' && p !== '' && rootIds.has(p)) {
       effectiveParent.set(n.id, p);
     }
@@ -243,25 +284,13 @@ function collectRuleRefs(rule: any, out = new Set<string>()): Set<string> {
   return out;
 }
 
-function ruleReferences(rule: any, targetId: string): boolean {
-  if (!rule) return false;
-  if ('kind' in rule) {
-    return rule.nodeId === targetId;
-  }
-  if ('op' in rule) {
-    if (rule.op === 'AND' || rule.op === 'OR') {
-      return rule.rules.some((r: any) => ruleReferences(r, targetId));
-    }
-    if (rule.op === 'NOT') {
-      return ruleReferences(rule.rule, targetId);
-    }
-  }
-  return false;
-}
-
 export function OptionsSheet({
   visible, rootNode, allNodes, selections, accent, onClose, onToggle, onNext,
 }: OptionsSheetProps) {
+  // Hooks MUST run before the early return below, otherwise the hook
+  // order changes between renders when the sheet closes.
+  const [infoChild, setInfoChild] = useState<ChildNode | null>(null);
+
   if (!rootNode || !accent) return <Modal visible={false} transparent />;
 
   const linkedNodes = findLinkedNodes(rootNode, allNodes, selections);
@@ -271,8 +300,20 @@ export function OptionsSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.card} onPress={() => {}}>
+      {/* Backdrop is a SIBLING of the card, not its parent.
+          Wrapping the card in a Pressable (to swallow taps) made that
+          Pressable win the responder on touch-start, so dragging on
+          empty space never reached the ScrollView — the sheet only
+          scrolled when the drag started on a pill, because a child
+          Pressable does hand the responder back on movement. */}
+      <View style={styles.root}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityLabel="Fermer"
+        />
+
+        <View style={styles.card}>
           <View style={styles.handle} />
 
           {/* Header */}
@@ -282,7 +323,7 @@ export function OptionsSheet({
               <Text style={styles.title}>{rootNode.title}</Text>
               {totalSelections > 0 && (
                 <Text style={styles.subtitle}>
-                  {totalSelections} selection{totalSelections > 1 ? 's' : ''}
+                  {totalSelections} sélection{totalSelections > 1 ? 's' : ''}
                 </Text>
               )}
             </View>
@@ -298,6 +339,7 @@ export function OptionsSheet({
               selections={selections}
               accent={accent}
               onToggle={onToggle}
+              onInfo={setInfoChild}
               isPrimary={true}
             />
 
@@ -309,6 +351,7 @@ export function OptionsSheet({
                 selections={selections}
                 accent={accent}
                 onToggle={onToggle}
+                onInfo={setInfoChild}
                 isPrimary={false}
               />
             ))}
@@ -317,7 +360,7 @@ export function OptionsSheet({
           {/* Done + Next row */}
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.doneBtn} onPress={onClose} activeOpacity={0.85}>
-              <Text style={styles.doneText}>Done</Text>
+              <Text style={styles.doneText}>Terminé</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.nextBtn, { borderColor: accent.strong }]}
@@ -327,14 +370,23 @@ export function OptionsSheet({
               <Ionicons name="arrow-forward" size={20} color={accent.strong} />
             </TouchableOpacity>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
+
+      <PathologySummaryModal
+        visible={!!infoChild}
+        dbId={infoChild?.db_id ?? null}
+        fallbackTitle={infoChild?.label ?? ''}
+        onClose={() => setInfoChild(null)}
+      />
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  // Fills the modal; the card is pinned to the bottom and the backdrop
+  // sits underneath it as an absolute-fill sibling.
+  root: {
     flex: 1,
     backgroundColor: 'rgba(45, 49, 66, 0.4)',
     justifyContent: 'flex-end',
@@ -395,13 +447,18 @@ const styles = StyleSheet.create({
   scrollWrap: {
     position: 'relative',
     marginTop: 10,
+    // Shrink inside the card's 85% cap instead of fighting it with a
+    // hard pixel height (the old maxHeight: 480 overflowed small
+    // phones and truncated content on large ones).
+    flexShrink: 1,
     // Bleed past the card's horizontal padding (22) so the track can sit
     // near the screen edge. Content keeps its inset via paddingRight below.
     marginRight: -22,
     paddingRight: 22,
   },
   scroll: {
-    maxHeight: 480,
+    flexGrow: 0,
+    flexShrink: 1,
   },
   scrollTrack: {
     position: 'absolute',
@@ -497,5 +554,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: -0.2,
+  },
+  // Tighter right edge so the badge can sit near the corner.
+  pillWithInfo: {
+    paddingRight: 7,
+  },
+  // Nudged upward toward the pill's top edge. alignSelf + negative
+  // margin keeps it inside the parent's bounds, which matters on
+  // Android where absolutely-positioned overflow gets clipped.
+  infoBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#3b76ba',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    alignSelf: 'flex-start',
+    marginTop: -5,
+    marginBottom: -1,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    shadowColor: '#2C5687',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.28,
+    shadowRadius: 3.5,
+    elevation: 5,
   },
 });

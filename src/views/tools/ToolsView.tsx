@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StatusBar,
   View,
@@ -7,6 +7,7 @@ import {
   Platform,
   Text
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
 
@@ -25,6 +26,15 @@ export const ToolsView = ({ navigation }) => {
   const [showGuidePatientMenu, setShowGuidePatientMenu] = useState(false)
   const [showLearningSupportMenu, setShowLearningSupportMenu] = useState(false)
 
+  // Control nav
+  useFocusEffect(
+    useCallback(() => {
+      const parent = navigation.getParent();
+      parent?.setOptions({ tabBarStyle: { display: 'flex' } });
+
+    }, [navigation])
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.blue} />
@@ -38,9 +48,9 @@ export const ToolsView = ({ navigation }) => {
       <View style={styles.body}>
         <LearningSupportButton onPress={() => { setShowLearningSupportMenu(true) }} />
         <View style={{ height: Spacings.md }} />
-        <QueChoisirButton onPress={() => { setShowQueChoisirMenu(true) }} />
+        {/* <QueChoisirButton onPress={() => { setShowQueChoisirMenu(true) }} /> */}
 
-        {/* <QueChoisirButton onPress={() => { navigation.navigate('new-que-choisir') }} /> */}
+        <QueChoisirButton onPress={() => { navigation.navigate('new-que-choisir') }} />
 
         <View style={{ height: Spacings.md }} />
         <GuidePatientButton onPress={() => { setShowGuidePatientMenu(true) }} />

@@ -1,6 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CommonActions } from '@react-navigation/native';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FilterSummaryModal } from './components/FilterSummaryModal';
 import { ManufacturerPriorityModal } from './components/ManufacturerPriorityModal';
 import { ProductCard } from './components/ProductCard';
 import { ProductDetailModal } from './components/ProductDetailModal';
@@ -23,6 +23,7 @@ import { MainNode, Selections } from './lib/Logic';
 import { Product } from './lib/Products';
 import { SAMPLE_NODES } from './lib/SampleRules';
 import { palette } from './lib/Theme';
+import Colors from '../../../constants/Colors'
 
 import {
   filterProducts,
@@ -33,7 +34,7 @@ import {
 
 // Base URL for QR-encoded deep links. Change to your real domain.
 // React Navigation linking config should match this prefix.
-const SHARE_URL_BASE = 'https://orthomastaer.fr/products';
+const SHARE_URL_BASE = 'https://go.orthomaster.fr/open/products-view';
 
 // Fixed list of manufacturers. Adjust to match your real lookup table.
 const ALL_MANUFACTURERS: string[] = [
@@ -137,7 +138,6 @@ export const ProductsScreen = ({ navigation, route }) => {
     return typeof l === 'string' && l !== '' ? l : null;
   }, [route?.params?.groupLabel]);
 
-  const [summaryOpen, setSummaryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [mfgModalOpen, setMfgModalOpen] = useState(false);
 
@@ -257,12 +257,28 @@ export const ProductsScreen = ({ navigation, route }) => {
     });
   }, [products, mfgPriority]);
 
-  const onBack = () => navigation.goBack();
+  const handleBack = useCallback(() => {
+    const state = navigation.getState();
+    const hasSolarFilterInStack = state.routes.some(r => r.name === 'new-que-choisir');
 
-  const handleResetFilters = () => {
-    setSummaryOpen(false);
-    navigation.navigate('new-que-choisir', { reset: true });
-  };
+    if (hasSolarFilterInStack) {
+      navigation.goBack();
+      return;
+    }
+
+    // Deep link entry — replace with SolarFilter, pass raw params so
+    // SolarFilter's deep-link effect fills the state without a full reset.
+    navigation.dispatch(CommonActions.reset({
+      index: 0,
+      routes: [{
+        name: 'new-que-choisir',
+        params: {
+          filters: route?.params?.filters,
+          group: route?.params?.group,
+        },
+      }],
+    }));
+  }, [navigation, route]);
 
   const handleOpenDetail = async (item: ProductListItem) => {
     setDetailLoading(true);
@@ -281,76 +297,50 @@ export const ProductsScreen = ({ navigation, route }) => {
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
         {/* Top bar */}
         <View style={styles.topBar}>
-          {/* Row 1 — back + title + filter count + share QR */}
           <View style={styles.topRow}>
-            <TouchableOpacity
-              onPress={onBack}
-              style={styles.backBtn}
-              hitSlop={10}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={22} color={palette.textPrimary} />
-            </TouchableOpacity>
-
             <View style={{ flex: 1 }}>
-              <Text style={styles.title} numberOfLines={1}>
-                {groupLabel ?? 'Products'}
-              </Text>
-              <Text style={styles.bannerText} numberOfLines={1}>
-                {listLoading
-                  ? 'Chargement des produits …'
-                  : listError
-                    ? 'Impossible de charger les produits'
-                    : products.length === 0
-                      ? 'Aucun produit ne correspond à vos filtres'
-                      : `${products.length} produit${products.length > 1 ? 's' : ''} trouvé${products.length > 1 ? 's' : ''}`}
+              <Text style={styles.eyebrow}>Étape 2</Text>
+              <Text style={styles.title}>
+                {groupLabel ?? "Dispositifs\nMédicaux"}
               </Text>
             </View>
 
-            {/* Vertical divider between the title block and the right-side
-                action group. Keeps the two sections visually distinct. */}
-            <View style={styles.topVerticalDivider} />
-
-            {/* Right side: labeled group with two icon+text actions */}
             <View style={styles.rightGroup}>
-              <Text style={styles.rightLabel}>Filtres Patient</Text>
               <View style={styles.rightButtons}>
                 <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => setMfgModalOpen(true)}
+                  activeOpacity={0.85}
+                  disabled={totalSelected === 0}
+                >
+                  <MaterialCommunityIcons
+                    name={mfgPriority.length > 0 ? "tag-arrow-down" : "tag-arrow-down-outline"}
+                    size={20}
+                    color={mfgPriority.length > 0 ? Colors.success : palette.textSecondary}
+                  />
+                  <Text
+                    style={[styles.actionBtnText, { color: mfgPriority.length > 0 ? Colors.success : palette.textSecondary }]}
+                  >
+                    Labos
+                  </Text>
+                </TouchableOpacity>
+
+                <View style={styles.headerDivider} />
+                <TouchableOpacity
                   style={[styles.actionBtn, totalSelected === 0 && styles.actionBtnDisabled]}
-                  onPress={() => setSummaryOpen(true)}
+                  onPress={() => totalSelected >= 0 && setShareOpen(true)}
                   activeOpacity={0.85}
                   disabled={totalSelected === 0}
                 >
                   <Ionicons
-                    name="list"
-                    size={18}
+                    name="qr-code-outline"
+                    size={20}
                     color={totalSelected === 0 ? palette.textMuted : palette.textPrimary}
                   />
                   <Text
                     style={[
                       styles.actionBtnText,
                       { color: totalSelected === 0 ? palette.textMuted : palette.textPrimary },
-                    ]}
-                  >
-                    Détails
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.actionBtn, styles.actionBtnPrimary, totalSelected === 0 && styles.actionBtnPrimaryDisabled]}
-                  onPress={() => setShareOpen(true)}
-                  activeOpacity={0.85}
-                  disabled={totalSelected === 0}
-                >
-                  <Ionicons
-                    name="share-outline"
-                    size={18}
-                    color={totalSelected === 0 ? palette.textMuted : '#3B82F6'}
-                  />
-                  <Text
-                    style={[
-                      styles.actionBtnText,
-                      { color: totalSelected === 0 ? palette.textMuted : '#3B82F6' },
                     ]}
                   >
                     Partager
@@ -361,36 +351,7 @@ export const ProductsScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* Body container — owns palette.bg so the screen body has the
-            tinted backdrop while the SafeAreaView top/bottom insets fall
-            through to root's white. */}
         <View style={styles.bodyContainer}>
-          {/* Row 2 — secondary filter pills (manufacturer, country) */}
-          <View style={styles.pillsRow}>
-            {/* Fabricant — active when at least one is in priority */}
-            <TouchableOpacity
-              style={[styles.pill, mfgPriority.length > 0 && styles.pillActive]}
-              activeOpacity={0.7}
-              onPress={() => setMfgModalOpen(true)}
-            >
-              <Ionicons
-                name="business-outline"
-                size={14}
-                color={mfgPriority.length > 0 ? '#3B82F6' : palette.textSecondary}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={[styles.pillText, mfgPriority.length > 0 && styles.pillTextActive]}>
-                Fabricant
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={14}
-                color={mfgPriority.length > 0 ? '#3B82F6' : palette.textMuted}
-                style={{ marginLeft: 4 }}
-              />
-            </TouchableOpacity>
-          </View>
-
           {/* Body */}
           {listLoading ? (
             <View style={styles.centered}>
@@ -398,7 +359,7 @@ export const ProductsScreen = ({ navigation, route }) => {
             </View>
           ) : listError ? (
             <View style={styles.empty}>
-              <Ionicons name="cloud-offline-outline" size={36} color={palette.textMuted} />
+              <Ionicons name="cloud-offline-outline" size={40} color={palette.textMuted} />
               <Text style={styles.emptyTitle}>Erreur réseau</Text>
               <Text style={styles.emptySub}>
                 Nous n'avons pas pu joindre le serveur. Veuillez réessayer.
@@ -413,17 +374,14 @@ export const ProductsScreen = ({ navigation, route }) => {
             </View>
           ) : products.length === 0 ? (
             <View style={styles.empty}>
-              <Ionicons name="search-outline" size={36} color={palette.textMuted} />
-              <Text style={styles.emptyTitle}>Aucun résultat trouvé.</Text>
-              <Text style={styles.emptySub}>
-                Ajustez vos filtres de pathologie pour voir les résultats.
-              </Text>
+              <Ionicons name="search-outline" size={50} color={palette.textMuted} />
+              <Text style={styles.emptyTitle}>Aucun dispositif trouvé.</Text>
               <TouchableOpacity
                 style={styles.emptyBtn}
-                onPress={onBack}
+                onPress={handleBack}
                 activeOpacity={0.85}
               >
-                <Text style={styles.emptyBtnText}>Retour aux filtres</Text>
+                <Text style={styles.emptyBtnText}>Retour aux critères patient</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -443,6 +401,17 @@ export const ProductsScreen = ({ navigation, route }) => {
               scrollEventThrottle={64}
             />
           )}
+
+          <View style={styles.floatBar} pointerEvents="box-none">
+            <TouchableOpacity
+              style={styles.cta}
+              onPress={handleBack}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="arrow-back" size={22} color='#fff' />
+              <Text style={styles.ctaText}>Retour aux critères patient</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Scroll-to-top FAB. Rendered last inside the SafeAreaView so it
@@ -468,15 +437,6 @@ export const ProductsScreen = ({ navigation, route }) => {
         )}
       </SafeAreaView>
 
-      {/* Modals */}
-      <FilterSummaryModal
-        visible={summaryOpen}
-        onClose={() => setSummaryOpen(false)}
-        onReset={handleResetFilters}
-        nodes={SAMPLE_NODES}
-        selections={selections}
-      />
-
       <ProductDetailModal
         visible={!!detailProduct}
         product={detailProduct}
@@ -488,7 +448,6 @@ export const ProductsScreen = ({ navigation, route }) => {
         visible={shareOpen}
         onClose={() => setShareOpen(false)}
         url={shareUrl}
-        caption="Scannez ce code pour voir la même sélection de produits."
       />
 
       <ManufacturerPriorityModal
@@ -503,20 +462,13 @@ export const ProductsScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  // White outer container — the SafeAreaView's top/bottom insets fall
-  // through to this color, giving the status-bar and home-indicator
-  // areas a clean white surface. The body itself sits in a separate
-  // container styled with palette.bg.
   root: { flex: 1, backgroundColor: '#FFFFFF' },
-
-  // Body wrapper between topBar and the SafeAreaView's bottom — owns
-  // the tinted palette.bg color for the list / empty / loading states.
   bodyContainer: { flex: 1, backgroundColor: palette.bg },
 
   topBar: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingHorizontal: 22,
+    paddingTop: 8,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: palette.border,
     backgroundColor: palette.cardBg,
@@ -534,14 +486,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 2,
   },
+  eyebrow: {
+    fontSize: 12,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    letterSpacing: 1.2,
+    color: palette.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 7,
+  },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 20,
+    lineHeight: 25,
+    letterSpacing: 0.3,
+    fontFamily: 'Poppins-Bold',
     color: palette.textPrimary,
-    letterSpacing: -0.3,
+    width: '80%',
   },
   bannerText: {
-    fontSize: 12,
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
     color: palette.textSecondary,
     marginTop: 1,
   },
@@ -552,47 +516,35 @@ const styles = StyleSheet.create({
     width: 1,
     alignSelf: 'stretch',
     backgroundColor: palette.border,
-    marginHorizontal: 10,
+    marginLeft: 10,
   },
 
   // Right-side grouped actions (label + two icon+text buttons)
   rightGroup: {
     alignItems: 'flex-end',
   },
-  rightLabel: {
-    fontSize: 11,
-    fontFamily: 'Poppins-Medium',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: palette.textMuted,
-  },
   rightButtons: {
     flexDirection: 'row',
+    gap: 12,
   },
   actionBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 8,
-    minWidth: 50,
-  },
-  actionBtnPrimary: {
-    paddingLeft: 12,
   },
   actionBtnDisabled: {
-    opacity: 0.55,
-  },
-  actionBtnPrimaryDisabled: {
-    backgroundColor: palette.bg,
-    borderWidth: 1,
-    borderColor: palette.border,
-    shadowOpacity: 0,
-    elevation: 0,
+    opacity: 0.45,
   },
   actionBtnText: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
-    marginTop: 0,
+    color: palette.textPrimary,
+    marginTop: 4,
     letterSpacing: 0.2,
+  },
+  headerDivider: {
+    width: 1,
+    backgroundColor: palette.border,
+    marginVertical: 6,
   },
 
   // Secondary filter pills (row 2)
@@ -645,17 +597,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: palette.textPrimary,
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
+    color: palette.textSecondary,
     marginTop: 14,
   },
   emptySub: {
-    fontSize: 13,
-    color: palette.textSecondary,
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    color: palette.textMuted,
     textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
   },
   emptyBtn: {
     marginTop: 18,
@@ -666,8 +618,8 @@ const styles = StyleSheet.create({
   },
   emptyBtnText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
   },
 
   // Loading indicator shown while a product detail is being fetched.
@@ -676,7 +628,7 @@ const styles = StyleSheet.create({
   // marginLeft equal to half the width.
   detailLoader: {
     position: 'absolute',
-    bottom: 22,
+    bottom: 130,
     left: '50%',
     marginLeft: -22,
     width: 44,
@@ -705,5 +657,38 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 8,
     elevation: 6,
+  },
+
+  // Floats over the scrolling body instead of sitting in a footer.
+  floatBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  cta: {
+    flex: 1,
+    flexDirection:'row',
+    gap: 6,
+    backgroundColor: palette.textPrimary,
+    paddingVertical: 12,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: palette.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.32,
+    shadowRadius: 14,
+    elevation: 7,
+    opacity: 0.9,
+  },
+  ctaText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontFamily: 'Poppins-Bold',
+    letterSpacing: 0.3,
   },
 });

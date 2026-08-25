@@ -198,11 +198,11 @@ export function ProductDetailModal({
               <Text style={styles.name} numberOfLines={2}>
                 {product.name}
               </Text>
-              {!!product.sub && (
+              {/* {!!product.sub && (
                 <Text style={styles.sub} numberOfLines={2}>
                   {product.sub}
                 </Text>
-              )}
+              )} */}
             </View>
 
             {/* [2] Tabs bar — STICKY */}
@@ -290,7 +290,7 @@ export function ProductDetailModal({
                 onPress={scrollToContent}
                 activeOpacity={0.9}
               >
-                <Text style={styles.voirText}>Voir détails</Text>
+                <Text style={styles.voirText}>Voir plus</Text>
                 <Ionicons
                   name="chevron-down"
                   size={16}
@@ -350,16 +350,6 @@ function SizesTabContent({
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled
     >
-      {/* Hint when there's nothing to base a recommendation on */}
-      {!hasActive && (
-        <View style={styles.hintBox}>
-          <Ionicons name="information-circle-outline" size={16} color="#1D4ED8" />
-          <Text style={styles.hintText}>
-            Sélectionnez une mesure dans le filtre pour voir la taille recommandée.
-          </Text>
-        </View>
-      )}
-
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Tailles disponibles</Text>
         {anyMatched && (
@@ -1209,7 +1199,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 24,
+    bottom: 40,
     alignItems: 'center',
     zIndex: 15,
   },
@@ -1219,16 +1209,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 999,
-    backgroundColor: 'rgba(17, 24, 39, 0.55)',
+    backgroundColor: 'rgba(17, 24, 39, 0.7)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.7,
     shadowRadius: 12,
     elevation: 6,
   },
   voirText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
     color: '#FFFFFF',
     letterSpacing: 0.3,
   },
@@ -1244,39 +1234,34 @@ const styles = StyleSheet.create({
   counterText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Medium',
     letterSpacing: 0.3,
   },
-
   titleStrip: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
-    backgroundColor: palette.cardBg,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 6,
+    // borderBottomWidth: 1,
+    // borderBottomColor: palette.border,
+    // backgroundColor: palette.cardBg,
   },
   manufacturer: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    fontWeight: '500',
     color: palette.textMuted,
-    letterSpacing: 1.4,
+    letterSpacing: 1,
     textTransform: 'uppercase',
   },
   name: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
     color: palette.textPrimary,
-    letterSpacing: -0.3,
-    marginTop: 4,
-    lineHeight: 22,
   },
   sub: {
-    fontSize: 12.5,
+    fontFamily: 'Roboto',
     fontWeight: '500',
     color: palette.textSecondary,
-    marginTop: 4,
-    lineHeight: 17,
   },
 
   tabsBar: {
@@ -1298,10 +1283,15 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: palette.fabBg,
+    shadowColor: palette.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 5,
   },
   tabText: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Medium',
     color: palette.textSecondary,
   },
   tabTextActive: {

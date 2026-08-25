@@ -102,21 +102,21 @@ export function ManufacturerPriorityModal({
             <View style={styles.handle} />
 
             <View style={styles.header}>
-              <Text style={styles.title}>Priorité Fabricants</Text>
+              <Text style={styles.title}>Priorité Marques</Text>
               <TouchableOpacity onPress={onClose} hitSlop={12}>
-                <Ionicons name="close" size={22} color={palette.textSecondary} />
+                <Ionicons name="close" size={30} color={palette.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <Text style={styles.hint}>
-              Sélectionnez les fabricants à afficher en priorité.
+              Sélectionnez les marques à afficher en priorité.
             </Text>
 
             {/* Priority section header */}
             <View style={styles.sectionHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.sectionTitle}>
-                  Affichés en priorité
+                  Afficher en priorité
                   {priority.length > 0 && (
                     <Text style={styles.sectionCount}>  ({priority.length})</Text>
                   )}
@@ -161,7 +161,7 @@ export function ManufacturerPriorityModal({
               >
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>
-                    Autres fabricants
+                    Autres marques
                     <Text style={styles.sectionCount}>  ({available.length})</Text>
                   </Text>
                 </View>
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 22,
     paddingTop: 8,
-    paddingBottom: 22,
+    paddingBottom: 60,
     height: '85%',
   },
   handle: {
@@ -229,19 +229,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
     color: palette.textPrimary,
-    letterSpacing: -0.3,
+    marginBottom: 0
   },
   hint: {
-    fontSize: 12,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
     color: palette.textSecondary,
-    lineHeight: 17,
     marginBottom: 6,
+    width: '70%'
   },
 
   sectionHeader: {
@@ -252,27 +252,28 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   sectionTitle: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: palette.textMuted,
-    letterSpacing: 1.1,
+    fontSize: 15,
+    fontFamily: 'Poppins-Bold',
+    color: palette.textSecondary,
+    letterSpacing: 1,
     textTransform: 'uppercase',
   },
   sectionSubtitle: {
-    fontSize: 11,
+    fontSize: 13,
+    fontFamily: 'Roboto',
     color: palette.textMuted,
-    lineHeight: 15,
-    marginBottom: 4
+    letterSpacing: 0.3,
+    marginBottom: 12
   },
   sectionCount: {
-    fontWeight: '500',
+    fontFamily: 'Poppins-Medium',
     color: palette.textMuted,
-    letterSpacing: 0,
     textTransform: 'none',
   },
   clearText: {
-    fontSize: 11.5,
-    fontWeight: '600',
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    letterSpacing: 0.5,
     color: '#EF4444',
   },
   emptyBox: {
@@ -285,9 +286,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 12,
+    fontSize: 14,
+    fontFamily: 'Roboto',
     color: palette.textMuted,
-    fontStyle: 'italic',
   },
 
   row: {
@@ -336,13 +337,14 @@ const styles = StyleSheet.create({
   },
   rankText: {
     color: '#FFFFFF',
-    fontSize: 11.5,
-    fontWeight: '700',
+    fontSize: 11,
+    fontFamily: 'Poppins-Bold',
   },
   rowName: {
     flex: 1,
-    fontSize: 13.5,
-    fontWeight: '600',
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    letterSpacing: 0.4,
     color: palette.textPrimary,
   },
   removeBtn: {
@@ -372,8 +374,8 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
   },
   availablePillText: {
-    fontSize: 12.5,
-    fontWeight: '600',
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
     color: palette.textPrimary,
   },
 
@@ -398,7 +400,7 @@ const styles = StyleSheet.create({
   },
   closeText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Bold',
     color: palette.textSecondary,
   },
   applyBtn: {
@@ -411,7 +413,7 @@ const styles = StyleSheet.create({
   },
   applyText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Poppins-Bold',
     color: '#FFFFFF',
   },
 });

@@ -18,7 +18,7 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
       <Image
         source={{ uri: product.images[0] }}
         style={styles.image}
-        resizeMode="contain"
+        resizeMode="cover"
       />
 
       <View style={styles.info}>

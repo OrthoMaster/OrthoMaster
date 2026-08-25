@@ -20,6 +20,9 @@ export type ChildNode = {
   // (phases + groups) before the product list. Points to a protocol id
   // in protocols.json. Multiple children may share the same protocol id.
   protocolId?: string;
+  db_id?: string;
+  min?: number;
+  max?: number;
 };
 
 export type MainNode = {
@@ -28,6 +31,8 @@ export type MainNode = {
   selectionType: 'single' | 'multi';
   children: ChildNode[];
   visibilityRule?: Rule | null;
+  dimensionKey?: string;
+  parentNodeId?: string;
 };
 
 // ---------- evaluator ----------

@@ -26,8 +26,8 @@ export type Accent = {
 export const accents: Accent[] = [
   { name: 'mint',     soft: '#E2F4EC', strong: '#7DC9B0', text: '#1F6E5A', textOn: '#FFFFFF' },
   { name: 'peach',    soft: '#FCE5D6', strong: '#F2A88B', text: '#9C4A2D', textOn: '#FFFFFF' },
-  { name: 'lavender', soft: '#EADFF8', strong: '#B89AE0', text: '#553D7E', textOn: '#FFFFFF' },
   { name: 'sky',      soft: '#DCE9F8', strong: '#8FB8E6', text: '#2C5687', textOn: '#FFFFFF' },
+  { name: 'lavender', soft: '#EADFF8', strong: '#B89AE0', text: '#553D7E', textOn: '#FFFFFF' },
   { name: 'lemon',    soft: '#F6E9C2', strong: '#E0C46E', text: '#7A5C12', textOn: '#FFFFFF' },
   { name: 'rose',     soft: '#F8DCE4', strong: '#DC9BB1', text: '#823756', textOn: '#FFFFFF' },
 ];
