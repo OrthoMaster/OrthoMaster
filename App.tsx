@@ -75,9 +75,7 @@ function AppContent() {
   /* ------------------------------------------------------------------ */
 
   /**
-   * navigate('home', { screen: 'podcast' }) bị nuốt khi tab 'home' ĐANG focus:
-   * tab router xử lý xong ở cấp của nó, stack con không nhận được action nào.
-   * Nên phải dispatch thẳng vào stack con qua `target`.
+   * navigate('home', { screen: 'podcast' })
    */
   const pushToHomeStack = (screen: string, params: any): boolean => {
     const nav = navigationRef.current;
@@ -99,6 +97,17 @@ function AppContent() {
 
     // Cold start: stack con chưa khởi tạo -> params lồng vẫn chạy đúng
     nav.navigate('home' as never, { screen, params } as never);
+    return true;
+  };
+
+  /**
+   * navigate('flash-media-home', { screen: 'event' })
+   */
+  const openMediaHome = (params: Record<string, any>): boolean => {
+    const nav = navigationRef.current;
+    if (!nav?.isReady()) return false;
+
+    nav.navigate('media' as never, { screen: 'flash-media-home', params } as never);
     return true;
   };
 
@@ -124,6 +133,9 @@ function AppContent() {
     } else if (seg[1] === 'daily-question' && seg[2]) {
       const id = String(seg[2]);
       runOrQueue(() => pushToHomeStack('daily-question', { questionId: id }));
+    } else if (seg[1] === 'event' && seg[2]) {
+      const id = String(seg[2]);
+      runOrQueue(() => openMediaHome({ eventId: id, id: undefined }));
     }
   };
 
@@ -433,11 +445,6 @@ function AppContent() {
   }, []);
 
   // ---------- Linking config ----------
-  /**
-   * 'podcast' và 'daily-question' KHÔNG khai ở đây.
-   * Chúng nằm trong HomeStack (tab mặc định) nên cơ chế path lồng của
-   * React Navigation bị nuốt khi tab home đang focus -> xử lý tay ở handleDeepLink.
-   */
   const linking = {
     prefixes: [prefix],
     config: {
@@ -450,7 +457,6 @@ function AppContent() {
             'invoice-view': { path: 'open/invoice/:invoiceId' },
           },
         },
-
         'media': {
           screens: {
             'flash-media-home': { path: 'open/media-preview/:id?' },

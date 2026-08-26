@@ -214,7 +214,7 @@ export const getEvents = async () => {
 /**
  * Get content of media
  */
-export const getContent = async (contentId: string) => {
+export const getContent = async (contentId: string | number) => {
   return axiosInstance
     .get(`${baseUrl}/media/content`, { params: { contentId } })
     .then((response) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -15,12 +15,11 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
-import { fetchMedias } from '../../services/FlashMediasService';
 import { CarouselItem } from '../../component/carousel/SimpleAdaptiveCarouselWeb';
 import { IContent } from '../../utils/interfaces';
 import { PreviewMediaParams } from './PreviewMediaView';
 
-import { getEvents, getNewests, getTrends, getCategories, getContent } from '../../services/v2/ContentService';
+import { getEvents, getTrends, getCategories, getContent } from '../../services/v2/ContentService';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -98,30 +97,69 @@ export const FlashMediaView = ({ navigation, route }) => {
     navigation.navigate("flash-media-channel", params)
   }
 
-  const verifyRoute = async () => {
-    if (route.path && route.path.includes("media-preview")) {
-      if (route.params && route.params.id) {
-        setOpenMediaIsLoading(true);
-        handleOpenMediaLink(route.params.id)
-          .then((media) => {
-            setOpenMediaIsLoading(false)
-            navigation.push('flash-media-preview', {
-              media: media
-            } as PreviewMediaParams)
-          })
-          .catch(errorMessage => {
-            setOpenMediaErrorMessage(errorMessage)
-            setTimeout(() => {
-              setOpenMediaIsLoading(false)
-            }, 1000);
-          })
-      }
-    }
-  }
+  const handledMediaRef = useRef<string | null>(null);
+  const handledEventRef = useRef<string | null>(null);
 
+  // ---------- Deeplink: media ----------
   useEffect(() => {
-    verifyRoute();
+    const id = route.params?.id;
+
+    if (!id || !route.path?.includes('media-preview')) {
+      handledMediaRef.current = null;
+      return;
+    }
+    if (handledMediaRef.current === String(id)) return;
+    handledMediaRef.current = String(id);
+
+    setOpenMediaIsLoading(true);
+    handleOpenMediaLink(Number(id))
+      .then((media) => {
+        setOpenMediaIsLoading(false);
+        navigation.push('flash-media-preview', { media } as PreviewMediaParams);
+        navigation.setParams({ id: undefined });
+      })
+      .catch((error) => {
+        setOpenMediaErrorMessage(error?.message ?? 'Média introuvable');
+        navigation.setParams({ id: undefined });
+        setTimeout(() => {
+          setOpenMediaIsLoading(false);
+          setOpenMediaErrorMessage('');
+        }, 1000);
+      });
   }, [route.params?.id]);
+
+  // ---------- Deeplink: event ----------
+  useEffect(() => {
+    const eventId = route.params?.eventId;
+
+    if (!eventId) {
+      handledEventRef.current = null;
+      return;
+    }
+    if (handledEventRef.current === String(eventId)) return;
+
+    // events chưa load xong -> chờ, effect sẽ chạy lại khi eventsLoading = false
+    if (eventsLoading) {
+      setOpenMediaIsLoading(true);
+      return;
+    }
+
+    handledEventRef.current = String(eventId);
+    const event = eventsCarouselItems.find((e) => String(e.id) === String(eventId));
+
+    navigation.setParams({ eventId: undefined });
+
+    if (event) {
+      setOpenMediaIsLoading(false);
+      handleOpenEvent(event);
+    } else {
+      setOpenMediaErrorMessage('Congrès introuvable');
+      setTimeout(() => {
+        setOpenMediaIsLoading(false);
+        setOpenMediaErrorMessage('');
+      }, 1500);
+    }
+  }, [route.params?.eventId, eventsLoading]);
 
   return (
     <View style={styles.container}>
@@ -207,7 +245,7 @@ export const FlashMediaView = ({ navigation, route }) => {
           <Text style={{ fontSize: 20, marginBottom: 10 }}>
             {openMediaErrorMessage ? openMediaErrorMessage : "Ouverture..."}</Text>
           {
-            openMediaErrorMessage == null &&
+            !openMediaErrorMessage &&
             <ActivityIndicator size={"large"} />
           }
         </View>

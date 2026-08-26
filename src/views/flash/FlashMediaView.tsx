@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   StatusBar,
@@ -77,25 +77,6 @@ export const FlashMediaView = ({ navigation, route }) => {
     return media;
   };
 
-  const verifyRoute = async () => {
-    const id = route.params?.id;
-    if (!id) return;
-
-    // Action
-    setOpenMediaIsLoading(true);
-    handleOpenMediaLink(Number(id))
-      .then((media) => {
-        setOpenMediaIsLoading(false);
-        navigation.push('flash-media-preview', { media } as PreviewMediaParams);
-        navigation.setParams({ id: undefined });
-      })
-      .catch(errorMessage => {
-        setOpenMediaErrorMessage(errorMessage);
-        navigation.setParams({ id: undefined });
-        setTimeout(() => setOpenMediaIsLoading(false), 1000);
-      });
-  };
-
   const [eventsCarouselItems, setEventsCarouselItems] = useState<CarouselItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(false);
@@ -132,10 +113,69 @@ export const FlashMediaView = ({ navigation, route }) => {
     navigation.navigate("flash-media-channel", params)
   }
 
-  // Deeplink: Open direct
+  const handledMediaRef = useRef<string | null>(null);
+  const handledEventRef = useRef<string | null>(null);
+
+  // ---------- Deeplink: media ----------
   useEffect(() => {
-    verifyRoute();
+    const id = route.params?.id;
+
+    if (!id) {
+      handledMediaRef.current = null; // reset để lần sau mở lại cùng id vẫn chạy
+      return;
+    }
+    if (handledMediaRef.current === String(id)) return;
+    handledMediaRef.current = String(id);
+
+    setOpenMediaIsLoading(true);
+    handleOpenMediaLink(Number(id))
+      .then((media) => {
+        setOpenMediaIsLoading(false);
+        navigation.push('flash-media-preview', { media } as PreviewMediaParams);
+        navigation.setParams({ id: undefined });
+      })
+      .catch((error) => {
+        setOpenMediaErrorMessage(error?.message ?? 'Média introuvable');
+        navigation.setParams({ id: undefined });
+        setTimeout(() => {
+          setOpenMediaIsLoading(false);
+          setOpenMediaErrorMessage('');
+        }, 1000);
+      });
   }, [route.params?.id]);
+
+  // ---------- Deeplink: event ----------
+  useEffect(() => {
+    const eventId = route.params?.eventId;
+
+    if (!eventId) {
+      handledEventRef.current = null;
+      return;
+    }
+    if (handledEventRef.current === String(eventId)) return;
+
+    // events chưa load xong -> chờ, effect sẽ chạy lại khi eventsLoading = false
+    if (eventsLoading) {
+      setOpenMediaIsLoading(true);
+      return;
+    }
+
+    handledEventRef.current = String(eventId);
+    const event = eventsCarouselItems.find((e) => String(e.id) === String(eventId));
+
+    navigation.setParams({ eventId: undefined });
+
+    if (event) {
+      setOpenMediaIsLoading(false);
+      handleOpenEvent(event);
+    } else {
+      setOpenMediaErrorMessage('Congrès introuvable');
+      setTimeout(() => {
+        setOpenMediaIsLoading(false);
+        setOpenMediaErrorMessage('');
+      }, 1500);
+    }
+  }, [route.params?.eventId, eventsLoading]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -235,7 +275,7 @@ export const FlashMediaView = ({ navigation, route }) => {
           <Text style={{ fontSize: 20, marginBottom: 10 }}>
             {openMediaErrorMessage ? openMediaErrorMessage : "Ouverture..."}</Text>
           {
-            openMediaErrorMessage == null &&
+            !openMediaErrorMessage &&
             <ActivityIndicator size={"large"} />
           }
         </View>
