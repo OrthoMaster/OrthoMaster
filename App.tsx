@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer, StackActions } from '@react-navigation/native';
+import { NavigationContainer, StackActions, getStateFromPath } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 const prefix = Linking.createURL('/');
@@ -401,6 +401,10 @@ function AppContent() {
         const id = d?.id ?? d?.id_content ?? d?.media_id;
         return ['media', { screen: 'flash-media-home', params: { id: id ? String(id) : undefined } }];
       },
+      'event': (d) => {
+        const id = d?.id ?? d?.id_event ?? d?.event_id ?? d?.eventId;
+        return ['media', { screen: 'flash-media-home', params: { eventId: id ? String(id) : undefined } }];
+      },
       'training': () => ['training', { screen: 'training-list' }],
       'document': () => ['profile', { screen: 'document-view' }],
       'company': () => ['company', { screen: 'company-view' }],
@@ -447,6 +451,16 @@ function AppContent() {
   // ---------- Linking config ----------
   const linking = {
     prefixes: [prefix],
+
+    // 'open/event/:id'
+    getStateFromPath: (path: string, options: any) => {
+      const m = path.match(/^\/?open\/event\/([^/?#]+)/);
+      if (m) {
+        return getStateFromPath(`/open/media-preview?eventId=${m[1]}`, options);
+      }
+      return getStateFromPath(path, options);
+    },
+
     config: {
       screens: {
         'home': {

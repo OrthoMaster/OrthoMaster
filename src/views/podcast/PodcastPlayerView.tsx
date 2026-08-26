@@ -12,7 +12,7 @@ import {
   PanResponder
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { Svg, Rect } from 'react-native-svg';
@@ -318,7 +318,12 @@ export const PodcastPlayerView = ({ navigation, route }) => {
       navigation.goBack();
       return;
     }
-    navigation.navigate('home');
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'home' }],
+      })
+    );
   };
 
   const handleSubscribeTopic = async () => {

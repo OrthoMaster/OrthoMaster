@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   BackHandler,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -475,7 +475,12 @@ export const DailyQuestionView = ({ navigation, route }) => {
       navigation.goBack();
       return;
     }
-    navigation.navigate('home');
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'home' }],
+      })
+    );
   };
 
   const handleClose = () => {
