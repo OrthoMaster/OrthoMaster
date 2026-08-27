@@ -39,7 +39,7 @@ export const answerDailyQuestion = async (questionId: string, answerId: string) 
 }
 
 /**
- * Get podcast by id
+ * Get question by id
  */
 export const getQuestionById = async (id: string | number) => {
   return axiosInstance
@@ -62,6 +62,24 @@ export const getQuestionById = async (id: string | number) => {
 export const getPodcastById = async (id: string | number) => {
   return axiosInstance
     .get(`${baseUrl}/podcast/${id}`)
+    .then((response) => {
+      if (response.data?.success == true) {
+        return response.data?.data;
+      }
+
+      return null;
+    })
+    .catch((e: AxiosError) => {
+      return null;
+    });
+};
+
+/**
+ * Get infographic by id
+ */
+export const getInfographicById = async (id: string | number) => {
+  return axiosInstance
+    .get(`${baseUrl}/infographic/${id}`)
     .then((response) => {
       if (response.data?.success == true) {
         return response.data?.data;

@@ -111,7 +111,7 @@ export const MediaBlockRenderer = ({ blocks, navigation, trackingId }: Props) =>
     if (block.type === 'list' && Array.isArray(block.data?.items)) {
       return (
         <View key={key} style={styles.listBlock}>
-          <ListBlock items={block.data.items} style={block.data.style} />
+          <ListBlock items={block.data.items} style={block.data.style} itemStyle={styles.paragraph}/>
         </View>
       );
     }

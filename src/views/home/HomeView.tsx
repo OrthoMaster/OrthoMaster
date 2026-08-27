@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 import { useQuery } from "@tanstack/react-query"
 import { OrthoCarousel } from '../../component/OrthoCarousel'
@@ -151,6 +151,7 @@ export const HomeView = ({ navigation, route }) => {
 
   const hasDailyQuestions = dailyContentData?.questions && dailyContentData.questions.length > 0;
   const hasDailyPodcasts = dailyContentData?.podcasts && dailyContentData.podcasts.length > 0;
+  const hasInfographics = dailyContentData?.infographics && dailyContentData.infographics.length > 0;
 
   /** Handle reload screen */
   const reload = () => {
@@ -213,6 +214,12 @@ export const HomeView = ({ navigation, route }) => {
   const handleOpenPodcast = (podcastData) => {
     navigation.navigate('podcast', {
       podcastId: String(podcastData.podcast.id),
+    });
+  };
+
+  const handleOpenInfographic = (infographicData) => {
+    navigation.navigate('infographic', {
+      infographicId: String(infographicData.infographic.id),
     });
   };
 
@@ -373,7 +380,7 @@ export const HomeView = ({ navigation, route }) => {
           onToolPress={() => navigation.navigate('tools')}
         />
 
-        {(hasDailyQuestions || hasDailyPodcasts) && (
+        {(hasDailyQuestions || hasDailyPodcasts || hasInfographics) && (
           <>
             <View style={styles.carouselHeader}>
               <Text style={styles.actionlHeaderTitle}>Actions du jour</Text>
@@ -393,7 +400,7 @@ export const HomeView = ({ navigation, route }) => {
                 >
                   <View style={styles.dailyQuestionIconContainer}>
                     <Animated.View style={{ transform: [{ rotate: shakeRotation }] }}>
-                      <Ionicons name="bulb" size={28} color={Colors.blue} />
+                      <MaterialIcons name="quiz" size={28} color={Colors.blue} />
                     </Animated.View>
 
                     {questionData.has_answered && (
@@ -403,9 +410,9 @@ export const HomeView = ({ navigation, route }) => {
                     )}
                   </View>
                   <View style={styles.dailyQuestionContent}>
-                    <Text style={styles.dailyQuestionTitle}>Quizz</Text>
-                    <Text style={styles.dailyQuestionSubtitle} numberOfLines={1} ellipsizeMode='tail'>
-                      {questionData.question?.topic?.name}
+                    <Text style={styles.dailyQuestionTitle}>Quiz</Text>
+                    <Text style={styles.dailyPodcastSubtitle} numberOfLines={2} ellipsizeMode='tail'>
+                      {questionData.question?.title}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -429,6 +436,27 @@ export const HomeView = ({ navigation, route }) => {
                       {podcastData.podcast.title}
                     </Text>
                     <Text style={styles.dailyPodcastDuration}>{podcastData.podcast.duration}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+
+              {/* Infographic Banners - infographics */}
+              {hasInfographics && dailyContentData.infographics.map((infographicData, index) => (
+                <TouchableOpacity
+                  key={`infographic-${index}`}
+                  style={[styles.dailyQuestionBanner, styles.infographicBanner]}
+                  onPress={() => handleOpenInfographic(infographicData)}
+                >
+                  <View style={[styles.dailyQuestionIconContainer, styles.podcastIconContainer]}>
+                    <Animated.View style={{ transform: [{ rotate: shakeRotation }] }}>
+                      <Ionicons name="image" size={28} color={Colors.primaryLight} />
+                    </Animated.View>
+                  </View>
+                  <View style={styles.dailyQuestionContent}>
+                    <Text style={styles.dailyQuestionTitle}>Infographie</Text>
+                    <Text style={styles.dailyPodcastSubtitle} numberOfLines={2} ellipsizeMode='tail'>
+                      {infographicData.infographic.title}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -561,6 +589,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.purple,
     shadowColor: Colors.purple,
   },
+  infographicBanner: {
+    backgroundColor: Colors.primaryLight,
+    shadowColor: Colors.primary,
+  },
   dailyQuestionIconContainer: {
     width: 56,
     height: 56,
@@ -599,7 +631,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.white,
     fontFamily: 'Poppins-Medium',
-    marginBottom: 1,
   },
   dailyQuestionSubtitle: {
     fontSize: 13,

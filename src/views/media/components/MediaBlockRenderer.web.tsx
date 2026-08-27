@@ -110,7 +110,7 @@ export const MediaBlockRenderer = ({ blocks, navigation, contentWidth = DEFAULT_
     if (block.type === 'list' && Array.isArray(block.data?.items)) {
       return (
         <View key={key} style={styles.listBlock}>
-          <ListBlock items={block.data.items} style={block.data.style} />
+          <ListBlock items={block.data.items} style={block.data.style} markerStyle={{ color: Colors.subtext }} itemStyle={styles.paragraph}/>
         </View>
       );
     }

@@ -146,6 +146,13 @@ export default function App({ navigation }) {
       return;
     }
 
+    // Infographic
+    const ipMatch = path.match(/open\/infographic\/([^/]+)/);
+    if (ipMatch) {
+      window.location.href = `orthomaster://open/infographic/${ipMatch[1]}`;
+      return;
+    }
+
     // Espace pro
     if (path.includes('open/company')) {
       window.location.href = `orthomaster://open/company`;
@@ -205,6 +212,7 @@ export default function App({ navigation }) {
             'home': 'home',
             'podcast': 'open/podcast/:podcastId',
             'daily-question': 'open/daily-question/:questionId',
+            'infographic': 'open/infographic/:infographicId',
             'invoice-view': 'open/invoice/:invoiceId',
           }
         },

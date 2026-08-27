@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   Image,
+  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
@@ -11,24 +12,40 @@ import {
   Animated,
   PanResponder
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { Svg, Rect } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { orthomasterShare } from '../../futils';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
+import SourceVideoCard from './components/SourceVideoCard';
+
 import { addTopic, sendError } from '../../services/v2/AuthService';
 import { countTimesPodcast, getPodcastById } from '../../services/v2/ContentService';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const WAVEFORM_BARS = 50;
+const WAVEFORM_HEIGHT = 52;
+
+/** Ảnh tràn từ mép trên. Giới hạn theo chiều cao để máy thấp vẫn đủ chỗ */
+const IMAGE_HEIGHT = Math.min(width * 0.9, height * 0.35);
+
+/** Chừa chỗ cho thanh action cố định ở đáy */
+const BOTTOM_BAR_SPACE = 100;
+
+/** Bề ngang thật của waveform: trừ padding của screen và của group */
+const WAVE_INITIAL_WIDTH = width - Spacings.lg * 2 - Spacings.md * 2;
 
 export const PodcastPlayerView = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const podcastId = route.params?.podcastId ?? null;
+
   const {
     data,
     isLoading: isLoadingPodcast,
@@ -50,6 +67,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   const title = podcast?.title ?? '';
   const subtitle = podcast?.author ?? '';
   const topic = podcast?.topic ?? null;
+  const video = podcast?.content ?? null;
 
   const queryClient = useQueryClient();
 
@@ -60,9 +78,10 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [waveformData, setWaveformData] = useState<number[]>([]);
-  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hasFinished, setHasFinished] = useState(false);
   const [subscribed, setSubscribed] = useState<boolean>(hasTopic);
+  const [liked, setLiked] = useState<boolean>(!!data?.has_like);
 
   // Toast animation values
   const toastTranslateY = useRef(new Animated.Value(-100)).current;
@@ -71,11 +90,11 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   // Control waveform
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekRatio, setSeekRatio] = useState(0);
-  const [waveWidth, setWaveWidth] = useState(width - Spacings.lg * 2);
+  const [waveWidth, setWaveWidth] = useState(WAVE_INITIAL_WIDTH);
 
   const waveRef = useRef<View>(null);
   const waveLeftRef = useRef(0);
-  const waveWidthRef = useRef(width - Spacings.lg * 2);
+  const waveWidthRef = useRef(WAVE_INITIAL_WIDTH);
   const durationRef = useRef(0);
   const isSeekingRef = useRef(false);
 
@@ -142,19 +161,23 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     }, [navigation])
   );
 
-  // Đồng bộ lại state subscribe khi data về từ API (case deeplink)
+  // Đồng bộ lại state khi data về từ API (case deeplink)
   useEffect(() => {
     setSubscribed(hasTopic);
   }, [hasTopic]);
 
+  useEffect(() => {
+    setLiked(!!data?.has_like);
+  }, [data?.has_like]);
+
   /** Waveform giả lập */
   useEffect(() => {
-    const data = Array.from({ length: WAVEFORM_BARS }, (_, i) => {
-      const baseHeight = 15 + Math.sin(i * 0.3) * 10;
-      const randomness = Math.random() * 15;
-      return Math.max(8, Math.min(45, baseHeight + randomness));
+    const bars = Array.from({ length: WAVEFORM_BARS }, (_, i) => {
+      const baseHeight = 14 + Math.sin(i * 0.3) * 9;
+      const randomness = Math.random() * 13;
+      return Math.max(8, Math.min(WAVEFORM_HEIGHT - 8, baseHeight + randomness));
     });
-    setWaveformData(data);
+    setWaveformData(bars);
   }, []);
 
   /** Đếm lượt nghe - chạy 1 lần khi đã biết id (kể cả vào từ deeplink) */
@@ -167,7 +190,10 @@ export const PodcastPlayerView = ({ navigation, route }) => {
 
   /** Toast animation */
   useEffect(() => {
-    if (!showToast) return;
+    if (!toastMessage) return;
+
+    toastTranslateY.setValue(-100);
+    toastOpacity.setValue(0);
 
     Animated.parallel([
       Animated.spring(toastTranslateY, {
@@ -195,11 +221,11 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           duration: 300,
           useNativeDriver: true,
         }),
-      ]).start(() => setShowToast(false));
+      ]).start(() => setToastMessage(null));
     }, 3000);
 
     return () => clearTimeout(timeout);
-  }, [showToast]);
+  }, [toastMessage]);
 
   const onPlaybackStatusUpdate = (status: any) => {
     if (!status.isLoaded) return;
@@ -326,16 +352,62 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     );
   };
 
-  const handleSubscribeTopic = async () => {
-    toastTranslateY.setValue(-100);
-    toastOpacity.setValue(0);
-    setShowToast(true);
+  const handleOpenSourceVideo = () => {
+    if (!video?.id_content) return;
+    navigation.navigate('media', {
+      screen: 'flash-media-preview',
+      params: { media: video },
+    });
+  };
 
-    if (topic && !subscribed) {
-      setSubscribed(true);
+  /* ---------------- Actions ---------------- */
+
+  const handleShare = () => {
+    if (!podcast) return;
+
+    const contentId = podcast.id;
+
+    orthomasterShare(
+      {
+        title,
+        message:
+          "Voici un contenu intéressant à écouter sur OrthoMaster :\n\n" +
+          title +
+          (subtitle ? ` par ${subtitle}` : '') +
+          "\n\n" +
+          "https://go.orthomaster.fr/open/podcast/" +
+          contentId,
+      },
+      "podcast",
+      contentId
+    );
+  };
+
+  const handleSubscribeTopic = async () => {
+    if (!topic || subscribed) return;
+
+    setSubscribed(true);
+    setToastMessage(`Vous suivez le sujet ${topic.name}`);
+
+    try {
       await addTopic(topic.id);
       await queryClient.invalidateQueries({ queryKey: ['current-user'] });
       await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
+    } catch (error) {
+      setSubscribed(false);
+      sendError('podcast-player-view', error);
+    }
+  };
+
+  const handleLike = async () => {
+    const next = !liked;
+    setLiked(next);
+
+    try {
+      // TODO: brancher l'API ici, ex: await likePodcast(podcast.id, next)
+    } catch (error) {
+      setLiked(!next);
+      sendError('podcast-player-view', error);
     }
   };
 
@@ -346,8 +418,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-
-  const progress = duration > 0 ? position / duration : 0;
 
   /** State: đang tải podcast từ deeplink */
   if (isLoadingPodcast) {
@@ -366,8 +436,8 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <StatusBar barStyle="light-content" backgroundColor={Colors.blackBackground} />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleClose} style={[styles.iconButton, { marginLeft: 32, marginTop: 8 }]}>
+        <View style={styles.errorHeader}>
+          <TouchableOpacity onPress={handleClose} style={styles.iconButton}>
             <Ionicons name="close" size={22} color={Colors.white} />
           </TouchableOpacity>
         </View>
@@ -384,74 +454,81 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     );
   }
 
+  const renderAction = (
+    key: string,
+    icon: any,
+    label: string,
+    onPress: () => void,
+    active = false
+  ) => (
+    <TouchableOpacity
+      key={key}
+      onPress={onPress}
+      activeOpacity={0.7}
+      style={styles.actionButton}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <View style={[styles.actionIconWrap, active && styles.actionIconWrapActive]}>
+        <Ionicons name={icon} size={22} color={active ? Colors.primary : Colors.white} />
+      </View>
+      <Text style={[styles.actionLabel, active && styles.actionLabelActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.blackBackground} />
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <View style={styles.container}>
-        {/* Toast Notification */}
-        {showToast && (
-          <Animated.View
-            style={[
-              styles.toastContainer,
-              {
-                transform: [{ translateY: toastTranslateY }],
-                opacity: toastOpacity,
-              },
-            ]}
-          >
-            <Ionicons name="notifications" size={20} color={Colors.primary} />
-            <Text style={styles.toastText}>Vous suivez le sujet {topic?.name}</Text>
-          </Animated.View>
-        )}
-
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleClose} style={styles.iconButton}>
-            <Ionicons name="close" size={22} color={Colors.white} />
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleSubscribeTopic} style={styles.iconButton}>
-            {subscribed
-              ? <Ionicons name="heart" size={20} color={Colors.primary} />
-              : <Ionicons name="heart-outline" size={20} color={Colors.white} />
-            }
-          </TouchableOpacity>
-        </View>
-
-        {/* Thumbnail */}
-        <View style={styles.thumbnailContainer}>
-          {thumbnailUrl ? (
-            <Image
-              source={{ uri: thumbnailUrl }}
-              style={styles.thumbnail}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.iconPlaceholder}>
-              <Ionicons name="mic" size={80} color={Colors.subtext2} />
-            </View>
-          )}
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title} numberOfLines={2}>{title}</Text>
-
-        {/* Subtitle */}
-        {!!subtitle && (
-          <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
-        )}
-
-        {/* Topic Badge */}
-        {topic && (
-          <View style={styles.topicContainer}>
-            <View style={styles.topicBadge}>
-              <Text style={styles.topicText}>{topic.name}</Text>
-            </View>
+      {/* 1. Thumbnail tràn từ mép trên */}
+      <View style={styles.thumbnailWrapper}>
+        {thumbnailUrl ? (
+          <Image
+            source={{ uri: thumbnailUrl }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.thumbnailPlaceholder}>
+            <Ionicons name="mic" size={IMAGE_HEIGHT * 0.35} color={Colors.subtext2} />
           </View>
         )}
 
-        {/* Waveform */}
+        {/* Hoà ảnh vào nền tối bên dưới */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.7)', Colors.blackBackground]}
+          style={styles.thumbnailFade}
+          pointerEvents="none"
+        />
+      </View>
+
+      {/* Close: absolute, đè lên ảnh */}
+      <TouchableOpacity
+        onPress={handleClose}
+        style={[styles.closeFloating, { top: insets.top + Spacings.sm }]}
+      >
+        <Ionicons name="close" size={30} color={Colors.white} />
+      </TouchableOpacity>
+
+      {/* Toast */}
+      {!!toastMessage && (
+        <Animated.View
+          style={[
+            styles.toastContainer,
+            {
+              top: insets.top + 60,
+              transform: [{ translateY: toastTranslateY }],
+              opacity: toastOpacity,
+            },
+          ]}
+        >
+          <Ionicons name="notifications" size={20} color={Colors.primary} />
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </Animated.View>
+      )}
+
+      {/* 2. Player: waveform + time + controls trong cùng một khối */}
+      <View style={styles.playerGroup}>
         <View
           ref={waveRef}
           onLayout={handleWaveLayout}
@@ -461,7 +538,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           {isLoadingAudio ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <Svg height="60" width="100%">
+            <Svg height={WAVEFORM_HEIGHT} width="100%">
               {waveformData.map((barHeight, index) => {
                 const barProgress = index / WAVEFORM_BARS;
                 const isActive = barProgress <= displayRatio;
@@ -471,7 +548,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
                   <Rect
                     key={index}
                     x={index * (barWidth + 2)}
-                    y={(60 - barHeight) / 2}
+                    y={(WAVEFORM_HEIGHT - barHeight) / 2}
                     width={barWidth}
                     height={barHeight}
                     fill={isActive ? Colors.primary : '#333'}
@@ -483,33 +560,31 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           )}
         </View>
 
-        {/* Time */}
         <View style={styles.timeContainer}>
           <Text style={styles.time}>{formatTime(displayPosition)}</Text>
           <Text style={styles.time}>{formatTime(duration)}</Text>
         </View>
 
-        {/* Controls */}
         <View style={styles.controls}>
           <TouchableOpacity
             onPress={skipBackward}
             disabled={!sound || isLoadingAudio}
             style={styles.controlButton}
           >
-            <Ionicons name="play-back" size={28} color={Colors.white} />
+            <Ionicons name="play-back" size={26} color={Colors.white} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.playButton, !isPlaying && { paddingLeft: 5 }]}
+            style={[styles.playButton, !isPlaying && { paddingLeft: 4 }]}
             onPress={togglePlayPause}
             disabled={!sound || isLoadingAudio}
           >
             {isLoadingAudio ? (
-              <ActivityIndicator size="large" color={Colors.primary} />
+              <ActivityIndicator size="small" color={Colors.primary} />
             ) : (
               <Ionicons
                 name={hasFinished ? 'reload' : isPlaying ? 'pause' : 'play'}
-                size={40}
+                size={34}
                 color={Colors.primary}
               />
             )}
@@ -520,23 +595,76 @@ export const PodcastPlayerView = ({ navigation, route }) => {
             disabled={!sound || isLoadingAudio}
             style={styles.controlButton}
           >
-            <Ionicons name="play-forward" size={28} color={Colors.white} />
+            <Ionicons name="play-forward" size={26} color={Colors.white} />
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+
+      {/* 3. Thông tin: cuộn được */}
+      <ScrollView
+        style={styles.infoScroll}
+        contentContainerStyle={styles.infoContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title} numberOfLines={3}>{title}</Text>
+
+        {!!subtitle && (
+          <Text style={styles.subtitle} numberOfLines={2}>{subtitle}</Text>
+        )}
+
+        {topic && (
+          <View style={styles.topicContainer}>
+            <View style={styles.topicBadge}>
+              <Text style={styles.topicText}>{topic.name}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Video nguồn - tự ẩn nếu podcast.content null */}
+        <SourceVideoCard video={video} onPress={handleOpenSourceVideo} />
+      </ScrollView>
+
+      {/* 4. Actions: cố định ở đáy, nền trong suốt */}
+      <View style={[styles.bottomLayer, { paddingBottom: insets.bottom + Spacings.sm }]}>
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.9)']}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+
+        <View style={styles.actionsRow}>
+          {renderAction('share', 'share-social-outline', 'Partager', handleShare)}
+
+          {!!topic &&
+            renderAction(
+              'follow',
+              subscribed ? 'notifications' : 'notifications-outline',
+              'Suivre',
+              handleSubscribeTopic,
+              subscribed
+            )}
+
+          {renderAction(
+            'like',
+            liked ? 'heart' : 'heart-outline',
+            "J'aime",
+            handleLike,
+            liked
+          )}
+        </View>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: Colors.blackBackground,
   },
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: Colors.blackBackground,
-    paddingHorizontal: Spacings.lg,
   },
   centered: {
     flex: 1,
@@ -544,6 +672,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.md,
     marginBottom: 150,
+  },
+  errorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: 12,
   },
   emptyText: {
     color: Colors.subtext2,
@@ -565,9 +699,59 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Poppins-Medium',
   },
+
+  /* ---- 1. Thumbnail ---- */
+  thumbnailWrapper: {
+    width: '100%',
+    height: IMAGE_HEIGHT,
+  },
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  thumbnailPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  thumbnailFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: IMAGE_HEIGHT * 0.5,
+  },
+
+  /* ---- Close ---- */
+  closeFloating: {
+    position: 'absolute',
+    left: Spacings.lg,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    zIndex: 20,
+  },
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+
+  /* ---- Toast ---- */
   toastContainer: {
     position: 'absolute',
-    top: 60,
     left: Spacings.lg,
     right: Spacings.lg,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -587,88 +771,30 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    marginBottom: Spacings.xxl,
-  },
-  closeButton: {
-    padding: 8,
-  },
-  moreButton: {
-    padding: 8,
-  },
-  thumbnailContainer: {
-    alignItems: 'center',
-    marginBottom: Spacings.xl,
-  },
-  thumbnail: {
-    width: width * 0.7,
-    height: width * 0.7,
-    borderRadius: 16,
-  },
-  iconPlaceholder: {
-    width: width * 0.7,
-    height: width * 0.7,
-    borderRadius: 16,
-    backgroundColor: '#1a1a1a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.white,
-    textAlign: 'center',
-    marginBottom: Spacings.xxs,
-    paddingHorizontal: Spacings.lg,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.subtext2,
-    textAlign: 'center',
-    marginBottom: Spacings.md,
-  },
-  topicContainer: {
-    alignItems: 'center',
-    marginBottom: Spacings.lg,
-  },
-  topicBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: Spacings.md,
-    paddingVertical: Spacings.xs,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+
+  /* ---- 2. Player group ---- */
+  playerGroup: {
+    marginHorizontal: Spacings.lg,
+    marginTop: Spacings.md,
+    padding: Spacings.md,
     borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  topicText: {
-    fontSize: 15,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    color: Colors.primary,
-    letterSpacing: 0.4,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   waveformContainer: {
-    height: 60,
+    height: WAVEFORM_HEIGHT,
     justifyContent: 'center',
-    marginBottom: Spacings.md,
-    paddingVertical: Spacings.sm,
   },
   timeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: Spacings.xxs,
-    marginBottom: Spacings.lg,
+    marginBottom: Spacings.sm,
   },
   time: {
     color: Colors.gray,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Poppins-Regular',
   },
   controls: {
@@ -676,32 +802,105 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: Spacings.xxl,
-    flex: 1,
-    paddingBottom: Spacings.xxxl,
   },
   controlButton: {
     justifyContent: 'center',
     alignItems: 'center',
+    padding: Spacings.xxs,
   },
   playButton: {
-    width: 75,
-    height: 75,
-    borderRadius: 37.5,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: Colors.primary,
   },
-  iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+
+  /* ---- 3. Infos ---- */
+  infoScroll: {
+    flex: 1,
+  },
+  infoContent: {
+    paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.lg,
+    paddingBottom: BOTTOM_BAR_SPACE,
+  },
+  title: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+    textAlign: 'center',
+    marginBottom: Spacings.xxs,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.subtext2,
+    textAlign: 'center',
+  },
+  topicContainer: {
+    alignItems: 'center',
+    marginTop: Spacings.sm,
+    marginBottom: Spacings.lg,
+  },
+  topicBadge: {
+    paddingHorizontal: Spacings.md,
+    paddingVertical: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  topicText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.primary,
+    letterSpacing: 0.6,
+  },
+
+  /* ---- 4. Actions cố định ---- */
+  bottomLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: Spacings.xl,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: Spacings.lg,
+  },
+  actionButton: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+  },
+  actionIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  actionIconWrapActive: {
+    borderColor: Colors.primary,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  actionLabel: {
+    fontSize: 11,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+    textAlign: 'center',
+  },
+  actionLabelActive: {
+    color: Colors.primary,
   },
 });
 

@@ -13,10 +13,12 @@ import {
 import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+
+import SourceVideoCard from '../podcast/components/SourceVideoCard';
 
 import { answerDailyQuestion, getQuestionById } from '../../services/v2/ContentService';
 import { addTopic } from '../../services/v2/AuthService';
@@ -36,30 +38,47 @@ interface QuestionBodyProps {
   question: any;
   userAnswerId: string | null;
   hasTopicQuestion: boolean;
-  onRequestClose: () => void;
   onAnswered: () => void;
+  onOpenVideo: () => void;
 }
 
 const QuestionBody: React.FC<QuestionBodyProps> = ({
   question,
   userAnswerId,
   hasTopicQuestion,
-  onRequestClose,
   onAnswered,
+  onOpenVideo,
 }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(userAnswerId);
   const [showResults, setShowResults] = useState(!!userAnswerId);
   const [isLoading, setIsLoading] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [subscribed, setSubscribed] = useState<boolean>(hasTopicQuestion);
 
   const queryClient = useQueryClient();
+
+  const video = question.content ?? null;
 
   const progressAnimations = useRef(
     question.answers.map(() => new Animated.Value(0))
   ).current;
 
-  // Panel phản hồi trượt lên từ đáy
+  // Khối kết quả (explication + vidéo) trượt lên trong vùng cuộn
   const feedbackAnim = useRef(new Animated.Value(0)).current;
+
+  /**
+   * Sau khi kết quả xuất hiện, tự cuộn xuống để user thấy explication + vidéo.
+   * Cờ được bật đồng bộ (không nằm trong effect) để không lỡ mất
+   * lần onContentSizeChange đầu tiên.
+   */
+  const scrollRef = useRef<ScrollView>(null);
+  const shouldScrollRef = useRef(!!userAnswerId);
+
+  const handleContentSizeChange = () => {
+    if (!shouldScrollRef.current) return;
+    shouldScrollRef.current = false;
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
+  };
 
   const selectedAnswerObj = question.answers.find(
     (answer: any) => answer.id === selectedAnswer
@@ -122,43 +141,40 @@ const QuestionBody: React.FC<QuestionBodyProps> = ({
     setSelectedAnswer(answerId);
   };
 
+  /** Theo dõi sujet. Không đóng modal: user còn explication + vidéo để xem */
   const handleSubscribeTopic = async () => {
+    if (subscribed || isLoading) return;
+
     setIsLoading(true);
+    setSubscribed(true);
 
     try {
       await addTopic(question.topic.id);
       await queryClient.invalidateQueries({ queryKey: ['current-user'] });
       await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
+    } catch (error) {
+      setSubscribed(false);
     } finally {
       setIsLoading(false);
-      onRequestClose();
     }
   };
 
   const handleValidate = async () => {
-    if (!selectedAnswer) return;
+    if (!selectedAnswer || showResults) return;
 
-    if (!showResults) {
-      setShowResults(true);
-      setIsLoading(true);
+    shouldScrollRef.current = true;
+    setShowResults(true);
+    setIsLoading(true);
 
-      if (selectedAnswerObj?.correct_flg) {
-        setShowCelebration(true);
-      }
-
-      try {
-        await answerDailyQuestion(question.id, selectedAnswer);
-        onAnswered();
-      } finally {
-        setIsLoading(false);
-      }
-      return;
+    if (selectedAnswerObj?.correct_flg) {
+      setShowCelebration(true);
     }
 
-    if (hasTopicQuestion) {
-      onRequestClose();
-    } else {
-      handleSubscribeTopic();
+    try {
+      await answerDailyQuestion(question.id, selectedAnswer);
+      onAnswered();
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -214,21 +230,9 @@ const QuestionBody: React.FC<QuestionBodyProps> = ({
     };
   };
 
-  const getButtonText = () => {
-    if (!showResults) return 'Valider';
-    if (hasTopicQuestion) return 'Fermer';
-    return `Suivre le sujet ${question.topic.name}`;
-  };
+  const isValidateDisabled = !selectedAnswer;
 
-  const isButtonDisabled = !selectedAnswer && !showResults;
-
-  const buttonColor = !showResults
-    ? Colors.blue
-    : isCorrect
-      ? Colors.success
-      : Colors.danger;
-
-  /** Nền dùng chung cho cả panel phản hồi lẫn nút CTA */
+  /** Nền footer đổi theo kết quả */
   const footerBg = !showResults
     ? Colors.white
     : isCorrect
@@ -247,20 +251,22 @@ const QuestionBody: React.FC<QuestionBodyProps> = ({
     ],
   };
 
+  const verdictStyle = {
+    opacity: feedbackAnim,
+  };
+
   return (
     <>
       <View style={styles.contentWrapper}>
         <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
           bounces={false}
           contentContainerStyle={styles.scrollContent}
+          onContentSizeChange={handleContentSizeChange}
         >
           {/* Câu hỏi */}
           <View style={styles.questionContainer}>
-            <View style={styles.topicLabel}>
-              <View style={styles.topicDot} />
-              <Text style={styles.topicText}>{question.topic.name}</Text>
-            </View>
             <Text style={styles.questionText}>{question.question}</Text>
           </View>
 
@@ -333,11 +339,42 @@ const QuestionBody: React.FC<QuestionBodyProps> = ({
             })}
           </View>
 
+          {/* Khối kết quả: explication + vidéo source. Cuộn tự do, không giới hạn chiều cao */}
+          {showResults && (
+            <Animated.View style={[styles.resultBlock, feedbackStyle]}>
+              {!!question.explanation && (
+                <>
+                  <View style={styles.resultLabelRow}>
+                    <View
+                      style={[
+                        styles.resultLabelBar,
+                        { backgroundColor: isCorrect ? Colors.success : Colors.danger },
+                      ]}
+                    />
+                    <Text style={styles.resultLabel}>Explication</Text>
+                  </View>
+                  <Text style={styles.explanationText}>{question.explanation}</Text>
+                </>
+              )}
+
+              {!!video && (
+                <View style={!!question.explanation && styles.videoSpacing}>
+                  <SourceVideoCard
+                    variant="large"
+                    video={video}
+                    label={isCorrect ? 'Pour aller plus loin' : 'Comprendre la réponse'}
+                    onPress={onOpenVideo}
+                  />
+                </View>
+              )}
+            </Animated.View>
+          )}
+
           <View style={{ height: Spacings.md }} />
         </ScrollView>
       </View>
 
-      {/* Footer: phản hồi + CTA dùng chung một nền -> không bị cắt khối */}
+      {/* Footer: trước khi trả lời = CTA Valider. Sau đó = verdict + bouton Suivre */}
       <View style={[styles.footer, { backgroundColor: footerBg }]}>
         {/* Dải chuyển màu nối vùng cuộn xuống footer */}
         <LinearGradient
@@ -346,9 +383,25 @@ const QuestionBody: React.FC<QuestionBodyProps> = ({
           pointerEvents="none"
         />
 
-        {showResults && (
-          <Animated.View style={[styles.feedbackBlock, feedbackStyle]}>
-            <View style={styles.feedbackHeader}>
+        {!showResults ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.validateButton,
+              (isValidateDisabled || isLoading) && styles.validateButtonDisabled,
+              pressed && !isValidateDisabled && !isLoading && styles.buttonPressed,
+            ]}
+            onPress={handleValidate}
+            disabled={isValidateDisabled || isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Text style={styles.validateButtonText}>Valider</Text>
+            )}
+          </Pressable>
+        ) : (
+          <Animated.View style={[styles.resultFooterRow, verdictStyle]}>
+            <View style={[styles.verdictRow, subscribed && styles.verdictRowCentered]}>
               <View
                 style={[
                   styles.feedbackIconWrap,
@@ -357,7 +410,7 @@ const QuestionBody: React.FC<QuestionBodyProps> = ({
               >
                 <Ionicons
                   name={isCorrect ? 'checkmark-sharp' : 'close-sharp'}
-                  size={18}
+                  size={16}
                   color={Colors.white}
                 />
               </View>
@@ -366,48 +419,36 @@ const QuestionBody: React.FC<QuestionBodyProps> = ({
                   styles.feedbackTitle,
                   { color: isCorrect ? Colors.success : Colors.danger },
                 ]}
+                numberOfLines={1}
               >
                 {isCorrect ? 'Bonne réponse !' : 'Pas tout à fait'}
               </Text>
             </View>
 
-            {!!question.explanation && (
-              <ScrollView
-                style={styles.feedbackScroll}
-                showsVerticalScrollIndicator={false}
-                nestedScrollEnabled
+            {!subscribed && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.followButton,
+                  isLoading && styles.followButtonLoading,
+                  pressed && !isLoading && styles.buttonPressed,
+                ]}
+                onPress={handleSubscribeTopic}
+                disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel={`Suivre le sujet ${question.topic?.name ?? ''}`}
               >
-                <Text style={styles.feedbackText}>{question.explanation}</Text>
-              </ScrollView>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color={Colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="notifications" size={16} color={Colors.white} />
+                    <Text style={styles.followButtonText}>Suivre</Text>
+                  </>
+                )}
+              </Pressable>
             )}
           </Animated.View>
         )}
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.validateButton,
-            { backgroundColor: buttonColor },
-            (isButtonDisabled || isLoading) && styles.validateButtonDisabled,
-            pressed && !isButtonDisabled && !isLoading && styles.validateButtonPressed,
-          ]}
-          onPress={handleValidate}
-          disabled={isButtonDisabled || isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color={Colors.white} />
-          ) : (
-            showResults && (
-              <Ionicons
-                name={hasTopicQuestion ? 'close' : 'notifications'}
-                size={20}
-                color={Colors.white}
-              />
-            )
-          )}
-          <Text style={styles.validateButtonText} numberOfLines={2}>
-            {getButtonText()}
-          </Text>
-        </Pressable>
       </View>
 
       <CelebrationScreen
@@ -441,6 +482,8 @@ export const DailyQuestionView = ({ navigation, route }) => {
   const question = data?.question ?? null;
   const userAnswerId = data?.user_answer_id ?? null;
   const hasTopicQuestion = !!data?.has_topic;
+  const video = question?.content ?? null;
+  const topicName = question?.topic?.name ?? null;
 
   const queryClient = useQueryClient();
 
@@ -494,6 +537,17 @@ export const DailyQuestionView = ({ navigation, route }) => {
     }).start(() => goBackSafe());
   };
 
+  /**
+   * Mở video gốc. Không đóng modal: user back về là thấy lại kết quả.
+   */
+  const handleOpenVideo = () => {
+    if (!video?.id_content) return;
+    navigation.navigate('media', {
+      screen: 'flash-media-preview',
+      params: { media: video },
+    });
+  };
+
   // Ẩn tab bar khi screen focus, trả lại khi rời đi
   useFocusEffect(
     useCallback(() => {
@@ -544,12 +598,26 @@ export const DailyQuestionView = ({ navigation, route }) => {
         >
           <View style={styles.headerContent}>
             <View style={styles.headerIconWrap}>
-              <Ionicons name="bulb" size={20} color={Colors.white} />
+              <MaterialIcons name="quiz" size={25} color={Colors.white} />
             </View>
-            <Text style={styles.headerTitle}>Question du jour</Text>
+
+            <View style={styles.headerTexts}>
+              <Text style={styles.headerTitle} numberOfLines={2}>
+                {question?.title ?? 'Question du jour'}
+              </Text>
+
+              {!!topicName && (
+                <View style={styles.headerTopicPill}>
+                  <Text style={styles.headerTopicText} numberOfLines={1}>
+                    {topicName}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
+
           <Pressable onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={22} color={Colors.white} />
+            <Ionicons name="close" size={25} color={Colors.white} />
           </Pressable>
         </LinearGradient>
 
@@ -572,8 +640,8 @@ export const DailyQuestionView = ({ navigation, route }) => {
             question={question}
             userAnswerId={userAnswerId}
             hasTopicQuestion={hasTopicQuestion}
-            onRequestClose={handleClose}
             onAnswered={() => { answeredRef.current = true; }}
+            onOpenVideo={handleOpenVideo}
           />
         )}
       </Animated.View>
@@ -641,30 +709,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacings.lg,
-    paddingVertical: Spacings.lg,
+    paddingTop: Spacings.md,
+    paddingBottom: Spacings.md,
+    gap: Spacings.sm,
   },
   headerContent: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.sm,
   },
   headerIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerTexts: {
+    flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
     fontSize: 17,
     color: Colors.white,
     fontFamily: 'Poppins-Bold',
   },
+  headerTopicPill: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    marginTop: 5,
+    paddingHorizontal: Spacings.sm,
+    paddingVertical: 2,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
+  },
+  headerTopicText: {
+    fontSize: 11,
+    color: Colors.white,
+    fontFamily: 'Poppins-Medium',
+    letterSpacing: 0.3,
+    opacity: 0.95,
+  },
   closeButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 40,
+    height: 40,
+    borderRadius: 25,
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -682,30 +775,8 @@ const styles = StyleSheet.create({
     paddingTop: Spacings.lg,
     paddingBottom: Spacings.lg,
   },
-  topicLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.xs,
-    backgroundColor: Colors.successBackground,
-    paddingHorizontal: Spacings.md,
-    paddingVertical: Spacings.xxs,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-    marginBottom: Spacings.md,
-  },
-  topicDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.success,
-  },
-  topicText: {
-    fontSize: 12,
-    color: Colors.success,
-    fontFamily: 'Poppins-Medium',
-  },
   questionText: {
-    fontSize: 19,
+    fontSize: 18,
     color: Colors.text,
     lineHeight: 27,
     fontFamily: 'Poppins-Bold',
@@ -719,7 +790,7 @@ const styles = StyleSheet.create({
   answerCard: {
     borderRadius: 18,
     paddingHorizontal: Spacings.md,
-    paddingTop: Spacings.md,
+    paddingTop: Spacings.sm,
     paddingBottom: Spacings.md,
     borderWidth: 2,
     // hiệu ứng nổi kiểu Duolingo
@@ -732,7 +803,7 @@ const styles = StyleSheet.create({
   answerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.md,
+    gap: Spacings.sm,
   },
   letterChip: {
     width: 34,
@@ -775,7 +846,44 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Bold',
   },
 
-  /* ---- Footer (phản hồi + CTA) ---- */
+  /* ---- Khối kết quả trong vùng cuộn ---- */
+  resultBlock: {
+    marginHorizontal: Spacings.lg,
+    marginTop: Spacings.lg,
+    padding: Spacings.md,
+    borderRadius: 18,
+    backgroundColor: Colors.grayLight,
+  },
+  resultLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    marginBottom: Spacings.xs,
+  },
+  resultLabelBar: {
+    width: 3,
+    height: 13,
+    borderRadius: 2,
+  },
+  resultLabel: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.gray,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  explanationText: {
+    fontSize: 14,
+    color: Colors.text,
+    lineHeight: 21,
+    fontFamily: 'Poppins-Regular',
+    textAlign: 'justify',
+  },
+  videoSpacing: {
+    marginTop: Spacings.md,
+  },
+
+  /* ---- Footer ---- */
   footer: {
     paddingHorizontal: Spacings.lg,
     paddingTop: Spacings.md,
@@ -788,51 +896,46 @@ const styles = StyleSheet.create({
     right: 0,
     height: 28,
   },
-  feedbackBlock: {
-    marginBottom: Spacings.md,
-    maxHeight: 170,
-  },
-  feedbackHeader: {
+  resultFooterRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.sm,
-    marginBottom: Spacings.xs,
+    minHeight: 40,
+  },
+  verdictRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+  },
+  verdictRowCentered: {
+    justifyContent: 'center',
   },
   feedbackIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
   },
   feedbackTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Poppins-Bold',
   },
-  feedbackScroll: {
-    maxHeight: 110,
-  },
-  feedbackText: {
-    fontSize: 14,
-    color: Colors.text,
-    lineHeight: 21,
-    fontFamily: 'Poppins-Regular',
-  },
 
-  /* ---- CTA ---- */
+  /* ---- Boutons ---- */
+  buttonPressed: {
+    borderBottomWidth: 2,
+    marginTop: 3,
+  },
   validateButton: {
     paddingVertical: Spacings.md,
     borderRadius: 18,
     alignItems: 'center',
-    flexDirection: 'row',
     justifyContent: 'center',
-    gap: Spacings.xs,
+    backgroundColor: Colors.blue,
     borderBottomWidth: 5,
     borderBottomColor: 'rgba(0, 0, 0, 0.22)',
-  },
-  validateButtonPressed: {
-    borderBottomWidth: 2,
-    marginTop: 3,
   },
   validateButtonDisabled: {
     backgroundColor: Colors.gray,
@@ -843,8 +946,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.white,
     fontFamily: 'Poppins-Bold',
-    textAlign: 'center',
     letterSpacing: 0.3,
+  },
+  followButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacings.xxs,
+    minWidth: 104,
+    paddingHorizontal: Spacings.md,
+    paddingVertical: Spacings.xs,
+    borderRadius: 14,
+    backgroundColor: Colors.blue,
+    borderBottomWidth: 4,
+    borderBottomColor: 'rgba(0, 0, 0, 0.22)',
+  },
+  followButtonLoading: {
+    opacity: 0.7,
+  },
+  followButtonText: {
+    fontSize: 14,
+    color: Colors.white,
+    fontFamily: 'Poppins-Bold',
+    letterSpacing: 0.2,
   },
 });
 

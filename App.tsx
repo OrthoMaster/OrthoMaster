@@ -133,6 +133,9 @@ function AppContent() {
     } else if (seg[1] === 'daily-question' && seg[2]) {
       const id = String(seg[2]);
       runOrQueue(() => pushToHomeStack('daily-question', { questionId: id }));
+    } else if (seg[1] === 'infographic' && seg[2]) {
+      const id = String(seg[2]);
+      runOrQueue(() => pushToHomeStack('infographic', { infographicId: id }));
     } else if (seg[1] === 'event' && seg[2]) {
       const id = String(seg[2]);
       runOrQueue(() => openMediaHome({ eventId: id, id: undefined }));
@@ -416,6 +419,10 @@ function AppContent() {
         const id = d?.id ?? d?.questionId;
         return ['home', { screen: 'daily-question', params: { questionId: id ? String(id) : undefined } }];
       },
+      'infographic': (d) => {
+        const id = d?.id ?? d?.infographicId;
+        return ['home', { screen: 'infographic', params: { infographicId: id ? String(id) : undefined } }];
+      },
     };
 
     const buildTarget = routes[action];
@@ -468,6 +475,7 @@ function AppContent() {
             'home': 'home',
             'podcast': 'open/podcast/:podcastId',
             'daily-question': 'open/daily-question/:questionId',
+            'infographic': 'open/infographic/:infographicId',
             'invoice-view': { path: 'open/invoice/:invoiceId' },
           },
         },

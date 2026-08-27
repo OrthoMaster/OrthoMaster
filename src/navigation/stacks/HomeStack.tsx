@@ -9,6 +9,7 @@ import { QaLayout } from '../../views/home/QaLayout';
 
 import { PodcastPlayerView } from '../../views/podcast/PodcastPlayerView';
 import { DailyQuestionView } from '../../views/question/DailyQuestionView';
+import { InfographicView } from '../../views/infographic/InfographicView';
 
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 import { LessonEndingView } from '../../views/content/LessonEndingView';
@@ -95,6 +96,22 @@ export const HomeStack = () => {
       <HomeStackNav.Screen
         name="podcast"
         component={PodcastPlayerView}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+          cardStyleInterpolator: slideUpOnClose,
+          transitionSpec: {
+            open: TransitionSpecs.TransitionIOSSpec,
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
+          cardStyle: { backgroundColor: Colors.blackBackground },
+          cardOverlayEnabled: false,
+        }}
+      />
+
+      <HomeStackNav.Screen
+        name="infographic"
+        component={InfographicView}
         options={{
           headerShown: false,
           gestureEnabled: false,
