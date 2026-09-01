@@ -547,13 +547,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     height: isTablet ? 100 : 60,
-    // Détache le header du contenu qui défile en dessous
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
     zIndex: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
   },
   backButton: {
     padding: 4,

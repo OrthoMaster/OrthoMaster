@@ -320,7 +320,7 @@ export const FavouriteView = ({ navigation }) => {
               activeOpacity={0.8}
               onPress={() => setPendingRemoval(item)}
               accessibilityRole="button"
-              accessibilityLabel="Retirer des favoris"
+              accessibilityLabel="Retirer ce contenu"
             >
               <Ionicons name="heart" size={22} color={Colors.red} />
             </TouchableOpacity>
@@ -359,7 +359,7 @@ export const FavouriteView = ({ navigation }) => {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mes favoris</Text>
+        <Text style={styles.headerTitle}>Contenus sauvegardés</Text>
       </View>
 
       {isInitializing ? (
