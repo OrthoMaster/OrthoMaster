@@ -24,8 +24,10 @@ import Spacings from '../../../constants/Spacings';
 
 import SourceVideoCard from '../podcast/components/SourceVideoCard';
 
-import { addTopic, sendError } from '../../services/v2/AuthService';
+import { sendError } from '../../services/v2/AuthService';
+import { toggleTopic, toggleFavourite } from '../../services/v2/FavouriteService';
 import { getInfographicById } from '../../services/v2/ContentService';
+import useDebouncedToggle from '../../hooks/useDebouncedToggle';
 
 const { width, height } = Dimensions.get('window');
 
@@ -59,19 +61,8 @@ export const InfographicView = ({ navigation, route }) => {
 
   const queryClient = useQueryClient();
 
-  const [liked, setLiked] = useState<boolean>(!!data?.has_like);
-  const [subscribed, setSubscribed] = useState<boolean>(hasTopic);
   const [isDownloading, setIsDownloading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Đồng bộ lại state khi data về từ API (case deeplink)
-  useEffect(() => {
-    setSubscribed(hasTopic);
-  }, [hasTopic]);
-
-  useEffect(() => {
-    setLiked(!!data?.has_like);
-  }, [data?.has_like]);
 
   /* ------------------------------------------------------------------ */
   /* Kích thước ảnh hiển thị (để giới hạn vùng kéo khi đã zoom)          */
@@ -412,32 +403,41 @@ export const InfographicView = ({ navigation, route }) => {
     );
   };
 
-  const handleSubscribeTopic = async () => {
-    if (!topic || subscribed) return;
+  const [subscribed, toggleSubscribed] = useDebouncedToggle(
+    hasTopic,
+    async () => {
+      if (!topic) return false;
 
-    setSubscribed(true);
-    setToastMessage(`Vous suivez le sujet ${topic.name}`);
+      const ok = await toggleTopic(topic.id);
 
-    try {
-      await addTopic(topic.id);
-      await queryClient.invalidateQueries({ queryKey: ['current-user'] });
-      await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
-    } catch (error) {
-      setSubscribed(false);
-      sendError('infographic-view', error);
-    }
+      if (ok) {
+        await queryClient.invalidateQueries({ queryKey: ['current-user'] });
+        await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
+      }
+
+      return ok;
+    },
+    { tag: 'infographic-view' }
+  );
+
+  const [liked, toggleLiked] = useDebouncedToggle(
+    !!data?.has_like,
+    async () => {
+      if (!infographic?.id) return false;
+
+      return await toggleFavourite(infographic.id, 'infographic');
+    },
+    { tag: 'infographic-view' }
+  );
+
+  const handleSubscribeTopic = () => {
+    if (!topic) return;
+    toggleSubscribed();
   };
 
-  const handleLike = async () => {
-    const next = !liked;
-    setLiked(next);
-
-    try {
-      // TODO: brancher l'API ici, ex: await likeInfographic(infographic.id, next)
-    } catch (error) {
-      setLiked(!next);
-      sendError('infographic-view', error);
-    }
+  const handleLike = () => {
+    if (!infographic?.id) return;
+    toggleLiked();
   };
 
   const handleOpenSourceVideo = () => {
@@ -660,7 +660,7 @@ export const InfographicView = ({ navigation, route }) => {
                   />
                 </View>
                 <Text style={[styles.actionLabel, liked && styles.actionLabelActive]}>
-                  J'aime
+                  Sauvegarder
                 </Text>
               </TouchableOpacity>
             </View>

@@ -114,14 +114,22 @@ export const HomeStack = () => {
         component={InfographicView}
         options={{
           headerShown: false,
-          gestureEnabled: false,
-          cardStyleInterpolator: slideUpOnClose,
+          cardStyleInterpolator: forZoomFromCenter,
           transitionSpec: {
-            open: TransitionSpecs.TransitionIOSSpec,
-            close: TransitionSpecs.TransitionIOSSpec,
+            open: {
+              animation: 'spring',
+              config: {
+                stiffness: 150,
+                damping: 30,
+              },
+            },
+            close: {
+              animation: 'timing',
+              config: {
+                duration: 350,
+              },
+            },
           },
-          cardStyle: { backgroundColor: Colors.blackBackground },
-          cardOverlayEnabled: false,
         }}
       />
 

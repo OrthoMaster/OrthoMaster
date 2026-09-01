@@ -52,7 +52,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ iconName, title, subtitle, disableL
   >
     <View style={styles.menuItemLeft}>
       <View style={styles.iconContainer}>
-        <Ionicons name={iconName} size={20} color={Colors.text} />
+        <Ionicons name={iconName} size={20} color={iconName == 'heart' ? Colors.red : Colors.text} />
         {showWarning && (
           <View style={styles.warningBadge}>
             <Ionicons name="alert-circle" size={16} color={Colors.warning} />
@@ -367,8 +367,14 @@ export const ProfileView = ({ navigation, route }) => {
             <MenuItem
               iconName="folder-open-outline"
               title="Devis & Factures"
-              isLast
+              // isLast
               onPress={() => (navigation.navigate('document-view'))}
+            />
+            <MenuItem
+              iconName="heart"
+              title="Contenus sauvegardés"
+              isLast
+              onPress={() => (navigation.navigate('favourite-view'))}
             />
           </View>
 

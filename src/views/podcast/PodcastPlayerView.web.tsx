@@ -20,15 +20,17 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-import { addTopic, sendError } from '../../services/v2/AuthService';
+import { sendError } from '../../services/v2/AuthService';
+import { toggleTopic, toggleFavourite } from '../../services/v2/FavouriteService';
 import { countTimesPodcast, getPodcastById } from '../../services/v2/ContentService';
 
+import useDebouncedToggle from '../../hooks/useDebouncedToggle';
 import SourceVideoCard from './components/SourceVideoCard';
 
 const WAVEFORM_BARS = 80; // web rộng hơn mobile -> nhiều bar hơn
 const BAR_GAP = 2;
 const NARROW_BREAKPOINT = 900;
-const RIGHT_COLUMN_WIDTH = 360;
+const RIGHT_COLUMN_WIDTH = 460;
 
 export const PodcastPlayerView = ({ navigation, route }) => {
   const { width: winWidth } = useWindowDimensions();
@@ -69,8 +71,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   const [duration, setDuration] = useState(0);
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [hasFinished, setHasFinished] = useState(false);
-  const [subscribed, setSubscribed] = useState<boolean>(hasTopic);
-  const [liked, setLiked] = useState<boolean>(!!data?.has_like);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Toast animation
@@ -145,15 +145,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   ).current;
 
   /* ---------------- Data effects ---------------- */
-
-  useEffect(() => {
-    setSubscribed(hasTopic);
-  }, [hasTopic]);
-
-  useEffect(() => {
-    setLiked(!!data?.has_like);
-  }, [data?.has_like]);
-
   useEffect(() => {
     const bars = Array.from({ length: WAVEFORM_BARS }, (_, i) => {
       const baseHeight = 15 + Math.sin(i * 0.3) * 10;
@@ -344,32 +335,43 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     }
   };
 
-  const handleSubscribeTopic = async () => {
-    if (!topic || subscribed) return;
+  /* ---------------- Suivi du sujet et favori ---------------- */
 
-    setSubscribed(true);
-    setToastMessage(`Vous suivez le sujet ${topic.name}`);
+  const [subscribed, toggleSubscribed] = useDebouncedToggle(
+    hasTopic,
+    async () => {
+      if (!topic) return false;
 
-    try {
-      await addTopic(topic.id);
-      await queryClient.invalidateQueries({ queryKey: ['current-user'] });
-      await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
-    } catch (error) {
-      setSubscribed(false);
-      sendError('podcast-player-view-web', error);
-    }
+      const ok = await toggleTopic(topic.id);
+
+      if (ok) {
+        await queryClient.invalidateQueries({ queryKey: ['current-user'] });
+        await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
+      }
+
+      return ok;
+    },
+    { tag: 'podcast-player-view-web' }
+  );
+
+  const [liked, toggleLiked] = useDebouncedToggle(
+    !!data?.has_like,
+    async () => {
+      if (!podcast?.id) return false;
+
+      return await toggleFavourite(podcast.id, 'podcast');
+    },
+    { tag: 'podcast-player-view-web' }
+  );
+
+  const handleSubscribeTopic = () => {
+    if (!topic) return;
+    toggleSubscribed();
   };
 
-  const handleLike = async () => {
-    const next = !liked;
-    setLiked(next);
-
-    try {
-      // TODO: brancher l'API ici, ex: await likePodcast(podcast.id, next)
-    } catch (error) {
-      setLiked(!next);
-      sendError('podcast-player-view-web', error);
-    }
+  const handleLike = () => {
+    if (!podcast?.id) return;
+    toggleLiked();
   };
 
   const handleOpenSourceVideo = () => {
@@ -602,7 +604,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
                 {renderAction(
                   'like',
                   liked ? 'heart' : 'heart-outline',
-                  "J'aime",
+                  "Sauvegarder",
                   handleLike,
                   liked
                 )}
@@ -711,13 +713,13 @@ const styles = StyleSheet.create({
   },
   infoWrapper: {
     width: '100%',
-    maxWidth: 1100,
+    maxWidth: 1150,
     alignSelf: 'center',
     paddingHorizontal: Spacings.lg,
     paddingBottom: Spacings.md,
   },
   infoBlock: {
-    maxWidth: 640,
+    maxWidth: 540,
     alignItems: 'flex-start',
   },
   title: {
@@ -760,7 +762,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.72)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    paddingVertical: Spacings.md,
+    paddingVertical: Spacings.lg,
     paddingHorizontal: Spacings.lg,
     backdropFilter: 'blur(12px)',
   } as any,

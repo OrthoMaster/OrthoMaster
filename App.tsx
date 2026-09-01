@@ -399,6 +399,14 @@ function AppContent() {
       }
     }
 
+    if (action === 'infographic') {
+      const infographicId = data?.infographicId ?? data?.infographic_id ?? data?.id;
+      if (infographicId) {
+        runOrQueue(() => pushToHomeStack('infographic', { infographicId: String(infographicId) }));
+        return;
+      }
+    }
+
     const routes: Record<string, (d?: any) => NavTarget> = {
       'media': (d) => {
         const id = d?.id ?? d?.id_content ?? d?.media_id;

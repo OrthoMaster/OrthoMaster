@@ -45,6 +45,7 @@ interface SettingItemProps {
   value: boolean;
   onValueChange: (value: boolean) => void;
   isLast?: boolean;
+  disabled?: boolean;
 }
 
 interface TopicCardProps {
@@ -95,15 +96,18 @@ const SettingItem: React.FC<SettingItemProps> = ({
   description,
   value,
   onValueChange,
-  isLast
+  isLast,
+  disabled
 }) => (
   <View style={[styles.settingItem, !isLast && styles.settingItemBorder]}>
     <View style={styles.settingItemLeft}>
       <View style={styles.iconContainer}>
-        <Ionicons name={iconName} size={20} color={Colors.text} />
+        <Ionicons name={iconName} size={20} color={disabled ? Colors.gray : Colors.text} />
       </View>
       <View style={styles.settingItemText}>
-        <Text style={styles.settingItemTitle}>{title}</Text>
+        <Text style={[styles.settingItemTitle, disabled && styles.settingItemTitleDisabled]}>
+          {title}
+        </Text>
         {description &&
           <Text style={styles.settingItemDescription}>{description}</Text>
         }
@@ -112,6 +116,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
     <Switch
       value={value}
       onValueChange={onValueChange}
+      disabled={disabled}
       trackColor={{ false: Colors.line, true: Colors.primaryLight || Colors.primary }}
       thumbColor={value ? Colors.primary : Colors.gray}
       ios_backgroundColor={Colors.line}
@@ -168,33 +173,48 @@ export const SettingsView = ({ navigation }) => {
     setIsLoading(false);
   }, [user]);
 
+  /** Autorisation système : sans elle, le réglage ne sert à rien */
+  const [permissionDenied, setPermissionDenied] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    Notifications.getPermissionsAsync()
+      .then(({ status }) => {
+        if (isActive) setPermissionDenied(status === 'denied');
+      })
+      .catch(() => { });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   // Handle change any settings
   const handleSettingChange = async (key: keyof typeof settings, value: boolean) => {
     if (key == 'notifications' && value == true && !user.settings?.notifications) {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      if (existingStatus !== 'undetermined') {
+      if (existingStatus === 'undetermined') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
-      } else if (finalStatus !== 'granted') {
-        Alert.alert(
-          'Notifications désactivées',
-          'Vous avez refusé les notifications. Veuillez les activer dans les paramètres de votre appareil.',
-          [
-            { text: 'Annuler', style: 'cancel' },
-            {
-              text: 'Ouvrir les paramètres',
-              onPress: () => Linking.openSettings()
-            }
-          ]
-        );
       }
 
-      if (finalStatus == 'granted') {
-        setSettings(prev => ({ ...prev, [key]: value }));
-        setHasChanges(true);
+      if (finalStatus !== 'granted') {
+        Alert.alert(
+          'Notifications désactivées',
+          'Les notifications sont bloquées pour cette application. Activez-les dans les réglages de votre appareil pour recevoir l\'actualité de vos centres d\'intérêt.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Ouvrir les réglages', onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
       }
+
+      setSettings(prev => ({ ...prev, [key]: value }));
+      setHasChanges(true);
     } else {
       setSettings(prev => ({ ...prev, [key]: value }));
       setHasChanges(true);
@@ -284,12 +304,23 @@ export const SettingsView = ({ navigation }) => {
           <View style={styles.sectionContent}>
             <SettingItem
               iconName="notifications-outline"
-              title="Recevoir l’actualité de mes centres d’intérêts par notification"
+              title="Recevoir l'actualité de mes centres d'intérêts par notification"
               value={settings.notifications}
               onValueChange={(value) => handleSettingChange('notifications', value)}
+              disabled={permissionDenied}
               isLast
             />
           </View>
+
+          {permissionDenied && (
+            <View style={styles.permissionNotice}>
+              <Ionicons name="warning" size={20} color={Colors.primary} />
+              <Text style={styles.permissionNoticeText}>
+                Les notifications sont bloquées pour cette application. Autorisez-les dans les
+                réglages de votre appareil pour activer cette option.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Favorite Topics Section */}
@@ -597,5 +628,22 @@ const styles = StyleSheet.create({
     paddingTop: Spacings.xxs,
     marginBottom: Spacings.md,
     width: '70%',
+  },
+  settingItemTitleDisabled: {
+    color: Colors.gray,
+  },
+  permissionNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.xs,
+    paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.sm,
+    marginBottom: Spacings.md
+  },
+  permissionNoticeText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.primary,
   },
 });

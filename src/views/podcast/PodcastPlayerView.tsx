@@ -26,8 +26,10 @@ import Spacings from '../../../constants/Spacings';
 
 import SourceVideoCard from './components/SourceVideoCard';
 
-import { addTopic, sendError } from '../../services/v2/AuthService';
+import { sendError } from '../../services/v2/AuthService';
+import { toggleTopic, toggleFavourite } from '../../services/v2/FavouriteService';
 import { countTimesPodcast, getPodcastById } from '../../services/v2/ContentService';
+import useDebouncedToggle from '../../hooks/useDebouncedToggle';
 
 const { width, height } = Dimensions.get('window');
 const WAVEFORM_BARS = 50;
@@ -80,8 +82,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hasFinished, setHasFinished] = useState(false);
-  const [subscribed, setSubscribed] = useState<boolean>(hasTopic);
-  const [liked, setLiked] = useState<boolean>(!!data?.has_like);
 
   // Toast animation values
   const toastTranslateY = useRef(new Animated.Value(-100)).current;
@@ -161,14 +161,44 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     }, [navigation])
   );
 
-  // Đồng bộ lại state khi data về từ API (case deeplink)
-  useEffect(() => {
-    setSubscribed(hasTopic);
-  }, [hasTopic]);
+  /* ---------------- Suivi du sujet et favori ---------------- */
 
-  useEffect(() => {
-    setLiked(!!data?.has_like);
-  }, [data?.has_like]);
+  const [subscribed, toggleSubscribed] = useDebouncedToggle(
+    hasTopic,
+    async () => {
+      if (!topic) return false;
+
+      const ok = await toggleTopic(topic.id);
+
+      if (ok) {
+        await queryClient.invalidateQueries({ queryKey: ['current-user'] });
+        await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
+      }
+
+      return ok;
+    },
+    { tag: 'podcast-player-view' }
+  );
+
+  const [liked, toggleLiked] = useDebouncedToggle(
+    !!data?.has_like,
+    async () => {
+      if (!podcast?.id) return false;
+
+      return await toggleFavourite(podcast.id, 'podcast');
+    },
+    { tag: 'podcast-player-view' }
+  );
+
+  const handleSubscribeTopic = () => {
+    if (!topic) return;
+    toggleSubscribed();
+  };
+
+  const handleLike = () => {
+    if (!podcast?.id) return;
+    toggleLiked();
+  };
 
   /** Waveform giả lập */
   useEffect(() => {
@@ -381,34 +411,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
       "podcast",
       contentId
     );
-  };
-
-  const handleSubscribeTopic = async () => {
-    if (!topic || subscribed) return;
-
-    setSubscribed(true);
-    setToastMessage(`Vous suivez le sujet ${topic.name}`);
-
-    try {
-      await addTopic(topic.id);
-      await queryClient.invalidateQueries({ queryKey: ['current-user'] });
-      await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
-    } catch (error) {
-      setSubscribed(false);
-      sendError('podcast-player-view', error);
-    }
-  };
-
-  const handleLike = async () => {
-    const next = !liked;
-    setLiked(next);
-
-    try {
-      // TODO: brancher l'API ici, ex: await likePodcast(podcast.id, next)
-    } catch (error) {
-      setLiked(!next);
-      sendError('podcast-player-view', error);
-    }
   };
 
   const formatTime = (millis: number) => {
@@ -647,7 +649,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           {renderAction(
             'like',
             liked ? 'heart' : 'heart-outline',
-            "J'aime",
+            "Sauvegarder",
             handleLike,
             liked
           )}
