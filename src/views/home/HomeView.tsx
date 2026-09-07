@@ -154,7 +154,7 @@ const ActionCard = ({ theme, renderIcon, title, meta, metaIcon, showCheck, onPre
           </View>
 
           {showCheck && (
-            <View style={[styles.checkBadge, { backgroundColor: theme.edge }]}>
+            <View style={[styles.checkBadge, { backgroundColor: Colors.success }]}>
               <Ionicons name="checkmark-sharp" size={12} color={Colors.white} />
             </View>
           )}
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: Colors.white,
   },
 })
