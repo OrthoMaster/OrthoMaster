@@ -23,6 +23,8 @@ import { authEvents, updateNotiPermission, sendError } from './src/services/v2/A
 
 import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScreen';
 
+import useDeviceToken from './src/hooks/useDeviceToken';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: true,
@@ -59,6 +61,9 @@ function AppContent() {
   const { data: user } = useGetUser();
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const previousUserRef = useRef(null);
+
+  // Le jeton de notification est maintenu à jour tant que l'utilisateur est connecté
+  useDeviceToken(!!user);
 
   const pendingDeepLink = useRef(false);
 

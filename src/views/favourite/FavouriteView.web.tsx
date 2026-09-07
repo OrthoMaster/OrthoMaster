@@ -58,8 +58,8 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { type: 'podcast', label: 'Podcasts', icon: 'mic' },
   { type: 'video', label: 'Médias', icon: 'play' },
+  { type: 'podcast', label: 'Podcasts', icon: 'mic' },
   { type: 'infographic', label: 'Infographies', icon: 'image' },
 ];
 
@@ -259,8 +259,8 @@ export const FavouriteView = ({ navigation }) => {
   const openItem = (item: any) => {
     if (activeType === 'video') {
       navigation.navigate('media', {
-        screen: 'flash-media-preview',
-        params: { media: item },
+        screen: 'flash-media-home',
+        params: { id: String(item.id) },
       });
       return;
     }
@@ -289,7 +289,8 @@ export const FavouriteView = ({ navigation }) => {
   const getThumbnail = (item: any) => {
     if (activeType === 'podcast') return item.image;
     if (activeType === 'infographic') return item.image;
-    return item.thumbnail;
+    if (activeType === 'video' && !!item.s3_thumbnail) return item.s3_thumbnail;
+    return '';
   };
 
   const renderCard = (item: any, index: number) => {

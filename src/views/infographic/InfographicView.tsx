@@ -29,6 +29,9 @@ import { toggleTopic, toggleFavourite } from '../../services/v2/FavouriteService
 import { getInfographicById } from '../../services/v2/ContentService';
 import useDebouncedToggle from '../../hooks/useDebouncedToggle';
 
+import useTopicFollowPrompt from '../../hooks/useTopicFollowPrompt';
+import TopicFollowDialog from '../../component/TopicFollowDialog';
+
 const { width, height } = Dimensions.get('window');
 
 const MIN_SCALE = 1;
@@ -345,23 +348,6 @@ export const InfographicView = ({ navigation, route }) => {
     }, [navigation])
   );
 
-  /**
-   * Deeplink: stack có thể rỗng -> goBack() sẽ thoát app.
-   * Fallback về home cho chắc.
-   */
-  const handleClose = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'home' }],
-      })
-    );
-  };
-
   /* ------------------------------------------------------------------ */
   /* Actions                                                             */
   /* ------------------------------------------------------------------ */
@@ -448,6 +434,27 @@ export const InfographicView = ({ navigation, route }) => {
     });
   };
 
+  /**
+  * Deeplink: stack có thể rỗng -> goBack() sẽ thoát app.
+  * Fallback về home cho chắc.
+  */
+  const leaveScreen = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.dispatch(
+      CommonActions.reset({ index: 0, routes: [{ name: 'home' }] })
+    );
+  }, [navigation]);
+
+  const { requestLeave, dialogProps } = useTopicFollowPrompt({
+    topic,
+    alreadyFollowed: subscribed,
+    onLeave: leaveScreen,
+    tag: 'podcast-player-view',
+  });
+
   /* ------------------------------------------------------------------ */
   /* States                                                              */
   /* ------------------------------------------------------------------ */
@@ -468,7 +475,7 @@ export const InfographicView = ({ navigation, route }) => {
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <StatusBar barStyle="light-content" backgroundColor={Colors.blackBackground} />
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleClose} style={styles.iconButton}>
+          <TouchableOpacity onPress={requestLeave} style={styles.iconButton}>
             <Ionicons name="close" size={30} color={Colors.white} />
           </TouchableOpacity>
         </View>
@@ -531,7 +538,7 @@ export const InfographicView = ({ navigation, route }) => {
 
         <SafeAreaView edges={['top', 'left', 'right']} pointerEvents="box-none">
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleClose} style={styles.iconButton}>
+            <TouchableOpacity onPress={requestLeave} style={styles.iconButton}>
               <Ionicons name="close" size={30} color={Colors.white} />
             </TouchableOpacity>
 
@@ -622,7 +629,7 @@ export const InfographicView = ({ navigation, route }) => {
                 <Text style={styles.actionLabel}>Partager</Text>
               </TouchableOpacity>
 
-              {!!topic && (
+              {/* {!!topic && (
                 <TouchableOpacity
                   onPress={handleSubscribeTopic}
                   style={styles.actionButton}
@@ -644,7 +651,7 @@ export const InfographicView = ({ navigation, route }) => {
                     Suivre
                   </Text>
                 </TouchableOpacity>
-              )}
+              )} */}
 
               <TouchableOpacity
                 onPress={handleLike}
@@ -667,6 +674,8 @@ export const InfographicView = ({ navigation, route }) => {
           </View>
         </SafeAreaView>
       </Animated.View>
+
+      <TopicFollowDialog {...dialogProps} />
     </View>
   );
 };
@@ -847,8 +856,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   actionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Poppins-Medium',
+    letterSpacing: 0.3,
     color: Colors.white,
     textAlign: 'center',
   },

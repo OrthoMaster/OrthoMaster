@@ -31,6 +31,9 @@ import { toggleTopic, toggleFavourite } from '../../services/v2/FavouriteService
 import { countTimesPodcast, getPodcastById } from '../../services/v2/ContentService';
 import useDebouncedToggle from '../../hooks/useDebouncedToggle';
 
+import useTopicFollowPrompt from '../../hooks/useTopicFollowPrompt';
+import TopicFollowDialog from '../../component/TopicFollowDialog';
+
 const { width, height } = Dimensions.get('window');
 const WAVEFORM_BARS = 50;
 const WAVEFORM_HEIGHT = 52;
@@ -189,11 +192,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     },
     { tag: 'podcast-player-view' }
   );
-
-  const handleSubscribeTopic = () => {
-    if (!topic) return;
-    toggleSubscribed();
-  };
 
   const handleLike = () => {
     if (!podcast?.id) return;
@@ -369,18 +367,22 @@ export const PodcastPlayerView = ({ navigation, route }) => {
    * Deeplink: stack có thể rỗng -> goBack() sẽ thoát app.
    * Fallback về home cho chắc.
    */
-  const handleClose = () => {
+  const leaveScreen = useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
     }
     navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'home' }],
-      })
+      CommonActions.reset({ index: 0, routes: [{ name: 'home' }] })
     );
-  };
+  }, [navigation]);
+
+  const { requestLeave, dialogProps } = useTopicFollowPrompt({
+    topic,
+    alreadyFollowed: subscribed,
+    onLeave: leaveScreen,
+    tag: 'podcast-player-view',
+  });
 
   const handleOpenSourceVideo = () => {
     if (!video?.id_content) return;
@@ -439,8 +441,8 @@ export const PodcastPlayerView = ({ navigation, route }) => {
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <StatusBar barStyle="light-content" backgroundColor={Colors.blackBackground} />
         <View style={styles.errorHeader}>
-          <TouchableOpacity onPress={handleClose} style={styles.iconButton}>
-            <Ionicons name="close" size={22} color={Colors.white} />
+          <TouchableOpacity onPress={leaveScreen} style={styles.iconButton}>
+            <Ionicons name="close" size={30} color={Colors.white} />
           </TouchableOpacity>
         </View>
         <View style={styles.centered}>
@@ -506,7 +508,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
 
       {/* Close: absolute, đè lên ảnh */}
       <TouchableOpacity
-        onPress={handleClose}
+        onPress={requestLeave}
         style={[styles.closeFloating, { top: insets.top + Spacings.sm }]}
       >
         <Ionicons name="close" size={30} color={Colors.white} />
@@ -637,14 +639,14 @@ export const PodcastPlayerView = ({ navigation, route }) => {
         <View style={styles.actionsRow}>
           {renderAction('share', 'share-social-outline', 'Partager', handleShare)}
 
-          {!!topic &&
+          {/* {!!topic &&
             renderAction(
               'follow',
               subscribed ? 'notifications' : 'notifications-outline',
               'Suivre',
               handleSubscribeTopic,
               subscribed
-            )}
+            )} */}
 
           {renderAction(
             'like',
@@ -655,6 +657,8 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           )}
         </View>
       </View>
+
+      <TopicFollowDialog {...dialogProps} />
     </View>
   );
 };
@@ -741,14 +745,15 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
+    zIndex: 20,
   },
 
   /* ---- Toast ---- */
@@ -896,7 +901,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   actionLabel: {
-    fontSize: 11,
+    fontSize: 12,
+    letterSpacing: 0.3,
     fontFamily: 'Poppins-Medium',
     color: Colors.white,
     textAlign: 'center',

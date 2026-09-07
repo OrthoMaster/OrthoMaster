@@ -15,6 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Portal, Dialog, Button } from 'react-native-paper';
 
+import { useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 import { Styles } from '../../../constants/Styles';
@@ -89,11 +92,32 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, isSelected, onToggle }) =>
 );
 
 export const SettingsView = ({ navigation }) => {
-  const { data: preData, isLoading: isLoadingTopics } = useQuery({
+  const {
+    data: preData,
+    isLoading: isLoadingTopics,
+    refetch: refetchPreData,
+  } = useQuery({
     queryKey: ['pre-form-data-profile'],
     queryFn: () => getPreFormData(),
+    staleTime: 0,
+    retry: 2,
+    retryDelay: 2000,
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchPreData();
+    }, [refetchPreData])
+  );
+
   const { data: user, isLoading: isLoadingUser, refetch, isFetching, error } = useGetUser();
+  
+  useFocusEffect(
+    useCallback(() => {
+      refetchPreData();
+      refetch();
+    }, [refetchPreData, refetch])
+  );
 
   // Settings state
   const [settings, setSettings] = useState({

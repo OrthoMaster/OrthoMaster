@@ -19,6 +19,9 @@ import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
@@ -138,11 +141,26 @@ export const SettingsView = ({ navigation }) => {
     };
   }, [navigation]);
 
-  const { data: preData, isLoading: isLoadingTopics } = useQuery({
+  const {
+    data: preData,
+    isLoading: isLoadingTopics,
+    refetch: refetchPreData,
+  } = useQuery({
     queryKey: ['pre-form-data-profile'],
     queryFn: () => getPreFormData(),
+    staleTime: 0,
+    retry: 2,
+    retryDelay: 2000,
   });
+
   const { data: user, isLoading: isLoadingUser, refetch, isFetching, error } = useGetUser();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchPreData();
+      refetch();
+    }, [refetchPreData, refetch])
+  );
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -204,7 +222,7 @@ export const SettingsView = ({ navigation }) => {
       if (finalStatus !== 'granted') {
         Alert.alert(
           'Notifications désactivées',
-          'Les notifications sont bloquées pour cette application. Activez-les dans les réglages de votre appareil pour recevoir l\'actualité de vos centres d\'intérêt.',
+          'Pour recevoir des quizz, podcasts et infographies selon vos envies, veuillez activer les notifications.',
           [
             { text: 'Annuler', style: 'cancel' },
             { text: 'Ouvrir les réglages', onPress: () => Linking.openSettings() },
@@ -305,7 +323,7 @@ export const SettingsView = ({ navigation }) => {
             <SettingItem
               iconName="notifications-outline"
               title="Recevoir l'actualité de mes centres d'intérêts par notification"
-              value={settings.notifications}
+              value={settings.notifications && !permissionDenied}
               onValueChange={(value) => handleSettingChange('notifications', value)}
               disabled={permissionDenied}
               isLast
@@ -316,8 +334,7 @@ export const SettingsView = ({ navigation }) => {
             <View style={styles.permissionNotice}>
               <Ionicons name="warning" size={20} color={Colors.primary} />
               <Text style={styles.permissionNoticeText}>
-                Les notifications sont bloquées pour cette application. Autorisez-les dans les
-                réglages de votre appareil pour activer cette option.
+                Pour recevoir des quizz, podcasts et infographies selon vos envies, veuillez activer les notifications.
               </Text>
             </View>
           )}

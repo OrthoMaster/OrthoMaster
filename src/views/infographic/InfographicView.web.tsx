@@ -25,6 +25,9 @@ import { toggleTopic, toggleFavourite } from '../../services/v2/FavouriteService
 import { getInfographicById } from '../../services/v2/ContentService';
 import useDebouncedToggle from '../../hooks/useDebouncedToggle';
 
+import useTopicFollowPrompt from '../../hooks/useTopicFollowPrompt';
+import TopicFollowDialog from '../../component/TopicFollowDialog';
+
 const MIN_SCALE = 1;
 const MAX_SCALE = 5;
 const ZOOM_STEP = 0.4;
@@ -280,19 +283,6 @@ export const InfographicView = ({ navigation, route }) => {
     }, [navigation])
   );
 
-  const handleClose = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'home' }],
-      })
-    );
-  };
-
   /* ------------------------------------------------------------------ */
   /* Actions                                                             */
   /* ------------------------------------------------------------------ */
@@ -374,7 +364,24 @@ export const InfographicView = ({ navigation, route }) => {
     },
     { tag: 'infographic-view' }
   );
-  
+
+  const leaveScreen = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.dispatch(
+      CommonActions.reset({ index: 0, routes: [{ name: 'home' }] })
+    );
+  }, [navigation]);
+
+  const { requestLeave, dialogProps } = useTopicFollowPrompt({
+    topic,
+    alreadyFollowed: subscribed,
+    onLeave: leaveScreen,
+    tag: 'podcast-player-view',
+  });
+
   const handleSubscribeTopic = () => {
     if (!topic) return;
     toggleSubscribed();
@@ -411,7 +418,7 @@ export const InfographicView = ({ navigation, route }) => {
     return (
       <View style={styles.root}>
         <View style={styles.closeLayer}>
-          <TouchableOpacity onPress={handleClose} style={styles.iconButton}>
+          <TouchableOpacity onPress={requestLeave} style={styles.iconButton}>
             <Ionicons name="close" size={22} color={Colors.white} />
           </TouchableOpacity>
         </View>
@@ -494,7 +501,7 @@ export const InfographicView = ({ navigation, route }) => {
 
       {/* Close en haut à gauche */}
       <View style={styles.closeLayer} pointerEvents="box-none">
-        <TouchableOpacity onPress={handleClose} style={styles.iconButton}>
+        <TouchableOpacity onPress={requestLeave} style={styles.iconButton}>
           <Ionicons name="close" size={22} color={Colors.white} />
         </TouchableOpacity>
       </View>
@@ -550,14 +557,7 @@ export const InfographicView = ({ navigation, route }) => {
               loading: isDownloading,
             })}
             {renderAction('share', 'share-social-outline', 'Partager', handleShare)}
-            {!!topic &&
-              renderAction(
-                'follow',
-                subscribed ? 'notifications' : 'notifications-outline',
-                'Suivre',
-                handleSubscribeTopic,
-                { active: subscribed }
-              )}
+            
             {renderAction('like', liked ? 'heart' : 'heart-outline', "Sauvegarder", handleLike, {
               active: liked,
             })}
@@ -570,6 +570,8 @@ export const InfographicView = ({ navigation, route }) => {
           </View>
         )}
       </View>
+
+      <TopicFollowDialog {...dialogProps} />
     </View>
   );
 };

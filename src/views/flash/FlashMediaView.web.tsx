@@ -104,7 +104,7 @@ export const FlashMediaView = ({ navigation, route }) => {
   useEffect(() => {
     const id = route.params?.id;
 
-    if (!id || !route.path?.includes('media-preview')) {
+    if (!id) {
       handledMediaRef.current = null;
       return;
     }

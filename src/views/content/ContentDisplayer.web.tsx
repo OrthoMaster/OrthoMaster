@@ -19,8 +19,12 @@ import XMLParser from 'react-xml-parser';
 import { Styles } from "../../../constants/Styles";
 
 import { useQuery } from "@tanstack/react-query";
+import { orthomasterShare } from "../../futils";
+import { IContent } from "../../utils/interfaces";
 
 import { getContent, trackMedia, getToolContent } from "../../services/v2/ContentService";
+import { toggleFavourite } from "../../services/v2/FavouriteService";
+import useDebouncedToggle from "../../hooks/useDebouncedToggle";
 import { ContentFactory } from "../content/components/ContentFactory";
 import { MediaBlockRenderer } from '../media/components/MediaBlockRenderer';
 import { MediaContentHeader } from '../media/components/MediaContentHeader';
@@ -35,6 +39,24 @@ export const ContentDisplayer = ({ navigation, route }) => {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [trackingId, setTrackingId] = useState<number | null>(null);
 
+  const shareMedia = async (media2share: IContent) => {
+    orthomasterShare(
+      {
+        title: media2share.title,
+        message:
+          "Voici un contenu intéressant à voir sur OrthoMaster :\n\n" +
+          media2share.title +
+          " par " +
+          media2share.author +
+          "\n\n" +
+          "https://go.orthomaster.fr/open/media-preview/" +
+          media2share.id_content,
+      },
+      "média",
+      media2share.id_content
+    );
+  };
+
   // Get first data
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['mediaContent', content.id_content],
@@ -42,6 +64,8 @@ export const ContentDisplayer = ({ navigation, route }) => {
     retry: 2,
     retryDelay: 1000,
   });
+
+  const showActions = data?.type == 'flash';
 
   // Tracking
   useEffect(() => {
@@ -83,14 +107,67 @@ export const ContentDisplayer = ({ navigation, route }) => {
     navigation.goBack();
   };
 
+  // Handle like
+  const [liked, toggleLiked] = useDebouncedToggle(
+    !!(data?.has_like ?? content.has_like),
+    async () => {
+      if (!content?.id_content) return false;
+
+      return await toggleFavourite(content.id_content, 'video');
+    },
+    { tag: 'content-displayer-web' }
+  );
+
+  const handleLike = (): void => {
+    if (!content?.id_content) return;
+    toggleLiked();
+  };
+
+  // Handle share
+  const shareContent = (): void => {
+    if (content) {
+      shareMedia(content);
+    }
+    return;
+  };
+
   return (
     <SafeAreaView style={Styles.container} edges={['top', 'left', 'right']}>
-      {/* Header fixe : bouton retour uniquement */}
+      {/* Header fixe : bouton retour + actions */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity style={styles.backButton} onPress={closeScreen} activeOpacity={0.8}>
             <Ionicons name="arrow-back" size={30} color={Colors.text} />
           </TouchableOpacity>
+
+          {showActions && (
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={shareContent}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Partager"
+              >
+                <Ionicons name="share-social" size={26} color={Colors.text} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionButton, liked && styles.actionButtonActive]}
+                onPress={handleLike}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityState={{ selected: liked }}
+                accessibilityLabel={liked ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+              >
+                <Ionicons
+                  name={liked ? 'heart' : 'heart-outline'}
+                  size={26}
+                  color={liked ? Colors.danger : Colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
 
@@ -169,7 +246,7 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacings.lg,
   },
   backButton: {
@@ -179,6 +256,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.06)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+  },
+  actionButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonActive: {
+    backgroundColor: Colors.dangerBackground,
   },
   scrollView: {
     flex: 1,

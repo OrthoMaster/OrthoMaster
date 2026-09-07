@@ -10,7 +10,7 @@ import {
   PanResponder,
   useWindowDimensions,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { Svg, Rect } from 'react-native-svg';
@@ -26,6 +26,9 @@ import { countTimesPodcast, getPodcastById } from '../../services/v2/ContentServ
 
 import useDebouncedToggle from '../../hooks/useDebouncedToggle';
 import SourceVideoCard from './components/SourceVideoCard';
+
+import useTopicFollowPrompt from '../../hooks/useTopicFollowPrompt';
+import TopicFollowDialog from '../../component/TopicFollowDialog';
 
 const WAVEFORM_BARS = 80; // web rộng hơn mobile -> nhiều bar hơn
 const BAR_GAP = 2;
@@ -299,14 +302,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     await sound.setPositionAsync(Math.max(position - 15000, 0));
   };
 
-  const handleClose = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.navigate('home');
-  };
-
   /* ---------------- Actions ---------------- */
 
   /** Web: partage natif si disponible, sinon copie du lien */
@@ -364,15 +359,31 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     { tag: 'podcast-player-view-web' }
   );
 
-  const handleSubscribeTopic = () => {
-    if (!topic) return;
-    toggleSubscribed();
-  };
-
   const handleLike = () => {
     if (!podcast?.id) return;
     toggleLiked();
   };
+
+  /**
+     * Deeplink: stack có thể rỗng -> goBack() sẽ thoát app.
+     * Fallback về home cho chắc.
+     */
+  const leaveScreen = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.dispatch(
+      CommonActions.reset({ index: 0, routes: [{ name: 'home' }] })
+    );
+  }, [navigation]);
+
+  const { requestLeave, dialogProps } = useTopicFollowPrompt({
+    topic,
+    alreadyFollowed: subscribed,
+    onLeave: leaveScreen,
+    tag: 'podcast-player-view',
+  });
 
   const handleOpenSourceVideo = () => {
     if (!video?.id_content) return;
@@ -407,7 +418,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   if (!podcast) {
     return (
       <View style={styles.centeredScreen}>
-        <TouchableOpacity onPress={handleClose} style={[styles.iconButton, styles.closeFloating]}>
+        <TouchableOpacity onPress={requestLeave} style={[styles.iconButton, styles.closeFloating]}>
           <Ionicons name="close" size={24} color={Colors.white} />
         </TouchableOpacity>
 
@@ -486,7 +497,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
       )}
 
       {/* Close - góc trên trái */}
-      <TouchableOpacity onPress={handleClose} style={[styles.iconButton, styles.closeFloating]}>
+      <TouchableOpacity onPress={requestLeave} style={[styles.iconButton, styles.closeFloating]}>
         <Ionicons name="close" size={24} color={Colors.white} />
       </TouchableOpacity>
 
@@ -592,15 +603,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
               <View style={styles.actionsGroup}>
                 {renderAction('share', 'share-social-outline', 'Partager', handleShare)}
 
-                {!!topic &&
-                  renderAction(
-                    'follow',
-                    subscribed ? 'notifications' : 'notifications-outline',
-                    'Suivre',
-                    handleSubscribeTopic,
-                    subscribed
-                  )}
-
                 {renderAction(
                   'like',
                   liked ? 'heart' : 'heart-outline',
@@ -613,6 +615,8 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           </View>
         </View>
       </View>
+
+      <TopicFollowDialog {...dialogProps} />
     </View>
   );
 };
