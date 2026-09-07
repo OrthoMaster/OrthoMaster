@@ -134,7 +134,7 @@ export const TopicFollowDialog = ({
 
           {/* L'autorisation a été refusée : le suivi reste possible, mais
               aucune notification ne parviendra tant qu'elle n'est pas rétablie */}
-          {!needsSettings && (
+          {needsSettings && (
             <View style={styles.notice}>
               <Ionicons name="warning" size={22} color={Colors.primary} />
               <Text style={styles.noticeText}>
