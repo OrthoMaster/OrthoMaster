@@ -50,6 +50,7 @@ const WAVE_INITIAL_WIDTH = width - Spacings.lg * 2 - Spacings.md * 2;
 export const PodcastPlayerView = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const podcastId = route.params?.podcastId ?? null;
+  const openFrom = route.params?.openFrom ?? null;
 
   const {
     data,
@@ -386,6 +387,12 @@ export const PodcastPlayerView = ({ navigation, route }) => {
 
   const handleOpenSourceVideo = () => {
     if (!video?.id_content) return;
+    
+    if (openFrom == 'media') {
+      navigation.goBack();
+      return;
+    }
+
     navigation.navigate('media', {
       screen: 'flash-media-preview',
       params: { media: video },

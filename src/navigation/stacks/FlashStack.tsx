@@ -11,6 +11,11 @@ import { FlashSearchView } from '../../views/flash/FlashSearchView';
 
 import ChannelMediaView from '../../views/flash/ChannelMediaView';
 
+import { PodcastPlayerView } from '../../views/podcast/PodcastPlayerView';
+import { InfographicView } from '../../views/infographic/InfographicView';
+
+import Colors from '../../../constants/Colors';
+
 const FlashStackNav = createStackNavigator();
 export const FlashStack = ({ }) => {
   return (
@@ -92,6 +97,27 @@ export const FlashStack = ({ }) => {
           presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
         }}
       />
+
+      <FlashStackNav.Screen
+        name="podcast"
+        component={PodcastPlayerView}
+        options={{
+          headerShown: false,
+          animation: 'fade_from_bottom',
+          cardStyle: { backgroundColor: Colors.blackBackground },
+          cardOverlayEnabled: false,
+        }}
+      />
+      <FlashStackNav.Screen
+        name="infographic"
+        component={InfographicView}
+        options={{
+          headerShown: false,
+          animation: 'fade_from_bottom',
+          cardStyle: { backgroundColor: Colors.blackBackground },
+        }}
+      />
+
     </FlashStackNav.Navigator>
   );
 }

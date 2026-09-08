@@ -37,6 +37,8 @@ const IMAGE_PADDING = Spacings.xl;
 
 export const InfographicView = ({ navigation, route }) => {
   const infographicId = route.params?.infographicId ?? null;
+  const openFrom = route.params?.openFrom ?? null;
+
   const { width: windowWidth } = useWindowDimensions();
   const isNarrow = windowWidth < NARROW_BREAKPOINT;
 
@@ -394,6 +396,12 @@ export const InfographicView = ({ navigation, route }) => {
 
   const handleOpenSourceVideo = () => {
     if (!video?.id_content) return;
+
+    if (openFrom == 'media') {
+      navigation.goBack();
+      return;
+    }
+
     navigation.navigate('media', {
       screen: 'flash-media-preview',
       params: { media: video },

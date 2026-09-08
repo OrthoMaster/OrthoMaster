@@ -40,6 +40,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   const isNarrow = winWidth < NARROW_BREAKPOINT;
 
   const podcastId = route.params?.podcastId ?? null;
+  const openFrom = route.params?.openFrom ?? null;
 
   const {
     data,
@@ -387,6 +388,12 @@ export const PodcastPlayerView = ({ navigation, route }) => {
 
   const handleOpenSourceVideo = () => {
     if (!video?.id_content) return;
+
+    if (openFrom == 'media') {
+      navigation.goBack();
+      return;
+    }
+
     navigation.navigate('media', {
       screen: 'flash-media-preview',
       params: { media: video },

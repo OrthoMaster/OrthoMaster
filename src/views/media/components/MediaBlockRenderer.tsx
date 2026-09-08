@@ -16,6 +16,9 @@ import ParagraphBlock from '../../training/components/ParagraphBlock';
 import ListBlock from '../../training/components/ListBlock';
 import { VideoPlayer } from './VideoPlayer';
 import { MediaImageBlock } from './MediaImageBlock';
+import MediaQuizBlock from './MediaQuizBlock';
+import MediaPodcastBlock from './MediaPodcastBlock';
+import MediaInfographicBlock from './MediaInfographicBlock';
 
 export interface MediaBlock {
   id: string;
@@ -30,7 +33,7 @@ type Props = {
   trackingId?: number | null;
 };
 
-const SUPPORTED = ['header', 'paragraph', 'list', 'image', 'video'];
+const SUPPORTED = ['header', 'paragraph', 'list', 'image', 'video', 'quiz', 'podcast', 'infographic'];
 
 export const MediaBlockRenderer = ({ blocks, navigation, trackingId }: Props) => {
   const screenWidth = Dimensions.get('window').width;
@@ -111,7 +114,7 @@ export const MediaBlockRenderer = ({ blocks, navigation, trackingId }: Props) =>
     if (block.type === 'list' && Array.isArray(block.data?.items)) {
       return (
         <View key={key} style={styles.listBlock}>
-          <ListBlock items={block.data.items} style={block.data.style} itemStyle={styles.paragraph}/>
+          <ListBlock items={block.data.items} style={block.data.style} itemStyle={styles.paragraph} />
         </View>
       );
     }
@@ -139,6 +142,41 @@ export const MediaBlockRenderer = ({ blocks, navigation, trackingId }: Props) =>
             embedWidth={screenWidth}
             showChapters={videosWithChapters.has(index)}
             trackingId={trackingId}
+          />
+        </View>
+      );
+    }
+
+    // Quiz rattaché : jouable directement dans l'article
+    if (block.type === 'quiz' && block.data?.id) {
+      return (
+        <View key={key} style={styles.linkedBlock}>
+          <MediaQuizBlock questionId={block.data.id} fallbackTitle={block.data.title} />
+        </View>
+      );
+    }
+
+    // Podcast rattaché
+    if (block.type === 'podcast' && block.data?.id) {
+      return (
+        <View key={key} style={styles.linkedBlock}>
+          <MediaPodcastBlock
+            podcastId={block.data.id}
+            fallbackTitle={block.data.title}
+            navigation={navigation}
+          />
+        </View>
+      );
+    }
+
+    // Infographie rattachée
+    if (block.type === 'infographic' && block.data?.id) {
+      return (
+        <View key={key} style={styles.linkedBlock}>
+          <MediaInfographicBlock
+            infographicId={block.data.id}
+            fallbackTitle={block.data.title}
+            navigation={navigation}
           />
         </View>
       );
@@ -233,6 +271,11 @@ const styles = StyleSheet.create({
 
   videoBlock: {
     marginBottom: Spacings.lg,
+  },
+
+  linkedBlock: {
+    marginHorizontal: Spacings.lg,
+    marginBottom: Spacings.xl,
   },
 
   emptyBlock: {

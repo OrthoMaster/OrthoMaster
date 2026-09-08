@@ -40,6 +40,7 @@ const DOUBLE_TAP_DELAY = 280;
 
 export const InfographicView = ({ navigation, route }) => {
   const infographicId = route.params?.infographicId ?? null;
+  const openFrom = route.params?.openFrom ?? null;
 
   const {
     data,
@@ -428,6 +429,12 @@ export const InfographicView = ({ navigation, route }) => {
 
   const handleOpenSourceVideo = () => {
     if (!video?.id_content) return;
+
+    if (openFrom == 'media') {
+      navigation.goBack();
+      return;
+    }
+
     navigation.navigate('media', {
       screen: 'flash-media-preview',
       params: { media: video },
