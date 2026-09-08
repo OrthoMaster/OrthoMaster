@@ -107,7 +107,7 @@ export const MediaPodcastBlock = ({ podcastId, fallbackTitle, navigation }: Prop
 
   const open = () => {
     if (!podcast?.id) return;
-    navigation.navigate('podcast', { podcastId: podcast.id, openFrom: 'media' });
+    navigation.navigate('flash-podcast', { podcastId: podcast.id, openFrom: 'media' });
   };
 
   if (isLoading) {

@@ -9,7 +9,7 @@ import {
 
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
-
+import { StackActions } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { HomeStack } from './stacks/HomeStack';
@@ -95,7 +95,7 @@ export const AppTab = ({ }) => {
 
   return (
     <Tab.Navigator
-      id={"main-tabs" as unknown as undefined}
+      id={"main-tabs"}
       initialRouteName='home'
       screenOptions={() => ({
         tabBarLabelPosition: 'below-icon',
@@ -151,10 +151,19 @@ export const AppTab = ({ }) => {
         component={FlashStack}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'media' }],
+            e.preventDefault();
+
+            navigation.navigate('media', {
+              screen: 'flash-media-home',
             });
+
+            // La pile est vidée : l'onglet repart de zéro
+            navigation.getState().routes
+              .find((r) => r.name === 'media')
+              ?.state?.key && navigation.dispatch({
+                ...StackActions.popToTop(),
+                target: navigation.getState().routes.find((r) => r.name === 'media')?.state?.key,
+              });
           },
         })}
         options={{

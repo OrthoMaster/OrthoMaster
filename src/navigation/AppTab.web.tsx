@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { StackActions } from '@react-navigation/native';
 
 // 1. IMPORT navigationRef từ file RootNavigation của bạn
 import { navigationRef } from './RootNavigation';
@@ -77,9 +78,27 @@ const Sidebar = () => {
   }, []);
 
   const handleNavigate = (routeName: string) => {
-    if (navigationRef.current?.isReady()) {
-      (navigationRef.current as any).navigate(routeName);
+    if (!navigationRef.current?.isReady()) return;
+
+    const nav = navigationRef.current as any;
+
+    if (routeName === 'media') {
+      const route = nav.getRootState().routes.find((r: any) => r.name === 'media');
+
+      nav.navigate('media');
+
+      // Pile vidée : la rubrique repart de son accueil
+      if (route?.state?.key) {
+        nav.dispatch({
+          ...StackActions.popToTop(),
+          target: route.state.key,
+        });
+      }
+
+      return;
     }
+
+    nav.navigate(routeName);
   };
 
   const visibleMenuItems = menuItems.filter(item => item.requiresCompany ? user?.has_company : true);

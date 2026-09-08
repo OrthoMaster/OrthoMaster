@@ -99,7 +99,7 @@ export const FlashStack = ({ }) => {
       />
 
       <FlashStackNav.Screen
-        name="podcast"
+        name="flash-podcast"
         component={PodcastPlayerView}
         options={{
           headerShown: false,
@@ -109,7 +109,7 @@ export const FlashStack = ({ }) => {
         }}
       />
       <FlashStackNav.Screen
-        name="infographic"
+        name="flash-infographic"
         component={InfographicView}
         options={{
           headerShown: false,

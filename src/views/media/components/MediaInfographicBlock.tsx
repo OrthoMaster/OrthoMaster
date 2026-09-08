@@ -107,7 +107,7 @@ export const MediaInfographicBlock = ({ infographicId, fallbackTitle, navigation
 
   const open = () => {
     if (!infographic?.id) return;
-    navigation.navigate('infographic', { infographicId: infographic.id, openFrom: 'media' });
+    navigation.navigate('flash-infographic', { infographicId: infographic.id, openFrom: 'media' });
   };
 
   if (isLoading) {
