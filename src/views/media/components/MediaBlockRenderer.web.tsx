@@ -207,8 +207,8 @@ const styles = StyleSheet.create({
   },
   heading1: { fontSize: 32, fontFamily: 'Poppins-Medium', color: Colors.primary },
   heading2: { fontSize: 26, fontFamily: 'Poppins-Medium', color: Colors.primary },
-  heading3: { fontSize: 22, fontFamily: 'Poppins-Medium', color: Colors.text },
-  heading4: { fontSize: 19, fontFamily: 'Poppins-Medium', color: Colors.text },
+  heading3: { fontSize: 22, fontFamily: 'Poppins-Medium', color: Colors.primary },
+  heading4: { fontSize: 19, fontFamily: 'Poppins-Medium', color: Colors.primary },
 
   paragraphBlock: {
     marginBottom: Spacings.md,
