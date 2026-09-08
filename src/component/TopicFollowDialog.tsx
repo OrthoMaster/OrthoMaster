@@ -125,10 +125,10 @@ export const TopicFollowDialog = ({
             </Animated.View>
           </View>
 
-          <Text style={styles.title}>Restons connectés !</Text>
+          <Text style={styles.title}>Restez connectés !</Text>
 
           <Text style={styles.message}>
-            Suivez les contenus{' '}
+            Suive les contenus{' '}
             <Text style={styles.topicName}>{topicName}</Text> ?
           </Text>
 
@@ -146,20 +146,42 @@ export const TopicFollowDialog = ({
           <View style={styles.secondaryRow}>
             <TouchableOpacity
               style={[styles.button, styles.buttonLater]}
-              onPress={onDismiss}
-              disabled={isSubmitting}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.buttonLaterText}>Plus tard</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.buttonDecline]}
               onPress={onDecline}
               disabled={isSubmitting}
               activeOpacity={0.8}
             >
-              <Text style={styles.buttonDeclineText}>Non merci</Text>
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <>
+                  <Ionicons
+                    name={'notifications-off-outline'}
+                    size={18}
+                    color={Colors.primary}
+                  />
+                  <Text style={styles.buttonLaterText}>Ne plus me{'\n'}demander</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.button, styles.buttonLater]}
+              onPress={onDismiss}
+              disabled={isSubmitting}
+              activeOpacity={0.8}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <>
+                  <Ionicons
+                    name={'reload-sharp'}
+                    size={18}
+                    color={Colors.primary}
+                  />
+                  <Text style={styles.buttonLaterText}>Me rappeler{'\n'}plus tard</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -174,12 +196,12 @@ export const TopicFollowDialog = ({
             ) : (
               <>
                 <Ionicons
-                  name={needsSettings ? 'settings' : 'notifications'}
+                  name={needsSettings ? 'settings' : 'checkmark-sharp'}
                   size={18}
                   color={Colors.white}
                 />
                 <Text style={styles.buttonText}>
-                  {needsSettings ? 'Ouvrir les réglages' : 'J’active les notifications'}
+                  {needsSettings ? 'Ouvrir les réglages' : 'Suivre cette catégorie'}
                 </Text>
               </>
             )}
@@ -245,7 +267,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   topicName: {
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'Poppins-Bold',
     color: Colors.primary,
   },
   notice: {
@@ -277,16 +299,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacings.xs,
-    paddingVertical: Spacings.sm,
-    paddingHorizontal: Spacings.xs,
+    paddingVertical: Spacings.xs,
+    paddingHorizontal: Spacings.xxs,
     borderRadius: 12,
     minHeight: 46,
   },
   buttonPrimary: {
     width: '100%',
     marginTop: Spacings.md,
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
+    backgroundColor: Colors.success,
+    shadowColor: Colors.success,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
@@ -321,10 +343,11 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   buttonText: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 15,
+    fontFamily: 'Poppins-Bold',
     color: Colors.white,
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
   buttonGhostText: {
     fontSize: 13,
