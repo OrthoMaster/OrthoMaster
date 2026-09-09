@@ -435,7 +435,7 @@ const QuestionBody: React.FC<QuestionBodyProps> = ({
                 onPress={handleSubscribeTopic}
                 disabled={isLoading}
                 accessibilityRole="button"
-                accessibilityLabel={`Suivre le sujet ${question.topic?.name ?? ''}`}
+                accessibilityLabel={`Suivre le sujet ${question.topic?.label ?? ''}`}
               >
                 {isLoading ? (
                   <ActivityIndicator size="small" color={Colors.white} />
@@ -483,7 +483,7 @@ export const DailyQuestionView = ({ navigation, route }) => {
   const userAnswerId = data?.user_answer_id ?? null;
   const hasTopicQuestion = !!data?.has_topic;
   const video = question?.content ?? null;
-  const topicName = question?.topic?.name ?? null;
+  const topicName = question?.topic?.label ?? null;
 
   const queryClient = useQueryClient();
 

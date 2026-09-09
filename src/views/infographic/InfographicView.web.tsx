@@ -556,7 +556,7 @@ export const InfographicView = ({ navigation, route }) => {
 
           {!!topic?.name && (
             <View style={styles.topicBadge}>
-              <Text style={styles.topicText} numberOfLines={1}>{topic.name}</Text>
+              <Text style={styles.topicText} numberOfLines={1}>{topic.label}</Text>
             </View>
           )}
 

@@ -514,7 +514,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           <View style={styles.infoBlock}>
             {topic && (
               <View style={styles.topicBadge}>
-                <Text style={styles.topicText}>{topic.name}</Text>
+                <Text style={styles.topicText}>{topic.label}</Text>
               </View>
             )}
 

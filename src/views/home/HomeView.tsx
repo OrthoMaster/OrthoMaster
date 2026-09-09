@@ -468,7 +468,7 @@ export const HomeView = ({ navigation, route }) => {
                   theme={ACTION_THEMES.quiz}
                   renderIcon={(color, size) => <MaterialIcons name="quiz" size={size} color={color} />}
                   title={questionData.question?.title}
-                  meta={questionData.question?.topic?.name}
+                  meta={questionData.question?.topic?.label}
                   showCheck={questionData.has_answered}
                   onPress={() => handleOpenQuestion(questionData)}
                 />
@@ -496,7 +496,7 @@ export const HomeView = ({ navigation, route }) => {
                   theme={ACTION_THEMES.infographic}
                   renderIcon={(color, size) => <Ionicons name="image" size={size} color={color} />}
                   title={infographicData.infographic.title}
-                  meta={infographicData.infographic?.topic?.name}
+                  meta={infographicData.infographic?.topic?.label}
                   onPress={() => handleOpenInfographic(infographicData)}
                 />
               ))}

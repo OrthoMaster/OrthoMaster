@@ -626,7 +626,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
         {topic && (
           <View style={styles.topicContainer}>
             <View style={styles.topicBadge}>
-              <Text style={styles.topicText}>{topic.name}</Text>
+              <Text style={styles.topicText}>{topic.label}</Text>
             </View>
           </View>
         )}

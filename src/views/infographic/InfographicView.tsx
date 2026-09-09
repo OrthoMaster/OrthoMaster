@@ -556,7 +556,7 @@ export const InfographicView = ({ navigation, route }) => {
 
               {!!topic?.name && (
                 <View style={styles.topicBadge}>
-                  <Text style={styles.topicText} numberOfLines={1}>{topic.name}</Text>
+                  <Text style={styles.topicText} numberOfLines={1}>{topic.label}</Text>
                 </View>
               )}
             </View>
@@ -643,8 +643,8 @@ export const InfographicView = ({ navigation, route }) => {
                   accessibilityRole="button"
                   accessibilityLabel={
                     subscribed
-                      ? `Vous suivez le sujet ${topic.name}`
-                      : `Suivre le sujet ${topic.name}`
+                      ? `Vous suivez le sujet ${topic.label}`
+                      : `Suivre le sujet ${topic.label}`
                   }
                 >
                   <View style={[styles.actionIconWrap, subscribed && styles.actionIconWrapActive]}>
