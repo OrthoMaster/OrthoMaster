@@ -15,10 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchLessonContent } from "../../services/ContentService";
 import { getContent, trackMedia } from "../../services/v2/ContentService";
+import { toggleFavourite } from "../../services/v2/FavouriteService";
 import { runContent } from "../../actions/contentAction";
 import { Ionicons } from '@expo/vector-icons';
 
-import { getCurrentDate } from "../../futils";
+import { getCurrentDate, orthomasterShare } from "../../futils";
 import { ContentFactory } from "./components/ContentFactory";
 import { MediaBlockRenderer } from "../media/components/MediaBlockRenderer";
 import { MediaContentHeader } from "../media/components/MediaContentHeader";
@@ -28,6 +29,7 @@ import { selectIsFinish, selectIsRunning } from "../../reducers/contentReducer";
 
 import { SessionEventContent } from "../../utils/myTypes";
 import { useAppDispatch } from "../../hooks/storeHooks";
+import useDebouncedToggle from "../../hooks/useDebouncedToggle";
 import { saveEvent } from "../../services/SessionEventService";
 
 import { UseCaptureGuard } from "../../component/captureGuard/useCaptureGuard";
@@ -35,6 +37,27 @@ import { saveLogtimeOnLesson } from "../../services/LogsService";
 
 import Colors from "../../../constants/Colors";
 import Spacings from '../../../constants/Spacings';
+
+/** Partage d'un média, commun aux deux formats */
+function shareMedia(content) {
+  if (!content) return;
+
+  orthomasterShare(
+    {
+      title: content.title,
+      message:
+        "Voici un contenu intéressant à voir sur OrthoMaster :\n\n" +
+        content.title +
+        " par " +
+        content.author +
+        "\n\n" +
+        "https://go.orthomaster.fr/open/media-preview/" +
+        content.id_content,
+    },
+    "média",
+    content.id_content
+  );
+}
 
 /**
  * Contenu média en version 2 : blocs Editor.js.
@@ -50,6 +73,8 @@ function ContentDisplayerV2({ content, navigation, trackingId, trackingReady }) 
     retryDelay: 1000,
   });
 
+  const showActions = data?.type == 'flash';
+
   useEffect(() => {
     if (!data) return;
 
@@ -63,6 +88,23 @@ function ContentDisplayerV2({ content, navigation, trackingId, trackingReady }) 
     }
   }, [data]);
 
+  /* ---------------- Favori ---------------- */
+
+  const [liked, toggleLiked] = useDebouncedToggle(
+    !!(data?.has_like ?? content.has_like),
+    async () => {
+      if (!content?.id_content) return false;
+
+      return await toggleFavourite(content.id_content, 'video');
+    },
+    { tag: 'content-displayer' }
+  );
+
+  const handleLike = () => {
+    if (!content?.id_content) return;
+    toggleLiked();
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <UseCaptureGuard>
@@ -70,6 +112,37 @@ function ContentDisplayerV2({ content, navigation, trackingId, trackingReady }) 
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={25} color={Colors.text} />
         </TouchableOpacity>
+
+        {/* Actions : favori + partage */}
+        {/* Actions : favori + partage */}
+        {showActions && (
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => shareMedia(content)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Partager"
+            >
+              <Ionicons name="share-social" size={24} color={Colors.text} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, liked && styles.actionButtonActive]}
+              onPress={handleLike}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityState={{ selected: liked }}
+              accessibilityLabel={liked ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            >
+              <Ionicons
+                name={liked ? 'heart' : 'heart-outline'}
+                size={24}
+                color={liked ? Colors.danger : Colors.text}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <ScrollView
           overScrollMode="never"
@@ -277,6 +350,19 @@ function ContentDisplayerV1({ route, navigation }) {
           <Ionicons name="chevron-back" size={25} color={Colors.text} />
         </TouchableOpacity>
 
+        {/* Action : partage */}
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => shareMedia(content)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Partager"
+          >
+            <Ionicons name="share-social" size={24} color={Colors.text} />
+          </TouchableOpacity>
+        </View>
+
         <ScrollView
           overScrollMode="never"
           contentContainerStyle={styles.scrollContainer}
@@ -402,6 +488,35 @@ var styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999
+  },
+  // Actions (favori + partage)
+  headerActions: {
+    position: 'absolute',
+    right: Spacings.lg,
+    top: Spacings.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    zIndex: 9999,
+  },
+  actionButton: {
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 3,
+    shadowOpacity: 0.5,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtonActive: {
+    backgroundColor: Colors.dangerBackground,
+    shadowColor: Colors.danger,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 8,
+    shadowOpacity: 0.6,
+    elevation: 6,
   },
   errorContainer: {
     marginTop: Spacings.md,

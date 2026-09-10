@@ -15,6 +15,8 @@ import { InvoiceView } from '../../views/profile/InvoiceView';
 import { NewCompanyView } from '../../views/company/NewCompanyView';
 import { NotificationView } from '../../views/notification/NotificationView';
 
+import { FavouriteView } from '../../views/favourite/FavouriteView';
+
 const ProfileStackNav = createStackNavigator();
 export const ProfileStack = () => {
   return (
@@ -90,6 +92,15 @@ export const ProfileStack = () => {
       <ProfileStackNav.Screen
         name="invoice-view"
         component={InvoiceView}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+
+      <ProfileStackNav.Screen
+        name="favourite-view"
+        component={FavouriteView}
         options={{
           headerShown: false,
           animation: 'slide_from_right',

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Platform,
   Animated,
+  Easing,
   Pressable,
   StatusBar,
   ScrollView,
@@ -51,6 +52,7 @@ const AUTO_HIDE_MS = 3500;
 const TOOLTIP_WIDTH = 110;
 const TOOLTIP_BG = 'rgba(14,14,18,0.8)';
 const COOKIE_REFRESH_MS = 13 * 60 * 1000;
+const SOMMAIRE_ANIM_MS = 260;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -124,74 +126,128 @@ const EmbeddedSommaire = ({
   duration: number;
   onSeek: (t: number) => void;
 }) => {
+  const [expanded, setExpanded] = useState(true);
+  const [contentHeight, setContentHeight] = useState(0);
+  const anim = useRef(new Animated.Value(1)).current; // 1 = ouvert, 0 = fermé
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    Animated.timing(anim, {
+      toValue: expanded ? 1 : 0,
+      duration: SOMMAIRE_ANIM_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [expanded, anim]);
+
   if (highlights.length === 0) return null;
+
+  const animatedHeight = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, contentHeight],
+  });
+
+  const chevronRotate = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
 
   return (
     <View style={sommaireStyles.wrapper}>
-      <View style={sommaireStyles.header}>
+      <TouchableOpacity
+        style={sommaireStyles.header}
+        onPress={() => setExpanded(v => !v)}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={expanded ? 'Masquer les chapitres' : 'Afficher les chapitres'}
+      >
         <Ionicons name="list" size={12} color={Colors.white} />
         <Text style={sommaireStyles.headerLabel}>Chapitres</Text>
-      </View>
+        <View style={sommaireStyles.headerSpacer} />
+        <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
+          <Ionicons name="chevron-down" size={20} color="rgba(255,255,255,0.55)" />
+        </Animated.View>
+      </TouchableOpacity>
 
-      {highlights.map((h, i) => {
-        const isActive =
-          currentTime >= h.time &&
-          (i === highlights.length - 1 || currentTime < highlights[i + 1].time);
-        const isPassed = !isActive && currentTime > h.time;
-        const progressRatio = duration > 0 ? Math.min(h.time / duration, 1) : 0;
+      <Animated.View
+        style={[
+          sommaireStyles.listClip,
+          contentHeight > 0 ? { height: animatedHeight, opacity: anim } : null,
+        ]}
+        pointerEvents={expanded ? 'auto' : 'none'}
+      >
+        <View
+          onLayout={e => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0 && Math.abs(h - contentHeight) > 1) setContentHeight(h);
+          }}
+        >
+          {highlights.map((h, i) => {
+            const isActive =
+              currentTime >= h.time &&
+              (i === highlights.length - 1 || currentTime < highlights[i + 1].time);
+            const isPassed = !isActive && currentTime > h.time;
+            const progressRatio = duration > 0 ? Math.min(h.time / duration, 1) : 0;
 
-        return (
-          <TouchableOpacity
-            key={h.id}
-            style={[sommaireStyles.row, isActive && sommaireStyles.rowActive]}
-            onPress={() => onSeek(h.time)}
-            activeOpacity={0.6}
-          >
-            {/* Left accent bar */}
-            <View style={[sommaireStyles.accentBar, isActive && sommaireStyles.accentBarActive]} />
-
-            {/* Index bubble */}
-            <View style={[
-              sommaireStyles.indexBubble,
-              isPassed && sommaireStyles.indexBubblePassed,
-              isActive && sommaireStyles.indexBubbleActive,
-            ]}>
-              {isPassed && !isActive ? (
-                <Ionicons name="checkmark" size={9} color="#fff" />
-              ) : (
-                <Text style={[
-                  sommaireStyles.indexText,
-                  (isPassed || isActive) && sommaireStyles.indexTextLight,
-                ]}>
-                  {i + 1}
-                </Text>
-              )}
-            </View>
-
-            {/* Label + time */}
-            <View style={sommaireStyles.rowBody}>
-              <Text style={sommaireStyles.rowTime}>{formatTime(h.time)}</Text>
-              <Text
-                style={[sommaireStyles.rowLabel, isActive && sommaireStyles.rowLabelActive]}
-                numberOfLines={1}
+            return (
+              <TouchableOpacity
+                key={h.id}
+                style={[sommaireStyles.row, isActive && sommaireStyles.rowActive]}
+                onPress={() => onSeek(h.time)}
+                activeOpacity={0.6}
               >
-                {h.label}
-              </Text>
-            </View>
+                {/* Left accent bar */}
+                <View style={[sommaireStyles.accentBar, isActive && sommaireStyles.accentBarActive]} />
 
-            {/* Mini progress indicator */}
-            <View style={sommaireStyles.miniBar}>
-              <View style={[
-                sommaireStyles.miniBarFill,
-                {
-                  width: `${progressRatio * 100}%` as any,
-                  backgroundColor: isActive ? '#E50914' : isPassed ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)',
-                },
-              ]} />
-            </View>
-          </TouchableOpacity>
-        );
-      })}
+                {/* Index bubble */}
+                <View style={[
+                  sommaireStyles.indexBubble,
+                  isPassed && sommaireStyles.indexBubblePassed,
+                  isActive && sommaireStyles.indexBubbleActive,
+                ]}>
+                  {isPassed && !isActive ? (
+                    <Ionicons name="checkmark" size={9} color="#fff" />
+                  ) : (
+                    <Text style={[
+                      sommaireStyles.indexText,
+                      (isPassed || isActive) && sommaireStyles.indexTextLight,
+                    ]}>
+                      {i + 1}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Label + time */}
+                <View style={sommaireStyles.rowBody}>
+                  <Text style={sommaireStyles.rowTime}>{formatTime(h.time)}</Text>
+                  <Text
+                    style={[sommaireStyles.rowLabel, isActive && sommaireStyles.rowLabelActive]}
+                    numberOfLines={1}
+                  >
+                    {h.label}
+                  </Text>
+                </View>
+
+                {/* Mini progress indicator */}
+                <View style={sommaireStyles.miniBar}>
+                  <View style={[
+                    sommaireStyles.miniBarFill,
+                    {
+                      width: `${progressRatio * 100}%` as any,
+                      backgroundColor: isActive ? '#E50914' : isPassed ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)',
+                    },
+                  ]} />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Animated.View>
     </View>
   );
 };
@@ -1026,12 +1082,17 @@ const sommaireStyles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 10,
   },
-  headerLabel: {
-    color: Colors.white,
-    fontSize: 10,
-    fontFamily: 'Poppins-Medium',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+  headerSpacer: {
+    flex: 1,
+  },
+  headerCount: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 11,
+    fontFamily: 'Poppins-Regular',
+    marginRight: 2,
+  },
+  listClip: {
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
@@ -1044,6 +1105,13 @@ const sommaireStyles = StyleSheet.create({
     marginHorizontal: 8,
     marginBottom: 2,
     overflow: 'hidden',
+  },
+  headerLabel: {
+    color: Colors.white,
+    fontSize: 10,
+    fontFamily: 'Poppins-Medium',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   rowActive: {
     backgroundColor: 'rgba(229,9,20,0.07)',

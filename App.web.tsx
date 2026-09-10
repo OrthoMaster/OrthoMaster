@@ -146,6 +146,13 @@ export default function App({ navigation }) {
       return;
     }
 
+    // Infographic
+    const ipMatch = path.match(/open\/infographic\/([^/]+)/);
+    if (ipMatch) {
+      window.location.href = `orthomaster://open/infographic/${ipMatch[1]}`;
+      return;
+    }
+
     // Espace pro
     if (path.includes('open/company')) {
       window.location.href = `orthomaster://open/company`;
@@ -153,11 +160,46 @@ export default function App({ navigation }) {
     }
 
     // Media preview
-    const contentId = new URLSearchParams(search).get('id');
-    if (path.includes('open/media-preview') && contentId) {
-      window.location.href = `orthomaster://open/content/${contentId}`;
+    const mediaMatch = path.match(/open\/media-preview\/([^/]+)/);
+    if (mediaMatch) {
+      window.location.href = `orthomaster://open/media-preview/${mediaMatch[1]}`;
+      return;
+    }
+
+    // Event
+    const eventMatch = path.match(/open\/event\/([^/]+)/);
+    if (eventMatch) {
+      window.location.href = `orthomaster://open/event/${eventMatch[1]}`;
+      return;
     }
   }, [appIsReady, windowWidth]);
+
+  const pendingNavigation = useRef<(() => void) | null>(null);
+
+  // Event Media
+  const openMediaHome = (params: Record<string, any>): boolean => {
+    const nav = navigationRef.current;
+    if (!nav?.isReady()) return false;
+
+    nav.navigate('media' as never, { screen: 'flash-media-home', params } as never);
+    return true;
+  };
+
+  const runOrQueue = (fn: () => void) => {
+    if (navigationRef.current?.isReady()) {
+      fn();
+    } else {
+      pendingNavigation.current = fn;
+    }
+  };
+
+  const handleWebDeepLink = () => {
+    const match = window.location.pathname.match(/open\/event\/([^/?#]+)/);
+    if (!match) return;
+
+    const id = String(match[1]);
+    runOrQueue(() => openMediaHome({ eventId: id, id: undefined }));
+  };
 
   // Link to screen
   const routeNameRef = React.useRef<string | undefined>(null);
@@ -170,6 +212,7 @@ export default function App({ navigation }) {
             'home': 'home',
             'podcast': 'open/podcast/:podcastId',
             'daily-question': 'open/daily-question/:questionId',
+            'infographic': 'open/infographic/:infographicId',
             'invoice-view': 'open/invoice/:invoiceId',
           }
         },
@@ -231,7 +274,15 @@ export default function App({ navigation }) {
           linking={linking}
           ref={navigationRef}
           onReady={() => {
-            routeNameRef.current = navigationRef.current.getCurrentRoute().name;
+            routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+
+            if (pendingNavigation.current) {
+              const run = pendingNavigation.current;
+              pendingNavigation.current = null;
+              run();
+            }
+
+            handleWebDeepLink();
           }}
           onStateChange={async () => {
             const currentRouteName = navigationRef.current.getCurrentRoute().name;

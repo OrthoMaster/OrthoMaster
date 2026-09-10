@@ -185,12 +185,7 @@ export const FlashSearchView = ({ navigation }) => {
       style={styles.videoItem}
       activeOpacity={0.7}
       onPress={() => {
-        navigation.navigate('media', {
-          screen: 'flash-media-preview',
-          params: {
-            media: item,
-          },
-        });
+        navigation.navigate('flash-media-preview', { media: item });
       }}
     >
       <View style={styles.thumbnailContainer}>

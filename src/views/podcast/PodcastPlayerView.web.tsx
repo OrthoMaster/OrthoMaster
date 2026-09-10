@@ -10,7 +10,7 @@ import {
   PanResponder,
   useWindowDimensions,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, CommonActions } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { Svg, Rect } from 'react-native-svg';
@@ -20,16 +20,27 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
-import { addTopic, sendError } from '../../services/v2/AuthService';
+import { sendError } from '../../services/v2/AuthService';
+import { toggleTopic, toggleFavourite } from '../../services/v2/FavouriteService';
 import { countTimesPodcast, getPodcastById } from '../../services/v2/ContentService';
+
+import useDebouncedToggle from '../../hooks/useDebouncedToggle';
+import SourceVideoCard from './components/SourceVideoCard';
+
+import useTopicFollowPrompt from '../../hooks/useTopicFollowPrompt';
+import TopicFollowDialog from '../../component/TopicFollowDialog';
 
 const WAVEFORM_BARS = 80; // web rộng hơn mobile -> nhiều bar hơn
 const BAR_GAP = 2;
+const NARROW_BREAKPOINT = 900;
+const RIGHT_COLUMN_WIDTH = 460;
 
 export const PodcastPlayerView = ({ navigation, route }) => {
   const { width: winWidth } = useWindowDimensions();
+  const isNarrow = winWidth < NARROW_BREAKPOINT;
 
   const podcastId = route.params?.podcastId ?? null;
+  const openFrom = route.params?.openFrom ?? null;
 
   const {
     data,
@@ -52,6 +63,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   const title = podcast?.title ?? '';
   const subtitle = podcast?.author ?? '';
   const topic = podcast?.topic ?? null;
+  const video = podcast?.content ?? null;
 
   const queryClient = useQueryClient();
 
@@ -62,9 +74,8 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [waveformData, setWaveformData] = useState<number[]>([]);
-  const [showToast, setShowToast] = useState(false);
   const [hasFinished, setHasFinished] = useState(false);
-  const [subscribed, setSubscribed] = useState<boolean>(hasTopic);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Toast animation
   const toastTranslateY = useRef(new Animated.Value(-100)).current;
@@ -138,11 +149,6 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   ).current;
 
   /* ---------------- Data effects ---------------- */
-
-  useEffect(() => {
-    setSubscribed(hasTopic);
-  }, [hasTopic]);
-
   useEffect(() => {
     const bars = Array.from({ length: WAVEFORM_BARS }, (_, i) => {
       const baseHeight = 15 + Math.sin(i * 0.3) * 10;
@@ -160,7 +166,10 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   }, [podcast?.id]);
 
   useEffect(() => {
-    if (!showToast) return;
+    if (!toastMessage) return;
+
+    toastTranslateY.setValue(-100);
+    toastOpacity.setValue(0);
 
     Animated.parallel([
       Animated.spring(toastTranslateY, {
@@ -188,11 +197,11 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           duration: 300,
           useNativeDriver: true,
         }),
-      ]).start(() => setShowToast(false));
+      ]).start(() => setToastMessage(null));
     }, 3000);
 
     return () => clearTimeout(timeout);
-  }, [showToast]);
+  }, [toastMessage]);
 
   const onPlaybackStatusUpdate = (status: any) => {
     if (!status.isLoaded) return;
@@ -294,25 +303,101 @@ export const PodcastPlayerView = ({ navigation, route }) => {
     await sound.setPositionAsync(Math.max(position - 15000, 0));
   };
 
-  const handleClose = () => {
+  /* ---------------- Actions ---------------- */
+
+  /** Web: partage natif si disponible, sinon copie du lien */
+  const handleShare = async () => {
+    if (!podcast) return;
+
+    const contentId = podcast.id;
+    const link = `https://go.orthomaster.fr/open/podcast/${contentId}`;
+    const message =
+      "Voici un contenu intéressant à écouter sur OrthoMaster :\n\n" +
+      title +
+      (subtitle ? ` par ${subtitle}` : '') +
+      "\n\n" +
+      link;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text: message, url: link });
+        return;
+      }
+
+      await navigator.clipboard.writeText(link);
+      setToastMessage('Lien copié dans le presse-papiers');
+    } catch (error) {
+      // L'utilisateur a annulé le partage natif: rien à signaler
+    }
+  };
+
+  /* ---------------- Suivi du sujet et favori ---------------- */
+
+  const [subscribed, toggleSubscribed] = useDebouncedToggle(
+    hasTopic,
+    async () => {
+      if (!topic) return false;
+
+      const ok = await toggleTopic(topic.id);
+
+      if (ok) {
+        await queryClient.invalidateQueries({ queryKey: ['current-user'] });
+        await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
+      }
+
+      return ok;
+    },
+    { tag: 'podcast-player-view-web' }
+  );
+
+  const [liked, toggleLiked] = useDebouncedToggle(
+    !!data?.has_like,
+    async () => {
+      if (!podcast?.id) return false;
+
+      return await toggleFavourite(podcast.id, 'podcast');
+    },
+    { tag: 'podcast-player-view-web' }
+  );
+
+  const handleLike = () => {
+    if (!podcast?.id) return;
+    toggleLiked();
+  };
+
+  /**
+     * Deeplink: stack có thể rỗng -> goBack() sẽ thoát app.
+     * Fallback về home cho chắc.
+     */
+  const leaveScreen = useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
     }
-    navigation.navigate('home');
-  };
+    navigation.dispatch(
+      CommonActions.reset({ index: 0, routes: [{ name: 'home' }] })
+    );
+  }, [navigation]);
 
-  const handleSubscribeTopic = async () => {
-    toastTranslateY.setValue(-100);
-    toastOpacity.setValue(0);
-    setShowToast(true);
+  const { requestLeave, dialogProps } = useTopicFollowPrompt({
+    topic,
+    alreadyFollowed: subscribed,
+    onLeave: leaveScreen,
+    tag: 'podcast-player-view',
+  });
 
-    if (topic && !subscribed) {
-      setSubscribed(true);
-      await addTopic(topic.id);
-      await queryClient.invalidateQueries({ queryKey: ['current-user'] });
-      await queryClient.invalidateQueries({ queryKey: ['daily-action'] });
+  const handleOpenSourceVideo = () => {
+    if (!video?.id_content) return;
+
+    if (openFrom == 'media') {
+      navigation.goBack();
+      return;
     }
+
+    navigation.navigate('media', {
+      screen: 'flash-media-preview',
+      params: { media: video },
+    });
   };
 
   const formatTime = (millis: number) => {
@@ -340,7 +425,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
   if (!podcast) {
     return (
       <View style={styles.centeredScreen}>
-        <TouchableOpacity onPress={handleClose} style={[styles.iconButton, styles.closeFloating]}>
+        <TouchableOpacity onPress={requestLeave} style={[styles.iconButton, styles.closeFloating]}>
           <Ionicons name="close" size={24} color={Colors.white} />
         </TouchableOpacity>
 
@@ -354,6 +439,30 @@ export const PodcastPlayerView = ({ navigation, route }) => {
       </View>
     );
   }
+
+  const renderAction = (
+    key: string,
+    icon: any,
+    label: string,
+    onPress: () => void,
+    active = false
+  ) => (
+    <TouchableOpacity
+      key={key}
+      onPress={onPress}
+      style={[styles.actionButton, active && styles.actionButtonActive]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Ionicons name={icon} size={18} color={active ? Colors.primary : Colors.white} />
+      <Text
+        style={[styles.actionLabel, active && styles.actionLabelActive]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.root}>
@@ -379,7 +488,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
       />
 
       {/* Toast */}
-      {showToast && (
+      {!!toastMessage && (
         <Animated.View
           style={[
             styles.toastContainer,
@@ -390,12 +499,12 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           ]}
         >
           <Ionicons name="notifications" size={20} color={Colors.primary} />
-          <Text style={styles.toastText}>Vous suivez le sujet {topic?.name}</Text>
+          <Text style={styles.toastText}>{toastMessage}</Text>
         </Animated.View>
       )}
 
       {/* Close - góc trên trái */}
-      <TouchableOpacity onPress={handleClose} style={[styles.iconButton, styles.closeFloating]}>
+      <TouchableOpacity onPress={requestLeave} style={[styles.iconButton, styles.closeFloating]}>
         <Ionicons name="close" size={24} color={Colors.white} />
       </TouchableOpacity>
 
@@ -405,7 +514,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           <View style={styles.infoBlock}>
             {topic && (
               <View style={styles.topicBadge}>
-                <Text style={styles.topicText}>{topic.name}</Text>
+                <Text style={styles.topicText}>{topic.label}</Text>
               </View>
             )}
 
@@ -417,51 +526,47 @@ export const PodcastPlayerView = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* Bottom bar */}
+        {/* Bottom bar: 2 cột */}
         <View style={styles.bottomBar}>
-          <View style={styles.bottomInner}>
-            {/* Hàng 1: waveform + thời gian */}
-            <View style={styles.waveRow}>
-              <Text style={styles.time}>{formatTime(displayPosition)}</Text>
+          <View style={[styles.bottomInner, isNarrow && styles.bottomInnerNarrow]}>
+            {/* Cột trái: waveform + controls */}
+            <View style={styles.playerColumn}>
+              <View style={styles.waveRow}>
+                <Text style={styles.time}>{formatTime(displayPosition)}</Text>
 
-              <View
-                ref={waveRef}
-                onLayout={handleWaveLayout}
-                {...panResponder.panHandlers}
-                style={styles.waveformContainer}
-              >
-                {isLoadingAudio ? (
-                  <ActivityIndicator size="small" color={Colors.primary} />
-                ) : (
-                  <Svg height="48" width="100%">
-                    {waveformData.map((barHeight, index) => {
-                      const barProgress = index / WAVEFORM_BARS;
-                      const isActive = barProgress <= displayRatio;
-                      const barWidth = Math.max(2, waveWidth / WAVEFORM_BARS - BAR_GAP);
+                <View
+                  ref={waveRef}
+                  onLayout={handleWaveLayout}
+                  {...panResponder.panHandlers}
+                  style={styles.waveformContainer}
+                >
+                  {isLoadingAudio ? (
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                  ) : (
+                    <Svg height="44" width="100%">
+                      {waveformData.map((barHeight, index) => {
+                        const barProgress = index / WAVEFORM_BARS;
+                        const isActive = barProgress <= displayRatio;
+                        const barWidth = Math.max(2, waveWidth / WAVEFORM_BARS - BAR_GAP);
 
-                      return (
-                        <Rect
-                          key={index}
-                          x={index * (barWidth + BAR_GAP)}
-                          y={(48 - barHeight) / 2}
-                          width={barWidth}
-                          height={barHeight}
-                          fill={isActive ? Colors.primary : 'rgba(255,255,255,0.25)'}
-                          rx={barWidth / 2}
-                        />
-                      );
-                    })}
-                  </Svg>
-                )}
+                        return (
+                          <Rect
+                            key={index}
+                            x={index * (barWidth + BAR_GAP)}
+                            y={(44 - barHeight) / 2}
+                            width={barWidth}
+                            height={Math.min(barHeight, 44)}
+                            fill={isActive ? Colors.primary : 'rgba(255,255,255,0.25)'}
+                            rx={barWidth / 2}
+                          />
+                        );
+                      })}
+                    </Svg>
+                  )}
+                </View>
+
+                <Text style={styles.time}>{formatTime(duration)}</Text>
               </View>
-
-              <Text style={styles.time}>{formatTime(duration)}</Text>
-            </View>
-
-            {/* Hàng 2: controls ở giữa, like bên phải */}
-            <View style={styles.controlRow}>
-              {/* spacer trái để cụm controls nằm đúng giữa */}
-              <View style={styles.sideSlot} />
 
               <View style={styles.controls}>
                 <TouchableOpacity
@@ -469,7 +574,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
                   disabled={!sound || isLoadingAudio}
                   style={styles.controlButton}
                 >
-                  <Ionicons name="play-back" size={26} color={Colors.white} />
+                  <Ionicons name="play-back" size={24} color={Colors.white} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -482,7 +587,7 @@ export const PodcastPlayerView = ({ navigation, route }) => {
                   ) : (
                     <Ionicons
                       name={hasFinished ? 'reload' : isPlaying ? 'pause' : 'play'}
-                      size={32}
+                      size={28}
                       color={Colors.primary}
                     />
                   )}
@@ -493,22 +598,32 @@ export const PodcastPlayerView = ({ navigation, route }) => {
                   disabled={!sound || isLoadingAudio}
                   style={styles.controlButton}
                 >
-                  <Ionicons name="play-forward" size={26} color={Colors.white} />
+                  <Ionicons name="play-forward" size={24} color={Colors.white} />
                 </TouchableOpacity>
               </View>
+            </View>
 
-              <View style={[styles.sideSlot, styles.likeBlock]}>
-                <TouchableOpacity onPress={handleSubscribeTopic} style={styles.iconButton}>
-                  {subscribed
-                    ? <Ionicons name="heart" size={22} color={Colors.primary} />
-                    : <Ionicons name="heart-outline" size={22} color={Colors.white} />
-                  }
-                </TouchableOpacity>
+            {/* Cột phải: SourceVideoCard trên, actions dưới */}
+            <View style={[styles.sideColumn, isNarrow && styles.sideColumnNarrow]}>
+              <SourceVideoCard video={video} onPress={handleOpenSourceVideo} />
+
+              <View style={styles.actionsGroup}>
+                {renderAction('share', 'share-social-outline', 'Partager', handleShare)}
+
+                {renderAction(
+                  'like',
+                  liked ? 'heart' : 'heart-outline',
+                  "Sauvegarder",
+                  handleLike,
+                  liked
+                )}
               </View>
             </View>
           </View>
         </View>
       </View>
+
+      <TopicFollowDialog {...dialogProps} />
     </View>
   );
 };
@@ -609,55 +724,13 @@ const styles = StyleSheet.create({
   },
   infoWrapper: {
     width: '100%',
-    maxWidth: 1100,
+    maxWidth: 1150,
     alignSelf: 'center',
-    paddingHorizontal: Spacings.xl,
-    paddingBottom: Spacings.lg,
-  },
-
-  bottomBar: {
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    paddingTop: Spacings.xl,
-    paddingBottom: Spacings.xl,
-    paddingHorizontal: Spacings.xl,
-    backdropFilter: 'blur(12px)',
-  } as any,
-  bottomInner: {
-    width: '100%',
-    maxWidth: 1100,
-    alignSelf: 'center',
-    gap: Spacings.sm,
-  },
-
-  waveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.md,
-  },
-  waveformContainer: {
-    flex: 1,
-    height: 48,
-    justifyContent: 'center',
-    cursor: 'pointer',
-  } as any,
-  time: {
-    color: Colors.grayLight,
-    fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    width: 44,
-    textAlign: 'center',
-  },
-
-  controlRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacings.lg,
+    paddingHorizontal: Spacings.lg,
+    paddingBottom: Spacings.md,
   },
   infoBlock: {
-    maxWidth: 640,
+    maxWidth: 540,
     alignItems: 'flex-start',
   },
   title: {
@@ -695,26 +768,69 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  sideSlot: {
-    flex: 1,
-    minWidth: 0,
+  /* ---- Bottom bar ---- */
+  bottomBar: {
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: Spacings.lg,
+    paddingHorizontal: Spacings.lg,
+    backdropFilter: 'blur(12px)',
+  } as any,
+  bottomInner: {
+    width: '100%',
+    maxWidth: 1100,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xl,
+  },
+  bottomInnerNarrow: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: Spacings.md,
   },
 
+  /* Cột trái: waveform + controls */
+  playerColumn: {
+    flex: 1,
+    minWidth: 0,
+    gap: Spacings.xs,
+  },
+  waveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+  },
+  waveformContainer: {
+    flex: 1,
+    height: 44,
+    justifyContent: 'center',
+    cursor: 'pointer',
+  } as any,
+  time: {
+    color: Colors.grayLight,
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    width: 42,
+    textAlign: 'center',
+  },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacings.lg,
   },
   controlButton: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacings.xs,
+    padding: Spacings.xxs,
     cursor: 'pointer',
   } as any,
   playButton: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
@@ -723,9 +839,44 @@ const styles = StyleSheet.create({
     cursor: 'pointer',
   } as any,
 
-  likeBlock: {
+  /* Cột phải: SourceVideoCard + actions */
+  sideColumn: {
+    width: RIGHT_COLUMN_WIDTH,
+  },
+  sideColumnNarrow: {
+    width: '100%',
+  },
+  actionsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+  },
+  actionButton: {
     flex: 1,
-    alignItems: 'flex-end',
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacings.xxs,
+    paddingHorizontal: Spacings.sm,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    cursor: 'pointer',
+  } as any,
+  actionButtonActive: {
+    borderColor: Colors.primary,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  actionLabel: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+  },
+  actionLabelActive: {
+    color: Colors.primary,
   },
 });
 

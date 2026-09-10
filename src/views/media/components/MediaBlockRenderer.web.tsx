@@ -14,6 +14,10 @@ import ListBlock from '../../training/components/ListBlock';
 import { VideoPlayer } from './VideoPlayer';
 import { MediaImageBlock } from './MediaImageBlock';
 
+import MediaQuizBlock from './MediaQuizBlock';
+import MediaPodcastBlock from './MediaPodcastBlock';
+import MediaInfographicBlock from './MediaInfographicBlock';
+
 export interface MediaBlock {
   id: string;
   type: string;
@@ -110,7 +114,7 @@ export const MediaBlockRenderer = ({ blocks, navigation, contentWidth = DEFAULT_
     if (block.type === 'list' && Array.isArray(block.data?.items)) {
       return (
         <View key={key} style={styles.listBlock}>
-          <ListBlock items={block.data.items} style={block.data.style} />
+          <ListBlock items={block.data.items} style={block.data.style} markerStyle={{ color: Colors.subtext }} itemStyle={styles.paragraph} />
         </View>
       );
     }
@@ -143,6 +147,41 @@ export const MediaBlockRenderer = ({ blocks, navigation, contentWidth = DEFAULT_
       );
     }
 
+    // Quiz rattaché : jouable directement dans l'article
+    if (block.type === 'quiz' && block.data?.id) {
+      return (
+        <View key={key} style={styles.linkedBlock}>
+          <MediaQuizBlock questionId={block.data.id} fallbackTitle={block.data.title} />
+        </View>
+      );
+    }
+
+    // Podcast rattaché
+    if (block.type === 'podcast' && block.data?.id) {
+      return (
+        <View key={key} style={styles.linkedBlock}>
+          <MediaPodcastBlock
+            podcastId={block.data.id}
+            fallbackTitle={block.data.title}
+            navigation={navigation}
+          />
+        </View>
+      );
+    }
+
+    // Infographie rattachée
+    if (block.type === 'infographic' && block.data?.id) {
+      return (
+        <View key={key} style={styles.linkedBlock}>
+          <MediaInfographicBlock
+            infographicId={block.data.id}
+            fallbackTitle={block.data.title}
+            navigation={navigation}
+          />
+        </View>
+      );
+    }
+
     if (!SUPPORTED.includes(block.type)) return null;
 
     return null;
@@ -168,8 +207,8 @@ const styles = StyleSheet.create({
   },
   heading1: { fontSize: 32, fontFamily: 'Poppins-Medium', color: Colors.primary },
   heading2: { fontSize: 26, fontFamily: 'Poppins-Medium', color: Colors.primary },
-  heading3: { fontSize: 22, fontFamily: 'Poppins-Medium', color: Colors.text },
-  heading4: { fontSize: 19, fontFamily: 'Poppins-Medium', color: Colors.text },
+  heading3: { fontSize: 22, fontFamily: 'Poppins-Medium', color: Colors.primary },
+  heading4: { fontSize: 19, fontFamily: 'Poppins-Medium', color: Colors.primary },
 
   paragraphBlock: {
     marginBottom: Spacings.md,
@@ -229,6 +268,10 @@ const styles = StyleSheet.create({
   },
 
   videoBlock: {
+    marginBottom: Spacings.xl,
+  },
+
+  linkedBlock: {
     marginBottom: Spacings.xl,
   },
 

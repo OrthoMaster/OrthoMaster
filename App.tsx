@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer, StackActions } from '@react-navigation/native';
+import { NavigationContainer, StackActions, getStateFromPath } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 const prefix = Linking.createURL('/');
@@ -22,6 +22,8 @@ import { useGetUser } from './src/hooks/auth.hook';
 import { authEvents, updateNotiPermission, sendError } from './src/services/v2/AuthService';
 
 import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScreen';
+
+import useDeviceToken from './src/hooks/useDeviceToken';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -60,6 +62,9 @@ function AppContent() {
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const previousUserRef = useRef(null);
 
+  // Le jeton de notification est maintenu à jour tant que l'utilisateur est connecté
+  useDeviceToken(!!user);
+
   const pendingDeepLink = useRef(false);
 
   // Điều hướng bị hoãn khi navigation chưa ready -> lưu hẳn 1 callback
@@ -75,9 +80,7 @@ function AppContent() {
   /* ------------------------------------------------------------------ */
 
   /**
-   * navigate('home', { screen: 'podcast' }) bị nuốt khi tab 'home' ĐANG focus:
-   * tab router xử lý xong ở cấp của nó, stack con không nhận được action nào.
-   * Nên phải dispatch thẳng vào stack con qua `target`.
+   * navigate('home', { screen: 'podcast' })
    */
   const pushToHomeStack = (screen: string, params: any): boolean => {
     const nav = navigationRef.current;
@@ -99,6 +102,17 @@ function AppContent() {
 
     // Cold start: stack con chưa khởi tạo -> params lồng vẫn chạy đúng
     nav.navigate('home' as never, { screen, params } as never);
+    return true;
+  };
+
+  /**
+   * navigate('flash-media-home', { screen: 'event' })
+   */
+  const openMediaHome = (params: Record<string, any>): boolean => {
+    const nav = navigationRef.current;
+    if (!nav?.isReady()) return false;
+
+    nav.navigate('media' as never, { screen: 'flash-media-home', params } as never);
     return true;
   };
 
@@ -124,6 +138,12 @@ function AppContent() {
     } else if (seg[1] === 'daily-question' && seg[2]) {
       const id = String(seg[2]);
       runOrQueue(() => pushToHomeStack('daily-question', { questionId: id }));
+    } else if (seg[1] === 'infographic' && seg[2]) {
+      const id = String(seg[2]);
+      runOrQueue(() => pushToHomeStack('infographic', { infographicId: id }));
+    } else if (seg[1] === 'event' && seg[2]) {
+      const id = String(seg[2]);
+      runOrQueue(() => openMediaHome({ eventId: id, id: undefined }));
     }
   };
 
@@ -384,10 +404,22 @@ function AppContent() {
       }
     }
 
+    if (action === 'infographic') {
+      const infographicId = data?.infographicId ?? data?.infographic_id ?? data?.id;
+      if (infographicId) {
+        runOrQueue(() => pushToHomeStack('infographic', { infographicId: String(infographicId) }));
+        return;
+      }
+    }
+
     const routes: Record<string, (d?: any) => NavTarget> = {
       'media': (d) => {
         const id = d?.id ?? d?.id_content ?? d?.media_id;
         return ['media', { screen: 'flash-media-home', params: { id: id ? String(id) : undefined } }];
+      },
+      'event': (d) => {
+        const id = d?.id ?? d?.id_event ?? d?.event_id ?? d?.eventId;
+        return ['media', { screen: 'flash-media-home', params: { eventId: id ? String(id) : undefined } }];
       },
       'training': () => ['training', { screen: 'training-list' }],
       'document': () => ['profile', { screen: 'document-view' }],
@@ -399,6 +431,10 @@ function AppContent() {
       'daily-question': (d) => {
         const id = d?.id ?? d?.questionId;
         return ['home', { screen: 'daily-question', params: { questionId: id ? String(id) : undefined } }];
+      },
+      'infographic': (d) => {
+        const id = d?.id ?? d?.infographicId;
+        return ['home', { screen: 'infographic', params: { infographicId: id ? String(id) : undefined } }];
       },
     };
 
@@ -433,13 +469,18 @@ function AppContent() {
   }, []);
 
   // ---------- Linking config ----------
-  /**
-   * 'podcast' và 'daily-question' KHÔNG khai ở đây.
-   * Chúng nằm trong HomeStack (tab mặc định) nên cơ chế path lồng của
-   * React Navigation bị nuốt khi tab home đang focus -> xử lý tay ở handleDeepLink.
-   */
   const linking = {
     prefixes: [prefix],
+
+    // 'open/event/:id'
+    getStateFromPath: (path: string, options: any) => {
+      const m = path.match(/^\/?open\/event\/([^/?#]+)/);
+      if (m) {
+        return getStateFromPath(`/open/media-preview?eventId=${m[1]}`, options);
+      }
+      return getStateFromPath(path, options);
+    },
+
     config: {
       screens: {
         'home': {
@@ -447,10 +488,10 @@ function AppContent() {
             'home': 'home',
             'podcast': 'open/podcast/:podcastId',
             'daily-question': 'open/daily-question/:questionId',
+            'infographic': 'open/infographic/:infographicId',
             'invoice-view': { path: 'open/invoice/:invoiceId' },
           },
         },
-
         'media': {
           screens: {
             'flash-media-home': { path: 'open/media-preview/:id?' },

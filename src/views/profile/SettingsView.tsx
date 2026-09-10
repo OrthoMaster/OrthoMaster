@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   StatusBar,
   Switch,
@@ -12,12 +13,15 @@ import {
   Linking,
   Platform,
   ActivityIndicator,
+  Animated,
   Image,
   Dimensions
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+
+import { useFocusEffect } from '@react-navigation/native';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -31,11 +35,26 @@ const isTablet = Platform.OS !== 'web' && width >= 768;
 const numberCol = isTablet ? 5 : 3;
 const topicWidth = (width - 2 * Spacings.lg - (numberCol - 1) * Spacings.sm) / numberCol - (4 * numberCol);
 
+/** Diamètre des sous-sujets déployés en éventail */
+const CHILD_SIZE = topicWidth * 0.68;
+
+/** Écart minimal entre deux sous-sujets voisins, étiquette comprise */
+const CHILD_GAP = 44;
+
+/** L'éventail occupe un quart de tour, du premier au dernier sous-sujet */
+const FAN_SPREAD = Math.PI / 2;
+
+/** Marge conservée avec les bords de l'écran */
+const SCREEN_MARGIN = 16;
+
 interface Topic {
   id: string;
   name: string;
   image?: string;
   description?: string;
+  parent_id?: string | null;
+  has_children?: boolean;
+  children?: Topic[];
 }
 
 interface SettingItemProps {
@@ -45,49 +64,305 @@ interface SettingItemProps {
   value: boolean;
   onValueChange: (value: boolean) => void;
   isLast?: boolean;
+  disabled?: boolean;
 }
+
+/** Position et contenu de l'éventail en cours d'affichage */
+type FanState = {
+  topic: Topic;
+  cx: number;
+  cy: number;
+} | null;
+
+/**
+ * Un sujet est actif lorsqu'il est lui-même suivi, ou — s'il regroupe
+ * des sous-sujets — dès que l'un d'eux l'est.
+ */
+const isTopicActive = (topic: Topic, selectedIds: string[]): boolean => {
+  const children = topic.children ?? [];
+
+  if (children.length === 0) {
+    return selectedIds.includes(topic.id);
+  }
+
+  return children.some(child => selectedIds.includes(child.id));
+};
+
+/* -------------------------------------------------------------------------- */
+/* Pastille ronde, commune aux sujets et sous-sujets                          */
+/* -------------------------------------------------------------------------- */
+
+const TopicDisc = ({
+  topic,
+  size,
+  selected,
+}: {
+  topic: Topic;
+  size: number;
+  selected: boolean;
+}) => (
+  <View
+    style={[
+      styles.topicImageContainer,
+      { width: size, height: size, borderRadius: size },
+      selected && styles.topicImageContainerSelected,
+      { opacity: selected ? 1 : 0.6 },
+    ]}
+  >
+    {topic.image ? (
+      <Image
+        source={{ uri: process.env.EXPO_PUBLIC_S3_URL + topic.image }}
+        style={styles.topicImage}
+        resizeMode="cover"
+      />
+    ) : (
+      <View style={styles.topicImagePlaceholder}>
+        <Ionicons name="image-outline" size={24} color={Colors.gray} />
+      </View>
+    )}
+  </View>
+);
+
+/* -------------------------------------------------------------------------- */
+/* Sujet de la grille                                                          */
+/* -------------------------------------------------------------------------- */
 
 interface TopicCardProps {
   topic: Topic;
   isSelected: boolean;
   onToggle: (topicId: string) => void;
+  onExpand: (topic: Topic, cx: number, cy: number) => void;
 }
 
-const TopicCard: React.FC<TopicCardProps> = ({ topic, isSelected, onToggle }) => (
-  <TouchableOpacity
-    style={[styles.topicCard, { width: topicWidth }]}
-    onPress={() => onToggle(topic.id)}
-    activeOpacity={0.8}
-  >
-    <View style={[
-      styles.topicImageContainer,
-      { width: topicWidth, height: topicWidth, borderRadius: topicWidth },
-      isSelected && styles.topicImageContainerSelected,
-      { opacity: isSelected ? 1 : 0.6 }
-    ]}>
-      {topic.image ? (
-        <Image
-          source={{ uri: process.env.EXPO_PUBLIC_S3_URL + topic.image }}
-          style={styles.topicImage}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={styles.topicImagePlaceholder}>
-          <Ionicons name="image-outline" size={24} color={Colors.gray} />
-        </View>
-      )}
-    </View>
-    <Text
-      style={[
-        styles.topicCardText,
-        isSelected && styles.topicCardTextSelected
-      ]}
-      numberOfLines={2}
+const TopicCard: React.FC<TopicCardProps> = ({ topic, isSelected, onToggle, onExpand }) => {
+  const discRef = useRef<View>(null);
+
+  const hasChildren = (topic.children ?? []).length > 0;
+
+  const handlePress = () => {
+    // Sans sous-sujet, le sujet se suit directement
+    if (!hasChildren) {
+      onToggle(topic.id);
+      return;
+    }
+
+    // L'éventail s'ouvre autour de la pastille : sa position est mesurée
+    // dans le repère de la fenêtre, celui de la surface superposée
+    discRef.current?.measureInWindow((x, y, w, h) => {
+      onExpand(topic, x + w / 2, y + h / 2);
+    });
+  };
+
+  return (
+    <TouchableOpacity
+      style={[styles.topicCard, { width: topicWidth }]}
+      onPress={handlePress}
+      activeOpacity={0.8}
     >
-      {topic.name}
-    </Text>
-  </TouchableOpacity>
-);
+      <View ref={discRef} collapsable={false}>
+        <TopicDisc topic={topic} size={topicWidth} selected={isSelected} />
+      </View>
+
+      <Text
+        style={[styles.topicCardText, isSelected && styles.topicCardTextSelected]}
+        numberOfLines={2}
+      >
+        {topic.name}
+      </Text>
+
+      {/* {hasChildren && (
+        <View style={styles.childrenHint}>
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={12}
+            color={isSelected ? Colors.primary : Colors.gray}
+          />
+        </View>
+      )} */}
+    </TouchableOpacity>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/* Éventail des sous-sujets                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Répartit les sous-sujets sur un quart de tour, centré sur la pastille
+ * du sujet.
+ *
+ * L'éventail s'ouvre vers la zone libre : vers le bas dans la moitié
+ * haute de l'écran, vers le haut dans la moitié basse, et du côté opposé
+ * au bord le plus proche. Le premier sous-sujet occupe toujours l'angle
+ * vertical du quadrant, le dernier son angle horizontal.
+ */
+const computeFanPositions = (count: number, cx: number, cy: number) => {
+  if (count === 0) return [];
+
+  const step = count > 1 ? FAN_SPREAD / (count - 1) : 0;
+
+  // Le rayon découle de l'écart angulaire : deux voisins ne doivent jamais
+  // se toucher, étiquettes comprises
+  const needed = count > 1
+    ? (CHILD_SIZE + CHILD_GAP) / (2 * Math.sin(step / 2))
+    : topicWidth * 1.55;
+  
+  const radius = Math.max(topicWidth * 1.55, needed);
+
+  // Vertical : vers le bas en haut d'écran, vers le haut en bas d'écran
+  const openDown = cy < height / 2;
+
+  // Horizontal : vers le centre lorsque la pastille longe un bord
+  const third = width / 3;
+  const openRight = cx < third ? true : cx > width - third ? false : true;
+
+  // Angle vertical du quadrant : point de départ de l'arc
+  const start = openDown ? Math.PI / 2 : -Math.PI / 2;
+
+  // Le balayage rejoint l'angle horizontal, du côté choisi
+  const direction = openDown === openRight ? -1 : 1;
+
+  return Array.from({ length: count }, (_, i) => {
+    const angle = start + direction * step * i;
+
+    return {
+      dx: radius * Math.cos(angle),
+      dy: radius * Math.sin(angle),
+    };
+  });
+};
+
+const TopicFanOverlay = ({
+  fan,
+  selectedIds,
+  onToggle,
+  onClose,
+}: {
+  fan: FanState;
+  selectedIds: string[];
+  onToggle: (topicId: string) => void;
+  onClose: () => void;
+}) => {
+  const progress = useRef(new Animated.Value(0)).current;
+
+  // La donnée est conservée le temps de l'animation de fermeture
+  const [current, setCurrent] = useState<FanState>(null);
+
+  useEffect(() => {
+    if (fan) {
+      setCurrent(fan);
+      progress.setValue(0);
+
+      Animated.spring(progress, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 70,
+        friction: 9,
+      }).start();
+
+      return;
+    }
+
+    if (!current) return;
+
+    Animated.timing(progress, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => setCurrent(null));
+  }, [fan]);
+
+  if (!current) return null;
+
+  const children = current.topic.children ?? [];
+  const positions = computeFanPositions(children.length, current.cx, current.cy);
+
+  const parentActive = isTopicActive(current.topic, selectedIds);
+
+  return (
+    <Modal visible transparent statusBarTranslucent animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[styles.fanBackdrop, { opacity: progress }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
+
+      {/* Le sujet reste à sa place : un nouvel appui referme l'éventail */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onClose}
+        style={[
+          styles.fanItem,
+          {
+            left: current.cx - topicWidth / 2,
+            top: current.cy - topicWidth / 2,
+            width: topicWidth,
+          },
+        ]}
+      >
+        <TopicDisc topic={current.topic} size={topicWidth} selected={parentActive} />
+        <Text
+          style={[styles.fanLabel, parentActive && styles.topicCardTextSelected]}
+          numberOfLines={2}
+        >
+          {current.topic.name}
+        </Text>
+      </TouchableOpacity>
+
+      {children.map((child, i) => {
+        const { dx, dy } = positions[i];
+
+        // Chaque sous-sujet part de la pastille du sujet, avec un léger décalage
+        const start = children.length > 1 ? (i / children.length) * 0.35 : 0;
+        const t = progress.interpolate({
+          inputRange: [start, Math.min(start + 0.65, 1)],
+          outputRange: [0, 1],
+          extrapolate: 'clamp',
+        });
+
+        const selected = selectedIds.includes(child.id);
+
+        return (
+          <Animated.View
+            key={child.id}
+            style={[
+              styles.fanItem,
+              {
+                left: current.cx - CHILD_SIZE / 2,
+                top: current.cy - CHILD_SIZE / 2,
+                width: CHILD_SIZE,
+                opacity: t,
+                transform: [
+                  { translateX: t.interpolate({ inputRange: [0, 1], outputRange: [0, dx] }) },
+                  { translateY: t.interpolate({ inputRange: [0, 1], outputRange: [0, dy] }) },
+                  { scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) },
+                ],
+              },
+            ]}
+          >
+            <TouchableOpacity activeOpacity={0.8} onPress={() => onToggle(child.id)}>
+              <TopicDisc topic={child} size={CHILD_SIZE} selected={selected} />
+
+              {/* Le sujet parent est rappelé au-dessus, en retrait :
+                  le sous-sujet reste ce que l'œil lit en premier */}
+              {/* <Text style={styles.fanParentLabel} numberOfLines={1}>
+                {current.topic.name}
+              </Text> */}
+              <Text
+                style={[styles.fanLabel, selected && styles.topicCardTextSelected]}
+                numberOfLines={2}
+              >
+                {child.name}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
+    </Modal>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/* Écran                                                                       */
+/* -------------------------------------------------------------------------- */
 
 const SettingItem: React.FC<SettingItemProps> = ({
   iconName,
@@ -95,15 +370,18 @@ const SettingItem: React.FC<SettingItemProps> = ({
   description,
   value,
   onValueChange,
-  isLast
+  isLast,
+  disabled
 }) => (
   <View style={[styles.settingItem, !isLast && styles.settingItemBorder]}>
     <View style={styles.settingItemLeft}>
       <View style={styles.iconContainer}>
-        <Ionicons name={iconName} size={20} color={Colors.text} />
+        <Ionicons name={iconName} size={20} color={disabled ? Colors.gray : Colors.text} />
       </View>
       <View style={styles.settingItemText}>
-        <Text style={styles.settingItemTitle}>{title}</Text>
+        <Text style={[styles.settingItemTitle, disabled && styles.settingItemTitleDisabled]}>
+          {title}
+        </Text>
         {description &&
           <Text style={styles.settingItemDescription}>{description}</Text>
         }
@@ -112,6 +390,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
     <Switch
       value={value}
       onValueChange={onValueChange}
+      disabled={disabled}
       trackColor={{ false: Colors.line, true: Colors.primaryLight || Colors.primary }}
       thumbColor={value ? Colors.primary : Colors.gray}
       ios_backgroundColor={Colors.line}
@@ -133,11 +412,26 @@ export const SettingsView = ({ navigation }) => {
     };
   }, [navigation]);
 
-  const { data: preData, isLoading: isLoadingTopics } = useQuery({
+  const {
+    data: preData,
+    isLoading: isLoadingTopics,
+    refetch: refetchPreData,
+  } = useQuery({
     queryKey: ['pre-form-data-profile'],
     queryFn: () => getPreFormData(),
+    staleTime: 0,
+    retry: 2,
+    retryDelay: 2000,
   });
+
   const { data: user, isLoading: isLoadingUser, refetch, isFetching, error } = useGetUser();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchPreData();
+      refetch();
+    }, [refetchPreData, refetch])
+  );
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -151,6 +445,9 @@ export const SettingsView = ({ navigation }) => {
 
   // Topics state
   const [topics, setTopics] = useState<Topic[]>([]);
+
+  /** Sujet dont les sous-sujets sont déployés */
+  const [fan, setFan] = useState<FanState>(null);
 
   // Load topics from database
   useEffect(() => {
@@ -168,33 +465,48 @@ export const SettingsView = ({ navigation }) => {
     setIsLoading(false);
   }, [user]);
 
+  /** Autorisation système : sans elle, le réglage ne sert à rien */
+  const [permissionDenied, setPermissionDenied] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    Notifications.getPermissionsAsync()
+      .then(({ status }) => {
+        if (isActive) setPermissionDenied(status === 'denied');
+      })
+      .catch(() => { });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   // Handle change any settings
   const handleSettingChange = async (key: keyof typeof settings, value: boolean) => {
     if (key == 'notifications' && value == true && !user.settings?.notifications) {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      if (existingStatus !== 'undetermined') {
+      if (existingStatus === 'undetermined') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
-      } else if (finalStatus !== 'granted') {
-        Alert.alert(
-          'Notifications désactivées',
-          'Vous avez refusé les notifications. Veuillez les activer dans les paramètres de votre appareil.',
-          [
-            { text: 'Annuler', style: 'cancel' },
-            {
-              text: 'Ouvrir les paramètres',
-              onPress: () => Linking.openSettings()
-            }
-          ]
-        );
       }
 
-      if (finalStatus == 'granted') {
-        setSettings(prev => ({ ...prev, [key]: value }));
-        setHasChanges(true);
+      if (finalStatus !== 'granted') {
+        Alert.alert(
+          'Notifications désactivées',
+          'Pour recevoir des quizz, podcasts et infographies selon vos envies, veuillez activer les notifications.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Ouvrir les réglages', onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
       }
+
+      setSettings(prev => ({ ...prev, [key]: value }));
+      setHasChanges(true);
     } else {
       setSettings(prev => ({ ...prev, [key]: value }));
       setHasChanges(true);
@@ -211,6 +523,10 @@ export const SettingsView = ({ navigation }) => {
       return { ...prev, favoriteTopicIds: newTopicIds };
     });
     setHasChanges(true);
+  };
+
+  const handleExpandTopic = (topic: Topic, cx: number, cy: number) => {
+    setFan({ topic, cx, cy });
   };
 
   const back = () => {
@@ -276,6 +592,8 @@ export const SettingsView = ({ navigation }) => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: hasChanges ? 130 : Spacings.xxl }}
+        // L'éventail est ancré à une position figée : le défilement le referme
+        onScrollBeginDrag={() => setFan(null)}
       >
         {/* Notifications Section */}
         <View style={styles.section}>
@@ -284,12 +602,22 @@ export const SettingsView = ({ navigation }) => {
           <View style={styles.sectionContent}>
             <SettingItem
               iconName="notifications-outline"
-              title="Recevoir l’actualité de mes centres d’intérêts par notification"
-              value={settings.notifications}
+              title="Recevoir l'actualité de mes centres d'intérêts par notification"
+              value={settings.notifications && !permissionDenied}
               onValueChange={(value) => handleSettingChange('notifications', value)}
+              disabled={permissionDenied}
               isLast
             />
           </View>
+
+          {permissionDenied && (
+            <View style={styles.permissionNotice}>
+              <Ionicons name="warning" size={20} color={Colors.primary} />
+              <Text style={styles.permissionNoticeText}>
+                Pour recevoir des quizz, podcasts et infographies selon vos envies, veuillez activer les notifications.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Favorite Topics Section */}
@@ -311,8 +639,9 @@ export const SettingsView = ({ navigation }) => {
                     <TopicCard
                       key={topic.id}
                       topic={topic}
-                      isSelected={settings.favoriteTopicIds.includes(topic.id)}
+                      isSelected={isTopicActive(topic, settings.favoriteTopicIds)}
                       onToggle={handleToggleTopic}
+                      onExpand={handleExpandTopic}
                     />
                   ))}
                 </View>
@@ -347,6 +676,14 @@ export const SettingsView = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Sous-sujets déployés en éventail */}
+      <TopicFanOverlay
+        fan={fan}
+        selectedIds={settings.favoriteTopicIds}
+        onToggle={handleToggleTopic}
+        onClose={() => setFan(null)}
+      />
 
       {/* Success Modal */}
       <Modal
@@ -514,6 +851,9 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontFamily: 'Poppins-Bold',
   },
+  childrenHint: {
+    marginTop: 2,
+  },
   loadingContainer: {
     paddingVertical: Spacings.xxl,
     alignItems: 'center',
@@ -528,6 +868,37 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginTop: Spacings.md,
     textAlign: 'center',
+  },
+
+  // Éventail
+  fanBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+  },
+  fanItem: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  fanParentLabel: {
+    marginTop: 2,
+    fontSize: 10,
+    fontFamily: 'Poppins-Medium',
+    color: 'rgba(255, 255, 255, 0.65)',
+    textAlign: 'center',
+    lineHeight: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.95)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
+  fanLabel: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+    textAlign: 'center',
+    lineHeight: 14,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 
   // Bottom Section
@@ -597,5 +968,22 @@ const styles = StyleSheet.create({
     paddingTop: Spacings.xxs,
     marginBottom: Spacings.md,
     width: '70%',
+  },
+  settingItemTitleDisabled: {
+    color: Colors.gray,
+  },
+  permissionNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.xs,
+    paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.sm,
+    marginBottom: Spacings.md
+  },
+  permissionNoticeText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.primary,
   },
 });

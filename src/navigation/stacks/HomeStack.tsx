@@ -9,6 +9,7 @@ import { QaLayout } from '../../views/home/QaLayout';
 
 import { PodcastPlayerView } from '../../views/podcast/PodcastPlayerView';
 import { DailyQuestionView } from '../../views/question/DailyQuestionView';
+import { InfographicView } from '../../views/infographic/InfographicView';
 
 import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 import { LessonEndingView } from '../../views/content/LessonEndingView';
@@ -105,6 +106,30 @@ export const HomeStack = () => {
           },
           cardStyle: { backgroundColor: Colors.blackBackground },
           cardOverlayEnabled: false,
+        }}
+      />
+
+      <HomeStackNav.Screen
+        name="infographic"
+        component={InfographicView}
+        options={{
+          headerShown: false,
+          cardStyleInterpolator: forZoomFromCenter,
+          transitionSpec: {
+            open: {
+              animation: 'spring',
+              config: {
+                stiffness: 150,
+                damping: 30,
+              },
+            },
+            close: {
+              animation: 'timing',
+              config: {
+                duration: 350,
+              },
+            },
+          },
         }}
       />
 
