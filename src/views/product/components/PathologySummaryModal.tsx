@@ -35,7 +35,6 @@ export function PathologySummaryModal({ visible, dbId, fallbackTitle, onClose }:
 
   // ---------- entrance choreography ----------
   // clip snaps on → text sweeps left-to-right → button pops in.
-  const clipAnim = useRef(new Animated.Value(0)).current;
   const bodyAnim = useRef(new Animated.Value(0)).current;
   const btnAnim = useRef(new Animated.Value(0)).current;
 
@@ -49,23 +48,10 @@ export function PathologySummaryModal({ visible, dbId, fallbackTitle, onClose }:
       // Reset, otherwise the next open would show everything already in
       // place with no animation.
       setShown(false);
-      clipAnim.setValue(0);
       bodyAnim.setValue(0);
       btnAnim.setValue(0);
     }
-  }, [visible, clipAnim, bodyAnim, btnAnim]);
-
-  // The clip lands as soon as the sheet is up — it doesn't wait for the
-  // request, so a slow network doesn't leave the header bare.
-  useEffect(() => {
-    if (!shown) return;
-    Animated.spring(clipAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 11,
-      bounciness: 15,
-    }).start();
-  }, [shown, clipAnim]);
+  }, [visible, bodyAnim, btnAnim]);
 
   // Body sweep waits for both the sheet AND the content, then the button
   // follows it. Chaining means the button never appears over text that
@@ -89,13 +75,6 @@ export function PathologySummaryModal({ visible, dbId, fallbackTitle, onClose }:
       }),
     ]).start();
   }, [canSweep, bodyAnim, btnAnim]);
-
-  const clipDrop = clipAnim.interpolate({ inputRange: [0, 1], outputRange: [-26, 0] });
-  const clipScale = clipAnim.interpolate({ inputRange: [0, 1], outputRange: [1.5, 1] });
-  const clipSpin = clipAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['48deg', '18deg'],
-  });
 
   // scaleX pivots around the centre, so translateX compensates to keep
   // the left edge fixed: at scale s the left edge sits at -w*s/2, and we
@@ -187,25 +166,6 @@ export function PathologySummaryModal({ visible, dbId, fallbackTitle, onClose }:
             )}
           </View>
 
-          {/* Paper clip straddling the top edge, same as the preview note.
-              Drops in and untwists onto the sheet. */}
-          <Animated.View
-            style={[
-              styles.clip,
-              {
-                opacity: clipAnim,
-                transform: [
-                  { translateY: clipDrop },
-                  { scale: clipScale },
-                  { rotate: clipSpin },
-                ],
-              },
-            ]}
-            pointerEvents="none"
-          >
-            <MaterialCommunityIcons name="paperclip" size={47} color="#8A9099" />
-          </Animated.View>
-
           <Animated.View
             style={[
               styles.closeWrap,
@@ -236,6 +196,7 @@ const styles = StyleSheet.create({
   holder: {
     paddingTop: 18,
     flexShrink: 1,
+    alignItems: 'center',
   },
   card: {
     backgroundColor: PAPER,
@@ -248,6 +209,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.55,
     shadowRadius: 18,
     elevation: 14,
+    maxWidth: 600,
   },
 
   headTitle: {
@@ -317,17 +279,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 20,
     lineHeight: 19,
-  },
-
-  clip: {
-    position: 'absolute',
-    top: 6,
-    right: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 1, height: 3 },
-    shadowOpacity: 0.32,
-    shadowRadius: 4,
-    elevation: 6,
   },
 
   // Wrapper carries the animation; the button keeps its own styling so

@@ -21,10 +21,6 @@ import { getRules } from '../../../services/v2/ProductService';
 // Web-only style props not present in React Native's type definitions.
 const webClickable = { cursor: 'pointer' } as any;
 
-// Aspect-ratio threshold at which markdown media renders edge-to-edge.
-const LANDSCAPE_MIN_RATIO = 1.3;
-const CONTAINED_MAX = 280;
-
 type ProductDetailModalProps = {
   visible: boolean;
   product: Product | null;
@@ -63,14 +59,14 @@ export function ProductDetailModal({
   // Measure the panel so the image band can be a fixed 30% of ITS height
   // (not the screen). Captured via onLayout on the root container.
   const [panelH, setPanelH] = useState(0);
-  const IMAGE_H = panelH > 0 ? Math.round(panelH * 0.3) : 0;
+  const IMAGE_H = Math.max(Math.round(panelH * 0.4), 300);
 
   // Thumbnail strip height: thumb (44) + vertical padding (8 top + 8 bottom).
   const THUMB_STRIP_H = 44 + 16;
   const hasThumbs = (product?.images?.length ?? 0) > 1;
   // Main image height = full image band minus the thumbnail strip (only
   // when thumbnails are shown). Otherwise the image takes the whole band.
-  const MAIN_IMAGE_H = hasThumbs ? Math.max(IMAGE_H - THUMB_STRIP_H, 0) : IMAGE_H;
+  const MAIN_IMAGE_H = hasThumbs ? Math.max(IMAGE_H - THUMB_STRIP_H, 120) : IMAGE_H;
 
   // Track the panel's inner width so markdown media (SVG) can size to it
   // instead of the full screen (panel is only ~40% of the window).
@@ -117,7 +113,7 @@ export function ProductDetailModal({
     if (embedded) {
       return (
         <View style={styles.embeddedEmpty}>
-          <Ionicons name="cube-outline" size={40} color={palette.textMuted} />
+          <Ionicons name="cube-outline" size={50} color={palette.textMuted} />
           <Text style={styles.embeddedEmptyText}>
             Sélectionnez un produit pour afficher ses détails.
           </Text>
@@ -258,7 +254,7 @@ export function ProductDetailModal({
             key={activeTab}
             style={{ flex: 1 }}
             contentContainerStyle={styles.tabBody}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
             nestedScrollEnabled
           >
             <SimpleMarkdown
@@ -307,7 +303,6 @@ function SizesTabContent({
   }, [options, activeBuckets]);
 
   const anyMatched = rows.some(r => r.matched);
-  const hasActive = activeBuckets.length > 0;
 
   return (
     <ScrollView
@@ -316,15 +311,6 @@ function SizesTabContent({
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled
     >
-      {!hasActive && (
-        <View style={styles.hintBox}>
-          <Ionicons name="information-circle-outline" size={16} color="#1D4ED8" />
-          <Text style={styles.hintText}>
-            Sélectionnez une mesure dans le filtre pour voir la taille recommandée.
-          </Text>
-        </View>
-      )}
-
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Tailles disponibles</Text>
         {anyMatched && (
@@ -933,12 +919,11 @@ const styles = StyleSheet.create({
     backgroundColor: palette.cardBg,
   },
   embeddedEmptyText: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
     color: palette.textMuted,
     textAlign: 'center',
     marginTop: 12,
-    lineHeight: 18,
   },
 
   // Fallback modal styles

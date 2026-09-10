@@ -60,14 +60,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(30, 45, 66, 0.55)',
     justifyContent: 'center',
     paddingHorizontal: 28,
+    alignItems: 'center',
   },
   card: {
     backgroundColor: palette.cardBg,
     borderRadius: 20,
     paddingHorizontal: 22,
     paddingTop: 24,
-    paddingBottom: 18,
+    paddingBottom: 24,
     alignItems: 'center',
+    maxWidth: 500,
   },
   iconChip: {
     width: 54,

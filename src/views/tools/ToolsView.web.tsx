@@ -42,7 +42,11 @@ export const ToolsView = ({ navigation }) => {
 
   const tools = [
     { key: 'learning', component: <LearningSupportButton onPress={() => setShowLearningSupportMenu(true)} /> },
-    { key: 'queChoisir', component: <QueChoisirButton onPress={() => setShowQueChoisirMenu(true)} /> },
+    
+    // { key: 'queChoisir', component: <QueChoisirButton onPress={() => setShowQueChoisirMenu(true)} /> },
+    { key: 'queChoisir', component: <QueChoisirButton onPress={() => { navigation.navigate('new-que-choisir') }} /> },
+    
+
     { key: 'guidePatient', component: <GuidePatientButton onPress={() => setShowGuidePatientMenu(true)} /> },
     ...(user?.has_subscription
       ? [{ key: 'chatbot', component: <ChatbotButton onPress={() => navigation.navigate('chatbot-view')} /> }]

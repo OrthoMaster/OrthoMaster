@@ -8,7 +8,6 @@ import { ContentDisplayer } from '../../views/content/ContentDisplayer';
 import ReturnButtonIcon from '../components/ReturnButton';
 
 import { FunnelFilterScreen } from '../../views/product/FunnelFilterScreen';
-
 import { ProductsScreen } from '../../views/product/ProductsScreen';
 import { ProtocolScreen } from '../../views/product/ProtocolScreen';
 
@@ -56,12 +55,6 @@ export const ToolsStack = ({ navigation, route }) => {
         component={FunnelFilterScreen}
         options={{ headerShown: false }}
       />
-
-      {/* <ToolsStackNav.Screen
-        name={'new-que-choisir'}
-        component={SolarFilterScreen}
-        options={{ headerShown: false }}
-      /> */}
 
       <ToolsStackNav.Screen
         name={'products-view'}

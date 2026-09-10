@@ -228,10 +228,5 @@ const styles = StyleSheet.create({
     right: 22,
     // Tilted so it looks placed by hand rather than stamped on.
     transform: [{ rotate: '18deg' }],
-    shadowColor: '#000',
-    shadowOffset: { width: 1, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 6,
   },
 });

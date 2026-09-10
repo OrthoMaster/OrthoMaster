@@ -1,20 +1,20 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CommonActions } from '@react-navigation/native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  StatusBar,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
+  ViewStyle,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { FilterSummaryModal } from './components/FilterSummaryModal';
+
 import { ManufacturerPriorityModal } from './components/ManufacturerPriorityModal';
 import { ProductCard } from './components/ProductCard';
 import { ProductDetailModal } from './components/ProductDetailModal';
@@ -24,6 +24,7 @@ import { MainNode, Selections } from './lib/Logic';
 import { Product } from './lib/Products';
 import { SAMPLE_NODES } from './lib/SampleRules';
 import { palette } from './lib/Theme';
+import Colors from '../../../constants/Colors';
 
 import {
   filterProducts,
@@ -32,10 +33,26 @@ import {
   ProductListItem,
 } from '../../services/v2/ProductService';
 
-// Base URL for QR-encoded deep links. Change to your real domain.
+// ============================================================
+// Web sibling of ProductsScreen.tsx.
+//
+// Above 1024px the screen splits: the list keeps the left column and the
+// product sheet moves into a permanent right column, so comparing two
+// devices is a click each instead of open-read-close-open. Below that
+// the native single-column flow is kept, detail modal included.
+// ============================================================
+
+const BREAKPOINT = 1024;
+const FOOTER_MAX = 720;
+
+const clickable = { cursor: 'pointer' } as unknown as ViewStyle;
+const smoothTint = {
+  transitionProperty: 'background-color, border-color',
+  transitionDuration: '150ms',
+} as unknown as ViewStyle;
+
 const SHARE_URL_BASE = 'https://go.orthomaster.fr/open/products-view';
 
-// Fixed list of manufacturers. Adjust to match your real lookup table.
 const ALL_MANUFACTURERS: string[] = [
   'Innothera-Gibaud',
   'Enovis-Donjoy',
@@ -50,23 +67,16 @@ const ALL_MANUFACTURERS: string[] = [
   'Essity-Actimovee',
 ];
 
-// AsyncStorage key for the saved priority order.
+// AsyncStorage falls back to localStorage on web, so the saved order
+// survives reloads per browser profile.
 const MFG_PRIORITY_KEY = '@orthomaster/manufacturer_priority';
 
-// Pixel threshold past which the scroll-to-top FAB becomes visible.
 const SCROLL_TOP_THRESHOLD = 300;
 
-// Right-panel state. summary = FilterSummary (default); detail = a product
-// detail is open. There is no explicit "closed" — the panel is always shown.
-type PanelMode = 'summary' | 'detail';
-
-// Flatten Selections (nodeId → childId[]) to a flat list of childIds.
 function flattenSelections(selections: Selections): string[] {
   return Object.values(selections).flat();
 }
 
-// Rebuild Selections object from a flat list of childIds — used when the
-// screen is opened from a QR scan that only carries the flat list.
 function flatToSelections(flat: string[], nodes: MainNode[]): Selections {
   const set = new Set(flat);
   const result: Selections = {};
@@ -101,14 +111,14 @@ function detailToModalProduct(d: ProductDetail): Product {
     images: d.images,
     tags: d.tags,
     description_tabs: d.description_tabs,
-    sizes: d.sizes
+    sizes: d.sizes,
   } as Product;
 }
 
-export const ProductsScreen = ({ navigation, route }) => {
-  // Two entry points for filters:
-  //   1. route.params.selections  (from SolarFilterScreen — full object)
-  //   2. route.params.filters     (from QR scan — flat string[] OR CSV string)
+export const ProductsScreen = ({ navigation, route }: any) => {
+  const { width } = useWindowDimensions();
+  const isWide = width >= BREAKPOINT;
+
   const selections: Selections = useMemo(() => {
     if (route?.params?.selections) {
       return route.params.selections;
@@ -121,7 +131,6 @@ export const ProductsScreen = ({ navigation, route }) => {
     return flatToSelections(flat, SAMPLE_NODES);
   }, [route?.params?.selections, route?.params?.filters]);
 
-  // Protocol group filter — when set, the backend narrows the product list.
   const groupId: string | null = useMemo(() => {
     const g = route?.params?.groupId ?? route?.params?.group;
     return typeof g === 'string' && g !== '' ? g : null;
@@ -134,12 +143,6 @@ export const ProductsScreen = ({ navigation, route }) => {
 
   const [shareOpen, setShareOpen] = useState(false);
   const [mfgModalOpen, setMfgModalOpen] = useState(false);
-
-  // Right panel content mode. Defaults to the filter summary and switches
-  // to 'detail' when a product is opened. Détails button forces 'summary'.
-  const [panelMode, setPanelMode] = useState<PanelMode>('summary');
-
-  // Manufacturer priority — loaded from AsyncStorage on mount.
   const [mfgPriority, setMfgPriority] = useState<string[]>([]);
 
   useEffect(() => {
@@ -168,11 +171,13 @@ export const ProductsScreen = ({ navigation, route }) => {
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState(false);
 
-  // Product currently shown in the right panel (when panelMode === 'detail').
+  // selectedId drives the list highlight, detailProduct the panel. They
+  // move together but the id lands first, so the row responds to the
+  // click before the request comes back.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Scroll-to-top FAB state.
   const listRef = useRef<FlatList>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -186,12 +191,8 @@ export const ProductsScreen = ({ navigation, route }) => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, []);
 
-  const totalSelected = Object.values(selections).reduce(
-    (s, a) => s + a.length,
-    0,
-  );
+  const totalSelected = Object.values(selections).reduce((s, a) => s + a.length, 0);
 
-  // Build the URL the QR code will encode.
   const flatFilters = useMemo(() => flattenSelections(selections), [selections]);
   const userFilters = useMemo(() => new Set(flatFilters), [flatFilters]);
   const shareUrl = useMemo(() => {
@@ -208,7 +209,7 @@ export const ProductsScreen = ({ navigation, route }) => {
   }, [flatFilters, groupId]);
 
   const fetchSeqRef = useRef(0);
-  const fetchList = () => {
+  const fetchList = useCallback(() => {
     const mySeq = ++fetchSeqRef.current;
     setListLoading(true);
     setListError(false);
@@ -224,14 +225,13 @@ export const ProductsScreen = ({ navigation, route }) => {
         setListError(true);
         setListLoading(false);
       });
-  };
+  }, [flatFilters, groupId]);
 
   useEffect(() => {
     fetchList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selections, groupId]);
 
-  // Sort products by manufacturer priority.
   const sortedProducts = useMemo(() => {
     if (mfgPriority.length === 0) return products;
 
@@ -245,9 +245,17 @@ export const ProductsScreen = ({ navigation, route }) => {
     });
   }, [products, mfgPriority]);
 
+  // A new list means the open sheet may no longer be in it.
+  useEffect(() => {
+    if (!selectedId) return;
+    if (products.some(p => p.id === selectedId)) return;
+    setSelectedId(null);
+    setDetailProduct(null);
+  }, [products, selectedId]);
+
   const handleBack = useCallback(() => {
     const state = navigation.getState();
-    const hasSolarFilterInStack = state.routes.some(r => r.name === 'new-que-choisir');
+    const hasSolarFilterInStack = state.routes.some((r: any) => r.name === 'new-que-choisir');
 
     if (hasSolarFilterInStack) {
       navigation.goBack();
@@ -266,253 +274,233 @@ export const ProductsScreen = ({ navigation, route }) => {
     }));
   }, [navigation, route]);
 
-  const handleResetFilters = () => {
-    navigation.navigate('new-que-choisir', { reset: true });
-  };
+  // Clicking down the list quickly used to let a slow response overwrite
+  // a newer one; the sequence guard keeps the panel on the last click.
+  const detailSeqRef = useRef(0);
+  const handleOpenDetail = useCallback(async (item: ProductListItem) => {
+    const mySeq = ++detailSeqRef.current;
+    setSelectedId(item.id);
+    setDetailLoading(true);
 
-  // Détails button → show the filter summary in the right panel.
-  const handleShowSummary = useCallback(() => {
-    setPanelMode('summary');
+    const detail = await getProduct(item.id);
+    if (mySeq !== detailSeqRef.current) return;
+
+    setDetailLoading(false);
+    setDetailProduct(detail ? detailToModalProduct(detail) : listItemToCardProduct(item));
   }, []);
 
-  // Open a product's detail INTO the right panel (not a modal).
-  const handleOpenDetail = async (item: ProductListItem) => {
-    setDetailLoading(true);
-    setPanelMode('detail');
-    const detail = await getProduct(item.id);
+  const closeDetail = useCallback(() => {
+    detailSeqRef.current++;
+    setSelectedId(null);
+    setDetailProduct(null);
     setDetailLoading(false);
-    if (detail) {
-      setDetailProduct(detailToModalProduct(detail));
-    } else {
-      setDetailProduct(listItemToCardProduct(item));
-    }
-  };
+  }, []);
+
+  // ---------- pieces shared by both layouts ----------
+
+  const topBar = (
+    <View style={[styles.topBar, isWide && styles.topBarWide]}>
+      <View style={styles.topRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.eyebrow}>Étape 2</Text>
+          <Text style={[styles.title, isWide && styles.titleWide]}>
+            {groupLabel ?? (isWide ? 'Dispositifs médicaux' : 'Dispositifs\nMédicaux')}
+          </Text>
+        </View>
+
+        <View style={styles.rightButtons}>
+          <Pressable
+            style={[styles.actionBtn, clickable, smoothTint]}
+            onPress={() => setMfgModalOpen(true)}
+            disabled={totalSelected === 0}
+          >
+            <MaterialCommunityIcons
+              name={mfgPriority.length > 0 ? 'tag-arrow-down' : 'tag-arrow-down-outline'}
+              size={20}
+              color={mfgPriority.length > 0 ? Colors.success : palette.textSecondary}
+            />
+            <Text
+              style={[
+                styles.actionBtnText,
+                { color: mfgPriority.length > 0 ? Colors.success : palette.textSecondary },
+              ]}
+            >
+              Labos
+            </Text>
+          </Pressable>
+
+          <View style={styles.headerDivider} />
+
+          <Pressable
+            style={[
+              styles.actionBtn,
+              totalSelected === 0 && styles.actionBtnDisabled,
+              clickable,
+              smoothTint,
+            ]}
+            onPress={() => setShareOpen(true)}
+            disabled={totalSelected === 0}
+          >
+            <Ionicons
+              name="qr-code-outline"
+              size={20}
+              color={totalSelected === 0 ? palette.textMuted : palette.textPrimary}
+            />
+            <Text
+              style={[
+                styles.actionBtnText,
+                { color: totalSelected === 0 ? palette.textMuted : palette.textPrimary },
+              ]}
+            >
+              Partager
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+
+  const listBody = listLoading ? (
+    <View style={styles.centered}>
+      <ActivityIndicator size="large" color={palette.fabBg} />
+    </View>
+  ) : listError ? (
+    <View style={styles.empty}>
+      <Ionicons name="cloud-offline-outline" size={40} color={palette.textMuted} />
+      <Text style={styles.emptyTitle}>Erreur réseau</Text>
+      <Text style={styles.emptySub}>
+        Nous n'avons pas pu joindre le serveur. Veuillez réessayer.
+      </Text>
+      <Pressable style={[styles.emptyBtn, clickable]} onPress={fetchList}>
+        <Text style={styles.emptyBtnText}>Veuillez réessayer</Text>
+      </Pressable>
+    </View>
+  ) : products.length === 0 ? (
+    <View style={styles.empty}>
+      <Ionicons name="search-outline" size={50} color={palette.textMuted} />
+      <Text style={styles.emptyTitle}>Aucun dispositif trouvé.</Text>
+      <Pressable style={[styles.emptyBtn, clickable]} onPress={handleBack}>
+        <Text style={styles.emptyBtnText}>Retour aux critères patient</Text>
+      </Pressable>
+    </View>
+  ) : (
+    <FlatList
+      // numColumns can't change on a mounted list, so the key forces a
+      // remount when the layout flips.
+      key={isWide ? 'grid-2' : 'grid-1'}
+      ref={listRef}
+      data={sortedProducts}
+      keyExtractor={p => p.id}
+      numColumns={isWide ? 2 : 1}
+      columnWrapperStyle={isWide ? styles.columnWrapper : undefined}
+      renderItem={({ item }) => (
+        <View style={styles.cardCell}>
+          <ProductCard
+            product={listItemToCardProduct(item)}
+            onPress={() => handleOpenDetail(item)}
+            {...({ selected: isWide && item.id === selectedId } as any)}
+          />
+        </View>
+      )}
+      extraData={selectedId}
+      contentContainerStyle={[styles.listContent, isWide && styles.listContentWide]}
+      showsVerticalScrollIndicator={true}
+      onScroll={onListScroll}
+      scrollEventThrottle={64}
+    />
+  );
+
+  const scrollTopFab = showScrollTop ? (
+    <Pressable
+      style={[styles.scrollTopBtn, isWide && styles.scrollTopBtnWide, clickable]}
+      onPress={scrollToTop}
+      accessibilityLabel="Remonter en haut"
+    >
+      <Ionicons name="arrow-up" size={22} color="#FFFFFF" />
+    </Pressable>
+  ) : null;
+
+  const backCta = (
+    <Pressable style={[styles.cta, clickable]} onPress={handleBack}>
+      <Ionicons name="arrow-back" size={20} color="#fff" />
+      <Text style={styles.ctaText}>Retour aux critères patient</Text>
+    </Pressable>
+  );
+
+  // ---------- detail column ----------
+
+  const detailColumn = (
+    <View style={styles.detailCol}>
+      <ProductDetailModal
+        embedded
+        visible={!!detailProduct}
+        product={detailProduct}
+        userFilters={userFilters}
+        onClose={closeDetail}
+      />
+
+      {detailLoading && (
+        <View style={styles.detailOverlay} pointerEvents="none">
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        </View>
+      )}
+    </View>
+  );
+
+  // ---------- render ----------
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={palette.bg} />
-      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
-        {/* Two-column split: left = products list (50%), right = context
-            panel (50%). Same pattern as SolarFilterScreen. 50% is of the
-            space left of the app's left nav — handled automatically since
-            this screen already renders inside that remaining area. */}
-        <View style={styles.splitRow}>
-          {/* ============ LEFT: products ============ */}
-          <View style={styles.leftPane}>
-            {/* Top bar */}
-            <View style={styles.topBar}>
-              <View style={styles.topRow}>
-                <TouchableOpacity
-                  onPress={handleBack}
-                  style={styles.backBtn}
-                  hitSlop={10}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="arrow-back" size={22} color={palette.textPrimary} />
-                </TouchableOpacity>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.title} numberOfLines={1}>
-                    {groupLabel ?? 'Produits'}
-                  </Text>
-                  <Text style={styles.bannerText} numberOfLines={1}>
-                    {listLoading
-                      ? 'Chargement des produits …'
-                      : listError
-                        ? 'Impossible de charger les produits'
-                        : products.length === 0
-                          ? 'Aucun produit ne correspond à vos filtres'
-                          : `${products.length} produit${products.length > 1 ? 's' : ''} trouvé${products.length > 1 ? 's' : ''}`}
-                  </Text>
-                </View>
-
-                <View style={styles.topVerticalDivider} />
-
-                {/* Right side: labeled group with two icon+text actions */}
-                <View style={styles.rightGroup}>
-                  <Text style={styles.rightLabel}>Filtres Patient</Text>
-                  <View style={styles.rightButtons}>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, totalSelected === 0 && styles.actionBtnDisabled]}
-                      onPress={handleShowSummary}
-                      activeOpacity={0.85}
-                      disabled={totalSelected === 0}
-                    >
-                      <Ionicons
-                        name="list"
-                        size={18}
-                        color={totalSelected === 0 ? palette.textMuted : palette.textPrimary}
-                      />
-                      <Text
-                        style={[
-                          styles.actionBtnText,
-                          { color: totalSelected === 0 ? palette.textMuted : palette.textPrimary },
-                        ]}
-                      >
-                        Détails
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.actionBtnPrimary, totalSelected === 0 && styles.actionBtnPrimaryDisabled]}
-                      onPress={() => setShareOpen(true)}
-                      activeOpacity={0.85}
-                      disabled={totalSelected === 0}
-                    >
-                      <Ionicons
-                        name="share-outline"
-                        size={18}
-                        color={totalSelected === 0 ? palette.textMuted : palette.textPrimary}
-                      />
-                      <Text
-                        style={[
-                          styles.actionBtnText,
-                          { color: totalSelected === 0 ? palette.textMuted : palette.textPrimary },
-                        ]}
-                      >
-                        Partager
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
+      {isWide ? (
+        <View style={styles.splitBody}>
+          {/* Top bar belongs to the list column, so the detail column runs
+              the full height of the window. */}
+          <View style={styles.listCol}>
+            {topBar}
+            <View style={styles.listArea}>
+              {listBody}
+              {scrollTopFab}
             </View>
-
-            {/* Body container */}
-            <View style={styles.bodyContainer}>
-              {/* Secondary filter pills (manufacturer) */}
-              <View style={styles.pillsRow}>
-                <TouchableOpacity
-                  style={[styles.pill, mfgPriority.length > 0 && styles.pillActive]}
-                  activeOpacity={0.7}
-                  onPress={() => setMfgModalOpen(true)}
-                >
-                  <Ionicons
-                    name="business-outline"
-                    size={14}
-                    color={mfgPriority.length > 0 ? '#3B82F6' : palette.textSecondary}
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text style={[styles.pillText, mfgPriority.length > 0 && styles.pillTextActive]}>
-                    Fabricant
-                  </Text>
-                  <Ionicons
-                    name="chevron-down"
-                    size={14}
-                    color={mfgPriority.length > 0 ? '#3B82F6' : palette.textMuted}
-                    style={{ marginLeft: 4 }}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Body */}
-              {listLoading ? (
-                <View style={styles.centered}>
-                  <ActivityIndicator size="large" color={palette.fabBg} />
-                </View>
-              ) : listError ? (
-                <View style={styles.empty}>
-                  <Ionicons name="cloud-offline-outline" size={36} color={palette.textMuted} />
-                  <Text style={styles.emptyTitle}>Erreur réseau</Text>
-                  <Text style={styles.emptySub}>
-                    Nous n'avons pas pu joindre le serveur. Veuillez réessayer.
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.emptyBtn}
-                    onPress={fetchList}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.emptyBtnText}>Veuillez réessayer</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : products.length === 0 ? (
-                <View style={styles.empty}>
-                  <Ionicons name="search-outline" size={36} color={palette.textMuted} />
-                  <Text style={styles.emptyTitle}>Aucun résultat trouvé.</Text>
-                  <Text style={styles.emptySub}>
-                    Ajustez vos filtres de pathologie pour voir les résultats.
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.emptyBtn}
-                    onPress={handleBack}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.emptyBtnText}>Retour aux filtres</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <FlatList
-                  ref={listRef}
-                  data={sortedProducts}
-                  keyExtractor={p => p.id}
-                  numColumns={2}
-                  columnWrapperStyle={styles.columnWrapper}
-                  renderItem={({ item }) => (
-                    <View style={styles.cardCell}>
-                      <ProductCard
-                        product={listItemToCardProduct(item)}
-                        onPress={() => handleOpenDetail(item)}
-                      />
-                    </View>
-                  )}
-                  contentContainerStyle={styles.listContent}
-                  showsVerticalScrollIndicator={false}
-                  onScroll={onListScroll}
-                  scrollEventThrottle={64}
-                />
-              )}
+            <View style={styles.footer}>
+              <View style={styles.footerInner}>{backCta}</View>
             </View>
-
-            {/* Scroll-to-top FAB — floats over the left pane list only. */}
-            {showScrollTop && (
-              <TouchableOpacity
-                style={styles.scrollTopBtn}
-                onPress={scrollToTop}
-                activeOpacity={0.85}
-                hitSlop={6}
-                accessibilityLabel="Remonter en haut"
-              >
-                <Ionicons name="arrow-up" size={22} color="#FFFFFF" />
-              </TouchableOpacity>
-            )}
           </View>
 
-          {/* ============ RIGHT: context panel (always visible) ============ */}
-          <View style={styles.rightPane}>
-            {panelMode === 'detail' ? (
-              detailLoading && !detailProduct ? (
-                <View style={styles.centered}>
-                  <ActivityIndicator size="large" color={palette.fabBg} />
-                </View>
-              ) : (
-                <ProductDetailModal
-                  embedded
-                  visible={!!detailProduct}
-                  product={detailProduct}
-                  userFilters={userFilters}
-                  onClose={() => setPanelMode('summary')}
-                />
-              )
-            ) : (
-              <FilterSummaryModal
-                embedded
-                visible
-                onClose={() => {}}
-                onReset={handleResetFilters}
-                nodes={SAMPLE_NODES}
-                selections={selections}
-              />
-            )}
-          </View>
+          {detailColumn}
         </View>
-      </SafeAreaView>
+      ) : (
+        <>
+          {topBar}
+          <View style={styles.bodyContainer}>
+            {listBody}
 
-      {/* Modals kept as overlays on web */}
+            <View style={styles.floatBar} pointerEvents="box-none">
+              {backCta}
+            </View>
+
+            {scrollTopFab}
+
+            {detailLoading && !detailProduct && (
+              <View style={styles.detailLoader} pointerEvents="none">
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              </View>
+            )}
+          </View>
+        </>
+      )}
+
+      {/* Narrow only — on wide the same content lives in the right column. */}
+      <ProductDetailModal
+        visible={!isWide && !!detailProduct}
+        product={detailProduct}
+        userFilters={userFilters}
+        onClose={closeDetail}
+      />
+
       <ShareQrModal
         visible={shareOpen}
         onClose={() => setShareOpen(false)}
         url={shareUrl}
-        caption="Scannez ce code pour voir la même sélection de produits."
       />
 
       <ManufacturerPriorityModal
@@ -529,158 +517,132 @@ export const ProductsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
 
-  // Split container: two equal columns.
-  splitRow: {
-    flex: 1,
-    flexDirection: 'row',
+  // ---- top bar ----
+  topBar: {
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+    backgroundColor: palette.cardBg,
+    zIndex: 10,
   },
-  leftPane: {
+  topBarWide: { paddingHorizontal: 28 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  eyebrow: {
+    fontSize: 15,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    letterSpacing: 1.2,
+    color: palette.textMuted,
+  },
+  title: {
+    fontSize: 20,
+    lineHeight: 25,
+    letterSpacing: 0.3,
+    fontFamily: 'Poppins-Bold',
+    color: palette.textPrimary,
+    width: '80%',
+  },
+  titleWide: { fontSize: 24, lineHeight: 28, width: 'auto' },
+  rightButtons: { flexDirection: 'row', alignItems: 'stretch', gap: 12 },
+  actionBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  actionBtnDisabled: { opacity: 0.45 },
+  actionBtnText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: palette.textPrimary,
+    marginTop: 4,
+    letterSpacing: 0.2,
+  },
+  headerDivider: { width: 1, backgroundColor: palette.border, marginVertical: 6 },
+
+  // ---- wide split ----
+  // Proportions and box model taken from the old working version: two
+  // flex columns with flexBasis 0, nothing else. No fixed width, no
+  // explicit heights — the panel's flex:1 root resolves against these.
+  splitBody: { flex: 1, flexDirection: 'row' },
+  listCol: {
     flex: 6,
     flexBasis: 0,
     borderRightWidth: 1,
     borderRightColor: palette.border,
   },
-  rightPane: {
+  listArea: { flex: 1 },
+  detailCol: {
     flex: 4,
     flexBasis: 0,
     backgroundColor: palette.cardBg,
   },
-
-  bodyContainer: { flex: 1, backgroundColor: palette.bg },
-
-  topBar: {
-    height: 100,
+  detailOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+  },
+
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.border,
     backgroundColor: palette.cardBg,
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 2,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: palette.textPrimary,
-    letterSpacing: -0.4,
-  },
-  bannerText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: palette.textSecondary,
-    marginTop: 1,
-  },
-
-  topVerticalDivider: {
-    width: 1,
-    alignSelf: 'stretch',
-    backgroundColor: palette.border,
-    marginHorizontal: 10,
-  },
-
-  rightGroup: {
-    alignItems: 'flex-end',
-  },
-  rightLabel: {
-    fontSize: 11,
-    fontFamily: 'Poppins-Medium',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: palette.textMuted,
-  },
-  rightButtons: {
-    flexDirection: 'row',
-  },
-  actionBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 8,
-    minWidth: 50,
-  },
-  actionBtnPrimary: {
-    paddingLeft: 12,
-  },
-  actionBtnDisabled: {
-    opacity: 0.55,
-  },
-  actionBtnPrimaryDisabled: {
-    backgroundColor: palette.bg,
-    borderWidth: 1,
-    borderColor: palette.border,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  actionBtnText: {
-    fontSize: 10,
-    fontFamily: 'Poppins-Medium',
-    marginTop: 0,
-    letterSpacing: 0.2,
-  },
-
-  pillsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingTop: 12,
-    paddingBottom: 8,
-    paddingHorizontal: 12,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: palette.bg,
-    borderWidth: 1,
-    borderColor: palette.border,
-  },
-  pillActive: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#3B82F6',
-  },
-  pillText: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Medium',
-    color: palette.textSecondary,
-  },
-  pillTextActive: {
-    color: '#3B82F6',
-    fontWeight: '700',
-  },
-
-  listContent: {
-    paddingHorizontal: 14,
     paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: palette.shadow,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
   },
-  // Row of two cards in the 2-column grid — the gap here is the spacing
-  // BETWEEN columns. It's kept equal to cardCell's marginBottom (the row
-  // spacing) so horizontal and vertical gaps match.
-  columnWrapper: {
-    gap: 12,
+  footerInner: {
+    width: '100%',
+    maxWidth: FOOTER_MAX,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  // Each card takes half the row; flex:1 with the wrapper gap splits evenly.
+
+  // ---- narrow ----
+  bodyContainer: { flex: 1, backgroundColor: palette.bg },
+  floatBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 640,
+    gap: 9,
+  },
+
+  // ---- list ----
+  listContent: { paddingHorizontal: 14, paddingVertical: 14, paddingBottom: 120 },
+  listContentWide: {
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    paddingBottom: 24,
+  },
+  // Gap between the two columns; matched to cardCell's marginBottom so
+  // horizontal and vertical spacing read the same.
+  columnWrapper: { gap: 14 },
+  // Layout only — the selected look lives inside ProductCard.
   cardCell: {
     flex: 1,
-    marginBottom: 0,
+    marginBottom: 14,
   },
 
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   empty: {
     flex: 1,
     alignItems: 'center',
@@ -688,17 +650,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: palette.textPrimary,
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
+    color: palette.textSecondary,
     marginTop: 14,
   },
   emptySub: {
-    fontSize: 13,
-    color: palette.textSecondary,
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    color: palette.textMuted,
     textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
   },
   emptyBtn: {
     marginTop: 18,
@@ -709,25 +671,61 @@ const styles = StyleSheet.create({
   },
   emptyBtnText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
   },
 
-  // Scroll-to-top FAB — bottom-right of the LEFT pane.
+  detailLoader: {
+    position: 'absolute',
+    bottom: 110,
+    left: '50%',
+    marginLeft: -22,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   scrollTopBtn: {
     position: 'absolute',
-    bottom: 22,
+    bottom: 110,
     right: 22,
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(59, 130, 246, 0.88)',
+    backgroundColor: palette.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,
     shadowRadius: 8,
-    elevation: 6,
+    opacity: 0.85,
+  },
+  // No floating CTA to clear in the split layout — the footer holds it.
+  scrollTopBtnWide: { bottom: 22, right: 26 },
+
+  cta: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
+    backgroundColor: palette.textPrimary,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: palette.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+  },
+  ctaText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontFamily: 'Poppins-Bold',
+    letterSpacing: 0.3,
   },
 });
