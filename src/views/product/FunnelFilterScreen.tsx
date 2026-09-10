@@ -8,7 +8,6 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CameraScannerModal } from './components/CameraScannerModal';
 import { PathologySummaryModal } from './components/PathologySummaryModal';
 import { StepTabs, StepTab } from './components/StepTabs';
 import { SearchFilterModal } from './components/SearchFilterModal';
@@ -544,12 +543,6 @@ export const FunnelFilterScreen = ({ navigation, route }: any) => {
         selections={selections}
         onClose={() => setSearchOpen(false)}
         onSelect={handleToggle}
-      />
-
-      <CameraScannerModal
-        visible={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onDetected={handleScanned}
       />
 
       <PathologySummaryModal

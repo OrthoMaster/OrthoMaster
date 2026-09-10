@@ -644,12 +644,12 @@ const styles = StyleSheet.create({
   // moved to bottom-center.
   scrollTopBtn: {
     position: 'absolute',
-    bottom: 22,
+    bottom: 122,
     right: 22,
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(59, 130, 246, 0.88)',
+    backgroundColor: palette.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -657,6 +657,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 8,
     elevation: 6,
+    opacity: 0.8
   },
 
   // Floats over the scrolling body instead of sitting in a footer.

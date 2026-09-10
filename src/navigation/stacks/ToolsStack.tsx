@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { createStackNavigator } from '@react-navigation/stack';
-import { Platform } from 'react-native';
 import { ToolsView } from '../../views/tools/ToolsView';
 import { QueChoisirView } from '../../views/tools/components/QueChoisir/View/QueChoisirView';
 import { FinalQC } from "../../views/tools/components/QueChoisir/FinalView/FinalQC";
@@ -9,7 +8,6 @@ import { ContentDisplayer } from '../../views/content/ContentDisplayer';
 import ReturnButtonIcon from '../components/ReturnButton';
 
 import { FunnelFilterScreen } from '../../views/product/FunnelFilterScreen';
-// import { SolarFilterScreen } from '../../views/product/SolarFilterScreen';
 
 import { ProductsScreen } from '../../views/product/ProductsScreen';
 import { ProtocolScreen } from '../../views/product/ProtocolScreen';
