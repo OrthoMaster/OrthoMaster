@@ -162,8 +162,6 @@ export const PreviewMediaView = ({ navigation, route }) => {
         message:
           "Voici un contenu intéressant à voir sur OrthoMaster :\n\n" +
           media2share.title +
-          " par " +
-          media2share.author +
           "\n\n" +
           "https://app.orthomaster.fr/open/media-preview?id=" +
           media2share.id_content,
