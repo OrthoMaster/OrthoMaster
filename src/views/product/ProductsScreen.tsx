@@ -463,7 +463,9 @@ export const ProductsScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
-  bodyContainer: { flex: 1, backgroundColor: palette.bg },
+  bodyContainer: { 
+    flex: 1, backgroundColor: palette.bg,
+  },
 
   topBar: {
     paddingHorizontal: 22,
@@ -582,6 +584,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 14,
     paddingVertical: 14,
+    paddingBottom: 110
   },
 
   centered: {
