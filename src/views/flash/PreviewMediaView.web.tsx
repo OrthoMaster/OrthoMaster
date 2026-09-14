@@ -7,9 +7,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
 import { useGetUser } from "../../hooks/useGetUser.hook";
-import { getS3Image } from "../../services/S3Service";
 import { IContent } from "../../utils/interfaces";
 import { orthomasterShare } from "../../futils";
 import { LinearGradient } from "expo-linear-gradient";
@@ -40,7 +38,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
           "Voici un contenu intéressant à voir sur OrthoMaster :\n\n" +
           media2share.title +
           " par " +
-          media2share.author +
+          media2share.expert_names +
           "\n\n" +
           "https://go.orthomaster.fr/open/media-preview/" +
           media2share.id_content,
