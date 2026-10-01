@@ -43,6 +43,7 @@ interface Video {
   aws_object_path?: string;
   s3_path?: string;
   thumbnail?: string;
+  expert_names?: string;
 }
 
 interface Category {
@@ -339,7 +340,7 @@ export const HomeSearchView = ({ navigation }) => {
 
       <View style={styles.videoInfo}>
         <Text style={styles.description} numberOfLines={2}>
-          {item.author ?? 'OrthoMaster'}
+          {item.expert_names ?? 'OrthoMaster'}
         </Text>
         <Text style={styles.videoTitle} numberOfLines={2}>
           {item.title}
