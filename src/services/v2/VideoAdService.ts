@@ -18,10 +18,12 @@ export interface RecordViewPayload {
     is_completed?: boolean;
     is_contacted?: boolean;
     user_id?: number;
+    content_id?: number;
 }
 
 export interface RecordImpressionPayload {
     user_id?: number;
+    content_id?: number;
 }
 
 // ---------- API ----------
@@ -31,11 +33,11 @@ export interface RecordImpressionPayload {
  * Get video list ( default 4 )
  */
 export const getFeed = async (
-    professionId?: number,
+    contentId?: number,
     limit?: number
 ): Promise<VideoAd[] | null> => {
     const params: Record<string, number> = {};
-    if (professionId != null) params.profession_id = professionId;
+    if (contentId != null) params.content_id = contentId;
     if (limit != null) params.limit = limit;
 
     return axiosInstance

@@ -49,9 +49,10 @@ type Props = {
   enabled: boolean;
   onClose: () => void;
   grantAccess: () => void;
+  contentId?: number;
 };
 
-const VideoAdsModal: React.FC<Props> = ({ enabled, onClose, grantAccess }) => {
+const VideoAdsModal: React.FC<Props> = ({ enabled, onClose, grantAccess, contentId }) => {
   const [loading, setLoading] = useState(false);
   const [videos, setVideos] = useState<VideoAd[]>([]);
   const [selected, setSelected] = useState<VideoAd | null>(null);
@@ -72,7 +73,7 @@ const VideoAdsModal: React.FC<Props> = ({ enabled, onClose, grantAccess }) => {
     let cancelled = false;
     setLoading(true);
 
-    getFeed()
+    getFeed(contentId)
       .then((data) => {
         if (cancelled) return;
 
@@ -86,7 +87,8 @@ const VideoAdsModal: React.FC<Props> = ({ enabled, onClose, grantAccess }) => {
         setLoading(false);
 
         data.forEach((v) => {
-          recordImpression(v.id).catch(() => { /* silent */ });
+          recordImpression(v.id, contentId ? { content_id: contentId } : {})
+            .catch(() => { /* silent */ });
         });
       })
       .catch(() => {
@@ -158,6 +160,7 @@ const VideoAdsModal: React.FC<Props> = ({ enabled, onClose, grantAccess }) => {
             >
               <VideoAdPlayer
                 video={selected}
+                contentId={contentId}
                 onSkip={grantAccess}
                 onContinue={grantAccess}
                 onBack={() => setSelected(null)}
@@ -257,12 +260,13 @@ const VideoGrid: React.FC<{
 
 const VideoAdPlayer: React.FC<{
   video: VideoAd;
+  contentId?: number;
   onSkip: () => void;
   onContinue: () => void;
   onBack: () => void;
   alreadyContacted: boolean;
   onContacted: () => void;
-}> = ({ video, onSkip, onContinue, onBack, alreadyContacted, onContacted }) => {
+}> = ({ video, contentId, onSkip, onContinue, onBack, alreadyContacted, onContacted }) => {
   const videoRef = useRef<Video>(null);
 
   const [elapsed, setElapsed] = useState(0);
@@ -312,6 +316,7 @@ const VideoAdPlayer: React.FC<{
 
     recordView(video.id, {
       is_completed: completed,
+      ...(contentId ? { content_id: contentId } : {}),
     }).catch(() => { /* silent */ });
   };
 
@@ -327,6 +332,7 @@ const VideoAdPlayer: React.FC<{
 
     contactAds(video.id, {
       is_contacted: true,
+      ...(contentId ? { content_id: contentId } : {}),
     }).catch(() => { /* silent */ });
 
     if (finishedRef.current) {

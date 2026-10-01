@@ -187,6 +187,7 @@ export const PreviewMediaView = ({ navigation, route }) => {
       {showAds && (
         <VideoAdsModal
           enabled={showAds}
+          contentId={media.id_content}
           onClose={() => {
             setShowAds(false);
           }}
