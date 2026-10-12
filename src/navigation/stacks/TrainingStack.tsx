@@ -14,6 +14,8 @@ import { LessonContentWithXML } from "../../views/training/LessonContentWithXML"
 import { CartView } from '../../views/training/CartView';
 import { PreviewView } from '../../views/training/PreviewView';
 
+import { BookingTabs } from './BookingTabs';
+
 const forZoomFromCenter = ({ current, layouts }) => {
   return {
     cardStyle: {
@@ -183,6 +185,16 @@ export const TrainingStack = () => {
                 },
               },
             }}
+      />
+
+      <TrainingStackNav.Screen
+        name="booking"
+        component={BookingTabs}
+        options={{
+          headerShown: false,
+          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
+          animation: 'slide_from_right',
+        }}
       />
     </TrainingStackNav.Navigator>
   );

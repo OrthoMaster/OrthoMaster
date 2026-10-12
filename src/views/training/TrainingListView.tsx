@@ -36,6 +36,10 @@ import { DiplomaModalContent } from '../company/components/DiplomaModalContent';
 
 import TrainingIntroModal from './components/TrainingIntroModal';
 
+import { getMyBookingSetup } from '../../services/v2/BookingService';
+import { BookingEntryCard } from './components/BookingEntryCard';
+import BookingIntroModal, { BOOKING_INTRO_STORAGE_KEY } from '../booking/components/BookingIntroModal';
+
 const SCROLL_DOWN_AMOUNT = 400;
 
 const strokeColor = '#58CC02';
@@ -316,6 +320,28 @@ export const TrainingListView = ({ navigation, route }) => {
   }
   /** Pre-reg Diploma - END */
 
+  /** Rendez-vous experts - STA */
+  const { data: bookingSetup } = useQuery({
+    queryKey: ['booking', 'me'],
+    queryFn: () => getMyBookingSetup(),
+    staleTime: 60 * 1000,
+  });
+  const isBookingExpert = bookingSetup?.is_expert === true;
+  const [showBookingIntro, setShowBookingIntro] = useState(false);
+
+  const openBooking = async () => {
+    // L'introduction s'adresse aux utilisateurs ; l'expert entre directement.
+    if (!isBookingExpert) {
+      const neverShow = await AsyncStorage.getItem(BOOKING_INTRO_STORAGE_KEY).catch(() => null);
+      if (neverShow !== 'true') {
+        setShowBookingIntro(true);
+        return;
+      }
+    }
+    navigation.navigate('booking');
+  };
+  /** Rendez-vous experts - END */
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.lgreen} />
@@ -398,6 +424,11 @@ export const TrainingListView = ({ navigation, route }) => {
               style={{ zIndex: 9999 }}
             />
           }>
+
+          {/* Rendez-vous experts */}
+          {!error && (
+            <BookingEntryCard isExpert={isBookingExpert} onPress={openBooking} />
+          )}
 
           {/* Training cards with grid pkg layout */}
           {!error && trainings && Array.isArray(trainings) && trainings.map((training) => (
@@ -503,8 +534,15 @@ export const TrainingListView = ({ navigation, route }) => {
         animationType="fade"
         onRequestClose={() => setShowPreRegDiplomaModal(false)}
       >
-        <DiplomaModalContent onPreReg={preReg} onClose={() => setShowPreRegDiplomaModal(false)}/>
+        <DiplomaModalContent onPreReg={preReg} onClose={() => setShowPreRegDiplomaModal(false)} />
       </Modal>
+
+      {/* Rendez-vous experts : introduction */}
+      <BookingIntroModal
+        visible={showBookingIntro}
+        onClose={() => setShowBookingIntro(false)}
+        onContinue={() => navigation.navigate('booking')}
+      />
 
     </SafeAreaView>
   );
