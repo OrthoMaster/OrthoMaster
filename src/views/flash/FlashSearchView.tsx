@@ -23,6 +23,7 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import { getPreSearch, search, deleteKeyword, clearSearchHistory } from '../../services/v2/ContentService';
+import { useAiSearchAvailable } from '../../hooks/useAiSearchAvailable';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = Platform.OS !== 'web' && width >= 768;
@@ -67,6 +68,17 @@ export const FlashSearchView = ({ navigation }) => {
     retry: 2,
     retryDelay: 2000
   });
+
+  const isAiSearchAvailable = useAiSearchAvailable();
+
+  // Ouvre l'assistant ; depuis un résultat vide, la requête lui est transmise pour éviter de la retaper.
+  const openAiSearch = (initialMessage?: string) => {
+    Keyboard.dismiss();
+    navigation.navigate('flash-ai-search', {
+      openFrom: 'media',
+      ...(initialMessage ? { initialMessage } : {}),
+    });
+  };
 
   // State management
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -387,6 +399,17 @@ export const FlashSearchView = ({ navigation }) => {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* AI assistant button */}
+          {isAiSearchAvailable && (
+            <TouchableOpacity
+              style={styles.aiButton}
+              activeOpacity={0.7}
+              onPress={() => openAiSearch()}
+            >
+              <Ionicons name="sparkles" size={20} color={Colors.white} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -421,6 +444,26 @@ export const FlashSearchView = ({ navigation }) => {
                 </>
               ) : (
                 <>
+                  {/* AI assistant card */}
+                  {isAiSearchAvailable && (
+                    <TouchableOpacity
+                      style={styles.aiCard}
+                      activeOpacity={0.8}
+                      onPress={() => openAiSearch()}
+                    >
+                      <View style={styles.aiCardIcon}>
+                        <Ionicons name="sparkles" size={20} color={Colors.white} />
+                      </View>
+                      <View style={styles.aiCardInfo}>
+                        <Text style={styles.aiCardTitle}>Essayez l'assistant IA</Text>
+                        <Text style={styles.aiCardText}>
+                          Décrivez votre besoin en une phrase, il vous guide vers les bonnes vidéos.
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={20} color={Colors.redDark} />
+                    </TouchableOpacity>
+                  )}
+
                   {filteredHistorySuggestions.length > 0 && (
                     <>
                       <View style={styles.sectionHeader}>
@@ -482,6 +525,18 @@ export const FlashSearchView = ({ navigation }) => {
                     <Text style={styles.emptySubtext}>
                       Essayez d'autres mots-clés
                     </Text>
+
+                    {/* AI assistant fallback */}
+                    {isAiSearchAvailable && (
+                      <TouchableOpacity
+                        style={styles.aiEmptyButton}
+                        activeOpacity={0.7}
+                        onPress={() => openAiSearch(searchQuery.trim())}
+                      >
+                        <Ionicons name="sparkles" size={16} color={Colors.white} />
+                        <Text style={styles.aiEmptyButtonText}>Demander à l'assistant IA</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
               </ScrollView>
@@ -804,5 +859,67 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginTop: Spacings.xs,
     textAlign: 'center',
+  },
+
+  /* --- AI assistant --- */
+  aiButton: {
+    width: 44,
+    alignSelf: 'stretch',
+    marginLeft: Spacings.xs,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  aiCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.md,
+    marginHorizontal: Spacings.lg,
+    marginTop: Spacings.lg,
+    padding: Spacings.md,
+    borderRadius: 12,
+    backgroundColor: Colors.red3,
+    borderWidth: 1,
+    borderColor: Colors.redDark,
+  },
+  aiCardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.red,
+  },
+  aiCardInfo: {
+    flex: 1,
+  },
+  aiCardTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.redDark,
+  },
+  aiCardText: {
+    fontSize: 13,
+    fontFamily: 'Roboto',
+    color: Colors.text,
+    lineHeight: 16,
+  },
+  aiEmptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    marginTop: Spacings.lg,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.lg,
+    borderRadius: 999,
+    backgroundColor: Colors.red,
+  },
+  aiEmptyButtonText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
   },
 });

@@ -192,6 +192,77 @@ export const clearSearchHistory = async () => {
     });
 }
 
+/* ---- Assistant de recherche IA ---- */
+
+export type AiSearchErrorCode =
+  | 'ai_unavailable'
+  | 'session_expired'
+  | 'rate_limited'
+  | 'invalid_request'
+  | 'network';
+
+export interface AiSearchOption {
+  id: string;
+  label: string;
+  count: number | null;
+}
+
+export interface AiSearchVideo {
+  id_content: string | number;
+  title: string;
+  author?: string | null;
+  thumbnail?: string | null;
+  matched_chapter?: { label: string; seconds: number } | null;
+  [key: string]: any;
+}
+
+export type AiSearchData =
+  | { session_id: string; type: 'question'; message: string; options: AiSearchOption[]; total: number | null }
+  | { session_id: string; type: 'results'; message: string; videos: AiSearchVideo[]; total: number };
+
+export type AiSearchResult =
+  | { success: true; data: AiSearchData }
+  | { success: false; code: AiSearchErrorCode };
+
+export interface AiSearchPayload {
+  session_id?: string | null;
+  message?: string;
+  option_id?: string;
+  action?: 'show';
+}
+
+/**
+ * Get AI search availability (the assistant button is hidden when false)
+ */
+export const getAiSearchStatus = async (): Promise<boolean> => {
+  return axiosInstance
+    .get(`${baseUrl}/content/ai-search/status`)
+    .then((response) => response.data?.success == true && response.data?.data?.available === true)
+    .catch((e: AxiosError) => {
+      return false;
+    });
+}
+
+/**
+ * One turn of the AI search conversation
+ */
+export const aiSearch = async (payload: AiSearchPayload): Promise<AiSearchResult> => {
+  return axiosInstance
+    .post(`${baseUrl}/content/ai-search`, payload)
+    .then((response): AiSearchResult => {
+      if (response.data?.success == true) {
+        return { success: true, data: response.data.data };
+      }
+
+      return { success: false, code: response.data?.code ?? 'ai_unavailable' };
+    })
+    .catch((e: AxiosError<any>): AiSearchResult => {
+      // Le serveur renvoie un code métier même en erreur HTTP (410, 429, 503) :
+      // sans réponse du tout, c'est un problème de réseau.
+      return { success: false, code: e.response?.data?.code ?? 'network' };
+    });
+}
+
 /**
  * Get S3 Url
  */
