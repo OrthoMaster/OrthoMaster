@@ -58,8 +58,8 @@ export const FlashSearchView = ({ navigation }) => {
    * L'assistant s'affiche DANS ce panneau, en calque par-dessus la recherche, plutôt que
    * comme un nouvel écran de la pile : ouvrir un écran rejouait l'animation d'entrée du
    * panneau de recherche derrière lui.
-   * Une fois ouvert, le calque reste monté : la conversation est conservée si l'utilisateur
-   * revient à la recherche puis rouvre l'assistant.
+   * Le retour vers la recherche démonte le calque : chaque ouverture repart d'une
+   * conversation vierge. Ouvrir une vidéo, en revanche, laisse le calque en place.
    */
   const [isAiMounted, setIsAiMounted] = useState(false);
   const [isAiVisible, setIsAiVisible] = useState(false);
@@ -72,7 +72,12 @@ export const FlashSearchView = ({ navigation }) => {
       duration: 220,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
-    }).start(onEnd);
+    }).start(({ finished }) => {
+      // Animation interrompue (assistant rouvert pendant sa fermeture) : ne pas démonter.
+      if (finished) {
+        onEnd?.();
+      }
+    });
   };
 
   // Depuis un résultat vide, la requête est transmise pour éviter de la retaper.
@@ -85,8 +90,13 @@ export const FlashSearchView = ({ navigation }) => {
     animateAi(1);
   };
 
+  // Démonter le panneau efface la conversation (son état vit dans useAiSearchConversation).
   const closeAiSearch = () => {
-    animateAi(0, () => setIsAiVisible(false));
+    setIsAiVisible(false);
+    animateAi(0, () => {
+      setIsAiMounted(false);
+      setAiPendingMessage(null);
+    });
   };
 
   // State management

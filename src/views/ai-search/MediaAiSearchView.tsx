@@ -48,10 +48,14 @@ type OpenFrom = keyof typeof PREVIEW_SCREENS;
 const MAX_MESSAGE_LENGTH = 300;
 
 /**
- * Exemples proposés à l'ouverture. Désactivés pour l'instant : remettre des phrases ici
- * (ou les charger depuis le serveur) suffit à réafficher le bloc.
+ * Exemples proposés à l'ouverture : montrent qu'on peut écrire une phrase, un intervenant, un congrès.
+ * Vider le tableau suffit à masquer le bloc.
  */
-const SUGGESTIONS: string[] = [];
+const SUGGESTIONS: string[] = [
+  'Les vidéos de Roberto Purello Ambrosio',
+  'Prise en charge de la lombalgie',
+  'Les vidéos de Chirurgie du Sport',
+];
 
 const ERROR_MESSAGES: Record<AiSearchErrorCode, string> = {
   ai_unavailable: 'L\'assistant est momentanément indisponible. Vous pouvez utiliser la recherche classique.',

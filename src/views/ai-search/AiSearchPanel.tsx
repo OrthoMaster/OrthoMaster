@@ -36,6 +36,16 @@ const INPUT_MAX_HEIGHT = 140;
 /** Hauteur réservée en haut de la liste pour que le bouton retour ne masque aucun message. */
 const BACK_BUTTON_SPACE = 72;
 
+/**
+ * Exemples proposés à l'ouverture : montrent qu'on peut écrire une phrase, un intervenant, un congrès.
+ * Mêmes phrases que sur mobile (MediaAiSearchView.tsx). Vider le tableau suffit à masquer le bloc.
+ */
+const SUGGESTIONS: string[] = [
+  'Les vidéos de Roberto Purello Ambrosio',
+  'Prise en charge de la lombalgie',
+  'Les vidéos de Chirurgie du Sport',
+];
+
 export type AiSearchPendingMessage = { text: string; nonce: number };
 
 type Props = {
@@ -95,7 +105,7 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
   const scrollTargetRef = useRef<string | null>(null);
   const stickToEndRef = useRef(true);
 
-  const { items, isLoading, isClosed, sendMessage, chooseOption, showResults } =
+  const { items, isLoading, isClosed, sendMessage, chooseOption, showResults, resetConversation } =
     useAiSearchConversation({
       onAssistantItem: (id) => {
         scrollTargetRef.current = id;
@@ -124,6 +134,17 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
       setInput('');
       setInputHeight(INPUT_MIN_HEIGHT);
     }
+    inputRef.current?.focus();
+  };
+
+  // Nouvelle conversation : l'écran revient à l'accueil, prêt pour une autre question.
+  const reset = () => {
+    resetConversation();
+    stickToEndRef.current = true;
+    scrollTargetRef.current = null;
+    setInput('');
+    setInputHeight(INPUT_MIN_HEIGHT);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
     inputRef.current?.focus();
   };
 
@@ -301,6 +322,34 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
       <Text style={styles.welcomeText}>
         Décrivez un sujet, une pathologie, un intervenant ou un congrès. Je vous aide à affiner si besoin.
       </Text>
+
+      {SUGGESTIONS.length > 0 && (
+        <View style={styles.suggestions}>
+          {SUGGESTIONS.map((suggestion) => (
+            <Pressable
+              key={suggestion}
+              onPress={() => {
+                sendMessage(suggestion);
+                inputRef.current?.focus();
+              }}
+              style={({ hovered }: any) => [styles.suggestionPill, hovered && styles.suggestionPillHovered]}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.redDark} />
+              <Text style={styles.suggestionText}>{suggestion}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      {/* Le bouton n'apparaît qu'après le premier message : on l'annonce dès l'accueil. */}
+      <View style={styles.welcomeHint}>
+        <View style={styles.welcomeHintIcon}>
+          <Ionicons name="refresh" size={14} color={Colors.text} />
+        </View>
+        <Text style={styles.welcomeHintText}>
+          Pour lancer une nouvelle recherche avec d'autres critères, cliquez sur ce bouton en haut à gauche.
+        </Text>
+      </View>
     </View>
   );
 
@@ -369,10 +418,32 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
         }
       </View>
 
-      {/* Bouton retour fixe, au-dessus de la liste qui défile dessous */}
-      <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Ionicons name="arrow-back" size={22} color={Colors.text} />
-      </TouchableOpacity>
+      {/* Boutons fixes, au-dessus de la liste qui défile dessous */}
+      <View style={styles.topActions}>
+        <Pressable
+          accessibilityLabel="Retour à la recherche"
+          onPress={onBack}
+          style={({ hovered }: any) => [styles.roundButton, hovered && styles.roundButtonHovered]}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.text} />
+        </Pressable>
+
+        {/* Inutile tant qu'il n'y a rien à effacer, ou si l'assistant est indisponible */}
+        {items.length > 0 && !isClosed && (
+          <Pressable
+            accessibilityLabel="Nouvelle conversation"
+            disabled={isLoading}
+            onPress={reset}
+            style={({ hovered }: any) => [
+              styles.roundButton,
+              hovered && !isLoading && styles.roundButtonHovered,
+              isLoading && styles.roundButtonDisabled,
+            ]}
+          >
+            <Ionicons name="refresh" size={20} color={Colors.text} />
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 };
@@ -383,10 +454,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.grayLight,
   },
-  backButton: {
+  topActions: {
     position: 'absolute',
     top: Spacings.lg,
     left: Spacings.lg,
+    flexDirection: 'row',
+    gap: Spacings.sm,
+    zIndex: 10,
+  },
+  roundButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -399,7 +475,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
-    zIndex: 10,
+  },
+  roundButtonHovered: {
+    backgroundColor: Colors.white,
+    shadowOpacity: 0.25,
+  },
+  roundButtonDisabled: {
+    opacity: 0.5,
+    cursor: 'default' as any,
   },
 
   /* ---- Liste des messages ---- */
@@ -441,6 +524,68 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     maxWidth: 480,
+  },
+  suggestions: {
+    width: '100%',
+    maxWidth: 480,
+    gap: Spacings.sm,
+    marginTop: Spacings.lg,
+  },
+  suggestionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 999,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  suggestionPillHovered: {
+    borderColor: Colors.red,
+    backgroundColor: Colors.red3,
+  },
+  suggestionText: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+  },
+  welcomeHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    maxWidth: 480,
+    marginTop: Spacings.lg,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 12,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.line,
+  },
+  // Rappel visuel du bouton réel (même forme ronde) pour qu'on le reconnaisse ensuite.
+  welcomeHintIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.grayLight,
+    borderWidth: 1,
+    borderColor: Colors.line,
+  },
+  welcomeHintText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    color: Colors.subtext,
+    lineHeight: 20,
   },
 
   /* ---- Bulles ---- */
