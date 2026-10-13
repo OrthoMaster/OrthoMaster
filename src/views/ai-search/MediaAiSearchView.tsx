@@ -30,6 +30,7 @@ import {
   AiSearchVideo,
 } from '../../services/v2/ContentService';
 import { AI_SEARCH_STATUS_KEY } from '../../hooks/useAiSearchAvailable';
+import { AiAvatar } from './AiAvatar';
 
 const { width } = Dimensions.get('window');
 const isTablet = Platform.OS !== 'web' && width >= 768;
@@ -60,8 +61,8 @@ const SUGGESTIONS: string[] = [
 const ERROR_MESSAGES: Record<AiSearchErrorCode, string> = {
   ai_unavailable: 'L\'assistant est momentanément indisponible. Vous pouvez utiliser la recherche classique.',
   network: 'Connexion impossible. Vérifiez votre réseau puis réessayez.',
-  rate_limited: 'Vous avez atteint la limite de recherches pour le moment. Réessayez un peu plus tard.',
-  session_expired: 'La conversation a expiré. Posez à nouveau votre question.',
+  rate_limited: 'Vous avez atteint la limite de 30 recherches par heure. Nous vous remercions de bien vouloir patienter quelques instants avant de revenir : l\'assistant sera de nouveau à votre disposition très prochainement.',
+  session_expired: 'Cette conversation a expiré. Utilisez le bouton ↻ en haut de l\'écran pour démarrer une nouvelle recherche.',
   invalid_request: 'Je n\'ai pas compris cette demande. Pouvez-vous la reformuler ?',
 };
 
@@ -310,11 +311,7 @@ export const MediaAiSearchView = ({ navigation, route }) => {
 
   /* ---- Rendu des messages ---- */
 
-  const renderAvatar = () => (
-    <View style={styles.avatar}>
-      <Ionicons name="sparkles" size={14} color={Colors.white} />
-    </View>
-  );
+  const renderAvatar = () => <AiAvatar size={34} style={styles.avatar} />;
 
   // Même structure que SimilarMediasContentCard (aperçu d'un média), posée dans une carte
   // avec ombre pour signaler qu'elle est cliquable.
@@ -443,9 +440,7 @@ export const MediaAiSearchView = ({ navigation, route }) => {
 
   const renderWelcome = () => (
     <View style={styles.welcome}>
-      <View style={styles.welcomeIcon}>
-        <Ionicons name="sparkles" size={28} color={Colors.white} />
-      </View>
+      <AiAvatar size={isTablet ? 104 : 88} style={styles.welcomeIcon} />
       <Text style={styles.welcomeTitle}>Que cherchez-vous ?</Text>
       <Text style={styles.welcomeText}>
         Décrivez un sujet, une pathologie, un intervenant ou un congrès. Je vous aide à affiner si besoin.
@@ -645,12 +640,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.md,
   },
   welcomeIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.red,
     marginBottom: Spacings.md,
   },
   welcomeTitle: {
@@ -718,12 +707,6 @@ const styles = StyleSheet.create({
     gap: Spacings.sm,
   },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.red,
     marginTop: 2,
   },
   assistantContent: {

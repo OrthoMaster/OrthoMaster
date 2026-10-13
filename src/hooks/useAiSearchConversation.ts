@@ -16,8 +16,8 @@ export const AI_SEARCH_MAX_MESSAGE_LENGTH = 300;
 export const AI_SEARCH_ERROR_MESSAGES: Record<AiSearchErrorCode, string> = {
   ai_unavailable: 'L\'assistant est momentanément indisponible. Vous pouvez utiliser la recherche classique.',
   network: 'Connexion impossible. Vérifiez votre réseau puis réessayez.',
-  rate_limited: 'Vous avez atteint la limite de recherches pour le moment. Réessayez un peu plus tard.',
-  session_expired: 'La conversation a expiré. Posez à nouveau votre question.',
+  rate_limited: 'Vous avez atteint la limite de 30 recherches par heure. Nous vous remercions de bien vouloir patienter quelques instants avant de revenir : l\'assistant sera de nouveau à votre disposition très prochainement.',
+  session_expired: 'Cette conversation a expiré. Utilisez le bouton ↻ en haut de l\'écran pour démarrer une nouvelle recherche.',
   invalid_request: 'Je n\'ai pas compris cette demande. Pouvez-vous la reformuler ?',
 };
 

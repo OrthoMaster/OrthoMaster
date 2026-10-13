@@ -23,6 +23,7 @@ import {
   formatAiChapterTime,
   useAiSearchConversation,
 } from '../../hooks/useAiSearchConversation';
+import { AiAvatar } from './AiAvatar';
 
 /*
  * Contenu de l'assistant pour le web, sans voile ni navigation : il s'affiche à l'intérieur
@@ -137,6 +138,31 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
     inputRef.current?.focus();
   };
 
+  /*
+   * Attire l'œil vers la saisie tant qu'aucune conversation n'a commencé : le cadre du
+   * champ pulse en rouge et une bulle « Écrivez votre question ici » rebondit au-dessus.
+   */
+  const attention = useRef(new Animated.Value(0)).current;
+  const hasConversation = items.length > 0 || isLoading;
+
+  useEffect(() => {
+    if (hasConversation || isClosed) {
+      attention.stopAnimation();
+      attention.setValue(0);
+      return;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(attention, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+        Animated.timing(attention, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+      ])
+    );
+    loop.start();
+
+    return () => loop.stop();
+  }, [hasConversation, isClosed, attention]);
+
   // Nouvelle conversation : l'écran revient à l'accueil, prêt pour une autre question.
   const reset = () => {
     resetConversation();
@@ -174,11 +200,7 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
 
   /* ---- Rendu des messages ---- */
 
-  const renderAvatar = () => (
-    <View style={styles.avatar}>
-      <Ionicons name="sparkles" size={16} color={Colors.white} />
-    </View>
-  );
+  const renderAvatar = () => <AiAvatar size={38} style={styles.avatar} />;
 
   // Même structure que SimilarMediasContentCard (aperçu d'un média), posée dans une carte
   // avec ombre pour signaler qu'elle est cliquable ; l'ombre se renforce au survol.
@@ -315,9 +337,7 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
 
   const renderWelcome = () => (
     <View style={styles.welcome}>
-      <View style={styles.welcomeIcon}>
-        <Ionicons name="sparkles" size={32} color={Colors.white} />
-      </View>
+      <AiAvatar size={112} style={styles.welcomeIcon} />
       <Text style={styles.welcomeTitle}>Assistant Médias</Text>
       <Text style={styles.welcomeText}>
         Décrivez un sujet, une pathologie, un intervenant ou un congrès. Je vous aide à affiner si besoin.
@@ -355,6 +375,9 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
 
   const canSend = input.trim().length > 0 && !isLoading;
 
+  // Conversation vide : la zone de saisie, en bas de l'écran, passe souvent inaperçue.
+  const showInputHint = items.length === 0 && !isLoading && !isClosed;
+
   return (
     <View style={styles.container}>
       {/* Messages */}
@@ -389,6 +412,35 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
           )
           : (
             <View style={styles.inputRow}>
+              {/* Bulle d'invitation : disparaît dès qu'on tape ou que la conversation démarre */}
+              {showInputHint && input === '' && (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.inputHint,
+                    { transform: [{ translateY: attention.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }] },
+                  ]}
+                >
+                  <View style={styles.inputHintBubble}>
+                    <Ionicons name="create-outline" size={16} color={Colors.white} />
+                    <Text style={styles.inputHintText}>Écrivez votre question ici</Text>
+                  </View>
+                  <View style={styles.inputHintArrow} />
+                </Animated.View>
+              )}
+
+              <Animated.View
+                style={[
+                  styles.inputFrame,
+                  showInputHint && {
+                    borderColor: attention.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['rgba(200, 30, 45, 0.25)', 'rgba(200, 30, 45, 0.9)'],
+                    }),
+                    shadowOpacity: attention.interpolate({ inputRange: [0, 1], outputRange: [0.05, 0.35] }),
+                  },
+                ]}
+              >
               <TextInput
                 ref={inputRef}
                 style={[styles.input, { height: inputHeight }]}
@@ -405,6 +457,7 @@ export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMes
                 maxLength={AI_SEARCH_MAX_MESSAGE_LENGTH}
                 editable={!isLoading}
               />
+              </Animated.View>
               <TouchableOpacity
                 style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
                 disabled={!canSend}
@@ -503,12 +556,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.xxl,
   },
   welcomeIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.red,
     marginBottom: Spacings.md,
   },
   welcomeTitle: {
@@ -612,12 +659,6 @@ const styles = StyleSheet.create({
     gap: Spacings.sm,
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.red,
     marginTop: 2,
   },
   assistantContent: {
@@ -845,13 +886,64 @@ const styles = StyleSheet.create({
     paddingVertical: Spacings.md,
     paddingHorizontal: Spacings.xl,
   },
+  // Cadre du champ : transparent en temps normal, pulse en rouge sur une conversation vide.
+  inputFrame: {
+    flex: 1,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    shadowColor: Colors.red,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 10,
+  },
+  inputHint: {
+    position: 'absolute',
+    left: Spacings.md,
+    bottom: '100%',
+    marginBottom: Spacings.sm,
+    alignItems: 'flex-start',
+    zIndex: 5,
+  },
+  inputHintBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    paddingVertical: Spacings.xs + 2,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 999,
+    backgroundColor: Colors.red,
+    shadowColor: Colors.redDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  inputHintText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+  },
+  // Petit triangle sous la bulle, pointé vers le champ.
+  inputHintArrow: {
+    marginLeft: Spacings.lg,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: Colors.red,
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: Spacings.sm,
   },
+  // Pas de flex: 1 ici : le champ est dans le cadre (colonne), où flex écraserait la hauteur
+  // calculée et le ferait grandir sur deux lignes. C'est le cadre qui prend la largeur.
   input: {
-    flex: 1,
+    width: '100%',
     paddingHorizontal: Spacings.md,
     paddingVertical: 11,
     borderRadius: 22,

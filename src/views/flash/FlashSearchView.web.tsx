@@ -23,6 +23,8 @@ import Spacings from '../../../constants/Spacings';
 import { getPreSearch, search, deleteKeyword, clearSearchHistory } from '../../services/v2/ContentService';
 import { useAiSearchAvailable } from '../../hooks/useAiSearchAvailable';
 import { AiSearchPanel, AiSearchPendingMessage } from '../ai-search/AiSearchPanel';
+import { AiAssistantButton } from '../ai-search/AiAssistantButton';
+import { AiAssistantCard } from '../ai-search/AiAssistantCard';
 
 interface Video {
   id?: string;
@@ -391,14 +393,7 @@ export const FlashSearchView = ({ navigation }) => {
 
               {/* AI assistant button */}
               {isAiSearchAvailable && (
-                <TouchableOpacity
-                  style={styles.aiButton}
-                  activeOpacity={0.7}
-                  onPress={() => openAiSearch()}
-                >
-                  <Ionicons name="sparkles" size={18} color={Colors.white} />
-                  <Text style={styles.aiButtonText}>Assistant IA</Text>
-                </TouchableOpacity>
+                <AiAssistantButton label="Assistant IA" onPress={() => openAiSearch()} style={styles.aiButton} />
               )}
             </View>
           </View>
@@ -436,22 +431,7 @@ export const FlashSearchView = ({ navigation }) => {
                     <>
                       {/* AI assistant card */}
                       {isAiSearchAvailable && (
-                        <TouchableOpacity
-                          style={styles.aiCard}
-                          activeOpacity={0.8}
-                          onPress={() => openAiSearch()}
-                        >
-                          <View style={styles.aiCardIcon}>
-                            <Ionicons name="sparkles" size={22} color={Colors.white} />
-                          </View>
-                          <View style={styles.aiCardInfo}>
-                            <Text style={styles.aiCardTitle}>Essayez l'assistant IA</Text>
-                            <Text style={styles.aiCardText}>
-                              Décrivez votre besoin en une phrase, il vous guide vers les bonnes vidéos.
-                            </Text>
-                          </View>
-                          <Ionicons name="chevron-forward" size={20} color={Colors.redDark} />
-                        </TouchableOpacity>
+                        <AiAssistantCard onPress={() => openAiSearch()} />
                       )}
 
                       {filteredHistorySuggestions.length > 0 && (
@@ -882,55 +862,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   aiButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    gap: Spacings.xs,
     marginLeft: Spacings.xs,
-    paddingHorizontal: Spacings.md,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-  },
-  aiButtonText: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.white,
-  },
-  aiCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.md,
-    marginHorizontal: Spacings.lg,
-    marginTop: Spacings.lg,
-    padding: Spacings.md,
-    borderRadius: 12,
-    backgroundColor: Colors.red3,
-    borderWidth: 1,
-    borderColor: Colors.redDark,
-  },
-  aiCardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.red,
-  },
-  aiCardInfo: {
-    flex: 1,
-  },
-  aiCardTitle: {
-    fontSize: 15,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.redDark,
-  },
-  aiCardText: {
-    fontSize: 13,
-    fontFamily: 'Roboto',
-    color: Colors.text,
-    lineHeight: 18,
   },
   aiEmptyButton: {
     flexDirection: 'row',
