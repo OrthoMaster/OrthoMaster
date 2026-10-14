@@ -9,7 +9,9 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
-  Keyboard
+  Keyboard,
+  Animated,
+  Easing
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -19,6 +21,10 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import { getPreSearch, search, deleteKeyword, clearSearchHistory } from '../../services/v2/ContentService';
+import { useAiSearchAvailable } from '../../hooks/useAiSearchAvailable';
+import { AiSearchPanel, AiSearchPendingMessage } from '../ai-search/AiSearchPanel';
+import { AiAssistantButton } from '../ai-search/AiAssistantButton';
+import { AiAssistantCard } from '../ai-search/AiAssistantCard';
 
 interface Video {
   id?: string;
@@ -47,6 +53,53 @@ export const FlashSearchView = ({ navigation }) => {
     retry: 2,
     retryDelay: 2000
   });
+
+  const isAiSearchAvailable = useAiSearchAvailable();
+
+  /*
+   * L'assistant s'affiche DANS ce panneau, en calque par-dessus la recherche, plutôt que
+   * comme un nouvel écran de la pile : ouvrir un écran rejouait l'animation d'entrée du
+   * panneau de recherche derrière lui.
+   * Le retour vers la recherche démonte le calque : chaque ouverture repart d'une
+   * conversation vierge. Ouvrir une vidéo, en revanche, laisse le calque en place.
+   */
+  const [isAiMounted, setIsAiMounted] = useState(false);
+  const [isAiVisible, setIsAiVisible] = useState(false);
+  const [aiPendingMessage, setAiPendingMessage] = useState<AiSearchPendingMessage | null>(null);
+  const aiAnim = useState(() => new Animated.Value(0))[0];
+
+  const animateAi = (toValue: number, onEnd?: () => void) => {
+    Animated.timing(aiAnim, {
+      toValue,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      // Animation interrompue (assistant rouvert pendant sa fermeture) : ne pas démonter.
+      if (finished) {
+        onEnd?.();
+      }
+    });
+  };
+
+  // Depuis un résultat vide, la requête est transmise pour éviter de la retaper.
+  const openAiSearch = (initialMessage?: string) => {
+    setIsAiMounted(true);
+    setIsAiVisible(true);
+    if (initialMessage) {
+      setAiPendingMessage({ text: initialMessage, nonce: Date.now() });
+    }
+    animateAi(1);
+  };
+
+  // Démonter le panneau efface la conversation (son état vit dans useAiSearchConversation).
+  const closeAiSearch = () => {
+    setIsAiVisible(false);
+    animateAi(0, () => {
+      setIsAiMounted(false);
+      setAiPendingMessage(null);
+    });
+  };
 
   // State management
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -337,6 +390,11 @@ export const FlashSearchView = ({ navigation }) => {
                   </TouchableOpacity>
                 )}
               </View>
+
+              {/* AI assistant button */}
+              {isAiSearchAvailable && (
+                <AiAssistantButton label="Assistant IA" onPress={() => openAiSearch()} style={styles.aiButton} />
+              )}
             </View>
           </View>
 
@@ -371,6 +429,11 @@ export const FlashSearchView = ({ navigation }) => {
                     </>
                   ) : (
                     <>
+                      {/* AI assistant card */}
+                      {isAiSearchAvailable && (
+                        <AiAssistantCard onPress={() => openAiSearch()} />
+                      )}
+
                       {filteredHistorySuggestions.length > 0 && (
                         <>
                           <View style={styles.sectionHeader}>
@@ -437,6 +500,18 @@ export const FlashSearchView = ({ navigation }) => {
                         <Text style={styles.emptySubtext}>
                           Essayez d'autres mots-clés
                         </Text>
+
+                        {/* AI assistant fallback */}
+                        {isAiSearchAvailable && (
+                          <TouchableOpacity
+                            style={styles.aiEmptyButton}
+                            activeOpacity={0.7}
+                            onPress={() => openAiSearch(searchQuery.trim())}
+                          >
+                            <Ionicons name="sparkles" size={16} color={Colors.white} />
+                            <Text style={styles.aiEmptyButtonText}>Demander à l'assistant IA</Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     )}
                   </ScrollView>
@@ -444,6 +519,27 @@ export const FlashSearchView = ({ navigation }) => {
               </>
             )}
           </View>
+
+          {/* AI assistant layer */}
+          {isAiMounted && (
+            <Animated.View
+              pointerEvents={isAiVisible ? 'auto' : 'none'}
+              style={[
+                styles.aiLayer,
+                {
+                  opacity: aiAnim,
+                  transform: [{ translateX: aiAnim.interpolate({ inputRange: [0, 1], outputRange: [48, 0] }) }],
+                },
+              ]}
+            >
+              <AiSearchPanel
+                visible={isAiVisible}
+                pendingMessage={aiPendingMessage}
+                onBack={closeAiSearch}
+                onOpenVideo={(video) => navigation.navigate('flash-media-preview', { media: video })}
+              />
+            </Animated.View>
+          )}
         </TouchableOpacity>
       </TouchableOpacity>
     </>
@@ -757,6 +853,31 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginTop: Spacings.xs,
     textAlign: 'center',
+  },
+
+  /* --- AI assistant --- */
+  aiLayer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.grayLight,
+    zIndex: 20,
+  },
+  aiButton: {
+    marginLeft: Spacings.xs,
+  },
+  aiEmptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    marginTop: Spacings.lg,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.lg,
+    borderRadius: 999,
+    backgroundColor: Colors.red,
+  },
+  aiEmptyButtonText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
   },
 
   // Clocked

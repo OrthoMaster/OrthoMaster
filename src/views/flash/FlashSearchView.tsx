@@ -23,6 +23,9 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import { getPreSearch, search, deleteKeyword, clearSearchHistory } from '../../services/v2/ContentService';
+import { useAiSearchAvailable } from '../../hooks/useAiSearchAvailable';
+import { AiAssistantButton } from '../ai-search/AiAssistantButton';
+import { AiAssistantCard } from '../ai-search/AiAssistantCard';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = Platform.OS !== 'web' && width >= 768;
@@ -67,6 +70,17 @@ export const FlashSearchView = ({ navigation }) => {
     retry: 2,
     retryDelay: 2000
   });
+
+  const isAiSearchAvailable = useAiSearchAvailable();
+
+  // Ouvre l'assistant ; depuis un résultat vide, la requête lui est transmise pour éviter de la retaper.
+  const openAiSearch = (initialMessage?: string) => {
+    Keyboard.dismiss();
+    navigation.navigate('flash-ai-search', {
+      openFrom: 'media',
+      ...(initialMessage ? { initialMessage } : {}),
+    });
+  };
 
   // State management
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -387,6 +401,11 @@ export const FlashSearchView = ({ navigation }) => {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* AI assistant button */}
+          {isAiSearchAvailable && (
+            <AiAssistantButton onPress={() => openAiSearch()} style={styles.aiButton} />
+          )}
         </View>
       </View>
 
@@ -421,6 +440,11 @@ export const FlashSearchView = ({ navigation }) => {
                 </>
               ) : (
                 <>
+                  {/* AI assistant card */}
+                  {isAiSearchAvailable && (
+                    <AiAssistantCard onPress={() => openAiSearch()} />
+                  )}
+
                   {filteredHistorySuggestions.length > 0 && (
                     <>
                       <View style={styles.sectionHeader}>
@@ -482,6 +506,18 @@ export const FlashSearchView = ({ navigation }) => {
                     <Text style={styles.emptySubtext}>
                       Essayez d'autres mots-clés
                     </Text>
+
+                    {/* AI assistant fallback */}
+                    {isAiSearchAvailable && (
+                      <TouchableOpacity
+                        style={styles.aiEmptyButton}
+                        activeOpacity={0.7}
+                        onPress={() => openAiSearch(searchQuery.trim())}
+                      >
+                        <Ionicons name="sparkles" size={16} color={Colors.white} />
+                        <Text style={styles.aiEmptyButtonText}>Demander à l'assistant IA</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
               </ScrollView>
@@ -804,5 +840,25 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginTop: Spacings.xs,
     textAlign: 'center',
+  },
+
+  /* --- AI assistant --- */
+  aiButton: {
+    marginLeft: Spacings.xs,
+  },
+  aiEmptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    marginTop: Spacings.lg,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.lg,
+    borderRadius: 999,
+    backgroundColor: Colors.red,
+  },
+  aiEmptyButtonText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
   },
 });

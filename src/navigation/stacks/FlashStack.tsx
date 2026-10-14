@@ -8,6 +8,7 @@ import { ContentDisplayer } from "../../views/content/ContentDisplayer";
 import { PreviewMediaView } from '../../views/flash/PreviewMediaView';
 
 import { FlashSearchView } from '../../views/flash/FlashSearchView';
+import { MediaAiSearchView } from '../../views/ai-search/MediaAiSearchView';
 
 import ChannelMediaView from '../../views/flash/ChannelMediaView';
 
@@ -91,6 +92,18 @@ export const FlashStack = ({ }) => {
       <FlashStackNav.Screen
         name="flash-search"
         component={FlashSearchView}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
+        }}
+      />
+
+      {/* Nom propre à cette pile : HomeStack aura son propre écran (home-ai-search).
+          Sur web, panneau latéral posé sur le panneau de recherche, comme flash-search. */}
+      <FlashStackNav.Screen
+        name="flash-ai-search"
+        component={MediaAiSearchView}
         options={{
           headerShown: false,
           animation: 'slide_from_right',

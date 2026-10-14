@@ -1,0 +1,982 @@
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  Image,
+  Animated,
+  Easing,
+} from 'react-native';
+import { Ionicons, MaterialCommunityIcons, AntDesign, FontAwesome } from '@expo/vector-icons';
+
+import Colors from '../../../constants/Colors';
+import Spacings from '../../../constants/Spacings';
+
+import { AiSearchOption, AiSearchVideo } from '../../services/v2/ContentService';
+import {
+  AiChatItem,
+  AI_SEARCH_MAX_MESSAGE_LENGTH,
+  formatAiChapterTime,
+  useAiSearchConversation,
+} from '../../hooks/useAiSearchConversation';
+import { AiAvatar } from './AiAvatar';
+
+/*
+ * Contenu de l'assistant pour le web, sans voile ni navigation : il s'affiche à l'intérieur
+ * d'un panneau existant (celui de la recherche, ou celui de MediaAiSearchView.web).
+ * Utilisé uniquement sur web : survol, Entrée pour envoyer.
+ */
+
+const INPUT_MIN_HEIGHT = 44;
+const INPUT_MAX_HEIGHT = 140;
+
+/** Hauteur réservée en haut de la liste pour que le bouton retour ne masque aucun message. */
+const BACK_BUTTON_SPACE = 72;
+
+/**
+ * Exemples proposés à l'ouverture : montrent qu'on peut écrire une phrase, un intervenant, un congrès.
+ * Mêmes phrases que sur mobile (MediaAiSearchView.tsx). Vider le tableau suffit à masquer le bloc.
+ */
+const SUGGESTIONS: string[] = [
+  'Les vidéos de Roberto Purello Ambrosio',
+  'Prise en charge de la lombalgie',
+  'Les vidéos de Chirurgie du Sport',
+];
+
+export type AiSearchPendingMessage = { text: string; nonce: number };
+
+type Props = {
+  onBack: () => void;
+  onOpenVideo: (video: AiSearchVideo) => void;
+  /** Message à envoyer dès réception ; le nonce permet d'envoyer deux fois le même texte. */
+  pendingMessage?: AiSearchPendingMessage | null;
+  /** Le panneau peut rester monté mais caché : la saisie ne reprend le focus qu'une fois visible. */
+  visible?: boolean;
+};
+
+/* ===================== Indicateur de saisie ===================== */
+
+const TypingDots = () => {
+  const dots = useRef([0, 1, 2].map(() => new Animated.Value(0.3))).current;
+
+  useEffect(() => {
+    const animations = dots.map((dot, i) =>
+      Animated.loop(
+        Animated.sequence([
+          // Décalage par point pour obtenir la vague plutôt qu'un clignotement simultané.
+          Animated.delay(i * 160),
+          Animated.timing(dot, { toValue: 1, duration: 320, easing: Easing.out(Easing.quad), useNativeDriver: false }),
+          Animated.timing(dot, { toValue: 0.3, duration: 320, easing: Easing.in(Easing.quad), useNativeDriver: false }),
+          Animated.delay((2 - i) * 160),
+        ])
+      )
+    );
+    animations.forEach((a) => a.start());
+
+    return () => animations.forEach((a) => a.stop());
+  }, [dots]);
+
+  return (
+    <View style={styles.typingRow}>
+      {dots.map((dot, i) => (
+        <Animated.View
+          key={i}
+          style={[styles.typingDot, { opacity: dot, transform: [{ scale: dot }] }]}
+        />
+      ))}
+    </View>
+  );
+};
+
+/* ===================== Panneau ===================== */
+
+export const AiSearchPanel: React.FC<Props> = ({ onBack, onOpenVideo, pendingMessage, visible = true }) => {
+  const [input, setInput] = useState('');
+  const [inputHeight, setInputHeight] = useState(INPUT_MIN_HEIGHT);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
+  const lastNonceRef = useRef<number | null>(null);
+  // Nouvelle réponse : on fait défiler jusqu'à son début, pas jusqu'au bas de la liste,
+  // sinon une longue liste de vidéos cache le message de l'assistant.
+  const scrollTargetRef = useRef<string | null>(null);
+  const stickToEndRef = useRef(true);
+
+  const { items, isLoading, isClosed, sendMessage, chooseOption, showResults, resetConversation } =
+    useAiSearchConversation({
+      onAssistantItem: (id) => {
+        scrollTargetRef.current = id;
+      },
+      onRequestStart: () => {
+        stickToEndRef.current = true;
+      },
+    });
+
+  // La ref sur le nonce évite le double envoi du StrictMode qui rejoue les effets.
+  useEffect(() => {
+    if (pendingMessage && lastNonceRef.current !== pendingMessage.nonce) {
+      lastNonceRef.current = pendingMessage.nonce;
+      sendMessage(pendingMessage.text);
+    }
+  }, [pendingMessage]);
+
+  useEffect(() => {
+    if (visible) {
+      inputRef.current?.focus();
+    }
+  }, [visible]);
+
+  const submit = () => {
+    if (sendMessage(input)) {
+      setInput('');
+      setInputHeight(INPUT_MIN_HEIGHT);
+    }
+    inputRef.current?.focus();
+  };
+
+  /*
+   * Attire l'œil vers la saisie tant qu'aucune conversation n'a commencé : le cadre du
+   * champ pulse en rouge et une bulle « Écrivez votre question ici » rebondit au-dessus.
+   */
+  const attention = useRef(new Animated.Value(0)).current;
+  const hasConversation = items.length > 0 || isLoading;
+
+  useEffect(() => {
+    if (hasConversation || isClosed) {
+      attention.stopAnimation();
+      attention.setValue(0);
+      return;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(attention, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+        Animated.timing(attention, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+      ])
+    );
+    loop.start();
+
+    return () => loop.stop();
+  }, [hasConversation, isClosed, attention]);
+
+  // Nouvelle conversation : l'écran revient à l'accueil, prêt pour une autre question.
+  const reset = () => {
+    resetConversation();
+    stickToEndRef.current = true;
+    scrollTargetRef.current = null;
+    setInput('');
+    setInputHeight(INPUT_MIN_HEIGHT);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    inputRef.current?.focus();
+  };
+
+  // Entrée envoie, Maj + Entrée passe à la ligne : comportement attendu d'un chat sur ordinateur.
+  const handleKeyPress = (e: any) => {
+    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+      e.preventDefault();
+      submit();
+    }
+  };
+
+  /* ---- Défilement ---- */
+
+  const handleContentSizeChange = () => {
+    if (stickToEndRef.current && !scrollTargetRef.current) {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }
+  };
+
+  const handleItemLayout = (id: string, y: number) => {
+    if (scrollTargetRef.current !== id) return;
+
+    scrollTargetRef.current = null;
+    stickToEndRef.current = false;
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - BACK_BUTTON_SPACE), animated: true });
+  };
+
+  /* ---- Rendu des messages ---- */
+
+  const renderAvatar = () => <AiAvatar size={38} style={styles.avatar} />;
+
+  // Même structure que SimilarMediasContentCard (aperçu d'un média), posée dans une carte
+  // avec ombre pour signaler qu'elle est cliquable ; l'ombre se renforce au survol.
+  const renderVideo = (video: AiSearchVideo) => (
+    <Pressable
+      key={`ai-video-${video.id_content}`}
+      onPress={() => onOpenVideo(video)}
+      style={({ hovered }: any) => [styles.videoCard, hovered && styles.videoCardHovered]}
+    >
+      <View style={styles.videoRow}>
+        {video.thumbnail
+          ? <Image source={{ uri: video.thumbnail }} style={styles.videoImage} />
+          : (
+            <View style={[styles.videoImage, styles.videoImagePlaceholder]}>
+              <MaterialCommunityIcons name="play-circle" size={36} color={Colors.grayLight} />
+            </View>
+          )
+        }
+
+        <View style={styles.videoDescription}>
+          <Text style={styles.videoAuthor} numberOfLines={1}>
+            {video.expert_names ? video.expert_names : 'OrthoMaster'}
+          </Text>
+          <Text style={styles.videoTitle} numberOfLines={2}>
+            {video.title}
+          </Text>
+
+          {!!video.duration && (
+            <View style={styles.videoMetadata}>
+              <AntDesign name="clock-circle" size={13} color={Colors.subtext2} />
+              <Text style={styles.videoMetatext}>{video.duration}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {video.matched_chapter && (
+        <View style={styles.chapterNote}>
+          <FontAwesome name="play" size={11} color={Colors.redDark} style={styles.chapterNoteIcon} />
+          <Text style={styles.chapterNoteText}>
+            Abordé à <Text style={styles.chapterNoteTime}>{formatAiChapterTime(video.matched_chapter.seconds)}</Text>
+            {' : '}{video.matched_chapter.label}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+
+  const renderOption = (option: AiSearchOption, disabled: boolean) => (
+    <Pressable
+      key={option.id}
+      disabled={disabled}
+      onPress={() => chooseOption(option)}
+      style={({ hovered }: any) => [
+        styles.optionPill,
+        // Le compteur a son propre fond arrondi : il remplace la marge droite.
+        option.count !== null && styles.optionPillWithCount,
+        hovered && !disabled && styles.optionPillHovered,
+        disabled && styles.pillDisabled,
+      ]}
+    >
+      <Text style={styles.optionText}>{option.label}</Text>
+      {option.count !== null && (
+        <View style={styles.optionCount}>
+          <Text style={styles.optionCountText}>{option.count}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+
+  const renderAssistant = (item: Extract<AiChatItem, { role: 'assistant' }>) => {
+    const disabled = item.kind === 'question' && (item.answered || isLoading);
+
+    return (
+      <View style={styles.assistantRow}>
+        {renderAvatar()}
+        <View style={styles.assistantContent}>
+          <View style={[styles.assistantBubble, item.kind === 'text' && item.isError && styles.errorBubble]}>
+            <Text style={[styles.assistantText, item.kind === 'text' && item.isError && styles.errorText]}>
+              {item.text}
+            </Text>
+          </View>
+
+          {item.kind === 'question' && (
+            <View style={styles.optionsWrap}>
+              {item.options.map((option) => renderOption(option, disabled))}
+
+              {item.total !== null && item.total > 0 && (
+                <Pressable
+                  disabled={disabled}
+                  onPress={() => showResults(item.total as number)}
+                  style={({ hovered }: any) => [
+                    styles.showPill,
+                    hovered && !disabled && styles.showPillHovered,
+                    disabled && styles.pillDisabled,
+                  ]}
+                >
+                  <Ionicons name="play" size={12} color={Colors.white} />
+                  <Text style={styles.showPillText}>Voir les {item.total} vidéos</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {item.kind === 'results' && item.videos.length > 0 && (
+            <View style={styles.videoList}>
+              {item.videos.map(renderVideo)}
+              {item.total > item.videos.length && (
+                <Text style={styles.resultsFootnote}>
+                  Les {item.videos.length} vidéos les plus pertinentes sur {item.total}.
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const renderItem = (item: AiChatItem) => (
+    <View key={item.id} onLayout={(e) => handleItemLayout(item.id, e.nativeEvent.layout.y)}>
+      {item.role === 'user'
+        ? (
+          <View style={styles.userRow}>
+            <View style={styles.userBubble}>
+              <Text style={styles.userText}>{item.text}</Text>
+            </View>
+          </View>
+        )
+        : renderAssistant(item)
+      }
+    </View>
+  );
+
+  const renderWelcome = () => (
+    <View style={styles.welcome}>
+      <AiAvatar size={112} style={styles.welcomeIcon} />
+      <Text style={styles.welcomeTitle}>Assistant Médias</Text>
+      <Text style={styles.welcomeText}>
+        Décrivez un sujet, une pathologie, un intervenant ou un congrès. Je vous aide à affiner si besoin.
+      </Text>
+
+      {SUGGESTIONS.length > 0 && (
+        <View style={styles.suggestions}>
+          {SUGGESTIONS.map((suggestion) => (
+            <Pressable
+              key={suggestion}
+              onPress={() => {
+                sendMessage(suggestion);
+                inputRef.current?.focus();
+              }}
+              style={({ hovered }: any) => [styles.suggestionPill, hovered && styles.suggestionPillHovered]}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.redDark} />
+              <Text style={styles.suggestionText}>{suggestion}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      {/* Le bouton n'apparaît qu'après le premier message : on l'annonce dès l'accueil. */}
+      <View style={styles.welcomeHint}>
+        <View style={styles.welcomeHintIcon}>
+          <Ionicons name="refresh" size={14} color={Colors.text} />
+        </View>
+        <Text style={styles.welcomeHintText}>
+          Pour lancer une nouvelle recherche avec d'autres critères, cliquez sur ce bouton en haut à gauche.
+        </Text>
+      </View>
+    </View>
+  );
+
+  const canSend = input.trim().length > 0 && !isLoading;
+
+  // Conversation vide : la zone de saisie, en bas de l'écran, passe souvent inaperçue.
+  const showInputHint = items.length === 0 && !isLoading && !isClosed;
+
+  return (
+    <View style={styles.container}>
+      {/* Messages */}
+      <ScrollView
+        ref={scrollRef}
+        style={styles.messages}
+        contentContainerStyle={styles.messagesContent}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={handleContentSizeChange}
+      >
+        {items.length === 0 && !isLoading && renderWelcome()}
+        {items.map(renderItem)}
+
+        {isLoading && (
+          <View style={styles.assistantRow}>
+            {renderAvatar()}
+            <View style={styles.assistantBubble}>
+              <TypingDots />
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Saisie */}
+      <View style={styles.inputBar}>
+        {isClosed
+          ? (
+            <TouchableOpacity style={styles.closedButton} activeOpacity={0.7} onPress={onBack}>
+              <Ionicons name="search-outline" size={18} color={Colors.white} />
+              <Text style={styles.closedButtonText}>Retour à la recherche</Text>
+            </TouchableOpacity>
+          )
+          : (
+            <View style={styles.inputRow}>
+              {/* Bulle d'invitation : disparaît dès qu'on tape ou que la conversation démarre */}
+              {showInputHint && input === '' && (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.inputHint,
+                    { transform: [{ translateY: attention.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }] },
+                  ]}
+                >
+                  <View style={styles.inputHintBubble}>
+                    <Ionicons name="create-outline" size={16} color={Colors.white} />
+                    <Text style={styles.inputHintText}>Écrivez votre question ici</Text>
+                  </View>
+                  <View style={styles.inputHintArrow} />
+                </Animated.View>
+              )}
+
+              <Animated.View
+                style={[
+                  styles.inputFrame,
+                  showInputHint && {
+                    borderColor: attention.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['rgba(200, 30, 45, 0.25)', 'rgba(200, 30, 45, 0.9)'],
+                    }),
+                    shadowOpacity: attention.interpolate({ inputRange: [0, 1], outputRange: [0.05, 0.35] }),
+                  },
+                ]}
+              >
+              <TextInput
+                ref={inputRef}
+                style={[styles.input, { height: inputHeight }]}
+                placeholder="Posez votre question…  (Maj + Entrée pour aller à la ligne)"
+                placeholderTextColor={Colors.gray}
+                value={input}
+                onChangeText={setInput}
+                onKeyPress={handleKeyPress}
+                onContentSizeChange={(e) => {
+                  const height = e.nativeEvent.contentSize.height;
+                  setInputHeight(Math.min(INPUT_MAX_HEIGHT, Math.max(INPUT_MIN_HEIGHT, height)));
+                }}
+                multiline
+                maxLength={AI_SEARCH_MAX_MESSAGE_LENGTH}
+                editable={!isLoading}
+              />
+              </Animated.View>
+              <TouchableOpacity
+                style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
+                disabled={!canSend}
+                activeOpacity={0.7}
+                onPress={submit}
+              >
+                <Ionicons name="arrow-up" size={22} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
+          )
+        }
+      </View>
+
+      {/* Boutons fixes, au-dessus de la liste qui défile dessous */}
+      <View style={styles.topActions}>
+        <Pressable
+          accessibilityLabel="Retour à la recherche"
+          onPress={onBack}
+          style={({ hovered }: any) => [styles.roundButton, hovered && styles.roundButtonHovered]}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.text} />
+        </Pressable>
+
+        {/* Inutile tant qu'il n'y a rien à effacer, ou si l'assistant est indisponible */}
+        {items.length > 0 && !isClosed && (
+          <Pressable
+            accessibilityLabel="Nouvelle conversation"
+            disabled={isLoading}
+            onPress={reset}
+            style={({ hovered }: any) => [
+              styles.roundButton,
+              hovered && !isLoading && styles.roundButtonHovered,
+              isLoading && styles.roundButtonDisabled,
+            ]}
+          >
+            <Ionicons name="refresh" size={20} color={Colors.text} />
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  /* ---- Structure ---- */
+  container: {
+    flex: 1,
+    backgroundColor: Colors.grayLight,
+  },
+  topActions: {
+    position: 'absolute',
+    top: Spacings.lg,
+    left: Spacings.lg,
+    flexDirection: 'row',
+    gap: Spacings.sm,
+    zIndex: 10,
+  },
+  roundButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderWidth: 1,
+    borderColor: Colors.line,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  roundButtonHovered: {
+    backgroundColor: Colors.white,
+    shadowOpacity: 0.25,
+  },
+  roundButtonDisabled: {
+    opacity: 0.5,
+    cursor: 'default' as any,
+  },
+
+  /* ---- Liste des messages ---- */
+  messages: {
+    flex: 1,
+  },
+  messagesContent: {
+    paddingHorizontal: Spacings.xl,
+    paddingTop: BACK_BUTTON_SPACE,
+    paddingBottom: Spacings.lg,
+    gap: Spacings.md,
+  },
+
+  /* ---- Accueil ---- */
+  welcome: {
+    alignItems: 'center',
+    paddingTop: Spacings.xxl,
+    paddingHorizontal: Spacings.xxl,
+  },
+  welcomeIcon: {
+    marginBottom: Spacings.md,
+  },
+  welcomeTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
+    color: Colors.text,
+    marginBottom: Spacings.xs,
+  },
+  welcomeText: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    color: Colors.subtext,
+    textAlign: 'center',
+    lineHeight: 24,
+    maxWidth: 480,
+  },
+  suggestions: {
+    width: '100%',
+    maxWidth: 480,
+    gap: Spacings.sm,
+    marginTop: Spacings.lg,
+  },
+  suggestionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 999,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  suggestionPillHovered: {
+    borderColor: Colors.red,
+    backgroundColor: Colors.red3,
+  },
+  suggestionText: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+  },
+  welcomeHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    maxWidth: 480,
+    marginTop: Spacings.lg,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 12,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.line,
+  },
+  // Rappel visuel du bouton réel (même forme ronde) pour qu'on le reconnaisse ensuite.
+  welcomeHintIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.grayLight,
+    borderWidth: 1,
+    borderColor: Colors.line,
+  },
+  welcomeHintText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    color: Colors.subtext,
+    lineHeight: 20,
+  },
+
+  /* ---- Bulles ---- */
+  userRow: {
+    alignItems: 'flex-end',
+  },
+  userBubble: {
+    maxWidth: '75%',
+    backgroundColor: Colors.red,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 18,
+    borderBottomRightRadius: 4,
+  },
+  userText: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    color: Colors.white,
+    lineHeight: 23,
+  },
+  assistantRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.sm,
+  },
+  avatar: {
+    marginTop: 2,
+  },
+  assistantContent: {
+    flex: 1,
+    gap: Spacings.sm,
+  },
+  assistantBubble: {
+    alignSelf: 'flex-start',
+    maxWidth: '90%',
+    backgroundColor: Colors.white,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 18,
+    borderTopLeftRadius: 4,
+  },
+  assistantText: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    color: Colors.text,
+    lineHeight: 23,
+  },
+  errorBubble: {
+    backgroundColor: Colors.red3,
+    borderWidth: 1,
+    borderColor: Colors.redDark,
+  },
+  errorText: {
+    color: Colors.redDark,
+  },
+
+  /* ---- Indicateur de saisie ---- */
+  typingRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingVertical: 7,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.redDark,
+  },
+
+  /* ---- Options ---- */
+  optionsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacings.sm,
+  },
+  // Ombre commune aux pastilles cliquables : les distingue du texte des bulles.
+  optionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    paddingVertical: Spacings.xs + 2,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 999,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.red,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+  },
+  optionPillWithCount: {
+    paddingRight: Spacings.xs,
+  },
+  optionPillHovered: {
+    backgroundColor: Colors.red3,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  optionText: {
+    fontSize: 15,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.redDark,
+  },
+  optionCount: {
+    minWidth: 24,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 999,
+    backgroundColor: Colors.red3,
+    alignItems: 'center',
+  },
+  optionCountText: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.redDark,
+  },
+  showPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    paddingVertical: Spacings.xs + 2,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 999,
+    backgroundColor: Colors.red,
+    borderWidth: 1,
+    borderColor: Colors.red,
+    shadowColor: Colors.redDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  showPillHovered: {
+    backgroundColor: Colors.redDark,
+    borderColor: Colors.redDark,
+  },
+  showPillText: {
+    fontSize: 15,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+  },
+  // Une pastille désactivée ne doit plus sembler cliquable : on retire aussi l'ombre.
+  pillDisabled: {
+    opacity: 0.45,
+    shadowOpacity: 0,
+    cursor: 'default' as any,
+  },
+
+  /* ---- Vidéos ---- */
+  videoList: {
+    gap: Spacings.md,
+  },
+  videoCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: Spacings.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    transitionDuration: '150ms' as any,
+  },
+  videoCardHovered: {
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    transform: [{ translateY: -1 }],
+  },
+  videoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.md,
+  },
+  // Même taille que l'aperçu d'un média (100 px de haut) : le panneau web est assez large.
+  videoImage: {
+    width: 100 * 16 / 9,
+    height: 100,
+    borderRadius: 8,
+    objectFit: 'cover',
+  },
+  videoImagePlaceholder: {
+    backgroundColor: Colors.gray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoDescription: {
+    flex: 1,
+    flexShrink: 1,
+  },
+  videoAuthor: {
+    marginTop: Spacings.xs,
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '500',
+    fontFamily: 'Roboto',
+  },
+  videoTitle: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 16,
+    color: Colors.text,
+    lineHeight: 22,
+  },
+  videoMetadata: {
+    marginTop: Spacings.xxs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+  },
+  videoMetatext: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    color: Colors.subtext2,
+  },
+  chapterNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.xs,
+    marginTop: Spacings.sm,
+    paddingTop: Spacings.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.line,
+  },
+  // Aligne le triangle sur la première ligne du texte.
+  chapterNoteIcon: {
+    marginTop: 5,
+  },
+  chapterNoteText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    fontStyle: 'italic',
+    color: Colors.subtext,
+    lineHeight: 20,
+  },
+  chapterNoteTime: {
+    fontFamily: 'Poppins-Medium',
+    fontStyle: 'normal',
+    color: Colors.redDark,
+  },
+  resultsFootnote: {
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    color: Colors.subtext,
+    paddingHorizontal: Spacings.xs,
+  },
+
+  /* ---- Saisie ---- */
+  inputBar: {
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.line,
+    paddingVertical: Spacings.md,
+    paddingHorizontal: Spacings.xl,
+  },
+  // Cadre du champ : transparent en temps normal, pulse en rouge sur une conversation vide.
+  inputFrame: {
+    flex: 1,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    shadowColor: Colors.red,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 10,
+  },
+  inputHint: {
+    position: 'absolute',
+    left: Spacings.md,
+    bottom: '100%',
+    marginBottom: Spacings.sm,
+    alignItems: 'flex-start',
+    zIndex: 5,
+  },
+  inputHintBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    paddingVertical: Spacings.xs + 2,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 999,
+    backgroundColor: Colors.red,
+    shadowColor: Colors.redDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  inputHintText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+  },
+  // Petit triangle sous la bulle, pointé vers le champ.
+  inputHintArrow: {
+    marginLeft: Spacings.lg,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: Colors.red,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: Spacings.sm,
+  },
+  // Pas de flex: 1 ici : le champ est dans le cadre (colonne), où flex écraserait la hauteur
+  // calculée et le ferait grandir sur deux lignes. C'est le cadre qui prend la largeur.
+  input: {
+    width: '100%',
+    paddingHorizontal: Spacings.md,
+    paddingVertical: 11,
+    borderRadius: 22,
+    backgroundColor: Colors.grayLight,
+    fontSize: 15,
+    fontFamily: 'Poppins-Regular',
+    color: Colors.text,
+    outlineStyle: 'none' as any,
+    resize: 'none' as any,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.red,
+  },
+  sendButtonDisabled: {
+    backgroundColor: Colors.gray,
+  },
+  closedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacings.sm,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.red,
+  },
+  closedButtonText: {
+    fontSize: 15,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+  },
+});

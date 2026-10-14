@@ -6,12 +6,13 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  Image
+  Image,
+  Pressable,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useQuery } from "@tanstack/react-query";
-import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from "@tanstack/react-query";
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import SimpleContentCarousel from '../../component/carousel/SimpleContentCarousel';
 import PanoramaCarousel from '../../component/carousel/PanoramaCarousel';
@@ -20,9 +21,116 @@ import { IContent } from '../../utils/interfaces';
 import { PreviewMediaParams } from './PreviewMediaView';
 
 import { getEvents, getTrends, getCategories, getContent } from '../../services/v2/ContentService';
+import { useAiSearchAvailable } from '../../hooks/useAiSearchAvailable';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
+
+/* ===================== Loupe animée de l'en-tête ===================== */
+
+/*
+ * Quand l'assistant IA est disponible : un cercle blanc se trace autour de la loupe en
+ * partant du coin supérieur droit, puis une étoile à quatre branches apparaît à ce point
+ * de départ. Le cercle a la taille du fond blanc affiché au survol.
+ * Animation CSS (fichier web uniquement) : un seul cycle, sans rendu React à chaque image.
+ */
+const SEARCH_ICON_SIZE = 34;
+const SEARCH_BUTTON_PADDING = 8;
+const SEARCH_RING_STROKE = 1;
+const SEARCH_STAR_SIZE = 18;
+/** Durée d'un cycle complet : tracé, étoile, pause, disparition. */
+const SEARCH_CYCLE_S = 3.6;
+
+const searchRingKeyframes = (circumference: number) => `
+@keyframes aiSearchRing {
+  0%        { stroke-dashoffset: ${circumference}; opacity: 1; }
+  32%       { stroke-dashoffset: 0; opacity: 1; }
+  82%       { stroke-dashoffset: 0; opacity: 1; }
+  94%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes aiSearchStar {
+  0%, 32%   { opacity: 0; transform: scale(.2) rotate(0deg); }
+  44%       { opacity: 1; transform: scale(1.2) rotate(90deg); }
+  52%, 82%  { opacity: 1; transform: scale(1) rotate(90deg); }
+  94%, 100% { opacity: 0; transform: scale(1) rotate(90deg); }
+}
+.ai-search-ring { animation: aiSearchRing ${SEARCH_CYCLE_S}s ease-in-out infinite; }
+.ai-search-star { opacity: 0; animation: aiSearchStar ${SEARCH_CYCLE_S}s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ai-search-ring { animation: none; stroke-dashoffset: 0; }
+  .ai-search-star { animation: none; opacity: 1; }
+}
+`;
+
+const AiSearchHeaderButton = ({ onPress }: { onPress: () => void }) => {
+  const isAiAvailable = useAiSearchAvailable();
+
+  const box = SEARCH_ICON_SIZE + SEARCH_BUTTON_PADDING * 2;
+  const center = box / 2;
+  const radius = center - SEARCH_RING_STROKE / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  // Point de départ du tracé, en haut à droite (45°) : c'est là qu'apparaît l'étoile.
+  const starX = center + radius * Math.SQRT1_2;
+  const starY = center - radius * Math.SQRT1_2;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={isAiAvailable ? 'Rechercher un média, assistant IA disponible' : 'Rechercher un média'}
+      style={({ hovered, pressed }: any) => [
+        styles.searchButton,
+        (hovered || pressed) && styles.searchButtonActive,
+      ]}
+    >
+      <Ionicons name="search" size={SEARCH_ICON_SIZE} color={Colors.white} />
+
+      {isAiAvailable && (
+        <>
+          <style>{searchRingKeyframes(circumference)}</style>
+
+          <svg
+            width={box}
+            height={box}
+            style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible' }}
+          >
+            {/* Le tracé d'un cercle SVG part de 3 h : rotation de -45° pour partir du coin supérieur droit */}
+            <circle
+              className="ai-search-ring"
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke={Colors.white}
+              strokeWidth={SEARCH_RING_STROKE}
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              transform={`rotate(-45 ${center} ${center})`}
+              opacity={0.7}
+            />
+          </svg>
+
+          <div
+            className="ai-search-star"
+            style={{
+              position: 'absolute',
+              left: starX - SEARCH_STAR_SIZE / 2,
+              top: starY - SEARCH_STAR_SIZE / 2,
+              width: SEARCH_STAR_SIZE,
+              height: SEARCH_STAR_SIZE,
+              pointerEvents: 'none',
+            }}
+          >
+            <MaterialCommunityIcons name="star-four-points" size={SEARCH_STAR_SIZE} color={Colors.white} />
+          </div>
+        </>
+      )}
+    </Pressable>
+  );
+};
+
+/* ===================== Écran ===================== */
 
 export const FlashMediaView = ({ navigation, route }) => {
   const queryClient = useQueryClient();
@@ -167,9 +275,8 @@ export const FlashMediaView = ({ navigation, route }) => {
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Médias</Text>
           <View style={styles.headerRightIcons}>
-            <TouchableOpacity onPress={() => { navigation.navigate('flash-search') }}>
-              <Ionicons name="search" size={34} color={Colors.white} />
-            </TouchableOpacity>
+            {/* Loupe animée (étoiles) quand l'assistant IA est disponible */}
+            <AiSearchHeaderButton onPress={() => { navigation.navigate('flash-search') }} />
           </View>
         </View>
       </View>
@@ -280,6 +387,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Loupe animée : le fond du survol et le cercle tracé ont la même taille
+  searchButton: {
+    padding: SEARCH_BUTTON_PADDING,
+    borderRadius: 999,
+    transitionDuration: '150ms' as any,
+  },
+  searchButtonActive: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    transform: [{ scale: 1.06 }],
   },
 
   sectionContainer: {
