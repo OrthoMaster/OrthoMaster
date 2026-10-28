@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,6 +34,24 @@ const DEFAULT_PILL_COLOR = Colors.lblueDark;
 /** Même ressort pour l'onglet qui s'ouvre, celui qui se referme et ceux qui se décalent. */
 const LAYOUT_TRANSITION = LinearTransition.springify().damping(18).stiffness(180);
 
+/** Écart entre les onglets ; resserré quand ils sont nombreux. */
+const TAB_GAP = Spacings.xs;
+const TAB_GAP_TIGHT = Spacings.xxs;
+
+/** Largeur moyenne d'un caractère du libellé (Poppins-Medium 15), pour estimer sans mesurer. */
+const LABEL_CHAR_WIDTH = 8.5;
+
+/**
+ * Largeur estimée de la barre. Estimation plutôt que mesure : onLayout n'est pas fiable
+ * sur le web dans une barre qui s'anime, et une marge de quelques pixels suffit ici.
+ */
+const estimateBarWidth = (tabCount: number, gap: number, label: string | null) => {
+  const exit = ITEM_HEIGHT + 1 + Spacings.sm * 2;
+  const tabs = tabCount * ITEM_HEIGHT + (tabCount - 1) * gap;
+  const labelWidth = label ? Spacings.xs + label.length * LABEL_CHAR_WIDTH + Spacings.md - ICON_INSET : 0;
+  return exit + tabs + labelWidth + (BAR_PADDING + BAR_BORDER) * 2;
+};
+
 /**
  * Espace à réserver en bas des écrans pour que le contenu ne passe pas sous la barre.
  * La version web renvoie 0 : la barre y est en haut, dans le flux.
@@ -51,15 +69,25 @@ type FloatingTabBarProps = BottomTabBarProps & {
 /**
  * Icônes seules ; l'onglet actif s'élargit en pastille avec son libellé à droite de l'icône.
  * La barre épouse son contenu et reste centrée : sa largeur suit l'ouverture de l'onglet actif.
+ *
+ * Avec beaucoup d'onglets (expert : cinq), le libellé ne tient plus sur un téléphone :
+ * les onglets se resserrent et l'actif garde sa pastille de couleur, sans libellé.
  */
 export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation, onExit }) => {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
 
   // Un écran peut masquer la barre (formulaire, clavier) via tabBarStyle: { display: 'none' }.
   const focusedOptions = descriptors[state.routes[state.index].key].options;
   if ((focusedOptions.tabBarStyle as { display?: string } | undefined)?.display === 'none') {
     return null;
   }
+
+  const available = screenWidth - BAR_GAP * 2;
+  const focusedLabel = focusedOptions.title ?? state.routes[state.index].name;
+  const tabCount = state.routes.length;
+  const gap = estimateBarWidth(tabCount, TAB_GAP, null) <= available ? TAB_GAP : TAB_GAP_TIGHT;
+  const showLabel = estimateBarWidth(tabCount, gap, focusedLabel) <= available;
 
   return (
     <View pointerEvents="box-none" style={[styles.wrapper, { bottom: Math.max(insets.bottom, BAR_GAP) }]}>
@@ -77,7 +105,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
 
         <View style={styles.divider} />
 
-        <View style={styles.tabs}>
+        <View style={[styles.tabs, { gap }]}>
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key];
             const focused = state.index === index;
@@ -85,8 +113,13 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
             const label = options.title ?? route.name;
             // Chaque onglet a sa couleur : la pastille reprend tabBarActiveTintColor.
             const pillColor = options.tabBarActiveTintColor ?? DEFAULT_PILL_COLOR;
-            // Pastille rouge sans chiffre : signale qu'il y a quelque chose à traiter, sans compter.
-            const hasBadge = !!options.tabBarBadge;
+            // Nombre ou texte : pastille chiffrée (9+ au-delà) ; tout autre valeur vraie : simple point.
+            const badge = options.tabBarBadge;
+            const badgeText =
+              typeof badge === 'number' ? (badge > 9 ? '9+' : String(badge)) : typeof badge === 'string' ? badge : null;
+            const hasBadge = !!badge;
+            // Le liseré reprend le fond sous la pastille : barre sombre, ou couleur de l'onglet actif.
+            const badgeRing = focused ? pillColor : Colors.blackBackground;
 
             const onPress = () => {
               const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -102,7 +135,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
                 style={[styles.item, focused && { backgroundColor: pillColor }]}
               >
                 <TouchableOpacity
-                  style={[styles.itemTouch, focused && styles.itemTouchActive]}
+                  style={[styles.itemTouch, focused && showLabel && styles.itemTouchActive]}
                   onPress={onPress}
                   activeOpacity={0.7}
                   accessibilityRole="tab"
@@ -111,10 +144,17 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
                 >
                   <View>
                     {options.tabBarIcon?.({ focused, color, size: ICON_SIZE })}
-                    {hasBadge && <View style={styles.badgeDot} />}
+                    {hasBadge &&
+                      (badgeText ? (
+                        <View style={[styles.badgeCount, { borderColor: badgeRing }]}>
+                          <Text style={styles.badgeCountText}>{badgeText}</Text>
+                        </View>
+                      ) : (
+                        <View style={[styles.badgeDot, { borderColor: badgeRing }]} />
+                      ))}
                   </View>
 
-                  {focused && (
+                  {focused && showLabel && (
                     <Animated.Text
                       entering={FadeIn.duration(180).delay(60)}
                       exiting={FadeOut.duration(100)}
@@ -178,10 +218,10 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Onglets ---- */
+  // Écart entre onglets fixé à l'affichage (TAB_GAP ou TAB_GAP_TIGHT).
   tabs: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.xs,
   },
   item: {
     height: ITEM_HEIGHT,
@@ -215,8 +255,27 @@ const styles = StyleSheet.create({
     height: 11,
     borderRadius: 6,
     backgroundColor: Colors.danger,
-    // Liseré de la couleur de la barre : la pastille se détache de l'icône.
+    // Liseré de la couleur du fond : la pastille se détache de l'icône.
     borderWidth: 2,
     borderColor: Colors.blackBackground,
+  },
+  badgeCount: {
+    position: 'absolute',
+    top: -7,
+    right: -10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    backgroundColor: Colors.danger,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeCountText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 10,
+    lineHeight: 13,
+    color: Colors.white,
   },
 });

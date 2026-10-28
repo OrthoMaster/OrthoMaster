@@ -13,14 +13,14 @@ import {
   addMyAvailabilityRules,
   deleteMyAvailabilityRule,
   fieldError,
+  setMyRuleLocation,
   updateMyBookingSettings,
 } from '../../../../services/v2/BookingService';
-import { BookingActionSheet, BookingSheetAction } from '../../components/BookingActionSheet';
+import { LocationPickerSheet, LocationSheetAction } from '../components/LocationPickerSheet';
 import { WEEKDAYS, formatDuration, formatShortDate, fromMinutes, toMinutes } from '../../bookingDates';
 import { notify } from '../../bookingActions';
 
 const TIME_STEP = 15;
-const NOTICE_STEP = 12;
 
 const PERIODS: { key: BookingPeriod; label: string }[] = [
   { key: 'morning', label: 'Matin' },
@@ -34,7 +34,7 @@ interface SettingsForm {
   morning_end: string;
   afternoon_start: string;
   afternoon_end: string;
-  min_notice_hours: number;
+  min_notice_days: number;
   max_advance_months: number;
 }
 
@@ -45,7 +45,7 @@ const formFromSetup = (setup: ExpertBookingSetup): SettingsForm => {
     morning_end: r.morning_end,
     afternoon_start: r.afternoon_start,
     afternoon_end: r.afternoon_end,
-    min_notice_hours: r.min_notice_hours,
+    min_notice_days: r.min_notice_days,
     max_advance_months: r.max_advance_months,
   };
 };
@@ -59,8 +59,7 @@ const validityLabel = (rule: ExpertAvailabilityRule) => {
   return 'Toutes les semaines';
 };
 
-const noticeLabel = (hours: number) =>
-  hours % 24 === 0 ? `${hours} h (${hours / 24} ${hours / 24 > 1 ? 'jours' : 'jour'})` : `${hours} h`;
+const noticeLabel = (days: number) => `${days} ${days > 1 ? 'jours' : 'jour'}`;
 
 /* ---- Sélecteurs ---- */
 
@@ -115,7 +114,15 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState(false);
   const [pendingCell, setPendingCell] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<{ title: string; subtitle?: string; actions: BookingSheetAction[] } | null>(null);
+  // Demi-journée ouverte touchée : fermeture et choix du lieu dans la même feuille
+  // (toutes ses règles en cours reçoivent le même lieu).
+  const [placeTarget, setPlaceTarget] = useState<{
+    title: string;
+    subtitle: string;
+    cellKey: string;
+    rules: ExpertAvailabilityRule[];
+    actions: LocationSheetAction[];
+  } | null>(null);
 
   const dirty = JSON.stringify(form) !== JSON.stringify(baseline);
 
@@ -161,7 +168,7 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
     form.morning_end === defaults.morning_end &&
     form.afternoon_start === defaults.afternoon_start &&
     form.afternoon_end === defaults.afternoon_end &&
-    form.min_notice_hours === defaults.min_notice_hours &&
+    form.min_notice_days === defaults.min_notice_days &&
     form.max_advance_months === defaults.max_advance_months;
 
   const saveSettings = async () => {
@@ -174,7 +181,7 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
       morning_end: own('morning_end'),
       afternoon_start: own('afternoon_start'),
       afternoon_end: own('afternoon_end'),
-      min_notice_hours: own('min_notice_hours'),
+      min_notice_days: own('min_notice_days'),
       max_advance_months: own('max_advance_months'),
     });
     setSaving(false);
@@ -211,12 +218,32 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
     setPendingCell(null);
   };
 
+  /** Même lieu pour toutes les règles en cours de la demi-journée ; null = en ligne seulement. */
+  const assignLocation = async (rules: ExpertAvailabilityRule[], cellKey: string, locationId: number | null) => {
+    setPendingCell(cellKey);
+    let last: ExpertBookingSetup | null = null;
+    for (const rule of rules) {
+      if (rule.location_id === locationId) continue;
+      const result = await setMyRuleLocation(rule.id, locationId);
+      if (!result.ok) {
+        // Refus 2b : une offre en présentiel utilise cette demi-journée ; le serveur dit laquelle.
+        const reasons = Object.values(result.errors ?? {}).flat();
+        notify('Changement impossible', reasons.length ? reasons.join('\n') : result.message ?? 'Réessayez dans un instant.');
+        break;
+      }
+      last = result.data;
+    }
+    if (last) apply(last);
+    setPendingCell(null);
+  };
+
   const toggleCell = async (weekday: number, period: BookingPeriod) => {
     if (pendingCell) return;
 
     const key = `${weekday}-${period}`;
     const rules = cellRules(weekday, period);
     const periodLabel = PERIODS.find((p) => p.key === period)?.label.toLowerCase();
+    const title = `${WEEKDAYS[weekday]} ${periodLabel}`;
 
     if (rules.length === 0) {
       setPendingCell(key);
@@ -227,22 +254,32 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
       return;
     }
 
-    // Créneau permanent : bascule directe. Créneau daté (créé au CMS) : on montre ses dates avant de supprimer.
-    if (rules.every((r) => !r.valid_from && !r.valid_until)) {
-      removeRules(rules, key);
-      return;
-    }
+    // Demi-journée ouverte : une seule feuille, la fermer en tête, son adresse dessous.
+    const location = rules[0].location_label;
+    const permanent = rules.every((r) => !r.valid_from && !r.valid_until);
 
-    setSheet({
-      title: `${WEEKDAYS[weekday]} ${periodLabel}`,
-      subtitle: 'Ce créneau a des dates de validité.',
-      actions: [
+    // Les actions ferment la feuille avant d'agir : la grille montre aussitôt la case en attente.
+    const closeAnd = (run: () => void) => () => {
+      setPlaceTarget(null);
+      run();
+    };
+
+    // Créneau permanent : une seule fermeture. Créneau daté (créé au CMS) : ses dates avant de supprimer.
+    const actions: LocationSheetAction[] = permanent
+      ? [{
+        key: 'close',
+        label: 'Fermer cette demi-journée',
+        icon: 'calendar-remove-outline',
+        tone: 'danger',
+        onPress: closeAnd(() => removeRules(rules, key)),
+      }]
+      : [
         ...rules.map((rule) => ({
           key: `rule-${rule.id}`,
           label: `Supprimer : ${validityLabel(rule).toLowerCase()}`,
           icon: 'calendar-remove-outline' as const,
           tone: 'danger' as const,
-          onPress: () => removeRules([rule], key),
+          onPress: closeAnd(() => removeRules([rule], key)),
         })),
         ...(rules.length > 1
           ? [{
@@ -250,10 +287,19 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
             label: 'Tout supprimer',
             icon: 'delete-outline' as const,
             tone: 'danger' as const,
-            onPress: () => removeRules(rules, key),
+            onPress: closeAnd(() => removeRules(rules, key)),
           }]
           : []),
-      ],
+      ];
+
+    setPlaceTarget({
+      title,
+      subtitle: permanent
+        ? location ? `Chaque semaine · ${location}` : 'Chaque semaine · en ligne uniquement'
+        : 'Ce créneau a des dates de validité.',
+      cellKey: key,
+      rules,
+      actions,
     });
   };
 
@@ -317,14 +363,16 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
         <View style={styles.delayRow}>
           <View style={styles.flex}>
             <Text style={styles.delayLabel}>Au plus tôt</Text>
-            <Text style={styles.hint}>avant la demi-journée</Text>
+            <Text style={styles.hint}>
+              {form.min_notice_days === 1 ? 'réservable dès le lendemain' : `réservable à partir de J+${form.min_notice_days}`}
+            </Text>
           </View>
           <Stepper
-            value={noticeLabel(form.min_notice_hours)}
-            onMinus={() => setForm((f) => ({ ...f, min_notice_hours: f.min_notice_hours - NOTICE_STEP }))}
-            onPlus={() => setForm((f) => ({ ...f, min_notice_hours: f.min_notice_hours + NOTICE_STEP }))}
-            minusDisabled={form.min_notice_hours - NOTICE_STEP < NOTICE_STEP}
-            plusDisabled={form.min_notice_hours + NOTICE_STEP > limits.max_notice_hours}
+            value={noticeLabel(form.min_notice_days)}
+            onMinus={() => setForm((f) => ({ ...f, min_notice_days: f.min_notice_days - 1 }))}
+            onPlus={() => setForm((f) => ({ ...f, min_notice_days: f.min_notice_days + 1 }))}
+            minusDisabled={form.min_notice_days <= 1}
+            plusDisabled={form.min_notice_days >= limits.max_notice_days}
             accessibilityLabel="Délai minimum"
           />
         </View>
@@ -368,7 +416,7 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
           <Text style={styles.counter}>{openCount} / 14</Text>
         </View>
         <Text style={[styles.hint, styles.gridHint]}>
-          Touchez une demi-journée pour l'ouvrir ou la fermer chaque semaine.
+          Touchez une case vide pour l'ouvrir chaque semaine ; une case ouverte pour choisir son adresse ou la fermer.
         </Text>
 
         <View style={styles.gridHeader}>
@@ -409,7 +457,15 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
                     <ActivityIndicator size="small" color={open ? Colors.white : Colors.lblueDark} />
                   ) : open ? (
                     <>
-                      <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
+                      {rules[0].location_label ? (
+                        // Adresse de la demi-journée : le nom court tient dans la case.
+                        <View style={styles.cellPlace}>
+                          <MaterialCommunityIcons name="map-marker" size={13} color={Colors.white} />
+                          <Text style={styles.cellPlaceText} numberOfLines={1}>{rules[0].location_label}</Text>
+                        </View>
+                      ) : (
+                        <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
+                      )}
                       {dated && (
                         <Text style={styles.cellDated} numberOfLines={1}>
                           {validityLabel(dated)}
@@ -433,12 +489,30 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
         </View>
       </View>
 
-      <BookingActionSheet
-        visible={!!sheet}
-        title={sheet?.title ?? ''}
-        subtitle={sheet?.subtitle}
-        actions={sheet?.actions ?? []}
-        onClose={() => setSheet(null)}
+      <LocationPickerSheet
+        visible={!!placeTarget}
+        title={placeTarget?.title ?? ''}
+        subtitle={placeTarget?.subtitle}
+        actions={placeTarget?.actions}
+        locations={setup.locations}
+        selectedId={placeTarget?.rules[0]?.location_id ?? null}
+        deselectable
+        placesEnabled={limits.places?.enabled ?? false}
+        minInput={limits.places?.min_input ?? 3}
+        labelMax={limits.location?.label_max ?? 60}
+        accessMax={limits.location?.access_max ?? 1000}
+        onSelect={(id) => {
+          const target = placeTarget;
+          setPlaceTarget(null);
+          if (target) assignLocation(target.rules, target.cellKey, id);
+        }}
+        onCreated={(next, id) => {
+          const target = placeTarget;
+          apply(next);
+          setPlaceTarget(null);
+          if (target) assignLocation(target.rules, target.cellKey, id);
+        }}
+        onClose={() => setPlaceTarget(null)}
       />
     </ScrollView>
   );
@@ -659,6 +733,18 @@ const styles = StyleSheet.create({
   cellDated: {
     fontFamily: 'Poppins-Regular',
     fontSize: 10,
+    color: Colors.white,
+  },
+  cellPlace: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    maxWidth: '100%',
+  },
+  cellPlaceText: {
+    flexShrink: 1,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
     color: Colors.white,
   },
   legend: {

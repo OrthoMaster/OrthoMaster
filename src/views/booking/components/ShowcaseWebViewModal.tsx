@@ -12,6 +12,8 @@ interface ShowcaseWebViewModalProps {
   visible: boolean;
   url: string | null;
   onClose: () => void;
+  /** Titre de l'en-tête ; par défaut, la page vitrine de l'expert. */
+  title?: string;
 }
 
 /**
@@ -19,7 +21,7 @@ interface ShowcaseWebViewModalProps {
  * La page peut être lourde sur un téléphone ancien : l'en-tête reste au-dessus de la
  * WebView, pour que Fermer réponde même pendant le chargement.
  */
-export const ShowcaseWebViewModal: React.FC<ShowcaseWebViewModalProps> = ({ visible, url, onClose }) => {
+export const ShowcaseWebViewModal: React.FC<ShowcaseWebViewModalProps> = ({ visible, url, onClose, title = 'Page vitrine web' }) => {
   const [loading, setLoading] = useState(true);
 
   // url porte ?inapp=true pour la WebView ; on affiche et on partage l'adresse publique.
@@ -36,7 +38,7 @@ export const ShowcaseWebViewModal: React.FC<ShowcaseWebViewModalProps> = ({ visi
             </TouchableOpacity>
 
             <View style={styles.headerTexts}>
-              <Text style={styles.headerTitle}>Page vitrine web</Text>
+              <Text style={styles.headerTitle}>{title}</Text>
               {publicUrl ? (
                 <Text style={styles.headerUrl} numberOfLines={1}>
                   {publicUrl.replace(/^https?:\/\//, '')}

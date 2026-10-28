@@ -1,12 +1,21 @@
 import React, { useRef } from 'react';
-import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, Image, Pressable, Animated, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
 /** Hauteur de la tranche : la face s'enfonce d'autant quand on appuie. */
 const PRESS_DEPTH = 5;
+
+/** Illustration hébergée sur S3 : modifiable sans nouvelle version de l'application. */
+const ILLUSTRATION_URL = 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/settings/booking_expert.png';
+
+/**
+ * Ratio largeur / hauteur de l'illustration. Fixé en dur pour réserver la place
+ * avant le chargement : la carte ne saute pas quand l'image arrive.
+ */
+const ILLUSTRATION_RATIO = 2.53;
 
 interface BookingEntryCardProps {
   isExpert: boolean;
@@ -25,6 +34,8 @@ export const BookingEntryCard: React.FC<BookingEntryCardProps> = ({ isExpert, on
     outputRange: [0, PRESS_DEPTH],
   });
 
+  const title = isExpert ? 'Mon espace expert' : 'Échanger avec un expert';
+
   return (
     <Pressable
       style={styles.wrapper}
@@ -32,29 +43,32 @@ export const BookingEntryCard: React.FC<BookingEntryCardProps> = ({ isExpert, on
       onPressIn={() => animatePress(1)}
       onPressOut={() => animatePress(0)}
       accessibilityRole="button"
+      accessibilityLabel={title}
     >
       <View style={styles.edge}>
         <Animated.View style={[styles.face, { transform: [{ translateY }] }]}>
-          <View style={styles.medallion}>
-            <MaterialCommunityIcons
-              name={isExpert ? 'calendar-account' : 'account-voice'}
-              size={30}
-              color={Colors.lblueDark}
-            />
-          </View>
+          <Image
+            source={{ uri: ILLUSTRATION_URL }}
+            style={styles.illustration}
+            resizeMode="contain"
+          />
 
-          <View style={styles.texts}>
-            <Text style={styles.title} numberOfLines={1}>
-              {isExpert ? 'Mon espace expert' : 'Échanger avec un expert'}
-            </Text>
-            <Text style={styles.description} numberOfLines={2}>
-              {isExpert
-                ? 'Vos demandes, votre agenda et vos disponibilités.'
-                : 'Réservez un échange en visio avec un expert sur un sujet de votre pratique.'}
-            </Text>
-          </View>
+          <View style={styles.footer}>
+            <View style={styles.texts}>
+              <Text style={styles.title} numberOfLines={1}>
+                {title}
+              </Text>
+              <Text style={styles.description} numberOfLines={2}>
+                {isExpert
+                  ? 'Vos demandes, votre agenda et vos disponibilités.'
+                  : 'Réservez un échange en visio avec un expert sur un sujet de votre pratique.'}
+              </Text>
+            </View>
 
-          <Ionicons name="chevron-forward" size={22} color={Colors.white} />
+            <View style={styles.arrow}>
+              <Ionicons name="chevron-forward" size={20} color={Colors.greenDark} />
+            </View>
+          </View>
         </Animated.View>
       </View>
     </Pressable>
@@ -69,43 +83,52 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.xs,
   },
   edge: {
-    backgroundColor: Colors.lblueDark,
+    backgroundColor: Colors.greenDark,
     borderRadius: 16,
     paddingBottom: PRESS_DEPTH,
   },
   face: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.sm,
-    backgroundColor: Colors.lblue,
+    backgroundColor: Colors.green,
     borderRadius: 16,
-    paddingVertical: Spacings.md,
-    paddingLeft: Spacings.md,
-    paddingRight: Spacings.sm,
+    padding: Spacings.sm,
+  },
+
+  /* ---- Illustration ---- */
+  illustration: {
+    width: '100%',
+    aspectRatio: ILLUSTRATION_RATIO,
   },
 
   /* ---- Contenu ---- */
-  medallion: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.lblue3,
+  footer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: Spacings.sm,
+    paddingTop: Spacings.sm,
+    paddingHorizontal: Spacings.xxs,
+    paddingBottom: Spacings.xxs,
   },
   texts: {
     flex: 1,
   },
   title: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 16,
+    fontSize: 20,
     color: Colors.white,
   },
   description: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 13,
-    lineHeight: 18,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 15,
+    lineHeight: 22,
     color: Colors.white,
     marginTop: Spacings.xxxs,
+  },
+  arrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

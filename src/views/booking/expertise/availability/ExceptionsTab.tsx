@@ -42,10 +42,11 @@ const STATE_COLORS: Record<PeriodState, string> = {
 };
 
 const STATE_LABELS: Record<PeriodState, string> = {
-  open: 'ouvert',
-  added: 'ouvert exceptionnellement',
-  blocked: 'fermé',
-  closed: 'fermé',
+  // Disponibilité de l'expert, pas horaires d'ouverture : « disponible », jamais « ouvert ».
+  open: 'disponible',
+  added: 'disponible exceptionnellement',
+  blocked: 'indisponible',
+  closed: 'indisponible',
 };
 
 /** Plages consécutives de même nature, pour qu'un congé de 15 jours tienne sur une ligne. */
@@ -372,7 +373,7 @@ export const ExceptionsTab: React.FC<ExceptionsTabProps> = ({ setup, apply, bott
             <View key={state} style={styles.legendItem}>
               <View style={[styles.legendSwatch, { backgroundColor: STATE_COLORS[state] }]} />
               <Text style={styles.legendText}>
-                {state === 'open' ? 'Semaine type' : state === 'blocked' ? 'Fermé' : 'Ouverture exceptionnelle'}
+                {state === 'open' ? 'Disponible' : state === 'blocked' ? 'Indisponible' : 'Disponible exceptionnellement'}
               </Text>
             </View>
           ))}
@@ -402,7 +403,7 @@ export const ExceptionsTab: React.FC<ExceptionsTabProps> = ({ setup, apply, bott
                 </View>
                 <View style={[styles.pill, group.type === 'block' ? styles.pillBlock : styles.pillAdd]}>
                   <Text style={[styles.pillText, { color: group.type === 'block' ? Colors.danger : Colors.success }]}>
-                    {group.type === 'block' ? 'Fermé' : 'Ouvert'}
+                    {group.type === 'block' ? 'Indisponible' : 'Disponible'}
                   </Text>
                 </View>
                 <TouchableOpacity

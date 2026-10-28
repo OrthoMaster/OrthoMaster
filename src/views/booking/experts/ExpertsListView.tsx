@@ -27,10 +27,8 @@ import { ExpertCard } from './components/ExpertCard';
 const PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 350;
 
-/** Deux cartes par rangée, séparées de COLUMN_GAP, dans la marge latérale de la liste. */
-const COLUMNS = 2;
-const COLUMN_GAP = Spacings.sm;
-const LIST_PADDING = Spacings.md;
+/** Marge latérale de l'écran. */
+const LIST_PADDING = Spacings.lg;
 
 /**
  * Experts, 10 par page, ceux qui acceptent des demandes en tête.
@@ -41,7 +39,7 @@ export const ExpertsListView = ({ navigation }) => {
   const bottomInset = useFloatingTabBarInset();
   // Largeur de fenêtre plutôt que onLayout : fiable dès le premier rendu.
   const { width: screenWidth } = useWindowDimensions();
-  const cardWidth = Math.floor((screenWidth - LIST_PADDING * 2 - COLUMN_GAP * (COLUMNS - 1)) / COLUMNS);
+  const cardWidth = screenWidth - LIST_PADDING * 2;
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
 
@@ -55,7 +53,6 @@ export const ExpertsListView = ({ navigation }) => {
     data,
     isLoading,
     isError,
-    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
@@ -72,6 +69,17 @@ export const ExpertsListView = ({ navigation }) => {
     getNextPageParam: (last) => (last.pagination.has_more ? last.pagination.page + 1 : undefined),
   });
 
+  // Indicateur réservé au tirage manuel : un rechargement en arrière-plan ne fait pas sauter la liste.
+  const [pulling, setPulling] = useState(false);
+  const pullToRefresh = async () => {
+    setPulling(true);
+    try {
+      await refetch();
+    } finally {
+      setPulling(false);
+    }
+  };
+
   const experts = useMemo(() => data?.pages.flatMap((page) => page.experts) ?? [], [data]);
 
   const loadMore = () => {
@@ -83,9 +91,8 @@ export const ExpertsListView = ({ navigation }) => {
       expert={item}
       width={cardWidth}
       indexInPage={index % PER_PAGE}
-      onPress={() => navigation.navigate('expert-profile', { expertId: item.id })}
-      // Le profil enchaîne sur le calendrier si l'expert n'a qu'une offre ; sinon on y choisit le thème.
-      onBook={() => navigation.navigate('expert-profile', { expertId: item.id, autoBook: true })}
+      // L'aperçu affiche l'en-tête du profil tout de suite, sans attendre la requête.
+      onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
     />
   );
 
@@ -112,8 +119,7 @@ export const ExpertsListView = ({ navigation }) => {
   // Passé en élément (pas en composant) : le champ garde le focus pendant la frappe.
   const listHeader = (
     <View style={styles.head}>
-      <Text style={styles.title}>Experts</Text>
-      <Text style={styles.subtitle}>Échangez en visio avec un confrère expert.</Text>
+      <Text style={styles.title}>Trouvez l'expert qui vous correspond</Text>
 
       <View style={styles.searchWrap}>
         <Ionicons name="search" size={18} color={Colors.subtext} />
@@ -143,9 +149,6 @@ export const ExpertsListView = ({ navigation }) => {
         data={experts}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderExpert}
-        numColumns={COLUMNS}
-        // Largeur fixe des cartes : une dernière carte seule reste à gauche, à sa taille.
-        columnWrapperStyle={styles.row}
         contentContainerStyle={[styles.list, { paddingBottom: bottomInset + Spacings.md }]}
         // L'indicateur de défilement s'arrête au-dessus de la barre flottante.
         scrollIndicatorInsets={{ bottom: bottomInset }}
@@ -156,7 +159,7 @@ export const ExpertsListView = ({ navigation }) => {
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching && !isFetchingNextPage} onRefresh={refetch} colors={[Colors.lblue]} tintColor={Colors.lblue} />
+          <RefreshControl refreshing={pulling} onRefresh={pullToRefresh} colors={[Colors.lblue]} tintColor={Colors.lblue} />
         }
         ListHeaderComponent={listHeader}
         // Premier chargement sous l'en-tête : le titre reste en place, seule la grille attend.
@@ -193,10 +196,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: LIST_PADDING,
-    gap: Spacings.md,
-  },
-  row: {
-    gap: COLUMN_GAP,
+    gap: Spacings.lg,
   },
   footer: {
     paddingVertical: Spacings.md,
@@ -207,17 +207,13 @@ const styles = StyleSheet.create({
     paddingTop: Spacings.lg,
     paddingBottom: Spacings.md,
   },
+  // Limité à 90 % de la largeur : le titre ne colle pas au bord droit.
   title: {
+    maxWidth: '90%',
     fontFamily: 'Poppins-Bold',
     fontSize: 30,
     lineHeight: 38,
     color: Colors.text,
-  },
-  subtitle: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: Colors.subtext2,
-    marginTop: Spacings.xxxs,
   },
 
   /* ---- Recherche ---- */

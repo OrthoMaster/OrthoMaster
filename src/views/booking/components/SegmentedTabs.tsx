@@ -8,12 +8,24 @@ interface SegmentedTabsProps<K extends string> {
   tabs: { key: K; label: string; badge?: number }[];
   value: K;
   onChange: (key: K) => void;
+  /** Couleur de la pastille active (bleu de l'espace par défaut, palette de l'expert sinon). */
+  color?: string;
+  /** Fond et bordure du rail, pour se fondre dans un fond teinté. */
+  surface?: string;
+  borderColor?: string;
 }
 
 const PADDING = Spacings.xxs;
 
 /** Onglets en pill segmented : la pastille colorée glisse derrière l'onglet choisi. */
-export const SegmentedTabs = <K extends string>({ tabs, value, onChange }: SegmentedTabsProps<K>) => {
+export const SegmentedTabs = <K extends string>({
+  tabs,
+  value,
+  onChange,
+  color = Colors.lblueDark,
+  surface = Colors.white,
+  borderColor = Colors.border,
+}: SegmentedTabsProps<K>) => {
   const [width, setWidth] = useState(0);
   const slide = useRef(new Animated.Value(0)).current;
   const positioned = useRef(false);
@@ -34,9 +46,14 @@ export const SegmentedTabs = <K extends string>({ tabs, value, onChange }: Segme
   }, [index, segment]);
 
   return (
-    <View style={styles.container} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+    <View
+      style={[styles.container, { backgroundColor: surface, borderColor }]}
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+    >
       {segment > 0 && (
-        <Animated.View style={[styles.pill, { width: segment, transform: [{ translateX: slide }] }]} />
+        <Animated.View
+          style={[styles.pill, { width: segment, backgroundColor: color, transform: [{ translateX: slide }] }]}
+        />
       )}
 
       {tabs.map((tab) => {

@@ -5,6 +5,7 @@ import { ExpertiseHomeView } from '../../views/booking/expertise/ExpertiseHomeVi
 import { ExpertiseOffersView } from '../../views/booking/expertise/ExpertiseOffersView';
 import { ExpertiseOfferFormView } from '../../views/booking/expertise/ExpertiseOfferFormView';
 import { ExpertiseAvailabilityView } from '../../views/booking/expertise/ExpertiseAvailabilityView';
+import { ExpertiseProfileFormView } from '../../views/booking/expertise/ExpertiseProfileFormView';
 
 const ExpertiseStackNav = createStackNavigator();
 
@@ -29,6 +30,11 @@ export const ExpertiseStack = () => {
         options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
       />
       <ExpertiseStackNav.Screen name="expertise-availability" component={ExpertiseAvailabilityView} />
+      <ExpertiseStackNav.Screen
+        name="expertise-profile"
+        component={ExpertiseProfileFormView}
+        options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
+      />
     </ExpertiseStackNav.Navigator>
   );
 };

@@ -12,11 +12,14 @@ import Spacings from '../../../constants/Spacings';
 import { BouncingDots } from '../../component/LoadingDots';
 import { FloatingTabBar } from '../../component/booking/FloatingTabBar';
 import { ExpertAvatarIcon } from '../../component/booking/ExpertAvatarIcon';
-import { getMyBookingSetup } from '../../services/v2/BookingService';
+import { getExpertRequests, getMyBookingSetup } from '../../services/v2/BookingService';
 import { BookingExitGuardContext, confirmLeaveBooking } from '../../views/booking/BookingExitGuard';
-import { BookingComingSoonView } from '../../views/booking/BookingComingSoonView';
 import { ExpertiseStack } from './ExpertiseStack';
 import { ExpertsStack } from './ExpertsStack';
+import { AppointmentsStack } from './AppointmentsStack';
+import { RequestsStack } from './RequestsStack';
+import { AgendaStack } from './AgendaStack';
+import { EXPERT_REQUESTS_KEY } from '../../views/booking/requests/RequestsView';
 
 const BookingTab = createBottomTabNavigator();
 
@@ -24,8 +27,9 @@ const BookingTab = createBottomTabNavigator();
  * Espace rendez-vous : écran « booking » de TrainingStack.
  *
  * Il remplace la barre de l'application par sa propre barre flottante, dont le premier
- * bouton ramène aux formations. Les onglets dépendent du rôle : un expert gère ses
- * demandes et ses disponibilités, un utilisateur cherche un expert et suit ses rendez-vous.
+ * bouton ramène aux formations. Tout le monde cherche un expert et suit ses rendez-vous ;
+ * un expert, qui peut lui aussi réserver auprès d'un confrère, gère en plus ses demandes,
+ * son agenda et son expertise.
  */
 export const BookingTabs = ({ navigation }) => {
   const { data: setup, isLoading, isFetching, refetch } = useQuery({
@@ -33,6 +37,20 @@ export const BookingTabs = ({ navigation }) => {
     queryFn: () => getMyBookingSetup(),
     retry: 1,
   });
+
+  // Même requête que l'écran Demandes : la pastille suit la liste sans appel en plus.
+  // Rafraîchie toutes les 2 minutes tant que l'espace est ouvert.
+  const { data: requests } = useQuery({
+    queryKey: EXPERT_REQUESTS_KEY,
+    queryFn: async () => {
+      const result = await getExpertRequests();
+      if (!result) throw new Error('requests');
+      return result;
+    },
+    enabled: !!setup?.is_expert,
+    refetchInterval: 2 * 60 * 1000,
+  });
+  const pendingRequests = requests?.pending.length ?? 0;
 
   // Par id : depuis les onglets imbriqués, getParent() sans id renverrait notre propre navigateur.
   useFocusEffect(
@@ -112,10 +130,38 @@ export const BookingTabs = ({ navigation }) => {
   const tabIcon = (name: keyof typeof Ionicons.glyphMap) =>
     ({ color, size }: { color: string; size: number }) => <Ionicons name={name} size={size} color={color} />;
 
+  const isExpert = setup.is_expert;
+  // Rétrécissement explicite : TypeScript ne le garde pas à travers la constante isExpert.
+  const expert = setup.is_expert ? setup.expert : null;
+
+  // Onglets communs : chercher un confrère, suivre ses propres rendez-vous.
+  // Chez un expert, « Rendez-vous » prend une autre icône et une autre couleur que l'Agenda :
+  // l'un liste ce qu'il a réservé, l'autre ce qu'on lui a réservé.
+  const clientTabs = [
+    <BookingTab.Screen
+      key="booking-experts"
+      name="booking-experts"
+      component={ExpertsStack}
+      options={{ title: 'Experts', tabBarIcon: tabIcon('people-outline'), tabBarActiveTintColor: Colors.lblueDark }}
+    />,
+    <BookingTab.Screen
+      key="booking-appointments"
+      name="booking-appointments"
+      component={AppointmentsStack}
+      options={{
+        title: 'Rendez-vous',
+        tabBarIcon: tabIcon(isExpert ? 'bookmark-outline' : 'calendar-outline'),
+        tabBarActiveTintColor: isExpert ? Colors.green : Colors.purple,
+      }}
+    />,
+  ];
+
   return (
     <BookingExitGuardContext.Provider value={guard}>
       <BookingTab.Navigator
         id={'booking-tabs' as undefined}
+        // Expert : on arrive sur ses demandes, ce qui attend une réponse de sa part.
+        initialRouteName={isExpert ? 'booking-requests' : 'booking-experts'}
         // Le retour ne passe pas d'onglet en onglet : il remonte à beforeRemove pour sortir.
         backBehavior="none"
         tabBar={(props) => <FloatingTabBar {...props} onExit={exit} />}
@@ -124,34 +170,26 @@ export const BookingTabs = ({ navigation }) => {
           tabBarPosition: Platform.OS === 'web' ? 'top' : 'bottom',
         }}
       >
-        {setup.is_expert ? (
+        {isExpert ? (
           <>
+            {/* Ce qu'on lui demande, puis ce qu'il réserve, puis sa configuration. */}
             <BookingTab.Screen
               name="booking-requests"
-              component={BookingComingSoonView}
-              initialParams={{
-                title: 'Demandes',
-                icon: 'email-outline',
-                description: 'Les demandes de rendez-vous à accepter ou refuser apparaîtront ici.',
-              }}
+              component={RequestsStack}
               options={{
                 title: 'Demandes',
-                tabBarIcon: tabIcon('mail-outline'),
+                tabBarIcon: tabIcon('paper-plane-outline'),
                 tabBarActiveTintColor: Colors.primary,
-                // Phase 3 : nombre de demandes en attente ; la barre affiche une pastille dès qu'il dépasse 0.
-                tabBarBadge: undefined,
+                // Nombre de demandes en attente de réponse.
+                tabBarBadge: pendingRequests > 0 ? pendingRequests : undefined,
               }}
             />
             <BookingTab.Screen
               name="booking-agenda"
-              component={BookingComingSoonView}
-              initialParams={{
-                title: 'Agenda',
-                icon: 'calendar-month-outline',
-                description: 'Vos rendez-vous acceptés et le lien de la visio apparaîtront ici.',
-              }}
+              component={AgendaStack}
               options={{ title: 'Agenda', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
             />
+            {clientTabs}
             <BookingTab.Screen
               name="booking-expertise"
               component={ExpertiseStack}
@@ -160,8 +198,8 @@ export const BookingTabs = ({ navigation }) => {
                 tabBarActiveTintColor: Colors.lblueDark,
                 tabBarIcon: ({ focused, size }) => (
                   <ExpertAvatarIcon
-                    uri={setup.expert.avatar_url}
-                    name={setup.expert.name}
+                    uri={expert?.avatar_url ?? null}
+                    name={expert?.name ?? ''}
                     size={size}
                     focused={focused}
                   />
@@ -170,23 +208,7 @@ export const BookingTabs = ({ navigation }) => {
             />
           </>
         ) : (
-          <>
-            <BookingTab.Screen
-              name="booking-experts"
-              component={ExpertsStack}
-              options={{ title: 'Experts', tabBarIcon: tabIcon('people-outline'), tabBarActiveTintColor: Colors.lblueDark }}
-            />
-            <BookingTab.Screen
-              name="booking-appointments"
-              component={BookingComingSoonView}
-              initialParams={{
-                title: 'Mes rendez-vous',
-                icon: 'calendar-check-outline',
-                description: 'Le suivi de vos demandes et vos prochains rendez-vous apparaîtront ici.',
-              }}
-              options={{ title: 'Rendez-vous', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
-            />
-          </>
+          <>{clientTabs}</>
         )}
       </BookingTab.Navigator>
     </BookingExitGuardContext.Provider>

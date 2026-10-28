@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
-  Image,
   Animated,
   ScrollView,
   Switch,
@@ -11,6 +10,7 @@ import {
   StyleSheet,
   StatusBar,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,23 +26,17 @@ import {
   getMyBookingSetup,
   updateMyBookingSettings,
 } from '../../../services/v2/BookingService';
-import { BookingHeaderButton, BookingScreenHeader } from '../components/BookingScreenHeader';
 import { ExpertiseSectionCard } from '../components/ExpertiseSectionCard';
 import { ShowcaseWebViewModal } from '../components/ShowcaseWebViewModal';
-import { notify, shareLink } from '../bookingActions';
+import { notify } from '../bookingActions';
+import { withAlpha } from '../bookingPalette';
+import { expertTheme } from '../expertTheme';
+import { ExpertIdentityCard } from '../components/ExpertIdentityCard';
 
 const QUERY_KEY = ['booking', 'me'];
 
 const plural = (count: number, singular: string, pluralForm: string) =>
   `${count} ${count > 1 ? pluralForm : singular}`;
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
 
 type ExpertStatus = 'online' | 'incomplete' | 'off';
 
@@ -94,10 +88,23 @@ const StatusDot = ({ color, pulse }: { color: string; pulse: boolean }) => {
 export const ExpertiseHomeView = ({ navigation }) => {
   const queryClient = useQueryClient();
   const bottomInset = useFloatingTabBarInset();
+  const { width } = useWindowDimensions();
   const [showShowcase, setShowShowcase] = useState(false);
   const [savingToggle, setSavingToggle] = useState(false);
 
-  const { data, isFetching, refetch } = useQuery({
+  // Indicateur réservé au tirage manuel : lié à isFetching, il apparaissait à chaque retour
+  // sur l'écran (rechargement du cache partagé) et décalait la page vers le bas sur iOS.
+  const [pulling, setPulling] = useState(false);
+  const pullToRefresh = async () => {
+    setPulling(true);
+    try {
+      await refetch();
+    } finally {
+      setPulling(false);
+    }
+  };
+
+  const { data, refetch } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: () => getMyBookingSetup(),
   });
@@ -119,9 +126,13 @@ export const ExpertiseHomeView = ({ navigation }) => {
   const statusKey: ExpertStatus = !resolved.enabled_flg ? 'off' : incomplete ? 'incomplete' : 'online';
   const status = STATUS[statusKey];
 
-  const showcaseUrl = expertShowcaseUrl(expert.slug);
-  // inapp=true : la page vitrine adapte son affichage quand elle est ouverte dans l'application.
-  // Le lien partagé reste l'adresse publique, sans paramètre.
+  // Lien vitrine seulement une fois la page publiée (brochure_published_at).
+  const showcaseUrl = expert.showcase_published ? expertShowcaseUrl(expert.slug) : null;
+
+  // Même thème que la fiche publique : palette choisie, ou bleu de l'espace par défaut.
+  // Seule la carte d'identité de cet écran le porte ; le reste garde les couleurs communes.
+  const theme = expertTheme(expert.palette, expert.palette_color);
+
   const showcaseInAppUrl = showcaseUrl ? `${showcaseUrl}?inapp=true` : null;
 
   /* ---- Actions ---- */
@@ -169,7 +180,7 @@ export const ExpertiseHomeView = ({ navigation }) => {
     {
       key: 'offers',
       route: 'expertise-offers',
-      icon: 'tag-multiple-outline' as const,
+      icon: 'school-outline' as const,
       title: 'Offres',
       summary: missingOffer ? 'Aucune offre active' : plural(activeOffers.length, 'offre active', 'offres actives'),
       warning: missingOffer,
@@ -186,89 +197,54 @@ export const ExpertiseHomeView = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.lblue} />
-      <BookingScreenHeader
-        title="Mon expertise"
-        right={
-          <>
-            {showcaseUrl && (
-              <BookingHeaderButton
-                icon="share-social-outline"
-                label="Partager la page vitrine"
-                onPress={() => shareLink(showcaseUrl, expert.name)}
-              />
-            )}
-            {/* Réservé à la future édition du profil. */}
-            <BookingHeaderButton
-              icon="create-outline"
-              label="Modifier le profil"
-              onPress={() => notify('Bientôt disponible', 'La modification du profil arrive prochainement.')}
-            />
-          </>
-        }
-      />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
 
       <ScrollView
         style={styles.body}
         contentContainerStyle={[styles.content, { paddingBottom: bottomInset + Spacings.md }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isFetching} onRefresh={refetch} colors={[Colors.lblue]} tintColor={Colors.lblue} />
+          <RefreshControl refreshing={pulling} onRefresh={pullToRefresh} colors={[Colors.lblue]} tintColor={Colors.lblue} />
         }
       >
-        {/* ---- Profil ---- */}
-        <View style={styles.card}>
-          <View style={styles.profileRow}>
-            <View style={styles.avatarWrap}>
-              {expert.avatar_url ? (
-                <Image source={{ uri: expert.avatar_url }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarFallback]}>
-                  <Text style={styles.avatarInitials}>{initials(expert.name)}</Text>
-                </View>
-              )}
-              <StatusDot color={status.dot} pulse={statusKey === 'online'} />
-            </View>
-
-            <View style={styles.profileTexts}>
-              <Text style={styles.name} numberOfLines={2}>
-                {expert.name}
-              </Text>
-              <Text style={[styles.statusText, { color: status.text }]}>{status.label}</Text>
-            </View>
+        {/* ---- En-tête, comme les autres onglets (Agenda, Demandes) ---- */}
+        <View style={styles.head}>
+          <Text style={styles.title}>Mon expertise</Text>
+          <View style={styles.headActions}>
+            <TouchableOpacity
+              style={styles.round}
+              onPress={() => navigation.navigate('expertise-profile')}
+              hitSlop={8}
+              accessibilityLabel="Modifier le profil"
+            >
+              <MaterialCommunityIcons name="account-edit-outline" size={23} color={Colors.lblueDark} />
+            </TouchableOpacity>
           </View>
-
-          {expert.domains.length > 0 && (
-            <View style={styles.block}>
-              <Text style={styles.blockLabel}>Domaines</Text>
-              <View style={styles.domains}>
-                {expert.domains.map((domain) => (
-                  <View key={domain.id} style={styles.domainPill}>
-                    <Text style={styles.domainText}>{domain.name}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {showcaseUrl && (
-            <View style={styles.block}>
-              <Text style={styles.blockLabel}>Page vitrine web</Text>
-              {/* Soulignement et fond teinté signalent le lien ; ellipse au milieu pour garder le slug lisible. */}
-              <TouchableOpacity
-                style={styles.showcaseLink}
-                onPress={openShowcase}
-                activeOpacity={0.7}
-                accessibilityRole="link"
-                accessibilityLabel="Ouvrir la page vitrine web"
-              >
-                <Text style={styles.showcaseUrl} numberOfLines={1} ellipsizeMode="middle">
-                  {showcaseUrl.replace(/^https?:\/\//, '')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
+
+        {/* ---- Identité : comme vos confrères la voient ---- */}
+        <ExpertIdentityCard
+          expert={expert}
+          theme={theme}
+          width={width - Spacings.md * 2}
+          avatarBadge={<StatusDot color={status.dot} pulse={statusKey === 'online'} />}
+        >
+          {showcaseUrl && (
+            <TouchableOpacity
+              style={[styles.showcaseLink, { borderColor: withAlpha(theme.primary, 0.35), backgroundColor: theme.card }]}
+              onPress={openShowcase}
+              activeOpacity={0.7}
+              accessibilityRole="link"
+              accessibilityLabel="Ouvrir la page vitrine web"
+            >
+              <Ionicons name="globe-outline" size={18} color={theme.primary} />
+              <Text style={[styles.showcaseUrl, { color: theme.primary }]} numberOfLines={1} ellipsizeMode="middle">
+                {showcaseUrl.replace(/^https?:\/\//, '')}
+              </Text>
+              <Ionicons name="open-outline" size={16} color={theme.primary} />
+            </TouchableOpacity>
+          )}
+        </ExpertIdentityCard>
 
         {/* ---- Activation ---- */}
         <View style={styles.card}>
@@ -308,9 +284,10 @@ export const ExpertiseHomeView = ({ navigation }) => {
         {/* ---- Configuration ---- */}
         <Text style={styles.sectionTitle}>Configuration</Text>
         <View style={styles.sections}>
-          {sections.map((section) => (
+          {sections.map((section, index) => (
             <ExpertiseSectionCard
               key={section.key}
+              last={index === sections.length - 1}
               icon={section.icon}
               title={section.title}
               summary={section.summary}
@@ -330,7 +307,7 @@ const styles = StyleSheet.create({
   /* ---- Structure ---- */
   container: {
     flex: 1,
-    backgroundColor: Colors.lblue,
+    backgroundColor: Colors.grayLight,
   },
   body: {
     flex: 1,
@@ -348,116 +325,75 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
 
-  /* ---- Profil ---- */
-  profileRow: {
+  /* ---- En-tête ---- */
+  head: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: Spacings.md,
+    paddingTop: Spacings.sm,
   },
-  avatarWrap: {
-    position: 'relative',
+  title: {
+    flex: 1,
+    fontFamily: 'Poppins-Bold',
+    fontSize: 30,
+    lineHeight: 38,
+    color: Colors.text,
   },
-  // Liseré : la pastille de statut vient chevaucher le bord sans mordre sur la photo.
-  avatar: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 3,
-    borderColor: Colors.lblue3,
-    backgroundColor: Colors.lblue3,
+  headActions: {
+    flexDirection: 'row',
+    gap: Spacings.xs,
   },
-  avatarFallback: {
+  round: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.5,
+    borderColor: withAlpha(Colors.lblueDark, 0.45),
+    backgroundColor: withAlpha(Colors.lblueDark, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarInitials: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 24,
-    color: Colors.lblueDark,
+
+  /* ---- Page vitrine (bas de la carte d'identité) ---- */
+  showcaseLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    height: 46,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 14,
+    borderWidth: 1,
   },
-  profileTexts: {
+  showcaseUrl: {
     flex: 1,
-  },
-  name: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 18,
-    color: Colors.text,
-  },
-  statusText: {
     fontFamily: 'Poppins-Medium',
-    fontSize: 13,
-    marginTop: Spacings.xxxs,
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 
   /* ---- Pastille de statut ---- */
   statusDotWrap: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 18,
-    height: 18,
+    right: 6,
+    bottom: 6,
+    width: 20,
+    height: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   statusDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 3,
     borderColor: Colors.white,
   },
   statusDotRing: {
     position: 'absolute',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-  },
-
-  /* ---- Blocs (domaines, page vitrine) ---- */
-  block: {
-    marginTop: Spacings.md,
-    paddingTop: Spacings.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.line,
-  },
-  blockLabel: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 11,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    color: Colors.subtext,
-    marginBottom: Spacings.xs,
-  },
-  domains: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacings.xs,
-  },
-  // Les libellés longs passent à la ligne dans la pastille au lieu de déborder.
-  domainPill: {
-    maxWidth: '100%',
-    paddingHorizontal: Spacings.sm,
-    paddingVertical: Spacings.xxs,
-    borderRadius: 999,
-    backgroundColor: Colors.lblue3,
-  },
-  domainText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-    color: Colors.lblueDark,
-  },
-  showcaseLink: {
-    justifyContent: 'center',
-    height: 44,
-    paddingHorizontal: Spacings.md,
-    borderRadius: 12,
-    backgroundColor: Colors.lblue3,
-  },
-  showcaseUrl: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 14,
-    color: Colors.lblueDark,
-    textDecorationLine: 'underline',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
   },
 
   /* ---- Activation ---- */
@@ -500,14 +436,15 @@ const styles = StyleSheet.create({
   /* ---- Configuration ---- */
   sectionTitle: {
     fontFamily: 'Poppins-Medium',
-    fontSize: 13,
+    fontSize: 14,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: Colors.subtext,
     marginTop: Spacings.xs,
     marginLeft: Spacings.xxs,
   },
+  // Liste sans fond : les lignes se séparent par un filet.
   sections: {
-    gap: Spacings.sm,
+    paddingHorizontal: Spacings.xxs,
   },
 });

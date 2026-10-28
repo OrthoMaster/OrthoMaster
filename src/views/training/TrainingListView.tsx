@@ -285,6 +285,11 @@ export const TrainingListView = ({ navigation, route }) => {
   // Show intro modal
   const [showIntroModal, setShowIntroModal] = useState(false);
   const [closedIntroModal, setClosedIntroModal] = useState(false);
+  const introTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Une fois annulée, l'intro ne revient pas pendant cette session : le drapeau
+  // AsyncStorage n'est pas écrit, elle réapparaîtra au prochain lancement.
+  const introCancelledRef = useRef(false);
+
   const checkShouldShowModal = async (): Promise<boolean> => {
     try {
       const value = await AsyncStorage.getItem('@never_open_training_intro');
@@ -295,11 +300,17 @@ export const TrainingListView = ({ navigation, route }) => {
   };
   useEffect(() => {
     const initModal = async () => {
+      // Le package ciblé s'ouvre au même délai : les deux minuteries se feraient la course.
+      if (initPackageId) {
+        return;
+      }
       if (!closedIntroModal) {
         const shouldShow = await checkShouldShowModal();
-        if (shouldShow) {
+        // L'utilisateur a pu agir pendant la lecture d'AsyncStorage.
+        if (shouldShow && !introCancelledRef.current) {
           setClosedIntroModal(true);
-          setTimeout(() => {
+          introTimeoutRef.current = setTimeout(() => {
+            introTimeoutRef.current = null;
             setShowIntroModal(true);
           }, 1000);
         }
@@ -308,6 +319,24 @@ export const TrainingListView = ({ navigation, route }) => {
 
     initModal();
   }, []);
+
+  /**
+   * Annule l'intro si elle n'est pas encore affichée. Deux Modal visibles en même temps
+   * (ou une Modal ouverte sur un écran quitté) laissent sur iOS un calque invisible
+   * qui bloque toutes les pressions.
+   */
+  const cancelPendingIntro = useCallback(() => {
+    introCancelledRef.current = true;
+    if (introTimeoutRef.current) {
+      clearTimeout(introTimeoutRef.current);
+      introTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Le nettoyage s'exécute à la perte du focus et au démontage : couvre toute navigation sortante.
+  useFocusEffect(
+    useCallback(() => () => cancelPendingIntro(), [cancelPendingIntro])
+  );
 
   /** Pre-reg Diploma - STA */
   const [showPreRegDiplomaModal, setShowPreRegDiplomaModal] = useState(false);
@@ -330,6 +359,8 @@ export const TrainingListView = ({ navigation, route }) => {
   const [showBookingIntro, setShowBookingIntro] = useState(false);
 
   const openBooking = async () => {
+    cancelPendingIntro();
+
     // L'introduction s'adresse aux utilisateurs ; l'expert entre directement.
     if (!isBookingExpert) {
       const neverShow = await AsyncStorage.getItem(BOOKING_INTRO_STORAGE_KEY).catch(() => null);
@@ -468,7 +499,7 @@ export const TrainingListView = ({ navigation, route }) => {
                     <TouchableOpacity
                       key={'preinscription'}
                       style={[styles.pkgItem, { width: itemSize }]}
-                      onPress={() => { setShowPreRegDiplomaModal(true); }}
+                      onPress={() => { cancelPendingIntro(); setShowPreRegDiplomaModal(true); }}
                       activeOpacity={0.8}
                     >
                       <View style={{
