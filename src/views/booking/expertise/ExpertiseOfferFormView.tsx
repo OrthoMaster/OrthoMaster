@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
+  Image,
   Text,
   TextInput,
   Switch,
@@ -36,6 +37,7 @@ import { blocksLabel, durationLabel, parseAmount } from '../bookingFormat';
 import { todayIn } from '../bookingDates';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { OfferImagesManager } from './components/OfferImagesManager';
+import { WebOnlyImagesNotice } from './components/WebOnlyImagesNotice';
 import { ModeForm, OfferModeCard, usedSlotKeys } from './components/OfferModeCard';
 
 const QUERY_KEY = ['booking', 'me'];
@@ -387,8 +389,23 @@ export const ExpertiseOfferFormView = ({ navigation, route }) => {
             {modesError && <Text style={styles.error}>{modesError}</Text>}
           </View>
 
-          {/* ---- Images : thème déjà créé uniquement (elles lui sont rattachées) ---- */}
-          {offer && (
+          {/* ---- Images, mobile : consultation seulement, modification sur la version web ---- */}
+          {Platform.OS !== 'web' && (
+            <View style={styles.field}>
+              <Text style={styles.label}>Images</Text>
+              {offer?.images?.length ? (
+                <View style={styles.thumbs}>
+                  {offer.images.map((image) => (
+                    <Image key={image.id} source={{ uri: image.url }} style={styles.thumb} />
+                  ))}
+                </View>
+              ) : null}
+              <WebOnlyImagesNotice />
+            </View>
+          )}
+
+          {/* ---- Images, web : thème déjà créé uniquement (elles lui sont rattachées) ---- */}
+          {Platform.OS === 'web' && offer && (
             <View style={styles.field}>
               <OfferImagesManager
                 offerId={offer.id}
@@ -490,6 +507,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: 12,
     color: Colors.subtext2,
+  },
+  thumbs: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacings.xs,
+  },
+  thumb: {
+    width: 72,
+    height: 54,
+    borderRadius: 8,
+    backgroundColor: Colors.grayLight,
   },
   error: {
     fontFamily: 'Poppins-Regular',

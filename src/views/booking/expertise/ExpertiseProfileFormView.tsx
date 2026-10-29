@@ -34,6 +34,7 @@ import {
 import { BookingScreenHeader } from '../components/BookingScreenHeader';
 import { initials } from '../bookingFormat';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
+import { WebOnlyImagesNotice } from './components/WebOnlyImagesNotice';
 
 const QUERY_KEY = ['booking', 'me'];
 const DOMAINS_KEY = ['booking', 'domains'];
@@ -243,7 +244,12 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
                 <Text style={styles.photoInitials}>{initials(form.name || expert.name)}</Text>
               )}
             </View>
-            <Text style={[styles.hint, styles.flex]}>Pour changer votre photo, envoyez-la à l'équipe OrthoMaster.</Text>
+            {/* Mobile : la photo se change sur la version web. */}
+            {Platform.OS === 'web' ? (
+              <Text style={[styles.hint, styles.flex]}>Pour changer votre photo, envoyez-la à l'équipe OrthoMaster.</Text>
+            ) : (
+              <WebOnlyImagesNotice style={styles.flex} />
+            )}
           </View>
 
           {/* ---- Identité ---- */}

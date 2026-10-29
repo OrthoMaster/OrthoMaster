@@ -159,7 +159,7 @@ export const BookingTabs = ({ navigation }) => {
         {isExpert ? (
           <>
             {/*
-              Ce qu'on lui demande, chercher un confrère, sa configuration, puis son agenda.
+              Ce qu'on lui demande, chercher un confrère, son agenda, puis sa configuration (toujours en dernier).
               L'agenda réunit les rendez-vous qu'il anime et ceux qu'il a réservés :
               pas d'onglet Rendez-vous séparé, chaque carte dit qui demande et qui est l'expert.
             */}
@@ -176,6 +176,11 @@ export const BookingTabs = ({ navigation }) => {
             />
             {expertsTab}
             <BookingTab.Screen
+              name="booking-agenda"
+              component={AgendaStack}
+              options={{ title: 'Agenda', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
+            />
+            <BookingTab.Screen
               name="booking-expertise"
               component={ExpertiseStack}
               options={{
@@ -190,11 +195,6 @@ export const BookingTabs = ({ navigation }) => {
                   />
                 ),
               }}
-            />
-            <BookingTab.Screen
-              name="booking-agenda"
-              component={AgendaStack}
-              options={{ title: 'Agenda', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
             />
           </>
         ) : (
