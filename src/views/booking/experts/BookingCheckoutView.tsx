@@ -25,6 +25,7 @@ import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
 import {
+  BookingMode,
   BookingOffer,
   BookingRequest,
   SLOT_TAKEN,
@@ -35,11 +36,12 @@ import {
   getBookingCheckout,
 } from '../../../services/v2/BookingService';
 import { formatLongDate } from '../bookingDates';
-import { formatPrice, initials } from '../bookingFormat';
+import { MODE_SHORT_LABELS, formatPrice, initials } from '../bookingFormat';
 import { markBookingCompleted } from '../bookingFlow';
 import { ShowcaseWebViewModal } from '../components/ShowcaseWebViewModal';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
-import { PERIOD_ICONS, PERIOD_LABELS, SelectedBlock } from './components/SlotPicker';
+import { useBookingSetup } from '../useBookingSetup';
+import { PERIOD_ICONS, PERIOD_LABELS, SelectedBlock, placeLabel } from './components/SlotPicker';
 
 const SHEET_RATIO = 0.92;
 const SHEET_RADIUS = 28;
@@ -86,14 +88,22 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   const expert = route.params?.expert ?? {};
   const blocks: SelectedBlock[] = route.params?.blocks ?? [];
   const offerRouteKey: string | undefined = route.params?.offerRouteKey;
+  // Format choisi sur l'écran du thème ; en ligne par défaut (seul format avant v2).
+  const mode: BookingMode = route.params?.mode ?? 'online';
+
+  // Expert qui réserve auprès d'un confrère : ses rendez-vous sont dans l'Agenda.
+  const { data: me } = useBookingSetup();
+  const isExpert = !!me?.is_expert;
 
   const { data: checkout, isLoading } = useQuery({
-    queryKey: ['booking', 'checkout', offer?.id],
-    queryFn: () => getBookingCheckout(offer.id),
+    queryKey: ['booking', 'checkout', offer?.id, mode],
+    queryFn: () => getBookingCheckout(offer.id, mode),
     enabled: !!offer,
   });
 
   const free = checkout ? !checkout.payment_enabled : false;
+  // Offre à 0 € : rien à barrer, le total est simplement offert.
+  const zeroPrice = checkout?.pricing.amount_ttc === 0;
   const pricing = checkout?.pricing;
   const currency = (pricing?.currency ?? offer?.currency ?? 'eur').toUpperCase();
   const messageMax = checkout?.message_max ?? 300;
@@ -247,6 +257,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
     try {
       const intent = await createBookingPaymentIntent({
         offer_id: offer.id,
+        mode,
         blocks: blocks.map((b) => ({ date: b.date, period: b.period })),
         address: address.trim(),
         message: message.trim() || null,
@@ -319,8 +330,13 @@ export const BookingCheckoutView = ({ navigation, route }) => {
     // L'écran de sélection ne doit pas demander « Abandonner votre sélection ? » en se fermant.
     markBookingCompleted(offerRouteKey);
     navigation.popToTop();
-    // La demande apparaît aussitôt « En attente » dans l'onglet Rendez-vous.
-    navigation.getParent('booking-tabs')?.navigate('booking-appointments', { screen: 'appointments-home' });
+    // La demande apparaît aussitôt « En attente » : onglet Rendez-vous, ou Agenda pour un expert.
+    if (isExpert) {
+      queryClient.invalidateQueries({ queryKey: ['booking', 'expert-agenda'] });
+      navigation.getParent('booking-tabs')?.navigate('booking-agenda', { screen: 'agenda-home' });
+    } else {
+      navigation.getParent('booking-tabs')?.navigate('booking-appointments', { screen: 'appointments-home' });
+    }
   };
 
   if (!offer) return null;
@@ -461,8 +477,10 @@ export const BookingCheckoutView = ({ navigation, route }) => {
 
                 <Text style={styles.offerTitle}>{offer.title}</Text>
                 <View style={styles.offerMeta}>
-                  <Ionicons name="videocam-outline" size={15} color={ACCENT_DARK} />
-                  <Text style={styles.offerMetaText}>Visio · {offer.duration_label}</Text>
+                  <Ionicons name={mode === 'onsite' ? 'location-outline' : 'videocam-outline'} size={15} color={ACCENT_DARK} />
+                  <Text style={styles.offerMetaText}>
+                    {MODE_SHORT_LABELS[mode]} · {offer.duration_label}
+                  </Text>
                 </View>
 
                 <View style={styles.blocks}>
@@ -477,6 +495,14 @@ export const BookingCheckoutView = ({ navigation, route }) => {
                         <Text style={styles.blockHours}>
                           {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
                         </Text>
+                        {block.location ? (
+                          <View style={styles.blockPlace}>
+                            <Ionicons name="location-outline" size={13} color={ACCENT_DARK} />
+                            <Text style={styles.blockHours} numberOfLines={1}>
+                              {placeLabel(block.location)}
+                            </Text>
+                          </View>
+                        ) : null}
                       </View>
                     );
                   })}
@@ -513,13 +539,13 @@ export const BookingCheckoutView = ({ navigation, route }) => {
                   <>
                     <View style={styles.amountRow}>
                       <Text style={styles.amountLabel}>Prix HT</Text>
-                      <Text style={[styles.amountValue, free && styles.struck]}>
+                      <Text style={[styles.amountValue, free && !zeroPrice && styles.struck]}>
                         {formatPrice(pricing.amount_ht, currency)}
                       </Text>
                     </View>
                     <View style={styles.amountRow}>
                       <Text style={styles.amountLabel}>TVA ({pricing.tva_rate.toString().replace('.', ',')} %)</Text>
-                      <Text style={[styles.amountValue, free && styles.struck]}>
+                      <Text style={[styles.amountValue, free && !zeroPrice && styles.struck]}>
                         {formatPrice(pricing.tva_amount, currency)}
                       </Text>
                     </View>
@@ -528,7 +554,9 @@ export const BookingCheckoutView = ({ navigation, route }) => {
 
                     <View style={styles.amountRow}>
                       <Text style={styles.totalLabel}>Total TTC</Text>
-                      {free ? (
+                      {zeroPrice ? (
+                        <Text style={[styles.totalValue, styles.totalFree]}>Offert</Text>
+                      ) : free ? (
                         <View style={styles.freeTotal}>
                           <Text style={[styles.totalStruck, styles.struck]}>{totalLabel}</Text>
                           <Text style={[styles.totalValue, styles.totalFree]}>{formatPrice(0, currency)}</Text>
@@ -879,6 +907,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: 13,
     color: Colors.subtext,
+  },
+  // Lieu de la demi-journée (présentiel), sur sa propre ligne.
+  blockPlace: {
+    flexBasis: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 
   /* ---- Montant ---- */

@@ -23,9 +23,10 @@ import Spacings from '../../../../constants/Spacings';
 
 import { MyBooking, MyBookingDetail, cancelMyBooking, getMyBooking, reportMyNoShow } from '../../../services/v2/BookingService';
 import { formatLongDate } from '../bookingDates';
-import { formatPrice, initials } from '../bookingFormat';
+import { MODE_SHORT_LABELS, formatPrice, initials } from '../bookingFormat';
 import { accentOf, withAlpha } from '../bookingPalette';
 import { JoinVisioButton } from '../components/JoinVisioButton';
+import { BlockPlace } from '../components/BlockPlace';
 import { NoShowSection } from '../components/NoShowSection';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
@@ -261,6 +262,14 @@ export const AppointmentDetailView = ({ navigation, route }) => {
             </View>
 
             <Text style={styles.offerTitle}>{booking.offer_title}</Text>
+            <View style={styles.modeRow}>
+              <Ionicons
+                name={booking.mode === 'onsite' ? 'location-outline' : 'videocam-outline'}
+                size={15}
+                color={Colors.lblueDark}
+              />
+              <Text style={styles.modeText}>{MODE_SHORT_LABELS[booking.mode ?? 'online']}</Text>
+            </View>
 
             <Text style={styles.blocksTitle}>
               {booking.blocks.length > 1 ? `${booking.blocks.length} demi-journées` : '1 demi-journée'}
@@ -274,7 +283,9 @@ export const AppointmentDetailView = ({ navigation, route }) => {
                     <Text style={styles.blockHours}>
                       {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
                     </Text>
-                    {booking.status === 'accepted' ? (
+                    {block.location ? <BlockPlace location={block.location} color={accentOf(expert?.palette_color)} /> : null}
+                    {/* Visio seulement en ligne ; en présentiel, le lieu ci-dessus. */}
+                    {booking.status === 'accepted' && booking.mode !== 'onsite' ? (
                       <View style={styles.join}>
                         <JoinVisioButton
                           startAt={block.start_at}
@@ -538,6 +549,17 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: Colors.text,
     marginTop: Spacings.md,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xxs,
+    marginTop: Spacings.xxs,
+  },
+  modeText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    color: Colors.lblueDark,
   },
   blocksTitle: {
     fontFamily: 'Poppins-Medium',

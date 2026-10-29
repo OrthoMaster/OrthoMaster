@@ -40,3 +40,31 @@ export const initials = (name: string): string =>
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('');
+/* ---- Formats d'une offre (en ligne / en présentiel) ---- */
+
+export const MODE_SHORT_LABELS: Record<'online' | 'onsite', string> = {
+  online: 'En ligne',
+  onsite: 'En présentiel',
+};
+
+/** En ligne d'abord, puis en présentiel. */
+const MODE_RANK = { online: 0, onsite: 1 } as const;
+
+/** « En ligne », « En présentiel », ou « En ligne · En présentiel ». */
+export const modesLabel = (modes: ('online' | 'onsite')[]): string =>
+  Array.from(new Set(modes))
+    .sort((a, b) => MODE_RANK[a] - MODE_RANK[b])
+    .map((mode) => MODE_SHORT_LABELS[mode])
+    .join(' · ');
+
+/** Prix d'un format ; 0 € = rendez-vous offert. */
+export const priceLabel = (price: number | null | undefined, currency?: string): string =>
+  price === 0 ? 'Offert' : price == null ? '' : formatPrice(price, currency);
+
+/** Plusieurs prix (un par format) : « dès 300 € » s'ils diffèrent. */
+export const pricesLabel = (prices: number[], currency?: string): string => {
+  if (prices.length === 0) return '';
+  const min = Math.min(...prices);
+  const differ = prices.some((p) => p !== min);
+  return differ ? `dès ${priceLabel(min, currency)}` : priceLabel(min, currency);
+};

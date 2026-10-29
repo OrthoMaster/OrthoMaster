@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
   Animated,
+  Linking,
   StyleSheet,
   StatusBar,
   useWindowDimensions,
@@ -20,16 +21,23 @@ import { useQuery } from '@tanstack/react-query';
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
-import { BookingOffer, BookingOfferImage, getBookingExpert } from '../../../services/v2/BookingService';
+import {
+  BookingLocation,
+  BookingMode,
+  BookingOffer,
+  BookingOfferImage,
+  getBookingExpert,
+} from '../../../services/v2/BookingService';
 import { takeBookingCompleted } from '../bookingFlow';
 import { formatLongDate } from '../bookingDates';
-import { formatPrice, initials } from '../bookingFormat';
+import { initials, priceLabel } from '../bookingFormat';
 import { tint, withAlpha } from '../bookingPalette';
 import { useBookingDirty } from '../BookingExitGuard';
 import { expertTheme } from '../expertTheme';
 import { ThemeBackdrop } from '../components/ThemeBackdrop';
+import { SegmentedTabs } from '../components/SegmentedTabs';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
-import { PERIOD_ICONS, PERIOD_LABELS, SlotPicker, SlotSelection } from './components/SlotPicker';
+import { PERIOD_ICONS, PERIOD_LABELS, SlotPicker, SlotSelection, placeLabel } from './components/SlotPicker';
 
 const INSET = Spacings.lg;
 const EXPERT_AVATAR = 36;
@@ -40,6 +48,19 @@ const THUMB_RATIO = 4 / 3;
 const THUMB_PEEK = 56;
 
 type DetailTab = 'details' | 'calendar';
+
+/** En ligne d'abord, puis en présentiel, quel que soit l'ordre reçu. */
+const MODE_ORDER: BookingMode[] = ['online', 'onsite'];
+const MODE_ICONS: Record<BookingMode, 'video-outline' | 'map-marker-outline'> = {
+  online: 'video-outline',
+  onsite: 'map-marker-outline',
+};
+
+/** Adresse sur deux lignes : rue, puis code postal et ville. */
+const addressLines = (l: { address_line?: string | null; postal_code?: string | null; city?: string | null }) => [
+  l.address_line,
+  [l.postal_code, l.city].filter(Boolean).join(' '),
+].filter(Boolean) as string[];
 
 /**
  * Onglets en texte souligné, posés sur le fond : un trait de la couleur principale
@@ -182,6 +203,12 @@ export const OfferDetailView = ({ navigation, route }) => {
 
   const [tab, setTab] = useState<DetailTab>(route.params?.initialTab ?? 'details');
   const [selection, setSelection] = useState<SlotSelection>({});
+
+  // Modes actifs de l'offre, en ligne d'abord ; le premier est choisi d'office.
+  const modes = MODE_ORDER.map((m) => offer?.modes?.find((om) => om.mode === m)).filter(Boolean) as BookingOffer['modes'];
+  const [mode, setMode] = useState<BookingMode | null>(route.params?.mode ?? modes[0]?.mode ?? null);
+  const offerMode = modes.find((m) => m.mode === mode) ?? modes[0] ?? null;
+  const onsiteLocations: BookingLocation[] = modes.find((m) => m.mode === 'onsite')?.locations ?? [];
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
 
@@ -213,6 +240,25 @@ export const OfferDetailView = ({ navigation, route }) => {
   const thumbHeight = Math.round(thumbWidth / THUMB_RATIO);
   const sortedSelection = Object.entries(selection).sort(([a], [b]) => a.localeCompare(b));
 
+  // Changer de format change le calendrier : la sélection en cours ne vaut plus.
+  const changeMode = (next: BookingMode) => {
+    if (next === offerMode?.mode) return;
+    if (selectedCount === 0) {
+      setMode(next);
+      return;
+    }
+    Alert.alert('Changer de format ?', 'Les demi-journées choisies seront retirées.', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Changer',
+        onPress: () => {
+          setSelection({});
+          setMode(next);
+        },
+      },
+    ]);
+  };
+
   const removeSelected = (key: string) => {
     const next = { ...selection };
     delete next[key];
@@ -221,9 +267,11 @@ export const OfferDetailView = ({ navigation, route }) => {
 
   // Récapitulatif et paiement en feuille basse, par-dessus le calendrier : on y revient tel quel.
   const submit = () => {
+    if (!offerMode) return;
     navigation.navigate('expert-checkout', {
       expertId,
       offer,
+      mode: offerMode.mode,
       expert,
       blocks: sortedSelection.map(([, block]) => block),
       offerRouteKey: route.key,
@@ -289,13 +337,36 @@ export const OfferDetailView = ({ navigation, route }) => {
                 <Ionicons name="time-outline" size={16} color={theme.primary} />
                 <Text style={[styles.factValue, { color: theme.ink }]}>{offer.duration_label}</Text>
               </View>
+              {/* Un seul format : il s'affiche ici ; deux formats : choix juste dessous. */}
+              {modes.length === 1 && offerMode ? (
+                <>
+                  <View style={[styles.factDot, { backgroundColor: theme.line }]} />
+                  <View style={styles.factLine}>
+                    <MaterialCommunityIcons name={MODE_ICONS[offerMode.mode]} size={16} color={theme.primary} />
+                    <Text style={[styles.factValue, { color: theme.ink }]}>{offerMode.label}</Text>
+                  </View>
+                </>
+              ) : null}
               <View style={[styles.factDot, { backgroundColor: theme.line }]} />
               <View style={styles.factLine}>
                 <Text style={[styles.factValue, styles.factPrice, { color: theme.ink }]}>
-                  {formatPrice(offer.price, offer.currency)}
+                  {priceLabel(offerMode?.price ?? offer.price, offer.currency)}
                 </Text>
               </View>
             </View>
+
+            {modes.length > 1 && offerMode ? (
+              <View style={styles.modeSwitch}>
+                <SegmentedTabs
+                  tabs={modes.map((m) => ({ key: m.mode, label: m.label }))}
+                  value={offerMode.mode}
+                  onChange={changeMode}
+                  color={theme.primary}
+                  surface={theme.card}
+                  borderColor={theme.line}
+                />
+              </View>
+            ) : null}
           </View>
 
           <UnderlineTabs
@@ -320,6 +391,43 @@ export const OfferDetailView = ({ navigation, route }) => {
           ) : (
             <Text style={[styles.description, { color: theme.muted }]}>Pas de description pour ce thème.</Text>
           )}
+
+          {/* ---- Lieux du présentiel (3b) : adresse visible avant de réserver ---- */}
+          {onsiteLocations.length > 0 ? (
+            <View style={styles.places}>
+              <Text style={[styles.placesTitle, { color: theme.ink }]}>
+                {onsiteLocations.length > 1 ? 'Lieux en présentiel' : 'Lieu en présentiel'}
+              </Text>
+              {onsiteLocations.map((location) => (
+                <View key={location.id} style={[styles.placeRow, { backgroundColor: theme.card, borderColor: theme.line }]}>
+                  <View style={[styles.placeIcon, { backgroundColor: tint(theme.primary, 0.12) }]}>
+                    <Ionicons name="location-outline" size={18} color={theme.primary} />
+                  </View>
+                  <View style={styles.flex}>
+                    <Text style={[styles.placeLabel, { color: theme.ink }]} numberOfLines={1}>
+                      {location.label}
+                    </Text>
+                    {addressLines(location).map((line) => (
+                      <Text key={line} style={[styles.placeAddress, { color: theme.muted }]} numberOfLines={2}>
+                        {line}
+                      </Text>
+                    ))}
+                  </View>
+                  {location.maps_url ? (
+                    <TouchableOpacity
+                      style={[styles.placeRoute, { borderColor: withAlpha(theme.primary, 0.45) }]}
+                      onPress={() => Linking.openURL(location.maps_url).catch(() => {})}
+                      hitSlop={6}
+                      accessibilityLabel={`Itinéraire vers ${location.label}`}
+                    >
+                      <Ionicons name="navigate-outline" size={14} color={theme.primary} />
+                      <Text style={[styles.placeRouteText, { color: theme.primary }]}>Itinéraire</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           {images.length > 0 && (
             <View style={styles.gallery}>
@@ -385,9 +493,13 @@ export const OfferDetailView = ({ navigation, route }) => {
           contentContainerStyle={{ paddingTop: Spacings.lg, paddingHorizontal: INSET, paddingBottom: bottomSpace }}
           showsVerticalScrollIndicator={false}
         >
-          {detail ? (
+          {detail && offerMode ? (
             <SlotPicker
+              // Nouveau format : calendrier rechargé depuis le premier mois, aucun jour ouvert.
+              key={offerMode.mode}
               expertId={expertId}
+              offerId={offer.id}
+              mode={offerMode.mode}
               firstDate={detail.first_date}
               lastDate={detail.last_date}
               required={required}
@@ -434,6 +546,14 @@ export const OfferDetailView = ({ navigation, route }) => {
                           {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
                         </Text>
                       </View>
+                      {block.location ? (
+                        <View style={styles.pickedMeta}>
+                          <Ionicons name="location-outline" size={14} color={theme.primary} />
+                          <Text style={[styles.pickedHours, styles.flex, { color: theme.muted }]} numberOfLines={1}>
+                            {placeLabel(block.location)}
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
 
                     <TouchableOpacity
@@ -593,6 +713,57 @@ const styles = StyleSheet.create({
   factPrice: {
     fontFamily: 'Poppins-Bold',
     fontSize: 16,
+  },
+  modeSwitch: {
+    marginTop: Spacings.xs,
+  },
+
+  /* ---- Lieux ---- */
+  places: {
+    gap: Spacings.sm,
+    paddingHorizontal: INSET,
+    marginTop: Spacings.lg,
+  },
+  placesTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 17,
+  },
+  placeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    padding: Spacings.sm,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  placeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeLabel: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 15,
+  },
+  placeAddress: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  placeRoute: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 32,
+    paddingHorizontal: Spacings.sm,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  placeRouteText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
   },
 
   /* ---- Onglets ---- */

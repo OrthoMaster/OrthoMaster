@@ -27,9 +27,9 @@ const BookingTab = createBottomTabNavigator();
  * Espace rendez-vous : écran « booking » de TrainingStack.
  *
  * Il remplace la barre de l'application par sa propre barre flottante, dont le premier
- * bouton ramène aux formations. Tout le monde cherche un expert et suit ses rendez-vous ;
- * un expert, qui peut lui aussi réserver auprès d'un confrère, gère en plus ses demandes,
- * son agenda et son expertise.
+ * bouton ramène aux formations. Un client cherche un expert et suit ses rendez-vous.
+ * Un expert, qui peut lui aussi réserver auprès d'un confrère, gère ses demandes et son
+ * expertise ; ses rendez-vous, des deux côtés, sont réunis dans l'Agenda.
  */
 export const BookingTabs = ({ navigation }) => {
   const { data: setup, isLoading, isFetching, refetch } = useQuery({
@@ -134,27 +134,13 @@ export const BookingTabs = ({ navigation }) => {
   // Rétrécissement explicite : TypeScript ne le garde pas à travers la constante isExpert.
   const expert = setup.is_expert ? setup.expert : null;
 
-  // Onglets communs : chercher un confrère, suivre ses propres rendez-vous.
-  // Chez un expert, « Rendez-vous » prend une autre icône et une autre couleur que l'Agenda :
-  // l'un liste ce qu'il a réservé, l'autre ce qu'on lui a réservé.
-  const clientTabs = [
+  const expertsTab = (
     <BookingTab.Screen
-      key="booking-experts"
       name="booking-experts"
       component={ExpertsStack}
       options={{ title: 'Experts', tabBarIcon: tabIcon('people-outline'), tabBarActiveTintColor: Colors.lblueDark }}
-    />,
-    <BookingTab.Screen
-      key="booking-appointments"
-      name="booking-appointments"
-      component={AppointmentsStack}
-      options={{
-        title: 'Rendez-vous',
-        tabBarIcon: tabIcon(isExpert ? 'bookmark-outline' : 'calendar-outline'),
-        tabBarActiveTintColor: isExpert ? Colors.green : Colors.purple,
-      }}
-    />,
-  ];
+    />
+  );
 
   return (
     <BookingExitGuardContext.Provider value={guard}>
@@ -172,7 +158,11 @@ export const BookingTabs = ({ navigation }) => {
       >
         {isExpert ? (
           <>
-            {/* Ce qu'on lui demande, puis ce qu'il réserve, puis sa configuration. */}
+            {/*
+              Ce qu'on lui demande, chercher un confrère, sa configuration, puis son agenda.
+              L'agenda réunit les rendez-vous qu'il anime et ceux qu'il a réservés :
+              pas d'onglet Rendez-vous séparé, chaque carte dit qui demande et qui est l'expert.
+            */}
             <BookingTab.Screen
               name="booking-requests"
               component={RequestsStack}
@@ -184,12 +174,7 @@ export const BookingTabs = ({ navigation }) => {
                 tabBarBadge: pendingRequests > 0 ? pendingRequests : undefined,
               }}
             />
-            <BookingTab.Screen
-              name="booking-agenda"
-              component={AgendaStack}
-              options={{ title: 'Agenda', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
-            />
-            {clientTabs}
+            {expertsTab}
             <BookingTab.Screen
               name="booking-expertise"
               component={ExpertiseStack}
@@ -206,9 +191,22 @@ export const BookingTabs = ({ navigation }) => {
                 ),
               }}
             />
+            <BookingTab.Screen
+              name="booking-agenda"
+              component={AgendaStack}
+              options={{ title: 'Agenda', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
+            />
           </>
         ) : (
-          <>{clientTabs}</>
+          <>
+            {/* Client : chercher un expert, suivre ses rendez-vous. */}
+            {expertsTab}
+            <BookingTab.Screen
+              name="booking-appointments"
+              component={AppointmentsStack}
+              options={{ title: 'Rendez-vous', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
+            />
+          </>
         )}
       </BookingTab.Navigator>
     </BookingExitGuardContext.Provider>

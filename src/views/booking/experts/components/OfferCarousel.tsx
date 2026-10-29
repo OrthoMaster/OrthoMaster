@@ -7,7 +7,7 @@ import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
 
 import { BookingOffer } from '../../../../services/v2/BookingService';
-import { formatPrice } from '../../bookingFormat';
+import { modesLabel, pricesLabel } from '../../bookingFormat';
 import { darken, withAlpha } from '../../bookingPalette';
 
 const CARD_RADIUS = 18;
@@ -20,6 +20,13 @@ const PEEK = 36;
 const NOTCH = 20;
 const DASH = 6;
 const DASH_GAP = 5;
+
+/** Format(s) en tête du ticket : « En ligne », « En présentiel », ou les deux. */
+const offerKind = (offer: BookingOffer) => modesLabel(offer.modes.map((m) => m.mode)) || 'Échange';
+
+/** Prix du ticket : « dès » quand les formats n'ont pas le même prix. */
+const offerPrice = (offer: BookingOffer) =>
+  pricesLabel(offer.modes.map((m) => m.price), offer.currency);
 
 interface OfferCarouselProps {
   offers: BookingOffer[];
@@ -84,7 +91,7 @@ export const OfferCarousel: React.FC<OfferCarouselProps> = ({
             onPress={() => onSelect(offer)}
             style={({ pressed }) => pressed && styles.pressed}
             accessibilityRole="button"
-            accessibilityLabel={`${offer.title}, ${offer.duration_label}, ${formatPrice(offer.price, offer.currency)}`}
+            accessibilityLabel={`${offer.title}, ${offer.duration_label}, ${offerPrice(offer)}`}
           >
             {/* Tranche 3D sous la carte, plus sombre que la couleur principale. */}
             <View style={[styles.edge, { backgroundColor: darken(accent, 0.45) }]}>
@@ -96,7 +103,7 @@ export const OfferCarousel: React.FC<OfferCarouselProps> = ({
                 style={[styles.card, { width: cardWidth, paddingTop: pad, paddingBottom: Math.round(pad * 0.7) }]}
               >
                 <View style={{ paddingHorizontal: pad }}>
-                  <Text style={styles.kind}>Échange en visio</Text>
+                  <Text style={styles.kind}>{offerKind(offer)}</Text>
                   {/* Hauteurs réservées (2 lignes chacun) : toutes les cartes ont la même taille. */}
                   <Text
                     style={[styles.title, { fontSize: titleSize, lineHeight: titleLine, height: titleLine * 2 }]}
@@ -129,7 +136,7 @@ export const OfferCarousel: React.FC<OfferCarouselProps> = ({
                     <Ionicons name="time-outline" size={bodySize + 2} color={Colors.white} />
                     <Text style={[styles.durationText, { fontSize: bodySize }]}>{offer.duration_label}</Text>
                   </View>
-                  <Text style={[styles.price, { fontSize: priceSize }]}>{formatPrice(offer.price, offer.currency)}</Text>
+                  <Text style={[styles.price, { fontSize: priceSize }]}>{offerPrice(offer)}</Text>
                 </View>
               </LinearGradient>
             </View>

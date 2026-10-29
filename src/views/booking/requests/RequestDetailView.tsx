@@ -35,10 +35,11 @@ import {
   reportExpertNoShow,
 } from '../../../services/v2/BookingService';
 import { formatLongDate } from '../bookingDates';
-import { formatPrice, initials } from '../bookingFormat';
+import { MODE_SHORT_LABELS, formatPrice, initials } from '../bookingFormat';
 import { accentOf, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
 import { JoinVisioButton } from '../components/JoinVisioButton';
+import { BlockPlace } from '../components/BlockPlace';
 import { NoShowSection } from '../components/NoShowSection';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
@@ -316,6 +317,14 @@ export const RequestDetailView = ({ navigation, route }) => {
             </View>
 
             <Text style={styles.offerTitle}>{request.offer_title}</Text>
+            <View style={styles.modeRow}>
+              <Ionicons
+                name={request.mode === 'onsite' ? 'location-outline' : 'videocam-outline'}
+                size={15}
+                color={Colors.lblueDark}
+              />
+              <Text style={styles.modeText}>{MODE_SHORT_LABELS[request.mode ?? 'online']}</Text>
+            </View>
 
             <Text style={styles.blocksTitle}>
               {request.blocks.length > 1 ? `${request.blocks.length} demi-journées` : '1 demi-journée'}
@@ -329,7 +338,9 @@ export const RequestDetailView = ({ navigation, route }) => {
                     <Text style={styles.blockHours}>
                       {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
                     </Text>
-                    {request.status === 'accepted' ? (
+                    {block.location ? <BlockPlace location={block.location} color={accent} /> : null}
+                    {/* Visio seulement en ligne ; en présentiel, le lieu ci-dessus. */}
+                    {request.status === 'accepted' && request.mode !== 'onsite' ? (
                       <View style={styles.join}>
                         <JoinVisioButton
                           startAt={block.start_at}
@@ -657,6 +668,17 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: Colors.text,
     marginTop: Spacings.md,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xxs,
+    marginTop: Spacings.xxs,
+  },
+  modeText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    color: Colors.lblueDark,
   },
   blocksTitle: {
     fontFamily: 'Poppins-Medium',

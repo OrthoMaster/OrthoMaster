@@ -45,10 +45,24 @@ export interface BookingExpert extends BookingExpertBase {
   online?: boolean;
 }
 
+/** Ligne courte d'une offre sous l'expert, dans la liste. */
+export interface BookingOfferSummary {
+  id: number;
+  title: string;
+  duration_label: string;
+  /** Modes actifs. */
+  modes: BookingMode[];
+  /** Prix TTC le plus bas des modes actifs. */
+  price_from: number | null;
+  currency: string;
+}
+
 /** Sans domaines : la liste ne les affiche pas. */
 export interface BookingExpertListItem extends BookingExpertBase {
   /** Accepte des demandes : réservation activée, offre active et créneau ouvert. */
   online: boolean;
+  /** Offres actives, seulement pour un expert qui accepte des demandes. */
+  offers?: BookingOfferSummary[];
 }
 
 export interface BookingExpertsPage {
@@ -126,6 +140,8 @@ export interface BookingBlock {
   /** HH:MM dans le fuseau de l'expert. */
   start_local: string;
   end_local: string;
+  /** Présentiel : lieu de la demi-journée (nom court + ville) ; null en ligne. */
+  location?: { id: number; label: string; city: string } | null;
 }
 
 export interface BookingDay {
@@ -454,14 +470,15 @@ export const getBookingExpert = async (
 };
 
 /**
- * Demi-journées libres d'un expert, regroupées par jour.
+ * Demi-journées libres d'une offre dans un mode, regroupées par jour ; en présentiel,
+ * chaque demi-journée porte son lieu. Sans offre : grille générale de l'expert.
  * Sans dates : un mois à partir du premier jour réservable. Plage plafonnée à 62 jours.
- * GET /booking/experts/{expertId}/availability
+ * GET /booking/experts/{expertId}/availability?offer_id=&mode=&from=&to=
  * @param params from / to au format Y-m-d
  */
 export const getExpertAvailability = async (
   expertId: number | string,
-  params?: { from?: string; to?: string }
+  params?: { offer_id?: number; mode?: BookingMode; from?: string; to?: string }
 ): Promise<BookingCalendar | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/experts/${expertId}/availability`, { params })
@@ -781,7 +798,7 @@ export const fieldError = (
 /* ---- Utilisateur : récapitulatif et paiement d'une demande ---- */
 
 export interface BookingPricing {
-  /** Le prix de l'offre est hors taxes ; la TVA est calculée par le serveur. */
+  /** Déduit du prix TTC de l'offre par le serveur. */
   amount_ht: number;
   /** En pourcentage : 20 = 20 %. */
   tva_rate: number;
@@ -792,8 +809,11 @@ export interface BookingPricing {
 
 export interface BookingCheckout {
   user: { name: string; email: string };
+  mode: BookingMode;
   pricing: BookingPricing;
-  /** Faux : rendez-vous offert, la demande part sans paiement. */
+  /** Politique d'annulation du mode, en vigueur aujourd'hui. */
+  policy: { free_cancel_hours: number; late_cancel_penalty_pct: number; user_noshow_refund_pct: number } | null;
+  /** Faux : rendez-vous offert (paiement désactivé ou offre à 0 €), la demande part sans paiement. */
   payment_enabled: boolean;
   terms_url: string;
   message_max: number;
@@ -808,11 +828,13 @@ export interface BookingRequest extends BookingPricing {
   payment_required: boolean;
   /** ISO 8601 ; renseigné quand la demande est transmise à l'expert. */
   respond_by: string | null;
-  blocks: { date: string; period: BookingPeriod; start_local: string; end_local: string }[];
+  mode: BookingMode;
+  blocks: { date: string; period: BookingPeriod; start_local: string; end_local: string; location: BookedLocation | null }[];
 }
 
 export interface BookingCheckoutInput {
   offer_id: number;
+  mode: BookingMode;
   blocks: { date: string; period: BookingPeriod }[];
   address: string;
   message?: string | null;
@@ -844,12 +866,12 @@ const toPaymentFailure = (e: AxiosError<any>): BookingResult<never> & { code?: s
 });
 
 /**
- * Nom et e-mail de l'utilisateur, montants HT / TVA / TTC du thème.
- * GET /payments/bookings/checkout?offer_id=
+ * Nom et e-mail de l'utilisateur, montants HT / TVA / TTC du thème dans ce mode.
+ * GET /payments/bookings/checkout?offer_id=&mode=
  */
-export const getBookingCheckout = async (offerId: number): Promise<BookingCheckout | null> => {
+export const getBookingCheckout = async (offerId: number, mode: BookingMode): Promise<BookingCheckout | null> => {
   return axiosInstance
-    .get(`${baseUrl}/payments/bookings/checkout`, { params: { offer_id: offerId } })
+    .get(`${baseUrl}/payments/bookings/checkout`, { params: { offer_id: offerId, mode } })
     .then((response) => (response.data?.success == true ? response.data.data : null))
     .catch(() => null);
 };
@@ -904,6 +926,24 @@ export interface MyBookingBlock {
   end_at: string | null;
   /** Lien Google Meet de la demi-journée ; null tant que l'intégration n'est pas en place. */
   meet_url: string | null;
+  /** Présentiel : lieu copié à la réservation ; null en ligne. */
+  location?: BookedLocation | null;
+}
+
+/**
+ * Lieu tel qu'il était au moment de la réservation (présentiel).
+ * Informations d'accès seulement une fois le rendez-vous accepté.
+ */
+export interface BookedLocation {
+  label: string | null;
+  address_line: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country: string | null;
+  lat: number | null;
+  lng: number | null;
+  maps_url: string;
+  access_details: string | null;
 }
 
 /** Signalement d'absence, du point de vue de la partie qui consulte. */
@@ -919,6 +959,7 @@ export interface MyBooking {
   id: number;
   status: MyBookingStatus;
   offer_title: string;
+  mode: BookingMode;
   blocks_count: number;
   expert: BookingExpertBase | null;
   blocks: MyBookingBlock[];
@@ -1010,6 +1051,7 @@ export interface ExpertRequest {
   id: number;
   status: MyBookingStatus;
   offer_title: string;
+  mode: BookingMode;
   blocks_count: number;
   requester: { name: string };
   blocks: MyBookingBlock[];
@@ -1145,7 +1187,14 @@ export const reportExpertNoShow = async (
 
 /* ---- Expert : agenda ---- */
 
+/**
+ * Rôle de l'expert connecté dans un rendez-vous de son agenda :
+ * host = un confrère a réservé auprès de lui ; guest = il a réservé auprès d'un confrère.
+ */
+export type AgendaRole = 'host' | 'guest';
+
 export interface AgendaSession {
+  role: AgendaRole;
   booking_id: number;
   block_id: number;
   date: string;
@@ -1158,15 +1207,41 @@ export interface AgendaSession {
   index: number;
   total: number;
   offer_title: string;
-  requester: { name: string };
+  mode: BookingMode;
+  /** Hôte : le confrère qui a réservé. Invité : name = null (c'est l'expert connecté). */
+  requester: { name: string | null };
+  /** Invité : l'expert rencontré. Hôte : null (c'est l'expert connecté). */
+  expert: BookingExpertBase | null;
   meet_url: string | null;
+  /** Présentiel : lieu copié à la réservation ; null en ligne. */
+  location: BookedLocation | null;
+}
+
+/** Demande envoyée par l'expert à un confrère, sans réponse. */
+export type AgendaPendingRequest = MyBooking & { role: 'guest' };
+
+export interface ExpertAgenda {
+  sessions: AgendaSession[];
+  pending: AgendaPendingRequest[];
+}
+
+export type AgendaHistoryItem =
+  | { role: 'host'; booking: ExpertRequest }
+  | { role: 'guest'; booking: MyBooking };
+
+export interface ExpertAgendaHistoryPage {
+  items: AgendaHistoryItem[];
+  /** Ancienne forme : rendez-vous animés seulement. */
+  requests: ExpertRequest[];
+  pagination: { page: number; per_page: number; total: number; has_more: boolean };
 }
 
 /**
- * Demi-journées à venir des rendez-vous acceptés, dans l'ordre.
+ * Demi-journées à venir des rendez-vous acceptés, des deux côtés, dans l'ordre ;
+ * plus les demandes envoyées en attente de réponse.
  * GET /booking/me/agenda
  */
-export const getExpertAgenda = async (): Promise<{ sessions: AgendaSession[] } | null> => {
+export const getExpertAgenda = async (): Promise<ExpertAgenda | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/me/agenda`)
     .then((response) => (response.data?.success == true ? response.data.data : null))
@@ -1174,10 +1249,10 @@ export const getExpertAgenda = async (): Promise<{ sessions: AgendaSession[] } |
 };
 
 /**
- * Rendez-vous passés, le plus récent d'abord.
+ * Rendez-vous passés ou clos, des deux côtés, le plus récent d'abord.
  * GET /booking/me/agenda/history?page=
  */
-export const getExpertAgendaHistory = async (page = 1): Promise<ExpertRequestHistoryPage | null> => {
+export const getExpertAgendaHistory = async (page = 1): Promise<ExpertAgendaHistoryPage | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/me/agenda/history`, { params: { page } })
     .then((response) => (response.data?.success == true ? response.data.data : null))

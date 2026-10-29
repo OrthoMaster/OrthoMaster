@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Image, Pressable, Animated, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, Text, Image, Pressable, Animated, LayoutAnimation, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
 
 import { BookingExpertListItem } from '../../../../services/v2/BookingService';
-import { initials } from '../../bookingFormat';
+import { initials, priceLabel } from '../../bookingFormat';
 
 const CARD_RADIUS = 20;
 const CARD_PADDING = Spacings.sm;
@@ -26,9 +27,12 @@ interface ExpertCardProps {
   onPress: () => void;
 }
 
+const MODE_ICONS = { online: 'video-outline', onsite: 'map-marker-outline' } as const;
+
 /**
  * Carte blanche aux couleurs de l'espace rendez-vous (la palette de l'expert est réservée
  * à son profil). Portrait carré à la hauteur du texte, identité à droite.
+ * Expert disponible : ses thèmes se déplient sous la carte, une ligne chacun.
  */
 export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPage, onPress }) => {
   const [photoSize, setPhotoSize] = useState(PHOTO_MIN);
@@ -53,6 +57,16 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
     if (Math.abs(next - photoSize) > 4) setPhotoSize(next);
   };
 
+  const offers = expert.online ? expert.offers ?? [] : [];
+  const [open, setOpen] = useState(false);
+
+  const toggleOffers = () => {
+    try {
+      LayoutAnimation.configureNext(LayoutAnimation.create(180, 'easeInEaseOut', 'opacity'));
+    } catch (e) { }
+    setOpen((v) => !v);
+  };
+
   const animatePress = (toValue: number) => {
     Animated.spring(press, { toValue, friction: 7, tension: 200, useNativeDriver: true }).start();
   };
@@ -67,8 +81,9 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
 
   return (
     <Animated.View style={[{ width }, animated]}>
+      <View style={styles.card}>
       <Pressable
-        style={styles.card}
+        style={styles.main}
         onPress={onPress}
         onPressIn={() => animatePress(1)}
         onPressOut={() => animatePress(0)}
@@ -116,6 +131,56 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
           </Text>
         </View>
       </Pressable>
+
+      {/* ---- Thèmes de l'expert, repliés par défaut ---- */}
+      {offers.length > 0 ? (
+        <>
+          <Pressable
+            style={styles.toggle}
+            onPress={toggleOffers}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: open }}
+            accessibilityLabel={`${offers.length} ${offers.length > 1 ? 'thèmes' : 'thème'}`}
+          >
+            <Text style={styles.toggleText}>
+              {offers.length} {offers.length > 1 ? 'thèmes proposés' : 'thème proposé'}
+            </Text>
+            <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.lblueDark} />
+          </Pressable>
+
+          {open ? (
+            <View style={styles.offers}>
+              {offers.map((offer) => (
+                <Pressable
+                  key={offer.id}
+                  style={({ pressed }) => [styles.offer, pressed && styles.offerPressed]}
+                  onPress={onPress}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.offerBody}>
+                    <Text style={styles.offerTitle} numberOfLines={1}>
+                      {offer.title}
+                    </Text>
+                    <View style={styles.offerMeta}>
+                      <Text style={styles.offerMetaText}>{offer.duration_label}</Text>
+                      {offer.modes.map((mode) => (
+                        <MaterialCommunityIcons key={mode} name={MODE_ICONS[mode]} size={14} color={Colors.lblueDark} />
+                      ))}
+                    </View>
+                  </View>
+                  {offer.price_from != null ? (
+                    <Text style={styles.offerPrice}>
+                      {offer.price_from > 0 && offer.modes.length > 1 ? 'dès ' : ''}
+                      {priceLabel(offer.price_from, offer.currency)}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+        </>
+      ) : null}
+      </View>
     </Animated.View>
   );
 };
@@ -124,10 +189,6 @@ const styles = StyleSheet.create({
   /* ---- Carte ---- */
   // Texte aligné en haut, sur le haut du portrait.
   card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacings.md,
-    padding: CARD_PADDING,
     borderRadius: CARD_RADIUS,
     backgroundColor: Colors.white,
     shadowColor: Colors.lblueDark,
@@ -135,6 +196,71 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 14,
     elevation: 5,
+  },
+  main: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.md,
+    padding: CARD_PADDING,
+  },
+
+  /* ---- Thèmes ---- */
+  toggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: CARD_PADDING,
+    paddingVertical: Spacings.xs,
+    paddingHorizontal: Spacings.xxs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+  },
+  toggleText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    color: Colors.lblueDark,
+  },
+  offers: {
+    paddingHorizontal: CARD_PADDING,
+    paddingBottom: CARD_PADDING,
+    gap: Spacings.xxs,
+  },
+  offer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    paddingVertical: Spacings.xs,
+    paddingHorizontal: Spacings.sm,
+    borderRadius: 12,
+    backgroundColor: Colors.grayLight,
+  },
+  offerPressed: {
+    opacity: 0.7,
+  },
+  offerBody: {
+    flex: 1,
+  },
+  offerTitle: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.text,
+  },
+  offerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xxs,
+    marginTop: 1,
+  },
+  offerMetaText: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: Colors.subtext,
+    marginRight: 2,
+  },
+  offerPrice: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 14,
+    color: Colors.text,
   },
 
   /* ---- Portrait ---- */

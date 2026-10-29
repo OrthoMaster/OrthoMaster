@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
 
-import { BookingBlock, BookingPeriod, getExpertAvailability } from '../../../../services/v2/BookingService';
+import { BookingBlock, BookingMode, BookingPeriod, getExpertAvailability } from '../../../../services/v2/BookingService';
 import { notify } from '../../bookingActions';
 import { blocksLabel } from '../../bookingFormat';
 import { MONTHS, WEEKDAYS_SHORT, formatLongDate, isoDate, monthMatrix } from '../../bookingDates';
@@ -31,6 +31,10 @@ export const blockKey = (date: string, period: BookingPeriod) => `${date}|${peri
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
+/** « Cabinet A · Lyon » : nom court du lieu, ville si elle apporte quelque chose. */
+export const placeLabel = (location: { label?: string | null; city?: string | null }) =>
+  [location.label, location.city].filter(Boolean).join(' · ');
+
 /** Fuseau de l'appareil, pour prévenir quand il diffère de celui de l'expert. */
 const deviceTimezone = () => {
   try {
@@ -42,6 +46,9 @@ const deviceTimezone = () => {
 
 interface SlotPickerProps {
   expertId: number;
+  /** Offre et mode : le calendrier suit celui de l'offre dans ce mode. */
+  offerId: number;
+  mode: BookingMode;
   /** Bornes de réservation de l'expert (Y-m-d). */
   firstDate: string;
   lastDate: string;
@@ -69,6 +76,8 @@ const animateLayout = () => {
  */
 export const SlotPicker: React.FC<SlotPickerProps> = ({
   expertId,
+  offerId,
+  mode,
   firstDate,
   lastDate,
   required,
@@ -100,8 +109,8 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
   }, [month, firstDate, lastDate]);
 
   const { data: calendar, isFetching } = useQuery({
-    queryKey: ['booking', 'availability', expertId, range?.from, range?.to],
-    queryFn: () => getExpertAvailability(expertId, range!),
+    queryKey: ['booking', 'availability', expertId, offerId, mode, range?.from, range?.to],
+    queryFn: () => getExpertAvailability(expertId, { offer_id: offerId, mode, ...range! }),
     enabled: !!range,
   });
 
@@ -299,6 +308,22 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
                         <Text style={[styles.slotHours, { color: chosen ? theme.onPrimary : theme.muted }]}>
                           {block.start_local} – {block.end_local}
                         </Text>
+                        {/* Présentiel : chaque demi-journée peut se tenir dans un lieu différent. */}
+                        {block.location ? (
+                          <View style={styles.slotPlace}>
+                            <Ionicons
+                              name="location-outline"
+                              size={12}
+                              color={chosen ? theme.onPrimary : theme.primary}
+                            />
+                            <Text
+                              style={[styles.slotPlaceText, { color: chosen ? theme.onPrimary : theme.ink }]}
+                              numberOfLines={2}
+                            >
+                              {placeLabel(block.location)}
+                            </Text>
+                          </View>
+                        ) : null}
                       </TouchableOpacity>
                     );
                   })}
@@ -309,7 +334,11 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
         })}
 
         {!isFetching && calendar && calendar.days.length === 0 && (
-          <Text style={[styles.noSlot, { color: theme.muted }]}>Aucune demi-journée libre ce mois-ci.</Text>
+          <Text style={[styles.noSlot, { color: theme.muted }]}>
+            {mode === 'onsite'
+              ? 'Aucune demi-journée libre sur place ce mois-ci.'
+              : 'Aucune demi-journée libre ce mois-ci.'}
+          </Text>
         )}
       </View>
 
@@ -457,6 +486,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: 12,
     marginTop: 1,
+  },
+  slotPlace: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 3,
+    marginTop: 3,
+  },
+  slotPlaceText: {
+    flex: 1,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 11,
+    lineHeight: 15,
   },
 
   /* ---- Fuseau ---- */

@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   Pressable,
+  Image,
   RefreshControl,
   StyleSheet,
   StatusBar,
@@ -21,7 +22,13 @@ import Spacings from '../../../../constants/Spacings';
 
 import { BouncingDots } from '../../../component/LoadingDots';
 import { useFloatingTabBarInset } from '../../../component/booking/FloatingTabBar';
-import { AgendaSession, getExpertAgenda } from '../../../services/v2/BookingService';
+import {
+  AgendaPendingRequest,
+  AgendaSession,
+  BookingExpertBase,
+  BookingMode,
+  getExpertAgenda,
+} from '../../../services/v2/BookingService';
 import { MONTHS, WEEKDAYS, addDays, formatLongDate, weekdayIso } from '../bookingDates';
 import { accentOf, tint, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
@@ -43,8 +50,69 @@ const mondayOf = (iso: string) => addDays(iso, 1 - weekdayIso(iso));
 /** « Aujourd'hui · 09:00 », « Demain · 14:00 », « Dans 5 jours · 09:00 ». */
 const whenLabel = (session: AgendaSession) => `${relativeDay(session.date)} · ${session.start_local}`;
 
+/** « Dr Martin » : titre éventuel devant le nom. */
+const expertName = (expert: BookingExpertBase | null) =>
+  expert ? [expert.honorific, expert.name].filter(Boolean).join(' ') : 'Expert';
+
+const MODE_META: Record<BookingMode, { icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string }> = {
+  online: { icon: 'video-outline', color: Colors.lblueDark },
+  onsite: { icon: 'map-marker-outline', color: Colors.purpleDark },
+};
+
+/** « En ligne », ou le lieu en présentiel : « Cabinet A · Lyon ». */
+const placeLabel = (session: AgendaSession) => {
+  if (session.mode !== 'onsite') return 'En ligne';
+  const l = session.location;
+  if (!l) return 'En présentiel';
+  return [l.label, l.city].filter(Boolean).join(' · ') || 'En présentiel';
+};
+
+/* ---- Qui demande, qui anime ---- */
+
+/** Avatar rond de l'expert rencontré ; initiales si pas de photo. */
+const MiniAvatar = ({ expert, color }: { expert: BookingExpertBase | null; color: string }) =>
+  expert?.avatar_url ? (
+    <Image source={{ uri: expert.avatar_url }} style={styles.avatar} />
+  ) : (
+    <View style={[styles.avatar, { backgroundColor: withAlpha(color, 0.15) }]}>
+      <Text style={[styles.avatarText, { color }]}>{(expert?.name ?? '?').charAt(0).toUpperCase()}</Text>
+    </View>
+  );
+
 /**
- * Agenda de l'expert : prochaine séance mise en avant, bandeau de la semaine
+ * Pied de carte : « Demandeur : X » à gauche, « Expert : Moi » ou l'expert réservé à droite.
+ * Hôte : le confrère demande, l'expert c'est moi. Invité : l'inverse.
+ */
+const Parties = ({
+  guest,
+  requesterName,
+  expert,
+  color,
+}: {
+  guest: boolean;
+  requesterName: string | null;
+  expert: BookingExpertBase | null;
+  color: string;
+}) => (
+  <View style={styles.parties}>
+    <Text style={styles.party} numberOfLines={1}>
+      Demandeur : <Text style={[styles.partyName, !guest ? null : styles.partyMe]}>{guest ? 'Moi' : requesterName ?? 'Confrère'}</Text>
+    </Text>
+    <View style={styles.partyExpert}>
+      {guest ? <MiniAvatar expert={expert} color={color} /> : null}
+      <Text style={styles.party} numberOfLines={1}>
+        Expert : <Text style={[styles.partyName, guest ? null : styles.partyMe]}>{guest ? expertName(expert) : 'Moi'}</Text>
+      </Text>
+    </View>
+  </View>
+);
+
+/**
+ * Agenda de l'expert, des deux côtés dans une seule liste :
+ * les rendez-vous qu'il anime (un confrère a réservé) et ceux qu'il a réservés auprès d'un confrère.
+ * Chaque carte dit qui demande et qui est l'expert ; la fiche ouverte dépend du rôle.
+ *
+ * Prochaine séance mise en avant, demandes envoyées sans réponse, bandeau de la semaine
  * (points matin / après-midi pour les demi-journées réservées), puis séances par jour.
  * Les rendez-vous passés sont dans l'historique (bouton en haut à droite).
  */
@@ -81,7 +149,12 @@ export const AgendaView = ({ navigation }) => {
   };
 
   const sessions = data?.sessions ?? [];
+  const pending = data?.pending ?? [];
   const next = sessions[0];
+
+  /** Couleur d'une séance : la mienne quand j'anime, celle du confrère quand j'ai réservé. */
+  const colorOf = (session: AgendaSession) =>
+    session.role === 'guest' ? accentOf(session.expert?.palette_color) : accent;
 
   /* ---- Regroupement par jour ---- */
 
@@ -129,8 +202,17 @@ export const AgendaView = ({ navigation }) => {
     return `${capitalize(MONTHS[m - 1])} ${y}`;
   })();
 
+  // Le rôle vient du serveur : j'anime → fiche de la demande reçue (accepter, signaler…) ;
+  // j'ai réservé → fiche du demandeur (paiement, annulation, informations d'accès).
   const openSession = (session: AgendaSession) =>
-    navigation.navigate('request-detail', { bookingId: session.booking_id });
+    session.role === 'guest'
+      ? navigation.navigate('appointment-detail', { bookingId: session.booking_id })
+      : navigation.navigate('request-detail', { bookingId: session.booking_id });
+
+  const openPending = (booking: AgendaPendingRequest) =>
+    navigation.navigate('appointment-detail', { bookingId: booking.id, preview: booking });
+
+  const nextColor = next ? colorOf(next) : accent;
 
   /* ---- En-tête de liste ---- */
 
@@ -152,18 +234,15 @@ export const AgendaView = ({ navigation }) => {
       {/* ---- Prochaine séance ---- */}
       {next ? (
         <Pressable
-          style={({ pressed }) => [styles.next, { backgroundColor: tint(accent, 0.14) }, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.next, { backgroundColor: tint(nextColor, 0.14) }, pressed && styles.pressed]}
           onPress={() => openSession(next)}
         >
           <View style={styles.nextHead}>
-            <Text style={[styles.nextKicker, { color: accent }]}>Prochaine séance</Text>
-            <Text style={[styles.nextWhen, { color: accent }]}>{whenLabel(next)}</Text>
+            <Text style={[styles.nextKicker, { color: nextColor }]}>Prochaine séance</Text>
+            <Text style={[styles.nextWhen, { color: nextColor }]}>{whenLabel(next)}</Text>
           </View>
           <Text style={styles.nextTitle} numberOfLines={2}>
             {next.offer_title}
-          </Text>
-          <Text style={styles.nextWith} numberOfLines={1}>
-            avec {next.requester.name}
           </Text>
           <View style={styles.nextMeta}>
             <MaterialCommunityIcons name={PERIOD_ICONS[next.period]} size={16} color={Colors.lblueDark} />
@@ -172,15 +251,74 @@ export const AgendaView = ({ navigation }) => {
               {next.start_local} – {next.end_local}
             </Text>
           </View>
-          {next.total > 1 ? (
-            <Text style={styles.nextIndex}>
-              Séance {next.index} / {next.total}
+          <View style={styles.nextMeta}>
+            <MaterialCommunityIcons name={MODE_META[next.mode].icon} size={16} color={MODE_META[next.mode].color} />
+            <Text style={styles.nextMetaText} numberOfLines={1}>
+              {placeLabel(next)}
+              {next.total > 1 ? ` · Séance ${next.index} / ${next.total}` : ''}
             </Text>
-          ) : null}
-          <View style={styles.nextJoin}>
-            <JoinVisioButton startAt={next.start_at} endAt={next.end_at} url={next.meet_url} color={accent} />
           </View>
+          <Parties
+            guest={next.role === 'guest'}
+            requesterName={next.requester.name}
+            expert={next.expert}
+            color={nextColor}
+          />
+          {/* Visio seulement en ligne ; en présentiel l'adresse est dans la fiche. */}
+          {next.mode === 'online' ? (
+            <View style={styles.nextJoin}>
+              <JoinVisioButton startAt={next.start_at} endAt={next.end_at} url={next.meet_url} color={nextColor} />
+            </View>
+          ) : null}
         </Pressable>
+      ) : null}
+
+      {/* ---- Demandes envoyées à un confrère, sans réponse ---- */}
+      {!selectedDay && pending.length > 0 ? (
+        <View>
+          <Text style={styles.sectionTitle}>
+            En attente de réponse <Text style={{ color: accent }}>({pending.length})</Text>
+          </Text>
+          <View style={styles.pendingList}>
+            {pending.map((booking) => {
+              const color = accentOf(booking.expert?.palette_color);
+              const first = booking.blocks[0];
+              return (
+                <Pressable
+                  key={booking.id}
+                  style={({ pressed }) => [styles.row, styles.rowColumn, pressed && styles.pressed]}
+                  onPress={() => openPending(booking)}
+                  accessibilityRole="button"
+                >
+                  <View style={[styles.rowBar, { backgroundColor: withAlpha(color, 0.5) }]} />
+                  <View style={styles.pendingHead}>
+                    <Text style={[styles.rowTitle, styles.flex]} numberOfLines={2}>
+                      {booking.offer_title}
+                    </Text>
+                    <View style={[styles.pendingBadge, { backgroundColor: withAlpha(color, 0.12) }]}>
+                      <MaterialCommunityIcons name="timer-sand" size={13} color={color} />
+                      <Text style={[styles.pendingBadgeText, { color }]}>En attente</Text>
+                    </View>
+                  </View>
+                  {first ? (
+                    <View style={styles.rowMeta}>
+                      <MaterialCommunityIcons
+                        name={MODE_META[booking.mode ?? 'online'].icon}
+                        size={14}
+                        color={MODE_META[booking.mode ?? 'online'].color}
+                      />
+                      <Text style={styles.rowMetaText} numberOfLines={1}>
+                        {capitalize(formatLongDate(first.date, new Date().getFullYear()))}
+                        {booking.blocks_count > 1 ? ` · ${booking.blocks_count} séances` : ''}
+                      </Text>
+                    </View>
+                  ) : null}
+                  <Parties guest requesterName={null} expert={booking.expert} color={color} />
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
       ) : null}
 
       {/* ---- Bandeau de la semaine ---- */}
@@ -303,7 +441,7 @@ export const AgendaView = ({ navigation }) => {
       <Text style={styles.emptyText}>
         {isError
           ? 'Vérifiez votre connexion, puis tirez vers le bas pour réessayer.'
-          : 'Les rendez-vous que vous acceptez apparaîtront ici, avec le lien de la visio.'}
+          : 'Les rendez-vous que vous acceptez et ceux que vous réservez auprès d’un confrère apparaîtront ici.'}
       </Text>
     </View>
   );
@@ -322,33 +460,46 @@ export const AgendaView = ({ navigation }) => {
           </Text>
           )
         }
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-            onPress={() => openSession(item)}
-            accessibilityRole="button"
-          >
-            <View style={[styles.rowBar, { backgroundColor: accent }]} />
-            <View style={styles.rowTime}>
-              <MaterialCommunityIcons name={PERIOD_ICONS[item.period]} size={18} color={Colors.lblueDark} />
-              <Text style={styles.rowHour}>{item.start_local}</Text>
-              <Text style={styles.rowHourEnd}>{item.end_local}</Text>
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={styles.rowTitle} numberOfLines={2}>
-                {item.offer_title}
-              </Text>
-              <Text style={styles.rowWith} numberOfLines={1}>
-                {item.requester.name}
-              </Text>
-              {item.total > 1 ? (
-                <Text style={[styles.rowIndex, { color: accent }]}>
-                  Séance {item.index} / {item.total}
+        renderItem={({ item }) => {
+          const color = colorOf(item);
+          const mode = MODE_META[item.mode];
+          return (
+            <Pressable
+              style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+              onPress={() => openSession(item)}
+              accessibilityRole="button"
+            >
+              <View style={[styles.rowBar, { backgroundColor: color }]} />
+              <View style={styles.rowTime}>
+                <MaterialCommunityIcons name={PERIOD_ICONS[item.period]} size={18} color={Colors.lblueDark} />
+                <Text style={styles.rowHour}>{item.start_local}</Text>
+                <Text style={styles.rowHourEnd}>{item.end_local}</Text>
+              </View>
+              <View style={styles.rowBody}>
+                <Text style={styles.rowTitle} numberOfLines={2}>
+                  {item.offer_title}
                 </Text>
-              ) : null}
-            </View>
-          </Pressable>
-        )}
+                <View style={styles.rowMeta}>
+                  <MaterialCommunityIcons name={mode.icon} size={14} color={mode.color} />
+                  <Text style={styles.rowMetaText} numberOfLines={1}>
+                    {placeLabel(item)}
+                  </Text>
+                  {item.total > 1 ? (
+                    <Text style={[styles.rowIndex, { color }]}>
+                      {item.index}/{item.total}
+                    </Text>
+                  ) : null}
+                </View>
+                <Parties
+                  guest={item.role === 'guest'}
+                  requesterName={item.requester.name}
+                  expert={item.expert}
+                  color={color}
+                />
+              </View>
+            </Pressable>
+          );
+        }}
         stickySectionHeadersEnabled={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={header}
@@ -437,29 +588,17 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginTop: Spacings.sm,
   },
-  nextWith: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 15,
-    color: Colors.text,
-    marginTop: 2,
-  },
   nextMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.xs,
-    marginTop: Spacings.sm,
+    marginTop: Spacings.xs,
   },
   nextMetaText: {
     flex: 1,
     fontFamily: 'Poppins-Regular',
     fontSize: 13,
     color: Colors.subtext,
-  },
-  nextIndex: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-    color: Colors.subtext,
-    marginTop: Spacings.xxs,
   },
   nextJoin: {
     marginTop: Spacings.md,
@@ -612,16 +751,94 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: Colors.text,
   },
-  rowWith: {
+  rowColumn: {
+    flexDirection: 'column',
+    gap: 0,
+  },
+  rowMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  rowMetaText: {
+    flex: 1,
     fontFamily: 'Poppins-Regular',
     fontSize: 13,
     color: Colors.subtext,
-    marginTop: 2,
   },
   rowIndex: {
     fontFamily: 'Poppins-Medium',
     fontSize: 12,
-    marginTop: Spacings.xxs,
+  },
+  flex: {
+    flex: 1,
+  },
+
+  /* ---- Demandeur / Expert ---- */
+  parties: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacings.sm,
+    marginTop: Spacings.sm,
+    paddingTop: Spacings.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+  },
+  party: {
+    flexShrink: 1,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: Colors.subtext,
+  },
+  partyName: {
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+  },
+  // « Moi » ressort : on repère d'un coup d'œil de quel côté on est.
+  partyMe: {
+    fontFamily: 'Poppins-Bold',
+  },
+  partyExpert: {
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  avatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 11,
+  },
+
+  /* ---- En attente ---- */
+  pendingList: {
+    gap: Spacings.sm,
+  },
+  pendingHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.sm,
+  },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    height: 24,
+    paddingHorizontal: Spacings.xs,
+    borderRadius: 999,
+  },
+  pendingBadgeText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 11,
   },
 
   /* ---- État vide ---- */
