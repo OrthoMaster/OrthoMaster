@@ -15,6 +15,8 @@ const WINDOW_WIDTH = 340;
 const WINDOW_HEIGHT = 470;
 const MINIMIZED_HEIGHT = 56;
 const EDGE = Spacings.md;
+/** Les fenêtres de discussion sont décalées vers la gauche : le panneau (à droite) ne se confond pas avec elles. */
+const WINDOWS_RIGHT = EDGE + 72;
 /** Barre latérale commune (AppTab.web) et demi-largeur de la barre d'onglets flottante, centrée. */
 const SIDEBAR_WIDTH = 200;
 const TAB_BAR_HALF = 190;
@@ -30,7 +32,7 @@ export const ChatDock = () => {
   const { width } = useWindowDimensions();
 
   // Les fenêtres ne recouvrent pas la barre d'onglets centrée : autant qu'il en tient à sa droite.
-  const freeWidth = (width - SIDEBAR_WIDTH) / 2 - TAB_BAR_HALF - EDGE;
+  const freeWidth = (width - SIDEBAR_WIDTH) / 2 - TAB_BAR_HALF - WINDOWS_RIGHT;
   const fitting = Math.max(1, Math.floor(freeWidth / (WINDOW_WIDTH + Spacings.sm)));
   const visible = windows.slice(0, fitting);
 
@@ -70,7 +72,7 @@ export const ChatDock = () => {
           exiting={FadeOut.duration(120)}
           style={[
             styles.window,
-            { right: EDGE + i * (WINDOW_WIDTH + Spacings.sm), height: w.minimized ? MINIMIZED_HEIGHT : WINDOW_HEIGHT },
+            { right: WINDOWS_RIGHT + i * (WINDOW_WIDTH + Spacings.sm), height: w.minimized ? MINIMIZED_HEIGHT : WINDOW_HEIGHT },
           ]}
         >
           <ConversationThread
@@ -95,12 +97,12 @@ const styles = StyleSheet.create({
   },
   panel: {
     position: 'absolute',
+    // Toute la hauteur de la page, toujours au-dessus des fenêtres de discussion.
     top: EDGE,
+    bottom: EDGE,
     right: EDGE,
     width: PANEL_WIDTH,
     maxWidth: '92%',
-    height: '78%',
-    maxHeight: 640,
     borderRadius: 16,
     backgroundColor: Colors.white,
     overflow: 'hidden',
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.18,
     shadowRadius: 28,
-    zIndex: 30,
+    zIndex: 50,
   },
   panelHead: {
     flexDirection: 'row',

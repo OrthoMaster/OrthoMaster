@@ -6,7 +6,10 @@ import {
   FlatList,
   Pressable,
   TouchableOpacity,
-  KeyboardAvoidingView,
+  Dimensions,
+  Keyboard,
+  KeyboardEvent,
+  LayoutAnimation,
   ActivityIndicator,
   Platform,
   StyleSheet,
@@ -64,6 +67,48 @@ type Row =
 
 const time = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
 
+/**
+ * Hauteur du clavier (0 fermé). On décale nous-mêmes la saisie plutôt que de compter sur
+ * KeyboardAvoidingView : avec l'affichage bord à bord d'Android (Expo 54), la fenêtre ne se
+ * redimensionne plus et le clavier recouvrait la zone de saisie. Rien sur le web.
+ */
+const useKeyboardHeight = () => {
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    // iOS annonce le clavier avant son animation (on suit sa durée) ; Android après coup.
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const animate = (e?: KeyboardEvent) => {
+      try {
+        LayoutAnimation.configureNext({
+          duration: e?.duration || 220,
+          update: { type: LayoutAnimation.Types.keyboard ?? 'easeInEaseOut' },
+        });
+      } catch (err) { }
+    };
+
+    const show = Keyboard.addListener(showEvent, (e) => {
+      animate(e);
+      // Distance entre le haut du clavier et le bas de l'écran : sur Android bord à bord,
+      // la hauteur annoncée peut ne pas compter la barre de navigation système.
+      const fromTop = Dimensions.get('window').height - e.endCoordinates.screenY;
+      setHeight(Math.max(e.endCoordinates.height, fromTop > 0 ? fromTop : 0));
+    });
+    const hide = Keyboard.addListener(hideEvent, (e) => {
+      animate(e);
+      setHeight(0);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  return height;
+};
+
 interface ConversationThreadProps {
   conversationId: number;
   /** Aperçu (liste, ouverture depuis un thème) : l'en-tête s'affiche sans attendre. */
@@ -102,6 +147,9 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
   onExpand,
 }) => {
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
+  // Clavier ouvert : la saisie remonte au-dessus ; sinon, marge de la zone sûre (barre d'accueil).
+  const composerBottom = keyboardHeight > 0 ? keyboardHeight + Spacings.xs : Math.max(insets.bottom, Spacings.sm);
   const queryClient = useQueryClient();
 
   // En-tête : l'aperçu passé par la liste s'affiche tout de suite, la fiche complète suit.
@@ -432,7 +480,7 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
     <View style={styles.container}>
       {headerView}
 
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.flex}>
         {loading ? (
           <View style={styles.loading}>
             <ActivityIndicator color={CHAT_BLUE} />
@@ -464,7 +512,7 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
 
         {/* ---- Saisie ---- */}
         {canWrite ? (
-          <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, Spacings.sm) }]}>
+          <View style={[styles.composer, { paddingBottom: composerBottom }]}>
             <TextInput
               style={styles.input}
               value={draft}
@@ -475,6 +523,8 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
               placeholder="Message"
               placeholderTextColor={Colors.subtext}
               multiline
+              // Web : une ligne au départ (sinon la zone de texte en montre deux), comme la saisie mobile.
+              {...(Platform.OS === 'web' ? { numberOfLines: 1 } : {})}
               maxLength={BODY_MAX}
             />
             <TouchableOpacity
@@ -488,12 +538,12 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={[styles.closed, { paddingBottom: Math.max(insets.bottom, Spacings.sm) }]}>
+          <View style={[styles.closed, { paddingBottom: composerBottom }]}>
             <Ionicons name="lock-closed-outline" size={16} color={Colors.subtext} />
             <Text style={styles.closedText}>Vous pourrez écrire dès qu'un rendez-vous sera accepté.</Text>
           </View>
         )}
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 };
