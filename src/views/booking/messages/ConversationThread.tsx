@@ -48,7 +48,11 @@ const POLL_MS = 4000;
 const GROUP_GAP_MS = 5 * 60 * 1000;
 /** Plus d'une heure sans message : séparateur avec la date et l'heure. */
 const SEPARATOR_GAP_MS = 60 * 60 * 1000;
-const BODY_MAX = 2000;
+/** Mêmes limites que le serveur (anti-spam) : 300 caractères, 8 lignes. */
+const BODY_MAX = 300;
+const LINES_MAX = 8;
+/** Le compteur passe en rouge à l'approche de la limite. */
+const BODY_WARN = 280;
 /** Hauteur max de la saisie (≈ 5 lignes) ; au-delà, elle défile. */
 const INPUT_MAX_HEIGHT = 120;
 /** Web : marges de la bulle autour de la zone de texte. */
@@ -466,7 +470,9 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
       style={Platform.OS === 'web' ? ([styles.inputWeb, WEB_INPUT_STYLE] as any) : styles.input}
       value={draft}
       onChangeText={(text) => {
-        setDraft(text);
+        // 8 lignes au plus : au-delà (Entrée, Maj + Entrée, collage), les lignes en trop sont ignorées.
+        const lines = text.split('\n');
+        setDraft(lines.length > LINES_MAX ? lines.slice(0, LINES_MAX).join('\n') : text);
         if (error) setError(null);
       }}
       placeholder="Message"
@@ -571,6 +577,14 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
         {/* ---- Saisie ---- */}
         {canWrite ? (
           <View style={[styles.composer, { paddingBottom: composerBottom }]}>
+            {/* Compteur pendant la saisie : « 120/300 », et la limite de lignes quand elle est atteinte. */}
+            {draft.length > 0 ? (
+              <Text style={[styles.counter, draft.length >= BODY_WARN && styles.counterWarn]}>
+                {draft.length}/{BODY_MAX}
+                {draft.split('\n').length >= LINES_MAX ? ` · ${LINES_MAX} lignes max` : ''}
+              </Text>
+            ) : null}
+            <View style={styles.composerRow}>
             {/* Web : la zone de texte est posée dans la bulle grise arrondie, en retrait ;
                 sa barre de défilement reste ainsi à l'intérieur, loin des arrondis.
                 Mobile : la saisie seule, inchangée. */}
@@ -584,6 +598,7 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
             >
               <Ionicons name="send" size={22} color={draft.trim() ? CHAT_BLUE : Colors.border} />
             </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <View style={[styles.closed, { paddingBottom: composerBottom }]}>
@@ -794,14 +809,27 @@ const styles = StyleSheet.create({
     color: Colors.danger,
   },
   composer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: Spacings.xs,
     paddingHorizontal: Spacings.sm,
     paddingTop: Spacings.xs,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,
     backgroundColor: Colors.white,
+  },
+  composerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: Spacings.xs,
+  },
+  counter: {
+    alignSelf: 'flex-end',
+    marginRight: 48,
+    marginBottom: 2,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 11,
+    color: Colors.subtext,
+  },
+  counterWarn: {
+    color: Colors.danger,
   },
   // Web : bulle arrondie qui porte le fond ; la zone de texte est dedans, en retrait à droite.
   inputBoxWeb: {
