@@ -1,6 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,6 +59,52 @@ const estimateBarWidth = (tabCount: number, gap: number, label: string | null) =
   const tabs = tabCount * ITEM_HEIGHT + (tabCount - 1) * gap;
   const labelWidth = label ? Spacings.xs + label.length * LABEL_CHAR_WIDTH + Spacings.md - ICON_INSET : 0;
   return exit + tabs + labelWidth + (BAR_PADDING + BAR_BORDER) * 2;
+};
+
+/**
+ * Pastille de couleur de l'onglet actif : elle grossit depuis le centre de l'icône en
+ * apparaissant et se résorbe en partant, au lieu de changer d'un coup — visible même
+ * quand la barre, trop pleine, n'affiche pas de libellé.
+ */
+const PillBackdrop = ({ focused, color }: { focused: boolean; color: string }) => {
+  const progress = useSharedValue(focused ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = focused
+      ? withSpring(1, { damping: 14, stiffness: 220 })
+      : withTiming(0, { duration: 140 });
+  }, [focused]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ scale: 0.4 + progress.value * 0.6 }],
+  }));
+
+  return <Animated.View pointerEvents="none" style={[styles.pill, { backgroundColor: color }, style]} />;
+};
+
+/** Icône qui saute légèrement et rebondit quand son onglet devient actif. */
+const BouncyIcon = ({ focused, children }: { focused: boolean; children: React.ReactNode }) => {
+  const lift = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (!focused) return;
+    lift.value = withSequence(
+      withTiming(-6, { duration: 130 }),
+      withSpring(0, { damping: 7, stiffness: 240 })
+    );
+    scale.value = withSequence(
+      withTiming(1.18, { duration: 130 }),
+      withSpring(1, { damping: 8, stiffness: 220 })
+    );
+  }, [focused]);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: lift.value }, { scale: scale.value }] as any,
+  }));
+
+  return <Animated.View style={style}>{children}</Animated.View>;
 };
 
 /**
@@ -132,8 +187,9 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
               <Animated.View
                 key={route.key}
                 layout={LAYOUT_TRANSITION}
-                style={[styles.item, focused && { backgroundColor: pillColor }]}
+                style={styles.item}
               >
+                <PillBackdrop focused={focused} color={pillColor} />
                 <TouchableOpacity
                   style={[styles.itemTouch, focused && showLabel && styles.itemTouchActive]}
                   onPress={onPress}
@@ -142,7 +198,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
                   accessibilityState={{ selected: focused }}
                   accessibilityLabel={label}
                 >
-                  <View>
+                  <BouncyIcon focused={focused}>
                     {options.tabBarIcon?.({ focused, color, size: ICON_SIZE })}
                     {hasBadge &&
                       (badgeText ? (
@@ -152,7 +208,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
                       ) : (
                         <View style={[styles.badgeDot, { borderColor: badgeRing }]} />
                       ))}
-                  </View>
+                  </BouncyIcon>
 
                   {focused && showLabel && (
                     <Animated.Text
@@ -225,6 +281,11 @@ const styles = StyleSheet.create({
   },
   item: {
     height: ITEM_HEIGHT,
+    borderRadius: ITEM_HEIGHT / 2,
+  },
+  // Fond animé de l'onglet actif, sous l'icône et le libellé.
+  pill: {
+    ...StyleSheet.absoluteFillObject,
     borderRadius: ITEM_HEIGHT / 2,
   },
   // Inactif : cercle de ITEM_HEIGHT, icône au centre.

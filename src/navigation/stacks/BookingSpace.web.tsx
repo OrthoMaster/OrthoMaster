@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMyBookingSetup } from '../../services/v2/BookingService';
 import BookingIntroModal, { BOOKING_INTRO_STORAGE_KEY } from '../../views/booking/components/BookingIntroModal';
 import { BookingTabs } from './BookingTabs';
+import { ChatDock } from '../../views/booking/messages/ChatDock.web';
 
 /**
  * Version WEB : espace rendez-vous ouvert depuis la barre latérale (« Rendez-vous »),
@@ -14,6 +15,8 @@ import { BookingTabs } from './BookingTabs';
  * Même règle que la carte mobile : l'utilisateur (non expert) voit l'introduction
  * à sa première visite, sauf s'il a coché « ne plus afficher ».
  * Ici il est déjà dans l'espace : fermer ou continuer referme simplement l'introduction.
+ *
+ * Porte aussi la messagerie web (ChatDock) : elle flotte au-dessus de tous les onglets.
  */
 export const BookingSpace = ({ navigation }) => {
   const { data: setup } = useQuery({
@@ -40,6 +43,8 @@ export const BookingSpace = ({ navigation }) => {
   return (
     <View style={styles.flex}>
       <BookingTabs navigation={navigation} />
+      {/* Messagerie à la Facebook : panneau à droite et fenêtres en bas à droite, par-dessus la page. */}
+      <ChatDock />
       <BookingIntroModal
         visible={showIntro}
         onClose={() => setShowIntro(false)}

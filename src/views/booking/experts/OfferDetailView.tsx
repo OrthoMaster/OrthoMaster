@@ -41,6 +41,8 @@ import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS, SlotPicker, SlotSelection, placeLabel } from './components/SlotPicker';
 import { MODE_META } from '../components/ModePill';
 import { notify } from '../bookingActions';
+// Mobile : écran de conversation ; web : fenêtre flottante (openConversation.web.ts).
+import { openConversation } from '../messages/openConversation';
 
 const INSET = Spacings.lg;
 const EXPERT_AVATAR = 36;
@@ -269,7 +271,7 @@ export const OfferDetailView = ({ navigation, route }) => {
       notify('Conversation indisponible', result.message ?? 'Vérifiez votre connexion puis réessayez.');
       return;
     }
-    navigation.navigate('conversation', { conversationId: result.data.id, preview: result.data });
+    openConversation(navigation, result.data);
   };
 
   const removeSelected = (key: string) => {

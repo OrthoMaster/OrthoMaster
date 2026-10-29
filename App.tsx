@@ -24,14 +24,22 @@ import { authEvents, updateNotiPermission, sendError } from './src/services/v2/A
 import SessionExpiredScreen from './src/views/auth/components/SessionExpiredScreen';
 
 import useDeviceToken from './src/hooks/useDeviceToken';
+import { getActiveConversation } from './src/views/booking/messages/chatPresence';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    // Nouveau message d'une conversation déjà à l'écran : la conversation l'affiche, pas de bannière.
+    const data: any = notification.request.content.data;
+    const onScreen =
+      data?.action === 'booking-message' && Number(data?.conversation_id) === getActiveConversation();
+
+    return {
+      shouldPlaySound: !onScreen,
+      shouldSetBadge: false,
+      shouldShowBanner: !onScreen,
+      shouldShowList: !onScreen,
+    };
+  },
 });
 
 if (Platform.OS === 'android') {
@@ -412,6 +420,23 @@ function AppContent() {
       }
     }
 
+    // Messagerie rendez-vous : Formations → espace rendez-vous → Messages → la conversation.
+    if (action === 'booking-message') {
+      const conversationId = Number(data?.conversation_id);
+      if (conversationId) {
+        runOrQueue(() => {
+          (navigationRef.current as any)?.navigate('training', {
+            screen: 'booking',
+            params: {
+              screen: 'booking-messages',
+              params: { screen: 'conversation', params: { conversationId }, initial: false },
+            },
+          });
+        });
+        return;
+      }
+    }
+
     const routes: Record<string, (d?: any) => NavTarget> = {
       'media': (d) => {
         const id = d?.id ?? d?.id_content ?? d?.media_id;
@@ -455,7 +480,14 @@ function AppContent() {
       }
     });
 
-    notificationListener.current = Notifications.addNotificationReceivedListener(() => { });
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      // Nouveau message reçu app ouverte : pastille de l'onglet Messages et liste à jour.
+      const data: any = notification.request.content.data;
+      if (data?.action === 'booking-message') {
+        queryClient.invalidateQueries({ queryKey: ['booking', 'chat-unread'] });
+        queryClient.invalidateQueries({ queryKey: ['booking', 'conversations'] });
+      }
+    });
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;

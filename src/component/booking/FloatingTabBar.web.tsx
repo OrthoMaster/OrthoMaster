@@ -6,6 +6,10 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 import { withAlpha } from '../../views/booking/bookingPalette';
+import { chatDock, useChatDock } from '../../views/booking/messages/chatDock';
+
+/** Onglet Messages : sur le web, il ouvre le panneau flottant au lieu d'un écran. */
+const MESSAGES_ROUTE = 'booking-messages';
 
 /**
  * Version WEB de la barre d'onglets de l'espace rendez-vous : même barre flottante que
@@ -57,6 +61,7 @@ type FloatingTabBarProps = BottomTabBarProps & {
 
 export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation }) => {
   const { width: windowWidth } = useWindowDimensions();
+  const { panelOpen } = useChatDock();
 
   // Un écran peut masquer la barre (formulaire) via tabBarStyle: { display: 'none' }.
   const focusedOptions = descriptors[state.routes[state.index].key].options;
@@ -75,7 +80,9 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
       <Animated.View layout={LAYOUT_TRANSITION} style={styles.bar}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
-          const focused = state.index === index;
+          const isMessages = route.name === MESSAGES_ROUTE;
+          // Messages : « actif » tant que son panneau est ouvert, jamais comme écran.
+          const focused = isMessages ? panelOpen : state.index === index && !panelOpen;
           const color = focused ? ACTIVE_COLOR : INACTIVE_COLOR;
           const label = options.title ?? route.name;
           const pillColor = options.tabBarActiveTintColor ?? DEFAULT_PILL_COLOR;
@@ -85,8 +92,13 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
           const badgeRing = focused ? pillColor : Colors.blackBackground;
 
           const onPress = () => {
+            if (isMessages) {
+              chatDock.togglePanel();
+              return;
+            }
+            chatDock.togglePanel(false);
             const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!focused && !event.defaultPrevented) {
+            if (state.index !== index && !event.defaultPrevented) {
               navigation.navigate(route.name, route.params);
             }
           };
