@@ -12,6 +12,7 @@ import {
   PanResponder,
   ActivityIndicator,
   Alert,
+  Platform,
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
@@ -19,7 +20,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { initStripe, initPaymentSheet, presentPaymentSheet } from '@stripe/stripe-react-native';
 
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
@@ -41,6 +41,9 @@ import { markBookingCompleted } from '../bookingFlow';
 import { ShowcaseWebViewModal } from '../components/ShowcaseWebViewModal';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { useBookingSetup } from '../useBookingSetup';
+import { notify } from '../bookingActions';
+// Stripe : PaymentSheet sur mobile (bookingPayment.tsx), Stripe Elements sur le web (bookingPayment.web.tsx).
+import { useBookingPayment } from './bookingPayment';
 import { PERIOD_ICONS, PERIOD_LABELS, SelectedBlock, placeLabel } from './components/SlotPicker';
 import { MODE_META } from '../components/ModePill';
 
@@ -91,6 +94,8 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   const offerRouteKey: string | undefined = route.params?.offerRouteKey;
   // Format choisi sur l'écran du thème ; en ligne par défaut (seul format avant v2).
   const mode: BookingMode = route.params?.mode ?? 'online';
+
+  const payment = useBookingPayment();
 
   // Expert qui réserve auprès d'un confrère : ses rendez-vous sont dans l'Agenda.
   const { data: me } = useBookingSetup();
@@ -225,11 +230,14 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   // Créneau pris entre-temps : retour au calendrier, rafraîchi.
   const backToCalendar = (text?: string | null) => {
     queryClient.invalidateQueries({ queryKey: ['booking', 'availability', expertId] });
-    Alert.alert(
-      'Demi-journée indisponible',
-      text ?? "Une des demi-journées choisies n'est plus disponible. Merci d'en choisir une autre.",
-      [{ text: 'Modifier ma sélection', onPress: close }]
-    );
+    const message = text ?? "Une des demi-journées choisies n'est plus disponible. Merci d'en choisir une autre.";
+    // Web : Alert.alert est sans effet ; alerte du navigateur, puis retour au calendrier.
+    if (Platform.OS === 'web') {
+      notify('Demi-journée indisponible', message);
+      close();
+      return;
+    }
+    Alert.alert('Demi-journée indisponible', message, [{ text: 'Modifier ma sélection', onPress: close }]);
   };
 
   const finish = async (booking: BookingRequest) => {
@@ -271,7 +279,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
           setServerErrors(intent.errors);
           revealAddress();
         } else {
-          Alert.alert('Envoi impossible', intent.message ?? 'Vérifiez votre connexion puis réessayez.');
+          notify('Envoi impossible', intent.message ?? 'Vérifiez votre connexion puis réessayez.');
         }
         return;
       }
@@ -285,23 +293,20 @@ export const BookingCheckoutView = ({ navigation, route }) => {
       const { booking, client_secret, payment_intent_id, publishable_key } = intent.data;
       unpaidBooking.current = booking.id;
 
-      await initStripe({ publishableKey: publishable_key });
-      const sheet = await initPaymentSheet({
-        merchantDisplayName: 'OrthoMaster',
-        paymentIntentClientSecret: client_secret,
-        defaultBillingDetails: { name: checkout.user.name, email: checkout.user.email },
+      const paid = await payment.pay({
+        clientSecret: client_secret,
+        publishableKey: publishable_key,
+        billing: { name: checkout.user.name, email: checkout.user.email },
+        amountLabel: formatPrice(booking.amount_ttc, currency),
       });
-      if (sheet.error) {
-        Alert.alert('Paiement indisponible', sheet.error.message);
+      // Le formulaire de paiement n'a pas pu s'ouvrir : rien n'a été tenté.
+      if (paid.status === 'failed' && paid.stage === 'init') {
+        notify(paid.title, paid.message);
         return;
       }
-
-      const paid = await presentPaymentSheet();
-      if (paid.error) {
+      if (paid.status !== 'paid') {
         // Fermeture volontaire : on reste sur le récapitulatif, sans message.
-        if (paid.error.code !== 'Canceled') {
-          Alert.alert('Paiement refusé', paid.error.message);
-        }
+        if (paid.status === 'failed') notify(paid.title, paid.message);
         cancelBookingPayment(booking.id);
         unpaidBooking.current = null;
         return;
@@ -313,7 +318,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
           unpaidBooking.current = null;
           backToCalendar(confirmed.message);
         } else {
-          Alert.alert(
+          notify(
             'Confirmation en attente',
             confirmed.message ?? "Le paiement n'a pas pu être confirmé. Réessayez dans un instant."
           );
@@ -640,6 +645,9 @@ export const BookingCheckoutView = ({ navigation, route }) => {
           </>
         )}
       </Animated.View>
+
+      {/* Web : fenêtre de saisie de carte ; mobile : rien (feuille native). */}
+      {payment.element}
 
       <ShowcaseWebViewModal
         visible={termsOpen}
