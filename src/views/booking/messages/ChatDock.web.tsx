@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, FadeOut } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,24 +17,15 @@ const MINIMIZED_HEIGHT = 56;
 const EDGE = Spacings.md;
 /** Les fenêtres de discussion sont décalées vers la gauche : le panneau (à droite) ne se confond pas avec elles. */
 const WINDOWS_RIGHT = EDGE + 72;
-/** Barre latérale commune (AppTab.web) et demi-largeur de la barre d'onglets flottante, centrée. */
-const SIDEBAR_WIDTH = 200;
-const TAB_BAR_HALF = 190;
 
 /**
  * Version WEB de la messagerie, à la manière de Facebook, par-dessus la page :
  *  - panneau flottant à droite (bouton Messages de la barre d'onglets) : liste des conversations ;
- *  - fenêtres de discussion ancrées en bas à droite, réductibles, deux au plus.
+ *  - une fenêtre de discussion ancrée en bas à droite, réductible ; ouvrir une autre conversation la remplace.
  * Toucher une conversation ou « Échanger avec l'expert » ouvre sa fenêtre.
  */
 export const ChatDock = () => {
   const { panelOpen, windows } = useChatDock();
-  const { width } = useWindowDimensions();
-
-  // Les fenêtres ne recouvrent pas la barre d'onglets centrée : autant qu'il en tient à sa droite.
-  const freeWidth = (width - SIDEBAR_WIDTH) / 2 - TAB_BAR_HALF - WINDOWS_RIGHT;
-  const fitting = Math.max(1, Math.floor(freeWidth / (WINDOW_WIDTH + Spacings.sm)));
-  const visible = windows.slice(0, fitting);
 
   return (
     <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, styles.dock]}>
@@ -65,14 +56,14 @@ export const ChatDock = () => {
       ) : null}
 
       {/* ---- Fenêtres de discussion : la plus récente à droite ---- */}
-      {visible.map((w, i) => (
+      {windows.map((w) => (
         <Animated.View
           key={w.conversationId}
           entering={FadeInDown.duration(200)}
           exiting={FadeOut.duration(120)}
           style={[
             styles.window,
-            { right: WINDOWS_RIGHT + i * (WINDOW_WIDTH + Spacings.sm), height: w.minimized ? MINIMIZED_HEIGHT : WINDOW_HEIGHT },
+            { right: WINDOWS_RIGHT, height: w.minimized ? MINIMIZED_HEIGHT : WINDOW_HEIGHT },
           ]}
         >
           <ConversationThread

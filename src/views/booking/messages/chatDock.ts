@@ -9,8 +9,11 @@ import { ChatConversation } from '../../../services/v2/BookingService';
  * (« Échanger avec l'expert ») et le dock lui-même. Inutilisé sur mobile.
  */
 
-/** Fenêtres ouvertes en même temps ; au-delà, la plus ancienne se ferme. */
-export const MAX_CHAT_WINDOWS = 2;
+/**
+ * Une seule fenêtre à la fois (écrans étroits en pharmacie) : ouvrir une autre conversation
+ * remplace la fenêtre en cours.
+ */
+export const MAX_CHAT_WINDOWS = 1;
 
 export interface ChatWindow {
   conversationId: number;
@@ -40,7 +43,7 @@ const subscribe = (listener: () => void) => {
 export const chatDock = {
   togglePanel: (open?: boolean) => set({ panelOpen: open ?? !state.panelOpen }),
 
-  /** Ouvre (ou ramène devant et déplie) la fenêtre d'une conversation ; ferme le panneau. */
+  /** Ouvre la fenêtre d'une conversation (remplace celle en cours, ou la déplie) ; ferme le panneau. */
   open: (conversation: ChatConversation) => {
     const others = state.windows.filter((w) => w.conversationId !== conversation.id);
     const current = state.windows.find((w) => w.conversationId === conversation.id);
