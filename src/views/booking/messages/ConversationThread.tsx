@@ -49,6 +49,8 @@ const GROUP_GAP_MS = 5 * 60 * 1000;
 /** Plus d'une heure sans message : séparateur avec la date et l'heure. */
 const SEPARATOR_GAP_MS = 60 * 60 * 1000;
 const BODY_MAX = 2000;
+/** Hauteur max de la saisie (≈ 5 lignes) ; au-delà, elle défile. */
+const INPUT_MAX_HEIGHT = 120;
 const AVATAR = 28;
 const RADIUS = 18;
 const RADIUS_JOINED = 4;
@@ -175,6 +177,19 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
   const [draft, setDraft] = useState('');
 
   const lastIdRef = useRef(0);
+  const inputRef = useRef<TextInput>(null);
+
+  // Web : la zone de texte grandit avec le message (jusqu'à ~5 lignes, puis défile)
+  // et redescend quand on efface — comme la saisie mobile.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const el: any = inputRef.current;
+    if (!el?.style) return;
+    el.style.height = 'auto';
+    const height = Math.min(el.scrollHeight, INPUT_MAX_HEIGHT);
+    el.style.height = `${height}px`;
+    el.style.overflowY = el.scrollHeight > INPUT_MAX_HEIGHT ? 'auto' : 'hidden';
+  }, [draft]);
 
   /** Ajoute sans doublon (une relève peut rapporter un message déjà reçu à l'envoi). */
   const merge = (incoming: ChatMessage[]) => {
@@ -514,7 +529,9 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
         {canWrite ? (
           <View style={[styles.composer, { paddingBottom: composerBottom }]}>
             <TextInput
-              style={styles.input}
+              ref={inputRef}
+              // Web : pas de contour noir du navigateur au focus, la bulle grise suffit.
+              style={[styles.input, Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
               value={draft}
               onChangeText={(text) => {
                 setDraft(text);
@@ -525,6 +542,16 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
               multiline
               // Web : une ligne au départ (sinon la zone de texte en montre deux), comme la saisie mobile.
               {...(Platform.OS === 'web' ? { numberOfLines: 1 } : {})}
+              // Web : Entrée envoie, Maj + Entrée passe à la ligne (comme Messenger).
+              // Pas pendant une composition (saisie avec accents / IME) : Entrée la valide seulement.
+              onKeyPress={(e: any) => {
+                if (Platform.OS !== 'web') return;
+                const key = e.nativeEvent;
+                if (key?.key === 'Enter' && !key.shiftKey && !key.isComposing && key.keyCode !== 229) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
               maxLength={BODY_MAX}
             />
             <TouchableOpacity
@@ -756,7 +783,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     minHeight: 40,
-    maxHeight: 120,
+    maxHeight: INPUT_MAX_HEIGHT,
     paddingHorizontal: 14,
     paddingTop: 9,
     paddingBottom: 9,
