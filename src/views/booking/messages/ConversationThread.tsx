@@ -51,6 +51,18 @@ const SEPARATOR_GAP_MS = 60 * 60 * 1000;
 const BODY_MAX = 2000;
 /** Hauteur max de la saisie (≈ 5 lignes) ; au-delà, elle défile. */
 const INPUT_MAX_HEIGHT = 120;
+/** Web : marges de la bulle autour de la zone de texte. */
+const INPUT_PAD_V = 9;
+/** Web : hauteur max de la zone de texte elle-même, dans la bulle. */
+const INPUT_INNER_MAX = INPUT_MAX_HEIGHT - INPUT_PAD_V * 2;
+
+/** Web : sans contour du navigateur, barre de défilement fine et discrète. */
+const WEB_INPUT_STYLE = {
+  outlineStyle: 'none',
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#C4C6CC transparent',
+  resize: 'none',
+};
 const AVATAR = 28;
 const RADIUS = 18;
 const RADIUS_JOINED = 4;
@@ -186,9 +198,9 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
     const el: any = inputRef.current;
     if (!el?.style) return;
     el.style.height = 'auto';
-    const height = Math.min(el.scrollHeight, INPUT_MAX_HEIGHT);
+    const height = Math.min(el.scrollHeight, INPUT_INNER_MAX);
     el.style.height = `${height}px`;
-    el.style.overflowY = el.scrollHeight > INPUT_MAX_HEIGHT ? 'auto' : 'hidden';
+    el.style.overflowY = el.scrollHeight > INPUT_INNER_MAX ? 'auto' : 'hidden';
   }, [draft]);
 
   /** Ajoute sans doublon (une relève peut rapporter un message déjà reçu à l'envoi). */
@@ -448,6 +460,34 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
     );
   };
 
+  const inputField = (
+    <TextInput
+      ref={inputRef}
+      style={Platform.OS === 'web' ? ([styles.inputWeb, WEB_INPUT_STYLE] as any) : styles.input}
+      value={draft}
+      onChangeText={(text) => {
+        setDraft(text);
+        if (error) setError(null);
+      }}
+      placeholder="Message"
+      placeholderTextColor={Colors.subtext}
+      multiline
+      // Web : une ligne au départ (sinon la zone de texte en montre deux), comme la saisie mobile.
+      {...(Platform.OS === 'web' ? { numberOfLines: 1 } : {})}
+      // Web : Entrée envoie, Maj + Entrée passe à la ligne (comme Messenger).
+      // Pas pendant une composition (saisie avec accents / IME) : Entrée la valide seulement.
+      onKeyPress={(e: any) => {
+        if (Platform.OS !== 'web') return;
+        const key = e.nativeEvent;
+        if (key?.key === 'Enter' && !key.shiftKey && !key.isComposing && key.keyCode !== 229) {
+          e.preventDefault();
+          send();
+        }
+      }}
+      maxLength={BODY_MAX}
+    />
+  );
+
   const headerView = (
       <Pressable style={styles.header} onPress={minimized ? onExpand : undefined} disabled={!minimized}>
         {onBack ? (
@@ -467,7 +507,10 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
           <Text style={styles.headerName} numberOfLines={1}>
             {name}
           </Text>
-          {header ? <Text style={styles.headerRole}>{isGuest ? 'Expert' : 'Demandeur'}</Text> : null}
+          {/* Web : le nom seul, sur une ligne (fenêtre étroite). */}
+          {header && Platform.OS !== 'web' ? (
+            <Text style={styles.headerRole}>{isGuest ? 'Expert' : 'Demandeur'}</Text>
+          ) : null}
         </View>
         {onMinimize ? (
           <TouchableOpacity
@@ -528,32 +571,10 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
         {/* ---- Saisie ---- */}
         {canWrite ? (
           <View style={[styles.composer, { paddingBottom: composerBottom }]}>
-            <TextInput
-              ref={inputRef}
-              // Web : pas de contour noir du navigateur au focus, la bulle grise suffit.
-              style={[styles.input, Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
-              value={draft}
-              onChangeText={(text) => {
-                setDraft(text);
-                if (error) setError(null);
-              }}
-              placeholder="Message"
-              placeholderTextColor={Colors.subtext}
-              multiline
-              // Web : une ligne au départ (sinon la zone de texte en montre deux), comme la saisie mobile.
-              {...(Platform.OS === 'web' ? { numberOfLines: 1 } : {})}
-              // Web : Entrée envoie, Maj + Entrée passe à la ligne (comme Messenger).
-              // Pas pendant une composition (saisie avec accents / IME) : Entrée la valide seulement.
-              onKeyPress={(e: any) => {
-                if (Platform.OS !== 'web') return;
-                const key = e.nativeEvent;
-                if (key?.key === 'Enter' && !key.shiftKey && !key.isComposing && key.keyCode !== 229) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              maxLength={BODY_MAX}
-            />
+            {/* Web : la zone de texte est posée dans la bulle grise arrondie, en retrait ;
+                sa barre de défilement reste ainsi à l'intérieur, loin des arrondis.
+                Mobile : la saisie seule, inchangée. */}
+            {Platform.OS === 'web' ? <View style={styles.inputBoxWeb}>{inputField}</View> : inputField}
             <TouchableOpacity
               style={styles.send}
               onPress={send}
@@ -599,8 +620,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.border,
   },
+  // minWidth 0 : sur le web, le nom peut rétrécir et finir par « … » au lieu de pousser les boutons.
   headerText: {
     flex: 1,
+    minWidth: 0,
   },
   headerName: {
     fontFamily: 'Poppins-Bold',
@@ -779,6 +802,27 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,
     backgroundColor: Colors.white,
+  },
+  // Web : bulle arrondie qui porte le fond ; la zone de texte est dedans, en retrait à droite.
+  inputBoxWeb: {
+    flex: 1,
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingVertical: INPUT_PAD_V,
+    paddingLeft: 14,
+    paddingRight: 6,
+    borderRadius: 20,
+    backgroundColor: CHAT_BUBBLE_OTHER,
+  },
+  inputWeb: {
+    width: '100%',
+    padding: 0,
+    paddingRight: 8,
+    backgroundColor: 'transparent',
+    fontFamily: 'Roboto',
+    fontSize: 16,
+    lineHeight: 22,
+    color: Colors.text,
   },
   input: {
     flex: 1,
