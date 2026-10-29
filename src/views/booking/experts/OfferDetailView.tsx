@@ -38,6 +38,7 @@ import { ThemeBackdrop } from '../components/ThemeBackdrop';
 import { SegmentedTabs } from '../components/SegmentedTabs';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS, SlotPicker, SlotSelection, placeLabel } from './components/SlotPicker';
+import { MODE_META } from '../components/ModePill';
 
 const INSET = Spacings.lg;
 const EXPERT_AVATAR = 36;
@@ -49,12 +50,8 @@ const THUMB_PEEK = 56;
 
 type DetailTab = 'details' | 'calendar';
 
-/** En ligne d'abord, puis en présentiel, quel que soit l'ordre reçu. */
+/** En visio d'abord, puis en présentiel, quel que soit l'ordre reçu. */
 const MODE_ORDER: BookingMode[] = ['online', 'onsite'];
-const MODE_ICONS: Record<BookingMode, 'video-outline' | 'map-marker-outline'> = {
-  online: 'video-outline',
-  onsite: 'map-marker-outline',
-};
 
 /** Adresse sur deux lignes : rue, puis code postal et ville. */
 const addressLines = (l: { address_line?: string | null; postal_code?: string | null; city?: string | null }) => [
@@ -342,8 +339,8 @@ export const OfferDetailView = ({ navigation, route }) => {
                 <>
                   <View style={[styles.factDot, { backgroundColor: theme.line }]} />
                   <View style={styles.factLine}>
-                    <MaterialCommunityIcons name={MODE_ICONS[offerMode.mode]} size={16} color={theme.primary} />
-                    <Text style={[styles.factValue, { color: theme.ink }]}>{offerMode.label}</Text>
+                    <MaterialCommunityIcons name={MODE_META[offerMode.mode].icon} size={16} color={theme.primary} />
+                    <Text style={[styles.factValue, { color: theme.ink }]}>{MODE_META[offerMode.mode].label}</Text>
                   </View>
                 </>
               ) : null}
@@ -358,7 +355,7 @@ export const OfferDetailView = ({ navigation, route }) => {
             {modes.length > 1 && offerMode ? (
               <View style={styles.modeSwitch}>
                 <SegmentedTabs
-                  tabs={modes.map((m) => ({ key: m.mode, label: m.label }))}
+                  tabs={modes.map((m) => ({ key: m.mode, label: MODE_META[m.mode].label }))}
                   value={offerMode.mode}
                   onChange={changeMode}
                   color={theme.primary}

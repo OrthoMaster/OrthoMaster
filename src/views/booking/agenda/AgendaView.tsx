@@ -35,6 +35,7 @@ import { useBookingSetup } from '../useBookingSetup';
 import { JoinVisioButton } from '../components/JoinVisioButton';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
 import { relativeDay, todayLocal } from '../appointments/appointmentFormat';
+import { MODE_META } from '../components/ModePill';
 
 const LIST_PADDING = Spacings.lg;
 /** Semaines proposées dans le bandeau : de la semaine en cours à environ 6 mois. */
@@ -54,14 +55,9 @@ const whenLabel = (session: AgendaSession) => `${relativeDay(session.date)} · $
 const expertName = (expert: BookingExpertBase | null) =>
   expert ? [expert.honorific, expert.name].filter(Boolean).join(' ') : 'Expert';
 
-const MODE_META: Record<BookingMode, { icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string }> = {
-  online: { icon: 'video-outline', color: Colors.lblueDark },
-  onsite: { icon: 'map-marker-outline', color: Colors.purpleDark },
-};
-
-/** « En ligne », ou le lieu en présentiel : « Cabinet A · Lyon ». */
+/** « En visio », ou le lieu en présentiel : « Cabinet A · Lyon ». */
 const placeLabel = (session: AgendaSession) => {
-  if (session.mode !== 'onsite') return 'En ligne';
+  if (session.mode !== 'onsite') return MODE_META.online.label;
   const l = session.location;
   if (!l) return 'En présentiel';
   return [l.label, l.city].filter(Boolean).join(' · ') || 'En présentiel';

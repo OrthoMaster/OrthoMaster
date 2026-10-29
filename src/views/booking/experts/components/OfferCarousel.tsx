@@ -21,7 +21,7 @@ const NOTCH = 20;
 const DASH = 6;
 const DASH_GAP = 5;
 
-/** Format(s) en tête du ticket : « En ligne », « En présentiel », ou les deux. */
+/** Format(s) en tête du ticket : « En visio », « En présentiel », ou les deux. */
 const offerKind = (offer: BookingOffer) => modesLabel(offer.modes.map((m) => m.mode)) || 'Échange';
 
 /** Prix du ticket : « dès » quand les formats n'ont pas le même prix. */

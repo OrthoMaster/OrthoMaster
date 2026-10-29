@@ -16,6 +16,7 @@ import {
 import { SegmentedTabs } from '../../components/SegmentedTabs';
 import { WEEKDAYS, WEEKDAYS_SHORT, weekdayIso } from '../../bookingDates';
 import { LocationPickerSheet } from './LocationPickerSheet';
+import { MODE_META as SHARED_MODE_META } from '../../components/ModePill';
 import { OfferDatesPicker } from './OfferDatesPicker';
 
 /** Saisie d'un mode dans le formulaire d'offre. */
@@ -40,13 +41,10 @@ const PERIODS: { key: BookingPeriod; label: string; short: string; icon: 'weathe
   { key: 'afternoon', label: 'après-midi', short: 'Après-midi', icon: 'weather-sunny' },
 ];
 
-/** Couleur forte, fond doux et filet de chaque mode : bleu en ligne, violet en présentiel. */
-const MODE_META: Record<
-  BookingMode,
-  { title: string; icon: 'video-outline' | 'map-marker-outline'; color: string; soft: string; line: string }
-> = {
-  online: { title: 'En ligne', icon: 'video-outline', color: Colors.lblueDark, soft: Colors.lblue3, line: Colors.lblue2 },
-  onsite: { title: 'En présentiel', icon: 'map-marker-outline', color: Colors.purpleDark, soft: Colors.purple3, line: Colors.purple2 },
+/** Couleur forte, fond doux et filet de chaque mode : bleu en visio, violet en présentiel (définition commune). */
+const MODE_META: Record<BookingMode, (typeof SHARED_MODE_META)[BookingMode] & { title: string }> = {
+  online: { ...SHARED_MODE_META.online, title: SHARED_MODE_META.online.label },
+  onsite: { ...SHARED_MODE_META.onsite, title: SHARED_MODE_META.onsite.label },
 };
 
 const SCHEDULE_HINTS: Record<BookingScheduleType, string> = {

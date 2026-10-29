@@ -35,7 +35,7 @@ import {
   reportExpertNoShow,
 } from '../../../services/v2/BookingService';
 import { formatLongDate } from '../bookingDates';
-import { MODE_SHORT_LABELS, formatPrice, initials } from '../bookingFormat';
+import { formatPrice, initials } from '../bookingFormat';
 import { accentOf, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
 import { JoinVisioButton } from '../components/JoinVisioButton';
@@ -45,6 +45,7 @@ import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
 import { formatDeadline } from '../appointments/appointmentFormat';
 import { REQUESTS_ACCENT, REQUEST_STATUS_META, timeLeft } from './requestFormat';
+import { ModePill } from '../components/ModePill';
 
 const SHEET_RATIO = 0.88;
 const SHEET_RADIUS = 28;
@@ -318,12 +319,7 @@ export const RequestDetailView = ({ navigation, route }) => {
 
             <Text style={styles.offerTitle}>{request.offer_title}</Text>
             <View style={styles.modeRow}>
-              <Ionicons
-                name={request.mode === 'onsite' ? 'location-outline' : 'videocam-outline'}
-                size={15}
-                color={Colors.lblueDark}
-              />
-              <Text style={styles.modeText}>{MODE_SHORT_LABELS[request.mode ?? 'online']}</Text>
+              <ModePill mode={request.mode ?? 'online'} />
             </View>
 
             <Text style={styles.blocksTitle}>
@@ -674,11 +670,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.xxs,
     marginTop: Spacings.xxs,
-  },
-  modeText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 13,
-    color: Colors.lblueDark,
   },
   blocksTitle: {
     fontFamily: 'Poppins-Medium',

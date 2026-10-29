@@ -43,14 +43,14 @@ export const initials = (name: string): string =>
 /* ---- Formats d'une offre (en ligne / en présentiel) ---- */
 
 export const MODE_SHORT_LABELS: Record<'online' | 'onsite', string> = {
-  online: 'En ligne',
+  online: 'En visio',
   onsite: 'En présentiel',
 };
 
-/** En ligne d'abord, puis en présentiel. */
+/** En visio d'abord, puis en présentiel. */
 const MODE_RANK = { online: 0, onsite: 1 } as const;
 
-/** « En ligne », « En présentiel », ou « En ligne · En présentiel ». */
+/** « En visio », « En présentiel », ou « En visio · En présentiel ». */
 export const modesLabel = (modes: ('online' | 'onsite')[]): string =>
   Array.from(new Set(modes))
     .sort((a, b) => MODE_RANK[a] - MODE_RANK[b])

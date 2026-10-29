@@ -23,7 +23,7 @@ import Spacings from '../../../../constants/Spacings';
 
 import { MyBooking, MyBookingDetail, cancelMyBooking, getMyBooking, reportMyNoShow } from '../../../services/v2/BookingService';
 import { formatLongDate } from '../bookingDates';
-import { MODE_SHORT_LABELS, formatPrice, initials } from '../bookingFormat';
+import { formatPrice, initials } from '../bookingFormat';
 import { accentOf, withAlpha } from '../bookingPalette';
 import { JoinVisioButton } from '../components/JoinVisioButton';
 import { BlockPlace } from '../components/BlockPlace';
@@ -31,6 +31,7 @@ import { NoShowSection } from '../components/NoShowSection';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
 import { APPOINTMENTS_ACCENT, STATUS_META, formatDeadline } from './appointmentFormat';
+import { ModePill } from '../components/ModePill';
 
 const SHEET_RATIO = 0.88;
 const SHEET_RADIUS = 28;
@@ -263,12 +264,7 @@ export const AppointmentDetailView = ({ navigation, route }) => {
 
             <Text style={styles.offerTitle}>{booking.offer_title}</Text>
             <View style={styles.modeRow}>
-              <Ionicons
-                name={booking.mode === 'onsite' ? 'location-outline' : 'videocam-outline'}
-                size={15}
-                color={Colors.lblueDark}
-              />
-              <Text style={styles.modeText}>{MODE_SHORT_LABELS[booking.mode ?? 'online']}</Text>
+              <ModePill mode={booking.mode ?? 'online'} />
             </View>
 
             <Text style={styles.blocksTitle}>
@@ -555,11 +551,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.xxs,
     marginTop: Spacings.xxs,
-  },
-  modeText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 13,
-    color: Colors.lblueDark,
   },
   blocksTitle: {
     fontFamily: 'Poppins-Medium',

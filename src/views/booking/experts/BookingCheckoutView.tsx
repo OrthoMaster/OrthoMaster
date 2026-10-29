@@ -36,12 +36,13 @@ import {
   getBookingCheckout,
 } from '../../../services/v2/BookingService';
 import { formatLongDate } from '../bookingDates';
-import { MODE_SHORT_LABELS, formatPrice, initials } from '../bookingFormat';
+import { formatPrice, initials } from '../bookingFormat';
 import { markBookingCompleted } from '../bookingFlow';
 import { ShowcaseWebViewModal } from '../components/ShowcaseWebViewModal';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { useBookingSetup } from '../useBookingSetup';
 import { PERIOD_ICONS, PERIOD_LABELS, SelectedBlock, placeLabel } from './components/SlotPicker';
+import { MODE_META } from '../components/ModePill';
 
 const SHEET_RATIO = 0.92;
 const SHEET_RADIUS = 28;
@@ -477,9 +478,9 @@ export const BookingCheckoutView = ({ navigation, route }) => {
 
                 <Text style={styles.offerTitle}>{offer.title}</Text>
                 <View style={styles.offerMeta}>
-                  <Ionicons name={mode === 'onsite' ? 'location-outline' : 'videocam-outline'} size={15} color={ACCENT_DARK} />
+                  <MaterialCommunityIcons name={MODE_META[mode].icon} size={15} color={ACCENT_DARK} />
                   <Text style={styles.offerMetaText}>
-                    {MODE_SHORT_LABELS[mode]} · {offer.duration_label}
+                    {MODE_META[mode].label} · {offer.duration_label}
                   </Text>
                 </View>
 

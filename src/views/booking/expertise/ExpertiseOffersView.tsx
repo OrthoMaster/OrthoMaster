@@ -20,6 +20,7 @@ import { useFloatingTabBarInset } from '../../../component/booking/FloatingTabBa
 import { ExpertBookingSetup, ExpertOwnOffer, getMyBookingSetup } from '../../../services/v2/BookingService';
 import { BookingHeaderButton, BookingScreenHeader } from '../components/BookingScreenHeader';
 import { formatPrice } from '../bookingFormat';
+import { ModePill } from '../components/ModePill';
 
 const QUERY_KEY = ['booking', 'me'];
 
@@ -137,18 +138,7 @@ export const ExpertiseOffersView = ({ navigation }) => {
                   ) : (
                     offer.modes.map((mode) => (
                       <View key={mode.mode} style={styles.modeRow}>
-                        <View style={[styles.modePill, mode.mode === 'onsite' ? styles.modeOnsite : styles.modeOnline]}>
-                          <MaterialCommunityIcons
-                            name={mode.mode === 'onsite' ? 'map-marker-outline' : 'video-outline'}
-                            size={15}
-                            color={mode.mode === 'onsite' ? Colors.purpleDark : Colors.lblueDark}
-                          />
-                          <Text
-                            style={[styles.modeText, { color: mode.mode === 'onsite' ? Colors.purpleDark : Colors.lblueDark }]}
-                          >
-                            {mode.label}
-                          </Text>
-                        </View>
+                        <ModePill mode={mode.mode} />
                         <Text style={styles.price}>{formatPrice(mode.price, offer.currency)}</Text>
                       </View>
                     ))
@@ -253,24 +243,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.xs,
-  },
-  modePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: Spacings.sm,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  modeOnline: {
-    backgroundColor: Colors.lblue3,
-  },
-  modeOnsite: {
-    backgroundColor: Colors.purple3,
-  },
-  modeText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 13,
   },
   noMode: {
     fontFamily: 'Poppins-Regular',

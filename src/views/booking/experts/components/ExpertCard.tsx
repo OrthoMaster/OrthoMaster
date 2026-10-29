@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, Pressable, Animated, LayoutAnimation, StyleSheet, LayoutChangeEvent } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
 
 import { BookingExpertListItem } from '../../../../services/v2/BookingService';
 import { initials, priceLabel } from '../../bookingFormat';
+import { ModePill, sortModes } from '../../components/ModePill';
 
 const CARD_RADIUS = 20;
 const CARD_PADDING = Spacings.sm;
@@ -26,8 +27,6 @@ interface ExpertCardProps {
   indexInPage: number;
   onPress: () => void;
 }
-
-const MODE_ICONS = { online: 'video-outline', onsite: 'map-marker-outline' } as const;
 
 /**
  * Carte blanche aux couleurs de l'espace rendez-vous (la palette de l'expert est réservée
@@ -163,8 +162,8 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
                     </Text>
                     <View style={styles.offerMeta}>
                       <Text style={styles.offerMetaText}>{offer.duration_label}</Text>
-                      {offer.modes.map((mode) => (
-                        <MaterialCommunityIcons key={mode} name={MODE_ICONS[mode]} size={14} color={Colors.lblueDark} />
+                      {sortModes(offer.modes).map((mode) => (
+                        <ModePill key={mode} mode={mode} size="compact" />
                       ))}
                     </View>
                   </View>
@@ -248,8 +247,9 @@ const styles = StyleSheet.create({
   offerMeta: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: Spacings.xxs,
-    marginTop: 1,
+    marginTop: 3,
   },
   offerMetaText: {
     fontFamily: 'Poppins-Regular',
