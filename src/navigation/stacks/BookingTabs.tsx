@@ -12,13 +12,15 @@ import Spacings from '../../../constants/Spacings';
 import { BouncingDots } from '../../component/LoadingDots';
 import { FloatingTabBar } from '../../component/booking/FloatingTabBar';
 import { ExpertAvatarIcon } from '../../component/booking/ExpertAvatarIcon';
-import { getExpertRequests, getMyBookingSetup } from '../../services/v2/BookingService';
+import { getChatUnread, getExpertRequests, getMyBookingSetup } from '../../services/v2/BookingService';
 import { BookingExitGuardContext, confirmLeaveBooking } from '../../views/booking/BookingExitGuard';
 import { ExpertiseStack } from './ExpertiseStack';
 import { ExpertsStack } from './ExpertsStack';
 import { AppointmentsStack } from './AppointmentsStack';
 import { RequestsStack } from './RequestsStack';
 import { AgendaStack } from './AgendaStack';
+import { MessagesStack } from './MessagesStack';
+import { CHAT_BLUE, CHAT_UNREAD_KEY } from '../../views/booking/messages/chatFormat';
 import { EXPERT_REQUESTS_KEY } from '../../views/booking/requests/RequestsView';
 
 const BookingTab = createBottomTabNavigator();
@@ -51,6 +53,15 @@ export const BookingTabs = ({ navigation }) => {
     refetchInterval: 2 * 60 * 1000,
   });
   const pendingRequests = requests?.pending.length ?? 0;
+
+  // Messages non lus, pour la pastille de l'onglet Messages (tout le monde).
+  const { data: chatUnread } = useQuery({
+    queryKey: CHAT_UNREAD_KEY,
+    queryFn: () => getChatUnread(),
+    enabled: !!setup,
+    refetchInterval: 30 * 1000,
+  });
+  const unreadMessages = chatUnread?.total ?? 0;
 
   // Par id : depuis les onglets imbriqués, getParent() sans id renverrait notre propre navigateur.
   useFocusEffect(
@@ -142,6 +153,20 @@ export const BookingTabs = ({ navigation }) => {
     />
   );
 
+  // Messagerie : pour le client et l'expert, avant Expertise (toujours en dernier).
+  const messagesTab = (
+    <BookingTab.Screen
+      name="booking-messages"
+      component={MessagesStack}
+      options={{
+        title: 'Messages',
+        tabBarIcon: tabIcon('chatbubbles-outline'),
+        tabBarActiveTintColor: CHAT_BLUE,
+        tabBarBadge: unreadMessages > 0 ? unreadMessages : undefined,
+      }}
+    />
+  );
+
   return (
     <BookingExitGuardContext.Provider value={guard}>
       <BookingTab.Navigator
@@ -159,7 +184,7 @@ export const BookingTabs = ({ navigation }) => {
         {isExpert ? (
           <>
             {/*
-              Ce qu'on lui demande, chercher un confrère, son agenda, puis sa configuration (toujours en dernier).
+              Ce qu'on lui demande, chercher un confrère, son agenda, ses messages, puis sa configuration (toujours en dernier).
               L'agenda réunit les rendez-vous qu'il anime et ceux qu'il a réservés :
               pas d'onglet Rendez-vous séparé, chaque carte dit qui demande et qui est l'expert.
             */}
@@ -180,6 +205,7 @@ export const BookingTabs = ({ navigation }) => {
               component={AgendaStack}
               options={{ title: 'Agenda', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
             />
+            {messagesTab}
             <BookingTab.Screen
               name="booking-expertise"
               component={ExpertiseStack}
@@ -206,6 +232,7 @@ export const BookingTabs = ({ navigation }) => {
               component={AppointmentsStack}
               options={{ title: 'Rendez-vous', tabBarIcon: tabIcon('calendar-outline'), tabBarActiveTintColor: Colors.purple }}
             />
+            {messagesTab}
           </>
         )}
       </BookingTab.Navigator>

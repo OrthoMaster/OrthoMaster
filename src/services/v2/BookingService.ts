@@ -1303,3 +1303,147 @@ export const createDomain = async (label: string): Promise<BookingResult<{ domai
     .then((response) => toResult<{ domain: BookingDomain }>(response))
     .catch(toFailure);
 };
+/* ---- Messagerie expert ↔ demandeur ---- */
+
+/** host = je suis l'expert de ce fil ; guest = je suis le demandeur. */
+export type ChatRole = 'host' | 'guest';
+
+export interface ChatPreview {
+  kind: 'text' | 'event';
+  mine: boolean;
+  body: string;
+  created_at: string | null;
+}
+
+export interface ChatConversation {
+  id: number;
+  role: ChatRole;
+  /** guest : l'expert (fiche publique). host : null. */
+  expert: BookingExpertBase | null;
+  /** host : le demandeur (nom seulement). guest : null. */
+  requester: { name: string } | null;
+  /** Faux tant que le fil n'est pas ouvert (ni contact depuis un thème, ni rendez-vous accepté). */
+  can_write: boolean;
+  last_message: ChatPreview | null;
+  unread: number;
+}
+
+export interface ChatConversationDetail extends ChatConversation {
+  bookings: {
+    id: number;
+    offer_title: string;
+    mode: BookingMode;
+    status: MyBookingStatus;
+    first_start: string | null;
+    last_end: string | null;
+  }[];
+}
+
+export interface ChatMessage {
+  id: number;
+  kind: 'text' | 'event';
+  sender: 'user' | 'expert' | 'admin' | 'system';
+  /** Toujours faux pour un événement (jamais une bulle). */
+  mine: boolean;
+  /** Texte du message, ou phrase de l'événement déjà rédigée pour le lecteur. */
+  body: string;
+  event: {
+    /** inquiry = contact depuis un thème ; sinon événement d'un rendez-vous. */
+    type: 'inquiry' | 'submitted' | 'accepted' | 'declined' | 'expired' | 'cancelled' | string;
+    booking_id: number | null;
+    offer: { id: number | null; title: string | null; duration_label: string | null; mode: BookingMode | null } | null;
+  } | null;
+  client_id: string | null;
+  created_at: string | null;
+}
+
+export interface ChatMessagesPage {
+  messages: ChatMessage[];
+  has_more: boolean;
+  can_write: boolean;
+  /** Dernier message lu par l'autre partie : « Vu » sous mes messages jusqu'à cet id. */
+  other_last_read_id: number;
+}
+
+/** Code renvoyé (422) quand le message contient des coordonnées (téléphone, e-mail, lien). */
+export const CONTACT_BLOCKED = 'contact_blocked';
+
+/**
+ * Fils de l'utilisateur, des deux côtés, le plus récent d'abord.
+ * GET /booking/conversations?page=
+ */
+export const getConversations = async (
+  page = 1
+): Promise<{ items: ChatConversation[]; current_page: number; last_page: number } | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/conversations`, { params: { page } })
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/**
+ * Badge : total des non-lus.
+ * GET /booking/conversations/unread
+ */
+export const getChatUnread = async (): Promise<{ total: number; conversations: number } | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/conversations/unread`)
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/**
+ * GET /booking/conversations/{id}
+ */
+export const getConversation = async (conversationId: number): Promise<ChatConversationDetail | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/conversations/${conversationId}`)
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/**
+ * « Échanger avec l'expert » depuis un thème : ouvre le fil (et l'encadré du thème).
+ * POST /booking/conversations/start
+ */
+export const startConversation = async (
+  offerId: number,
+  mode?: BookingMode | null
+): Promise<BookingResult<ChatConversationDetail>> => {
+  return axiosInstance
+    .post(`${baseUrl}/booking/conversations/start`, { offer_id: offerId, mode: mode ?? null })
+    .then((response) => toResult<ChatConversationDetail>(response))
+    .catch(toFailure);
+};
+
+/**
+ * Messages : les derniers, la suite (after_id, relève) ou plus anciens (before_id).
+ * GET /booking/conversations/{id}/messages
+ */
+export const getChatMessages = async (
+  conversationId: number,
+  params?: { after_id?: number; before_id?: number }
+): Promise<ChatMessagesPage | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/conversations/${conversationId}/messages`, { params })
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/**
+ * POST /booking/conversations/{id}/messages  { body, client_id }
+ * Échec avec code « contact_blocked » : coordonnées refusées.
+ */
+export const sendChatMessage = async (
+  conversationId: number,
+  body: string,
+  clientId: string
+): Promise<BookingResult<ChatMessage> & { code?: string }> => {
+  return axiosInstance
+    .post(`${baseUrl}/booking/conversations/${conversationId}/messages`, { body, client_id: clientId })
+    .then((response) => toResult<ChatMessage>(response))
+    .catch((e: AxiosError<any>) => ({
+      ...toFailure(e),
+      ...(e.response?.data?.code ? { code: e.response.data.code } : {}),
+    }));
+};

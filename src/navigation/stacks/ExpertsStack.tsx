@@ -5,6 +5,7 @@ import { ExpertsListView } from '../../views/booking/experts/ExpertsListView';
 import { ExpertProfileView } from '../../views/booking/experts/ExpertProfileView';
 import { OfferDetailView } from '../../views/booking/experts/OfferDetailView';
 import { BookingCheckoutView } from '../../views/booking/experts/BookingCheckoutView';
+import { ConversationView } from '../../views/booking/messages/ConversationView';
 
 const ExpertsStackNav = createStackNavigator();
 
@@ -51,6 +52,8 @@ export const ExpertsStack = () => {
           gestureEnabled: false,
         }}
       />
+      {/* « Échanger avec l'expert » depuis un thème : on revient au thème en fermant la conversation. */}
+      <ExpertsStackNav.Screen name="conversation" component={ConversationView} />
     </ExpertsStackNav.Navigator>
   );
 };

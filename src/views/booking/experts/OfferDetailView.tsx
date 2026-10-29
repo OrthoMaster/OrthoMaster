@@ -27,6 +27,7 @@ import {
   BookingOffer,
   BookingOfferImage,
   getBookingExpert,
+  startConversation,
 } from '../../../services/v2/BookingService';
 import { takeBookingCompleted } from '../bookingFlow';
 import { formatLongDate } from '../bookingDates';
@@ -39,6 +40,7 @@ import { SegmentedTabs } from '../components/SegmentedTabs';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS, SlotPicker, SlotSelection, placeLabel } from './components/SlotPicker';
 import { MODE_META } from '../components/ModePill';
+import { notify } from '../bookingActions';
 
 const INSET = Spacings.lg;
 const EXPERT_AVATAR = 36;
@@ -208,6 +210,7 @@ export const OfferDetailView = ({ navigation, route }) => {
   const onsiteLocations: BookingLocation[] = modes.find((m) => m.mode === 'onsite')?.locations ?? [];
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [contacting, setContacting] = useState(false);
 
   const images = offer?.images ?? [];
   const required = offer?.blocks_count ?? 1;
@@ -254,6 +257,19 @@ export const OfferDetailView = ({ navigation, route }) => {
         },
       },
     ]);
+  };
+
+  // « Échanger avec l'expert » : ouvre (ou reprend) la conversation, avec l'encadré du thème.
+  const contactExpert = async () => {
+    if (contacting) return;
+    setContacting(true);
+    const result = await startConversation(offer.id, offerMode?.mode ?? null);
+    setContacting(false);
+    if (result.ok === false) {
+      notify('Conversation indisponible', result.message ?? 'Vérifiez votre connexion puis réessayez.');
+      return;
+    }
+    navigation.navigate('conversation', { conversationId: result.data.id, preview: result.data });
   };
 
   const removeSelected = (key: string) => {
@@ -577,13 +593,15 @@ export const OfferDetailView = ({ navigation, route }) => {
         ]}
       >
         {tab === 'details' ? (
+          // Avant de réserver, on peut poser ses questions ; la réservation reste dans l'onglet Réserver.
           <TouchableOpacity
-            style={[styles.cta, { backgroundColor: theme.primary }]}
-            onPress={() => setTab('calendar')}
+            style={[styles.cta, { backgroundColor: theme.primary }, contacting && styles.ctaBusy]}
+            onPress={contactExpert}
+            disabled={contacting}
             activeOpacity={0.85}
           >
-            <Ionicons name="calendar-outline" size={20} color={theme.onPrimary} />
-            <Text style={[styles.ctaText, { color: theme.onPrimary }]}>Prendre rendez-vous</Text>
+            <Ionicons name="chatbubbles-outline" size={20} color={theme.onPrimary} />
+            <Text style={[styles.ctaText, { color: theme.onPrimary }]}>Échanger avec l'expert</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.progressRow}>
@@ -882,6 +900,9 @@ const styles = StyleSheet.create({
   ctaText: {
     fontFamily: 'Poppins-Medium',
     fontSize: 16,
+  },
+  ctaBusy: {
+    opacity: 0.6,
   },
   ctaCompact: {
     paddingHorizontal: Spacings.lg,
