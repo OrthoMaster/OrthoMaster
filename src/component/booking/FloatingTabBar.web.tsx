@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -18,8 +17,9 @@ type FloatingTabBarProps = BottomTabBarProps & {
 /**
  * Sur le web, une barre flottante en bas d'un écran large paraît déplacée à côté de la
  * barre latérale : onglets en pill segmented en haut du contenu, comme dans le CMS.
+ * L'espace s'ouvre depuis l'entrée « Rendez-vous » de la barre latérale : pas de bouton de sortie.
  */
-export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation, onExit }) => {
+export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation }) => {
   const focusedOptions = descriptors[state.routes[state.index].key].options;
   if ((focusedOptions.tabBarStyle as { display?: string } | undefined)?.display === 'none') {
     return null;
@@ -27,14 +27,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
 
   return (
     <View style={styles.wrapper}>
-      <Pressable
-        onPress={onExit}
-        style={({ hovered }: any) => [styles.exit, hovered && styles.exitHovered]}
-        accessibilityRole="button"
-      >
-        <Ionicons name="arrow-back" size={16} color={Colors.lgreenDark} />
-        <Text style={styles.exitText}>Formations</Text>
-      </Pressable>
+      {/* Pas de bouton « Formations » : sur le web, on entre et on sort par la barre latérale. */}
 
       <View style={styles.segmented}>
         {state.routes.map((route, index) => {
@@ -90,23 +83,6 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
 
-  /* ---- Sortie ---- */
-  exit: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.xxs,
-    paddingHorizontal: Spacings.sm,
-    paddingVertical: Spacings.xs,
-    borderRadius: 9,
-  },
-  exitHovered: {
-    backgroundColor: Colors.lgreen3,
-  },
-  exitText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 13,
-    color: Colors.lgreenDark,
-  },
 
   /* ---- Pill segmented ---- */
   segmented: {

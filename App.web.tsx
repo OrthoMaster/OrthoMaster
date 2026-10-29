@@ -217,6 +217,8 @@ export default function App({ navigation }) {
           }
         },
         training: 'training',
+        // Espace rendez-vous experts (barre latérale web).
+        'rendez-vous': 'rendez-vous',
         media: {
           screens: {
             'flash-media-home': 'open/media-preview/:id?',
