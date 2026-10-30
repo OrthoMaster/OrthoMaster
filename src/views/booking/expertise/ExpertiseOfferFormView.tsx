@@ -8,10 +8,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Alert,
   StyleSheet,
   StatusBar,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +33,7 @@ import {
   updateMyOffer,
 } from '../../../services/v2/BookingService';
 import { BookingScreenHeader } from '../components/BookingScreenHeader';
+import { confirmAction } from '../bookingActions';
 import { blocksLabel, durationLabel, parseAmount } from '../bookingFormat';
 import { todayIn } from '../bookingDates';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
@@ -45,6 +46,15 @@ const GRID_DATES_KEY = ['booking', 'me', 'grid-dates'];
 const TITLE_MAX = 150;
 const DESCRIPTION_MAX = 5000;
 const MODES: BookingMode[] = ['online', 'onsite'];
+
+const IS_WEB = Platform.OS === 'web';
+/** Web : barre latérale commune (AppTab.web) ; la zone de contenu est le reste. */
+const WEB_SIDEBAR_WIDTH = 200;
+/** Web : deux colonnes dès que la zone de contenu le permet. */
+const WEB_TWO_COLUMNS_FROM = 900;
+const WEB_MAX_WIDTH = 1180;
+const WEB_LEFT_COLUMN = 420;
+const WEB_SINGLE_MAX_WIDTH = 640;
 
 interface OfferForm {
   title: string;
@@ -59,9 +69,15 @@ interface OfferForm {
  * Chaque mode (en ligne, en présentiel) a son prix TTC et son calendrier ; le présentiel
  * attribue au passage une adresse aux demi-journées qui n'en ont pas encore.
  * Le serveur renvoie l'état complet : on l'écrit dans le cache puis on revient à la liste.
+ *
+ * Web : en-tête large, deux colonnes sur grand écran (informations et images à gauche,
+ * formats et calendriers à droite), une seule colonne centrée sur écran étroit.
  */
 export const ExpertiseOfferFormView = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
+
+  const { width: windowWidth } = useWindowDimensions();
+  const twoColumns = IS_WEB && windowWidth - WEB_SIDEBAR_WIDTH >= WEB_TWO_COLUMNS_FROM;
 
   const queryClient = useQueryClient();
   const offerId: number | undefined = route.params?.offerId;
@@ -128,10 +144,13 @@ export const ExpertiseOfferFormView = ({ navigation, route }) => {
       if (!dirty || leaving.current) return;
 
       e.preventDefault();
-      Alert.alert('Abandonner les modifications ?', 'Vos changements ne seront pas enregistrés.', [
-        { text: 'Continuer la saisie', style: 'cancel' },
-        { text: 'Abandonner', style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
-      ]);
+      confirmAction(
+        'Abandonner les modifications ?',
+        'Vos changements ne seront pas enregistrés.',
+        'Abandonner',
+        () => navigation.dispatch(e.data.action),
+        { destructive: true, cancelText: 'Continuer la saisie' }
+      );
     });
   }, [navigation, dirty]);
 
@@ -235,27 +254,22 @@ export const ExpertiseOfferFormView = ({ navigation, route }) => {
   const confirmDelete = () => {
     if (!offer) return;
 
-    Alert.alert(
+    confirmAction(
       "Supprimer l'offre ?",
       'Les rendez-vous déjà pris avec cette offre ne sont pas affectés.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: async () => {
-            setSaving(true);
-            const result = await deleteMyOffer(offer.id);
-            setSaving(false);
+      'Supprimer',
+      async () => {
+        setSaving(true);
+        const result = await deleteMyOffer(offer.id);
+        setSaving(false);
 
-            if (result.ok) {
-              closeAfterSave(result.data);
-            } else {
-              setMessage(result.message ?? 'Suppression impossible. Réessayez dans un instant.');
-            }
-          },
-        },
-      ]
+        if (result.ok) {
+          closeAfterSave(result.data);
+        } else {
+          setMessage(result.message ?? 'Suppression impossible. Réessayez dans un instant.');
+        }
+      },
+      { destructive: true }
     );
   };
 
@@ -266,169 +280,213 @@ export const ExpertiseOfferFormView = ({ navigation, route }) => {
   const blocksError = fieldError(errors, 'blocks_count');
   const modesError = errors.modes?.[0] ?? null;
 
+  const alertBox = message ? (
+    <View style={styles.alert}>
+      <Ionicons name="alert-circle-outline" size={20} color={Colors.danger} />
+      <Text style={styles.alertText}>{message}</Text>
+    </View>
+  ) : null;
+
+  const titleField = (
+    <View style={styles.field}>
+      <Text style={styles.label}>Titre</Text>
+      <TextInput
+        style={[styles.input, titleError && styles.inputError]}
+        value={form.title}
+        onChangeText={(value) => update('title', value)}
+        placeholder="Ex. Chirurgie du ligament croisé"
+        placeholderTextColor={Colors.subtext}
+        maxLength={TITLE_MAX}
+        returnKeyType="next"
+      />
+      {titleError && <Text style={styles.error}>{titleError}</Text>}
+    </View>
+  );
+
+  const descriptionField = (
+    <View style={styles.field}>
+      <Text style={styles.label}>
+        Description <Text style={styles.optional}>(facultatif)</Text>
+      </Text>
+      <TextInput
+        style={[styles.input, styles.textarea, IS_WEB && styles.textareaWeb, descriptionError && styles.inputError]}
+        value={form.description}
+        onChangeText={(value) => update('description', value)}
+        placeholder="Ce que vous aborderez pendant l'échange, à qui il s'adresse…"
+        placeholderTextColor={Colors.subtext}
+        maxLength={DESCRIPTION_MAX}
+        multiline
+        textAlignVertical="top"
+      />
+      {descriptionError && <Text style={styles.error}>{descriptionError}</Text>}
+    </View>
+  );
+
+  const durationField = (
+    <View style={styles.field}>
+      <Text style={styles.label}>Durée</Text>
+      <View style={[styles.stepper, blocksError && styles.inputError]}>
+        <TouchableOpacity
+          style={[styles.stepperButton, form.blocks <= 1 && styles.stepperButtonDisabled]}
+          onPress={() => update('blocks', Math.max(1, form.blocks - 1))}
+          disabled={form.blocks <= 1}
+          accessibilityLabel="Réduire la durée"
+        >
+          <Ionicons name="remove" size={22} color={Colors.white} />
+        </TouchableOpacity>
+
+        <View style={styles.stepperValue}>
+          <Text style={styles.stepperMain}>{durationLabel(form.blocks)}</Text>
+          <Text style={styles.stepperSub}>{blocksLabel(form.blocks)}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.stepperButton, form.blocks >= maxBlocks && styles.stepperButtonDisabled]}
+          onPress={() => update('blocks', Math.min(maxBlocks, form.blocks + 1))}
+          disabled={form.blocks >= maxBlocks}
+          accessibilityLabel="Augmenter la durée"
+        >
+          <Ionicons name="add" size={22} color={Colors.white} />
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.hint}>
+        Vos confrères choisiront {blocksLabel(form.blocks)}, consécutives ou non.
+      </Text>
+      {blocksError && <Text style={styles.error}>{blocksError}</Text>}
+    </View>
+  );
+
+  const visibilityRow = (
+    <View style={styles.switchRow}>
+      <View style={styles.flex}>
+        <Text style={styles.switchTitle}>Proposée à vos confrères</Text>
+        <Text style={styles.hint}>
+          {form.active ? 'Visible et réservable.' : 'Masquée : conservée mais non réservable.'}
+        </Text>
+      </View>
+      <Switch
+        value={form.active}
+        onValueChange={(value) => update('active', value)}
+        trackColor={{ false: Colors.disabledBackground, true: Colors.lblue }}
+        thumbColor={Colors.white}
+        ios_backgroundColor={form.active ? Colors.lblue : Colors.disabledBackground}
+      />
+    </View>
+  );
+
+  // Formats : en ligne, en présentiel.
+  const formatsField = (
+    <View style={styles.field}>
+      <Text style={styles.sectionTitle}>Formats proposés</Text>
+      {MODES.map((mode) => (
+        <OfferModeCard
+          key={mode}
+          mode={mode}
+          value={form.modes[mode]}
+          onChange={(next) => updateMode(mode, next)}
+          setup={setup}
+          gridDates={gridDates ?? null}
+          gridDatesLoading={gridDatesLoading}
+          errors={errors}
+          today={today}
+          onSetupChange={(next) => queryClient.setQueryData(QUERY_KEY, next)}
+        />
+      ))}
+      {modesError && <Text style={styles.error}>{modesError}</Text>}
+    </View>
+  );
+
+  const deleteButton = offer ? (
+    <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete} disabled={saving}>
+      <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+      <Text style={styles.deleteText}>Supprimer l'offre</Text>
+    </TouchableOpacity>
+  ) : null;
+
+  /* ---- Web : informations et images à gauche, formats et calendriers à droite ---- */
+  const webBody = (
+    <View style={[styles.webLayout, twoColumns ? styles.webLayoutTwo : styles.webLayoutOne]}>
+      {alertBox && <View style={twoColumns && styles.webFullRow}>{alertBox}</View>}
+
+      <View style={[styles.webSide, twoColumns && styles.webLeftColumn]}>
+        <View style={styles.webCard}>
+          <Text style={styles.sectionTitle}>Informations</Text>
+          {titleField}
+          {descriptionField}
+          {durationField}
+          {visibilityRow}
+        </View>
+
+        <View style={styles.webCard}>
+          {offer ? (
+            <OfferImagesManager
+              offerId={offer.id}
+              images={offer.images ?? []}
+              maxImages={setup.limits.max_offer_images ?? 6}
+              captionMax={setup.limits.image_caption_max ?? 150}
+              onApply={(next) => queryClient.setQueryData(QUERY_KEY, next)}
+            />
+          ) : (
+            <>
+              <Text style={styles.sectionTitle}>Images</Text>
+              <Text style={styles.hint}>Les images se gèrent une fois l'offre créée.</Text>
+            </>
+          )}
+        </View>
+
+        {deleteButton}
+      </View>
+
+      <View style={[styles.webCard, twoColumns && styles.flex]}>{formatsField}</View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.lblue} />
-      <BookingScreenHeader title={offer ? "Modifier l'offre" : 'Nouvelle offre'} onBack={() => navigation.goBack()} />
+      <BookingScreenHeader title={offer ? "Modifier l'offre" : 'Nouvelle offre'} onBack={() => navigation.goBack()} webLarge />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* Conteneur « nestable » : la liste des images se réordonne au glisser à l'intérieur du formulaire. */}
         <NestableScrollContainer
           style={styles.body}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={IS_WEB ? styles.webContent : styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {message && (
-            <View style={styles.alert}>
-              <Ionicons name="alert-circle-outline" size={20} color={Colors.danger} />
-              <Text style={styles.alertText}>{message}</Text>
-            </View>
-          )}
+          {IS_WEB ? (
+            webBody
+          ) : (
+            <>
+              {alertBox}
+              {titleField}
+              {descriptionField}
+              {durationField}
+              {visibilityRow}
+              {formatsField}
 
-          {/* ---- Titre ---- */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Titre</Text>
-            <TextInput
-              style={[styles.input, titleError && styles.inputError]}
-              value={form.title}
-              onChangeText={(value) => update('title', value)}
-              placeholder="Ex. Chirurgie du ligament croisé"
-              placeholderTextColor={Colors.subtext}
-              maxLength={TITLE_MAX}
-              returnKeyType="next"
-            />
-            {titleError && <Text style={styles.error}>{titleError}</Text>}
-          </View>
-
-          {/* ---- Description ---- */}
-          <View style={styles.field}>
-            <Text style={styles.label}>
-              Description <Text style={styles.optional}>(facultatif)</Text>
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textarea, descriptionError && styles.inputError]}
-              value={form.description}
-              onChangeText={(value) => update('description', value)}
-              placeholder="Ce que vous aborderez pendant l'échange, à qui il s'adresse…"
-              placeholderTextColor={Colors.subtext}
-              maxLength={DESCRIPTION_MAX}
-              multiline
-              textAlignVertical="top"
-            />
-            {descriptionError && <Text style={styles.error}>{descriptionError}</Text>}
-          </View>
-
-          {/* ---- Durée ---- */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Durée</Text>
-            <View style={[styles.stepper, blocksError && styles.inputError]}>
-              <TouchableOpacity
-                style={[styles.stepperButton, form.blocks <= 1 && styles.stepperButtonDisabled]}
-                onPress={() => update('blocks', Math.max(1, form.blocks - 1))}
-                disabled={form.blocks <= 1}
-                accessibilityLabel="Réduire la durée"
-              >
-                <Ionicons name="remove" size={22} color={Colors.white} />
-              </TouchableOpacity>
-
-              <View style={styles.stepperValue}>
-                <Text style={styles.stepperMain}>{durationLabel(form.blocks)}</Text>
-                <Text style={styles.stepperSub}>{blocksLabel(form.blocks)}</Text>
+              {/* ---- Images, mobile : consultation seulement, modification sur la version web ---- */}
+              <View style={styles.field}>
+                <Text style={styles.label}>Images</Text>
+                {offer?.images?.length ? (
+                  <View style={styles.thumbs}>
+                    {offer.images.map((image) => (
+                      <Image key={image.id} source={{ uri: image.url }} style={styles.thumb} />
+                    ))}
+                  </View>
+                ) : null}
+                <WebOnlyImagesNotice />
               </View>
 
-              <TouchableOpacity
-                style={[styles.stepperButton, form.blocks >= maxBlocks && styles.stepperButtonDisabled]}
-                onPress={() => update('blocks', Math.min(maxBlocks, form.blocks + 1))}
-                disabled={form.blocks >= maxBlocks}
-                accessibilityLabel="Augmenter la durée"
-              >
-                <Ionicons name="add" size={22} color={Colors.white} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.hint}>
-              Vos confrères choisiront {blocksLabel(form.blocks)}, consécutives ou non.
-            </Text>
-            {blocksError && <Text style={styles.error}>{blocksError}</Text>}
-          </View>
-
-          {/* ---- Visibilité ---- */}
-          <View style={styles.switchRow}>
-            <View style={styles.flex}>
-              <Text style={styles.switchTitle}>Proposée à vos confrères</Text>
-              <Text style={styles.hint}>
-                {form.active ? 'Visible et réservable.' : 'Masquée : conservée mais non réservable.'}
-              </Text>
-            </View>
-            <Switch
-              value={form.active}
-              onValueChange={(value) => update('active', value)}
-              trackColor={{ false: Colors.disabledBackground, true: Colors.lblue }}
-              thumbColor={Colors.white}
-              ios_backgroundColor={form.active ? Colors.lblue : Colors.disabledBackground}
-            />
-          </View>
-
-          {/* ---- Modes : en ligne, en présentiel ---- */}
-          <View style={styles.field}>
-            <Text style={styles.sectionTitle}>Formats proposés</Text>
-            {MODES.map((mode) => (
-              <OfferModeCard
-                key={mode}
-                mode={mode}
-                value={form.modes[mode]}
-                onChange={(next) => updateMode(mode, next)}
-                setup={setup}
-                gridDates={gridDates ?? null}
-                gridDatesLoading={gridDatesLoading}
-                errors={errors}
-                today={today}
-                onSetupChange={(next) => queryClient.setQueryData(QUERY_KEY, next)}
-              />
-            ))}
-            {modesError && <Text style={styles.error}>{modesError}</Text>}
-          </View>
-
-          {/* ---- Images, mobile : consultation seulement, modification sur la version web ---- */}
-          {Platform.OS !== 'web' && (
-            <View style={styles.field}>
-              <Text style={styles.label}>Images</Text>
-              {offer?.images?.length ? (
-                <View style={styles.thumbs}>
-                  {offer.images.map((image) => (
-                    <Image key={image.id} source={{ uri: image.url }} style={styles.thumb} />
-                  ))}
-                </View>
-              ) : null}
-              <WebOnlyImagesNotice />
-            </View>
-          )}
-
-          {/* ---- Images, web : thème déjà créé uniquement (elles lui sont rattachées) ---- */}
-          {Platform.OS === 'web' && offer && (
-            <View style={styles.field}>
-              <OfferImagesManager
-                offerId={offer.id}
-                images={offer.images ?? []}
-                maxImages={setup.limits.max_offer_images ?? 6}
-                captionMax={setup.limits.image_caption_max ?? 150}
-                onApply={(next) => queryClient.setQueryData(QUERY_KEY, next)}
-              />
-            </View>
-          )}
-
-          {offer && (
-            <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete} disabled={saving}>
-              <Ionicons name="trash-outline" size={18} color={Colors.danger} />
-              <Text style={styles.deleteText}>Supprimer l'offre</Text>
-            </TouchableOpacity>
+              {deleteButton}
+            </>
           )}
         </NestableScrollContainer>
 
         {/* ---- Barre d'action ---- */}
-        <SafeAreaView edges={['bottom']} style={styles.footer}>
+        <SafeAreaView edges={['bottom']} style={[styles.footer, IS_WEB && styles.webFooter]}>
           <TouchableOpacity
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            style={[styles.saveButton, IS_WEB && styles.webSaveButton, saving && styles.saveButtonDisabled]}
             onPress={save}
             disabled={saving}
             activeOpacity={0.8}
@@ -462,6 +520,50 @@ const styles = StyleSheet.create({
     padding: Spacings.md,
     paddingBottom: Spacings.xl,
     gap: Spacings.lg,
+  },
+
+  /* ---- Web : colonnes et cartes ---- */
+  webContent: {
+    padding: Spacings.lg,
+    paddingBottom: Spacings.xl,
+  },
+  webLayout: {
+    width: '100%',
+    alignSelf: 'center',
+    gap: Spacings.lg,
+  },
+  webLayoutTwo: {
+    maxWidth: WEB_MAX_WIDTH,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+  },
+  webLayoutOne: {
+    maxWidth: WEB_SINGLE_MAX_WIDTH,
+  },
+  webFullRow: {
+    width: '100%',
+  },
+  webSide: {
+    gap: Spacings.lg,
+  },
+  webLeftColumn: {
+    width: WEB_LEFT_COLUMN,
+  },
+  webCard: {
+    gap: Spacings.lg,
+    padding: Spacings.lg,
+    borderRadius: 16,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.line,
+  },
+  webFooter: {
+    alignItems: 'center',
+  },
+  webSaveButton: {
+    width: '100%',
+    maxWidth: 320,
   },
 
   /* ---- Champs ---- */
@@ -499,6 +601,10 @@ const styles = StyleSheet.create({
   },
   textarea: {
     minHeight: 120,
+  },
+  // Web : plus de place pour une description longue.
+  textareaWeb: {
+    minHeight: 220,
   },
   inputError: {
     borderColor: Colors.danger,

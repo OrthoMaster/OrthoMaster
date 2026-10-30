@@ -10,6 +10,27 @@ export const notify = (title: string, message?: string | null) => {
 };
 
 /**
+ * Confirmation avant une action. Alert.alert est sans effet sur le web : confirm du navigateur.
+ * `destructive` : bouton rouge et « Annuler » libellé selon le contexte (cancelText).
+ */
+export const confirmAction = (
+  title: string,
+  message: string,
+  confirmText: string,
+  onConfirm: () => void,
+  options: { destructive?: boolean; cancelText?: string } = {}
+) => {
+  if (Platform.OS === 'web') {
+    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
+    return;
+  }
+  Alert.alert(title, message, [
+    { text: options.cancelText ?? 'Annuler', style: 'cancel' },
+    { text: confirmText, style: options.destructive ? 'destructive' : 'default', onPress: onConfirm },
+  ]);
+};
+
+/**
  * Partage d'un lien.
  * Web : feuille de partage du navigateur si elle existe (mobile), sinon copie dans le presse-papiers (bureau).
  * iOS lit `url`, Android ne lit que `message` : chacun reçoit le champ qu'il affiche.

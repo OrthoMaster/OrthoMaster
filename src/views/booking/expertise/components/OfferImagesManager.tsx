@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NestableDraggableFlatList, RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 
@@ -13,6 +13,7 @@ import {
   reorderMyOfferImages,
   updateMyOfferImage,
 } from '../../../../services/v2/BookingService';
+import { confirmAction, notify } from '../../bookingActions';
 
 const THUMB_WIDTH = 72;
 const THUMB_HEIGHT = 54;
@@ -50,7 +51,7 @@ export const OfferImagesManager: React.FC<OfferImagesManagerProps> = ({
   }, [images]);
 
   const fail = (message: string | null) =>
-    Alert.alert('Enregistrement impossible', message ?? 'Vérifiez votre connexion puis réessayez.');
+    notify('Enregistrement impossible', message ?? 'Vérifiez votre connexion puis réessayez.');
 
   const reorder = async (next: BookingOfferImage[]) => {
     const previous = items;
@@ -80,23 +81,23 @@ export const OfferImagesManager: React.FC<OfferImagesManagerProps> = ({
   };
 
   const remove = (image: BookingOfferImage) => {
-    Alert.alert('Supprimer cette image ?', 'Elle ne sera plus visible sur la fiche du thème.', [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Supprimer',
-        style: 'destructive',
-        onPress: async () => {
-          setBusyId(image.id);
-          const result = await deleteMyOfferImage(offerId, image.id);
-          setBusyId(null);
-          if (result.ok === false) {
-            fail(result.message);
-            return;
-          }
-          onApply(result.data);
-        },
+    // confirm du navigateur sur le web (Alert.alert y est sans effet).
+    confirmAction(
+      'Supprimer cette image ?',
+      'Elle ne sera plus visible sur la fiche du thème.',
+      'Supprimer',
+      async () => {
+        setBusyId(image.id);
+        const result = await deleteMyOfferImage(offerId, image.id);
+        setBusyId(null);
+        if (result.ok === false) {
+          fail(result.message);
+          return;
+        }
+        onApply(result.data);
       },
-    ]);
+      { destructive: true }
+    );
   };
 
   const renderItem = ({ item, drag, isActive, getIndex }: RenderItemParams<BookingOfferImage>) => {

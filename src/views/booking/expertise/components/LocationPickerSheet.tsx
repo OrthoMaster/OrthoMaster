@@ -83,11 +83,12 @@ export const LocationPickerSheet: React.FC<LocationPickerSheetProps> = ({
   }, [visible]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <Modal visible={visible} transparent animationType={IS_WEB ? 'fade' : 'slide'} onRequestClose={onClose}>
+      <KeyboardAvoidingView style={[styles.root, IS_WEB && styles.rootWeb]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.sheet, step === 'new' && styles.sheetTall]}>
-          <View style={styles.handle} />
+        {/* Web : fenêtre centrée plutôt que feuille montant du bas. */}
+        <View style={[styles.sheet, step === 'new' && styles.sheetTall, IS_WEB && styles.sheetWeb]}>
+          {!IS_WEB && <View style={styles.handle} />}
           <Text style={styles.title}>{step === 'new' ? 'Nouvelle adresse' : title}</Text>
           {step === 'list' && subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
 
@@ -174,11 +175,26 @@ export const LocationPickerSheet: React.FC<LocationPickerSheetProps> = ({
   );
 };
 
+/** Web : fenêtre centrée. */
+const IS_WEB = Platform.OS === 'web';
+
 const styles = StyleSheet.create({
   /* ---- Fenêtre ---- */
   root: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  rootWeb: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacings.lg,
+  },
+  sheetWeb: {
+    width: '100%',
+    maxWidth: 520,
+    paddingTop: Spacings.lg,
+    paddingBottom: Spacings.lg,
+    borderRadius: 24,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,

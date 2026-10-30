@@ -34,7 +34,7 @@ import {
   updateMyProfile,
   uploadMyAvatar,
 } from '../../../services/v2/BookingService';
-import { notify } from '../bookingActions';
+import { confirmAction, notify } from '../bookingActions';
 import { pickImageFile } from './components/pickImageFile';
 import { BookingScreenHeader } from '../components/BookingScreenHeader';
 import { initials } from '../bookingFormat';
@@ -53,17 +53,6 @@ const WEB_MAX_WIDTH = 1040;
 const WEB_LEFT_COLUMN = 340;
 const WEB_SINGLE_MAX_WIDTH = 560;
 
-/** Alert.alert est sans effet sur le web : confirmation du navigateur à la place. */
-const confirmAction = (title: string, message: string, confirmText: string, onConfirm: () => void, destructive = false) => {
-  if (IS_WEB) {
-    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
-    return;
-  }
-  Alert.alert(title, message, [
-    { text: destructive ? 'Continuer la saisie' : 'Annuler', style: 'cancel' },
-    { text: confirmText, style: destructive ? 'destructive' : 'default', onPress: onConfirm },
-  ]);
-};
 const DOMAINS_KEY = ['booking', 'domains'];
 
 interface ProfileForm {
@@ -159,7 +148,7 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
         'Vos changements ne seront pas enregistrés.',
         'Abandonner',
         () => navigation.dispatch(e.data.action),
-        true
+        { destructive: true, cancelText: 'Continuer la saisie' }
       );
     });
   }, [navigation, dirty]);
