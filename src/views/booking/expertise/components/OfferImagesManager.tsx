@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NestableDraggableFlatList, RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 
@@ -12,8 +12,10 @@ import {
   deleteMyOfferImage,
   reorderMyOfferImages,
   updateMyOfferImage,
+  uploadMyOfferImages,
 } from '../../../../services/v2/BookingService';
 import { confirmAction, notify } from '../../bookingActions';
+import { pickImageFiles } from './pickImageFile';
 
 const THUMB_WIDTH = 72;
 const THUMB_HEIGHT = 54;
@@ -23,6 +25,8 @@ interface OfferImagesManagerProps {
   images: BookingOfferImage[];
   maxImages: number;
   captionMax: number;
+  /** Poids max d'une image (Ko), contrôlé avant l'envoi. */
+  maxKb?: number;
   /** Écrit l'état complet renvoyé par le serveur dans le cache partagé. */
   onApply: (setup: ExpertBookingSetup) => void;
 }
@@ -38,6 +42,7 @@ export const OfferImagesManager: React.FC<OfferImagesManagerProps> = ({
   offerId,
   images,
   maxImages,
+  maxKb = 5120,
   captionMax,
   onApply,
 }) => {
@@ -45,6 +50,9 @@ export const OfferImagesManager: React.FC<OfferImagesManagerProps> = ({
   const [items, setItems] = useState(images);
   const [captions, setCaptions] = useState<Record<number, string>>({});
   const [busyId, setBusyId] = useState<number | null>(null);
+  // Web : images en cours d'envoi (aperçus locaux).
+  const [uploading, setUploading] = useState<string[]>([]);
+  const canAdd = Platform.OS === 'web' && items.length + uploading.length < maxImages;
 
   useEffect(() => {
     setItems(images);
@@ -78,6 +86,36 @@ export const OfferImagesManager: React.FC<OfferImagesManagerProps> = ({
     }
     setCaptions(({ [image.id]: _, ...rest }) => rest);
     onApply(result.data);
+  };
+
+  /** Web : choix de fichiers dans le navigateur, envoi groupé, aperçus pendant l'envoi. */
+  const addImages = async () => {
+    const remaining = maxImages - items.length;
+    const picked = await pickImageFiles({ max: remaining, minEdge: 0, maxKb, resizeMaxEdge: 1600, keepPng: true });
+    if (!picked) return;
+
+    const problems = [...picked.errors];
+    if (picked.skipped > 0) {
+      problems.push(`${picked.skipped} image(s) non ajoutée(s) : ${maxImages} images au plus par thème.`);
+    }
+
+    if (picked.images.length > 0) {
+      const previews = picked.images.map((image) => image.previewUrl);
+      setUploading(previews);
+      const result = await uploadMyOfferImages(offerId, picked.images);
+      setUploading([]);
+      previews.forEach((url) => URL.revokeObjectURL(url));
+
+      if (result.ok) {
+        onApply(result.data);
+      } else {
+        const failure = result as Extract<typeof result, { ok: false }>;
+        const first = Object.values(failure.errors ?? {})[0]?.[0];
+        problems.unshift(first ?? failure.message ?? 'Envoi impossible. Réessayez dans un instant.');
+      }
+    }
+
+    if (problems.length > 0) notify('Images', problems.join('\n'));
   };
 
   const remove = (image: BookingOfferImage) => {
@@ -153,7 +191,7 @@ export const OfferImagesManager: React.FC<OfferImagesManagerProps> = ({
         </Text>
       </View>
 
-      {items.length > 0 ? (
+      {items.length > 0 || uploading.length > 0 ? (
         <NestableDraggableFlatList
           data={items}
           keyExtractor={(item) => String(item.id)}
@@ -168,9 +206,36 @@ export const OfferImagesManager: React.FC<OfferImagesManagerProps> = ({
         </View>
       )}
 
+      {/* Web : aperçus des images en cours d'envoi. */}
+      {uploading.map((url) => (
+        <View key={url} style={[styles.row, styles.rowUploading]}>
+          <View style={styles.handle} />
+          <View style={styles.thumb}>
+            <Image source={{ uri: url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          </View>
+          <Text style={[styles.caption, styles.uploadingText]}>Envoi…</Text>
+          <ActivityIndicator size="small" color={Colors.lblue} style={styles.remove} />
+        </View>
+      ))}
+
+      {canAdd && (
+        <TouchableOpacity
+          style={[styles.addButton, uploading.length > 0 && styles.addButtonDisabled]}
+          onPress={addImages}
+          disabled={uploading.length > 0}
+          accessibilityRole="button"
+          accessibilityLabel="Ajouter des images"
+        >
+          <Ionicons name="add" size={20} color={Colors.lblueDark} />
+          <Text style={styles.addButtonText}>Ajouter des images</Text>
+        </TouchableOpacity>
+      )}
+
       <Text style={styles.hint}>
         {items.length > 1 ? 'Maintenez la poignée puis glissez pour changer l’ordre. ' : ''}
-        Pour ajouter des images, envoyez-les à l'équipe OrthoMaster : elles apparaîtront ici.
+        {Platform.OS === 'web'
+          ? `JPG, PNG ou WebP, ${Math.round(maxKb / 1024)} Mo au plus par image, ${maxImages} images au plus.`
+          : "Pour ajouter des images, envoyez-les à l'équipe OrthoMaster : elles apparaîtront ici."}
       </Text>
     </View>
   );
@@ -248,6 +313,32 @@ const styles = StyleSheet.create({
   remove: {
     width: 32,
     alignItems: 'center',
+  },
+  rowUploading: {
+    opacity: 0.7,
+  },
+  uploadingText: {
+    color: Colors.subtext,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacings.xs,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Colors.lblue,
+    backgroundColor: Colors.lblue3,
+  },
+  addButtonDisabled: {
+    opacity: 0.5,
+  },
+  addButtonText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.lblueDark,
   },
   empty: {
     flexDirection: 'row',

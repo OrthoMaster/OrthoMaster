@@ -197,8 +197,9 @@ export interface ExpertBookingLimits {
   location?: { label_max: number; access_max: number };
   /** Recherche d'adresse Google disponible (clé configurée sur le serveur). */
   places?: { enabled: boolean; min_input: number };
-  /** Illustrations par thème ; l'ajout se fait depuis le CMS. */
+  /** Illustrations par thème ; ajout depuis le CMS ou la version web. */
   max_offer_images?: number;
+  offer_image_max_kb?: number;
   image_caption_max?: number;
   profile?: {
     honorific_max: number;
@@ -1317,6 +1318,27 @@ export const uploadMyAvatar = async (file: Blob, fileName?: string): Promise<Boo
       // Le type JSON par défaut transformerait le FormData en JSON : multipart, le navigateur ajoute la frontière.
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
+    })
+    .then((response) => toResult<ExpertBookingSetup>(response))
+    .catch(toFailure);
+};
+
+/**
+ * Ajout d'illustrations à un thème (version web : fichiers choisis dans le navigateur).
+ * POST /booking/me/offers/{offerId}/images (multipart, champ `images[]`) → configuration à jour.
+ * Le serveur les réduit à 1600 px ; 6 images au plus par thème.
+ */
+export const uploadMyOfferImages = async (
+  offerId: number,
+  files: { blob: Blob; fileName: string }[]
+): Promise<BookingResult<ExpertBookingSetup>> => {
+  const body = new FormData();
+  files.forEach((file) => body.append('images[]', file.blob as any, file.fileName));
+
+  return axiosInstance
+    .post(`${baseUrl}/booking/me/offers/${offerId}/images`, body, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
     })
     .then((response) => toResult<ExpertBookingSetup>(response))
     .catch(toFailure);

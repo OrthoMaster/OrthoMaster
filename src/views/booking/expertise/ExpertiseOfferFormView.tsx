@@ -55,6 +55,8 @@ const WEB_TWO_COLUMNS_FROM = 900;
 const WEB_MAX_WIDTH = 1180;
 const WEB_LEFT_COLUMN = 420;
 const WEB_SINGLE_MAX_WIDTH = 640;
+/** Hauteur réservée sous le contenu pour les boutons fixés (50 + marges). */
+const WEB_ACTIONS_SPACE = 50 + Spacings.lg * 3;
 
 interface OfferForm {
   title: string;
@@ -71,7 +73,8 @@ interface OfferForm {
  * Le serveur renvoie l'état complet : on l'écrit dans le cache puis on revient à la liste.
  *
  * Web : en-tête large, deux colonnes sur grand écran (informations et images à gauche,
- * formats et calendriers à droite), une seule colonne centrée sur écran étroit.
+ * formats et calendriers à droite), une seule colonne centrée sur écran étroit ;
+ * « Supprimer » et « Enregistrer » fixés en bas à droite de la page.
  */
 export const ExpertiseOfferFormView = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
@@ -424,6 +427,7 @@ export const ExpertiseOfferFormView = ({ navigation, route }) => {
               images={offer.images ?? []}
               maxImages={setup.limits.max_offer_images ?? 6}
               captionMax={setup.limits.image_caption_max ?? 150}
+              maxKb={setup.limits.offer_image_max_kb ?? 5120}
               onApply={(next) => queryClient.setQueryData(QUERY_KEY, next)}
             />
           ) : (
@@ -433,8 +437,6 @@ export const ExpertiseOfferFormView = ({ navigation, route }) => {
             </>
           )}
         </View>
-
-        {deleteButton}
       </View>
 
       <View style={[styles.webCard, twoColumns && styles.flex]}>{formatsField}</View>
@@ -484,20 +486,50 @@ export const ExpertiseOfferFormView = ({ navigation, route }) => {
         </NestableScrollContainer>
 
         {/* ---- Barre d'action ---- */}
-        <SafeAreaView edges={['bottom']} style={[styles.footer, IS_WEB && styles.webFooter]}>
-          <TouchableOpacity
-            style={[styles.saveButton, IS_WEB && styles.webSaveButton, saving && styles.saveButtonDisabled]}
-            onPress={save}
-            disabled={saving}
-            activeOpacity={0.8}
-          >
-            {saving ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.saveText}>{offer ? 'Enregistrer' : "Créer l'offre"}</Text>
+        {IS_WEB ? (
+          // Web : boutons fixés en bas à droite, par-dessus la page.
+          <View style={styles.webActions} pointerEvents="box-none">
+            {offer && (
+              <TouchableOpacity
+                style={[styles.webDeleteButton, saving && styles.saveButtonDisabled]}
+                onPress={confirmDelete}
+                disabled={saving}
+                accessibilityRole="button"
+              >
+                <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+                <Text style={styles.deleteText}>Supprimer</Text>
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-        </SafeAreaView>
+            <TouchableOpacity
+              style={[styles.saveButton, styles.webSaveButton, saving && styles.saveButtonDisabled]}
+              onPress={save}
+              disabled={saving}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+            >
+              {saving ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.saveText}>{offer ? 'Enregistrer' : "Créer l'offre"}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <SafeAreaView edges={['bottom']} style={styles.footer}>
+            <TouchableOpacity
+              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+              onPress={save}
+              disabled={saving}
+              activeOpacity={0.8}
+            >
+              {saving ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.saveText}>{offer ? 'Enregistrer' : "Créer l'offre"}</Text>
+              )}
+            </TouchableOpacity>
+          </SafeAreaView>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -523,9 +555,10 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Web : colonnes et cartes ---- */
+  // Marge basse : la fin du formulaire ne reste pas sous les boutons fixés.
   webContent: {
     padding: Spacings.lg,
-    paddingBottom: Spacings.xl,
+    paddingBottom: WEB_ACTIONS_SPACE,
   },
   webLayout: {
     width: '100%',
@@ -558,12 +591,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.line,
   },
-  webFooter: {
+  webActions: {
+    position: 'absolute',
+    right: Spacings.lg,
+    bottom: Spacings.lg,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacings.sm,
   },
   webSaveButton: {
-    width: '100%',
-    maxWidth: 320,
+    minWidth: 180,
+    paddingHorizontal: Spacings.lg,
+    shadowColor: Colors.lblueDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+  },
+  webDeleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    height: 50,
+    paddingHorizontal: Spacings.lg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    backgroundColor: Colors.white,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
   },
 
   /* ---- Champs ---- */
