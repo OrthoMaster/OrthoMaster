@@ -7,7 +7,6 @@ import { BookingExpert } from '../../../services/v2/BookingService';
 import { initials } from '../bookingFormat';
 import { withAlpha } from '../bookingPalette';
 import { ExpertTheme } from '../expertTheme';
-import { SwooshRule } from './SwooshRule';
 import { ThemeBackdrop } from './ThemeBackdrop';
 
 const PHOTO_SIZE = 92;
@@ -26,8 +25,8 @@ const nameLines = (name: string) => {
 interface ExpertIdentityCardProps {
   expert: BookingExpert;
   theme: ExpertTheme;
-  /** Largeur extérieure de la carte : sert au filet sous les références. */
-  width: number;
+  /** Largeur extérieure de la carte (plus utilisée par le filet, gardée pour les appels). */
+  width?: number;
   /** Pastille posée sur l'avatar (statut de l'expert). */
   avatarBadge?: React.ReactNode;
   /** Contenu ajouté en bas de la carte (lien de la page vitrine…). */
@@ -66,7 +65,8 @@ export const ExpertIdentityCard: React.FC<ExpertIdentityCardProps> = ({ expert, 
           ) : null}
         </View>
 
-        <SwooshRule color={theme.primary} width={width - PADDING * 2} style={styles.rule} />
+        {/* Filet simple entre l'identité et les domaines. */}
+        <View style={[styles.rule, { backgroundColor: theme.line }]} />
 
         {expert.domains.length > 0 && (
           <View style={styles.domains}>
@@ -183,7 +183,8 @@ const styles = StyleSheet.create({
     marginTop: Spacings.sm,
   },
   rule: {
-    marginLeft: PADDING,
+    height: StyleSheet.hairlineWidth * 2,
+    marginHorizontal: PADDING,
     marginTop: Spacings.md,
   },
 

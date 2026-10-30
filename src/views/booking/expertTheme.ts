@@ -24,9 +24,10 @@ const THEMES: Record<string, ExpertTheme> = {
     bg: '#e3ebf0', bg2: '#cfdde7', ink: '#13293d', muted: '#4d6578', primary: '#1f8379',
     onPrimary: '#ffffff', line: 'rgba(19,41,61,0.16)', panel: 'rgba(227,235,240,0.82)', card: '#f3f7f9',
   },
+  // Fond plus franchement orangé que la vitrine (beige qui tirait sur le brun dans l'application).
   orange: {
-    bg: '#f3ece4', bg2: '#ead9c6', ink: '#2a1c10', muted: '#6b5848', primary: '#b35f00',
-    onPrimary: '#ffffff', line: 'rgba(42,28,16,0.15)', panel: 'rgba(243,236,228,0.84)', card: '#fbf7f2',
+    bg: '#fff1e2', bg2: '#ffdcb5', ink: '#2a1c10', muted: '#6e5640', primary: '#b35f00',
+    onPrimary: '#ffffff', line: 'rgba(42,28,16,0.14)', panel: 'rgba(255,241,226,0.86)', card: '#fff9f2',
   },
   ocean: {
     bg: '#e6ecf4', bg2: '#d2deee', ink: '#0f2240', muted: '#4a5d78', primary: '#1f56c9',
