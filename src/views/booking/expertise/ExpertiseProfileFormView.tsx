@@ -14,6 +14,7 @@ import {
   StyleSheet,
   StatusBar,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,13 +31,37 @@ import {
   getDomains,
   getMyBookingSetup,
   updateMyProfile,
+  uploadMyAvatar,
 } from '../../../services/v2/BookingService';
+import { notify } from '../bookingActions';
+import { pickImageFile } from './components/pickImageFile';
 import { BookingScreenHeader } from '../components/BookingScreenHeader';
 import { initials } from '../bookingFormat';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { WebOnlyImagesNotice } from './components/WebOnlyImagesNotice';
 
 const QUERY_KEY = ['booking', 'me'];
+
+const IS_WEB = Platform.OS === 'web';
+/** Web : barre latérale commune (AppTab.web) ; la zone de contenu est le reste. */
+const WEB_SIDEBAR_WIDTH = 200;
+/** Web : deux colonnes dès que la zone de contenu le permet. */
+const WEB_TWO_COLUMNS_FROM = 860;
+const WEB_MAX_WIDTH = 1040;
+const WEB_LEFT_COLUMN = 340;
+const WEB_SINGLE_MAX_WIDTH = 560;
+
+/** Alert.alert est sans effet sur le web : confirmation du navigateur à la place. */
+const confirmAction = (title: string, message: string, confirmText: string, onConfirm: () => void, destructive = false) => {
+  if (IS_WEB) {
+    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
+    return;
+  }
+  Alert.alert(title, message, [
+    { text: destructive ? 'Continuer la saisie' : 'Annuler', style: 'cancel' },
+    { text: confirmText, style: destructive ? 'destructive' : 'default', onPress: onConfirm },
+  ]);
+};
 const DOMAINS_KEY = ['booking', 'domains'];
 
 interface ProfileForm {
@@ -59,10 +84,18 @@ const normalize = (text: string) =>
 /**
  * Modification du profil public de l'expert : titre, nom, références, présentation,
  * domaines et palette. Domaines et couleur se choisissent dans une fenêtre : le formulaire
- * n'en montre que le résultat. La photo n'est pas modifiable ici (pas de sélecteur d'images).
+ * n'en montre que le résultat.
+ *
+ * Photo : modifiable sur la version web seulement (sélecteur de fichiers du navigateur,
+ * enregistrée dès qu'elle est choisie) ; le mobile n'a pas de sélecteur d'images.
+ * Web : en-tête blanc comme « Informations personnelles », et deux colonnes sur grand écran
+ * (photo + identité à gauche, présentation + domaines + couleur à droite).
  */
 export const ExpertiseProfileFormView = ({ navigation }) => {
   useHideFloatingTabBar(navigation);
+
+  const { width: windowWidth } = useWindowDimensions();
+  const twoColumns = IS_WEB && windowWidth - WEB_SIDEBAR_WIDTH >= WEB_TWO_COLUMNS_FROM;
 
   const queryClient = useQueryClient();
 
@@ -99,6 +132,10 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
   const [addingDomain, setAddingDomain] = useState(false);
   const [domainsOpen, setDomainsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  // Web : aperçu local de la photo pendant l'envoi.
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const dirty = JSON.stringify(form) !== JSON.stringify(initial);
   const leaving = useRef(false);
@@ -113,12 +150,50 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
       if (!dirty || leaving.current) return;
 
       e.preventDefault();
-      Alert.alert('Abandonner les modifications ?', 'Vos changements ne seront pas enregistrés.', [
-        { text: 'Continuer la saisie', style: 'cancel' },
-        { text: 'Abandonner', style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
-      ]);
+      confirmAction(
+        'Abandonner les modifications ?',
+        'Vos changements ne seront pas enregistrés.',
+        'Abandonner',
+        () => navigation.dispatch(e.data.action),
+        true
+      );
     });
   }, [navigation, dirty]);
+
+  /* ---- Photo (web) ---- */
+
+  useEffect(() => () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+  }, [avatarPreview]);
+
+  const changeAvatar = async () => {
+    if (avatarUploading) return;
+    setAvatarError(null);
+
+    const picked = await pickImageFile({ minEdge: limits?.avatar_min_edge, maxKb: limits?.avatar_max_kb });
+    if (!picked) return;
+    if (picked.ok === false) {
+      setAvatarError(picked.message);
+      return;
+    }
+
+    setAvatarPreview(picked.image.previewUrl);
+    setAvatarUploading(true);
+    const result = await uploadMyAvatar(picked.image.blob, picked.image.fileName);
+    setAvatarUploading(false);
+
+    if (result.ok) {
+      // Seule la photo change : la saisie en cours du formulaire est conservée.
+      queryClient.setQueryData(QUERY_KEY, result.data);
+      queryClient.invalidateQueries({ queryKey: ['booking', 'experts'] });
+      queryClient.invalidateQueries({ queryKey: ['booking', 'expert'] });
+      return;
+    }
+
+    const failure = result as Extract<typeof result, { ok: false }>;
+    setAvatarPreview(null);
+    setAvatarError(fieldError(failure.errors, 'avatar') ?? failure.message ?? 'Envoi impossible. Réessayez dans un instant.');
+  };
 
   /* ---- Logique des domaines ---- */
 
@@ -143,28 +218,27 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
 
   const confirmNewDomain = () => {
     const label = search.trim().replace(/\s+/g, ' ');
-    Alert.alert('Ajouter ce domaine ?', `« ${label} » sera ajouté à la liste et proposé à tous les experts.`, [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Ajouter',
-        onPress: async () => {
-          setAddingDomain(true);
-          const result = await createDomain(label);
-          setAddingDomain(false);
+    confirmAction(
+      'Ajouter ce domaine ?',
+      `« ${label} » sera ajouté à la liste et proposé à tous les experts.`,
+      'Ajouter',
+      async () => {
+        setAddingDomain(true);
+        const result = await createDomain(label);
+        setAddingDomain(false);
 
-          if (result.ok === false) {
-            Alert.alert('Ajout impossible', fieldError(result.errors, 'label') ?? result.message ?? 'Réessayez dans un instant.');
-            return;
-          }
-          const domain = result.data.domain;
-          queryClient.setQueryData<BookingDomain[]>(DOMAINS_KEY, (current) =>
-            current && !current.some((d) => d.id === domain.id) ? [...current, domain] : current
-          );
-          if (!selectedIds.has(domain.id)) update('domains', [...form.domains, domain]);
-          setSearch('');
-        },
-      },
-    ]);
+        if (result.ok === false) {
+          notify('Ajout impossible', fieldError(result.errors, 'label') ?? result.message ?? 'Réessayez dans un instant.');
+          return;
+        }
+        const domain = result.data.domain;
+        queryClient.setQueryData<BookingDomain[]>(DOMAINS_KEY, (current) =>
+          current && !current.some((d) => d.id === domain.id) ? [...current, domain] : current
+        );
+        if (!selectedIds.has(domain.id)) update('domains', [...form.domains, domain]);
+        setSearch('');
+      }
+    );
   };
 
   /* ---- Enregistrement ---- */
@@ -216,154 +290,234 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
   const colorOptions = [{ key: null as string | null, name: 'Par défaut', color: Colors.lblue }, ...palettes];
   const currentColor = colorOptions.find((o) => o.key === form.palette)?.color ?? Colors.lblue;
 
+  const avatarUri = avatarPreview ?? expert.avatar_url;
+
+  const header = IS_WEB ? (
+    // Web : même en-tête que « Informations personnelles » (blanc, flèche et titre à gauche).
+    <View style={styles.webHeader}>
+      <TouchableOpacity style={styles.webBackButton} onPress={() => navigation.goBack()} accessibilityLabel="Retour">
+        <Ionicons name="arrow-back" size={20} color={Colors.text} />
+      </TouchableOpacity>
+      <Text style={styles.webHeaderTitle} numberOfLines={1}>
+        Modifier le profil
+      </Text>
+    </View>
+  ) : (
+    <BookingScreenHeader title="Modifier le profil" onBack={() => navigation.goBack()} />
+  );
+
+  const alertBox = message ? (
+    <View style={styles.alert}>
+      <Ionicons name="alert-circle-outline" size={20} color={Colors.danger} />
+      <Text style={styles.alertText}>{message}</Text>
+    </View>
+  ) : null;
+
+  const photo = (size: number) => (
+    <View style={[styles.photo, { width: size, height: size, borderRadius: size / 2 }]}>
+      {avatarUri ? (
+        <Image source={{ uri: avatarUri }} style={StyleSheet.absoluteFill} />
+      ) : (
+        <Text style={[styles.photoInitials, size > 64 && styles.photoInitialsLarge]}>{initials(form.name || expert.name)}</Text>
+      )}
+      {avatarUploading && (
+        <View style={styles.photoBusy}>
+          <ActivityIndicator color={Colors.white} />
+        </View>
+      )}
+    </View>
+  );
+
+  const identityFields = (
+    <>
+      <View style={styles.field}>
+        <Text style={styles.label}>
+          Titre <Text style={styles.optional}>(facultatif)</Text>
+        </Text>
+        <TextInput
+          style={[styles.input, honorificError && styles.inputError]}
+          value={form.honorific}
+          onChangeText={(value) => update('honorific', value)}
+          placeholder="Ex. Dr, Pr"
+          placeholderTextColor={Colors.subtext}
+          maxLength={limits?.honorific_max ?? 40}
+        />
+        {honorificError && <Text style={styles.error}>{honorificError}</Text>}
+      </View>
+
+      <View style={styles.field}>
+        <Text style={styles.label}>Nom</Text>
+        <TextInput
+          style={[styles.input, nameError && styles.inputError]}
+          value={form.name}
+          onChangeText={(value) => update('name', value)}
+          placeholder="Prénom et nom"
+          placeholderTextColor={Colors.subtext}
+          maxLength={limits?.name_max ?? 255}
+        />
+        {nameError && <Text style={styles.error}>{nameError}</Text>}
+      </View>
+
+      <View style={styles.field}>
+        <Text style={styles.label}>
+          Références <Text style={styles.optional}>(facultatif)</Text>
+        </Text>
+        <TextInput
+          style={[styles.input, styles.textareaSmall, credentialsError && styles.inputError]}
+          value={form.credentials}
+          onChangeText={(value) => update('credentials', value)}
+          placeholder="Ex. Orthodontiste exclusif · Ancien interne des hôpitaux"
+          placeholderTextColor={Colors.subtext}
+          maxLength={limits?.credentials_max ?? 200}
+          multiline
+          textAlignVertical="top"
+        />
+        {credentialsError && <Text style={styles.error}>{credentialsError}</Text>}
+      </View>
+
+    </>
+  );
+
+  const presentationField = (
+    <View style={styles.field}>
+      <Text style={styles.label}>
+        Présentation <Text style={styles.optional}>(facultatif)</Text>
+      </Text>
+      <TextInput
+        style={[styles.input, styles.textarea, ledeError && styles.inputError]}
+        value={form.lede}
+        onChangeText={(value) => update('lede', value)}
+        placeholder="Votre parcours, votre approche, ce que vous partagez avec vos confrères…"
+        placeholderTextColor={Colors.subtext}
+        maxLength={ledeMax}
+        multiline
+        textAlignVertical="top"
+      />
+      <Text style={styles.counter}>
+        {form.lede.length} / {ledeMax}
+      </Text>
+      {ledeError && <Text style={styles.error}>{ledeError}</Text>}
+    </View>
+
+  );
+
+  // Domaines : résumé, le choix se fait dans une fenêtre.
+  const domainsField = (
+    <View style={styles.field}>
+      <View style={styles.fieldHead}>
+        <Text style={styles.label}>Domaines</Text>
+        <TouchableOpacity onPress={() => setDomainsOpen(true)} hitSlop={10}>
+          <Text style={styles.editButtonText}>Modifier</Text>
+        </TouchableOpacity>
+      </View>
+
+      {form.domains.length > 0 ? (
+        <View style={styles.chips}>
+          {form.domains.map((domain) => (
+            <View key={domain.id} style={styles.chip}>
+              <Text style={styles.chipText}>{domain.name}</Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.emptyBox} onPress={() => setDomainsOpen(true)}>
+          <Ionicons name="add" size={18} color={Colors.lblueDark} />
+          <Text style={styles.emptyBoxText}>Choisir vos domaines</Text>
+        </TouchableOpacity>
+      )}
+      {domainsError && <Text style={styles.error}>{domainsError}</Text>}
+    </View>
+
+  );
+
+  // Couleur : titre et explication à gauche, carré de la couleur choisie à droite.
+  const colorField = (
+    <View style={styles.colorRow}>
+      <View style={styles.flex}>
+        <Text style={styles.label}>Couleur du profil</Text>
+        <Text style={styles.hint}>Couleur principale utilisée pour afficher votre profil.</Text>
+      </View>
+      <TouchableOpacity
+        style={[styles.colorCurrent, { backgroundColor: currentColor }]}
+        onPress={() => setPaletteOpen(true)}
+        accessibilityLabel="Changer la couleur du profil"
+      >
+        <Ionicons name="color-palette-outline" size={22} color={Colors.white} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  /* ---- Mise en page web : photo + identité | présentation + domaines + couleur ---- */
+  const webBody = (
+    <View style={[styles.webLayout, twoColumns ? styles.webLayoutTwo : styles.webLayoutOne]}>
+      {alertBox && <View style={twoColumns && styles.webFullRow}>{alertBox}</View>}
+
+      <View style={[styles.webCard, twoColumns && styles.webLeftColumn]}>
+        <View style={styles.webPhotoBlock}>
+          {photo(112)}
+          <TouchableOpacity
+            style={[styles.photoButton, avatarUploading && styles.saveButtonDisabled]}
+            onPress={changeAvatar}
+            disabled={avatarUploading}
+            accessibilityLabel="Changer la photo"
+          >
+            <Ionicons name="camera-outline" size={18} color={Colors.lblueDark} />
+            <Text style={styles.photoButtonText}>{avatarUploading ? 'Envoi…' : 'Changer la photo'}</Text>
+          </TouchableOpacity>
+          <Text style={[styles.hint, styles.centerText]}>
+            JPG, PNG ou WebP · {limits?.avatar_min_edge ?? 200} × {limits?.avatar_min_edge ?? 200} px minimum.{'\n'}
+            Enregistrée dès qu'elle est choisie.
+          </Text>
+          {avatarError && <Text style={[styles.error, styles.centerText]}>{avatarError}</Text>}
+        </View>
+        <View style={styles.webDivider} />
+        {identityFields}
+      </View>
+
+      <View style={[styles.webCard, twoColumns && styles.flex]}>
+        {presentationField}
+        {domainsField}
+        {colorField}
+      </View>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.lblue} />
-      <BookingScreenHeader title="Modifier le profil" onBack={() => navigation.goBack()} />
+    <SafeAreaView style={[styles.container, IS_WEB && styles.containerWeb]} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle={IS_WEB ? 'dark-content' : 'light-content'} backgroundColor={IS_WEB ? Colors.white : Colors.lblue} />
+      {header}
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={styles.body}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={IS_WEB ? styles.webContent : styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {message && (
-            <View style={styles.alert}>
-              <Ionicons name="alert-circle-outline" size={20} color={Colors.danger} />
-              <Text style={styles.alertText}>{message}</Text>
-            </View>
-          )}
+          {IS_WEB ? (
+            webBody
+          ) : (
+            <>
+              {alertBox}
 
-          {/* ---- Photo (lecture seule) ---- */}
-          <View style={styles.photoRow}>
-            <View style={styles.photo}>
-              {expert.avatar_url ? (
-                <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} />
-              ) : (
-                <Text style={styles.photoInitials}>{initials(form.name || expert.name)}</Text>
-              )}
-            </View>
-            {/* Mobile : la photo se change sur la version web. */}
-            {Platform.OS === 'web' ? (
-              <Text style={[styles.hint, styles.flex]}>Pour changer votre photo, envoyez-la à l'équipe OrthoMaster.</Text>
-            ) : (
-              <WebOnlyImagesNotice style={styles.flex} />
-            )}
-          </View>
-
-          {/* ---- Identité ---- */}
-          <View style={styles.field}>
-            <Text style={styles.label}>
-              Titre <Text style={styles.optional}>(facultatif)</Text>
-            </Text>
-            <TextInput
-              style={[styles.input, honorificError && styles.inputError]}
-              value={form.honorific}
-              onChangeText={(value) => update('honorific', value)}
-              placeholder="Ex. Dr, Pr"
-              placeholderTextColor={Colors.subtext}
-              maxLength={limits?.honorific_max ?? 40}
-            />
-            {honorificError && <Text style={styles.error}>{honorificError}</Text>}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Nom</Text>
-            <TextInput
-              style={[styles.input, nameError && styles.inputError]}
-              value={form.name}
-              onChangeText={(value) => update('name', value)}
-              placeholder="Prénom et nom"
-              placeholderTextColor={Colors.subtext}
-              maxLength={limits?.name_max ?? 255}
-            />
-            {nameError && <Text style={styles.error}>{nameError}</Text>}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>
-              Références <Text style={styles.optional}>(facultatif)</Text>
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textareaSmall, credentialsError && styles.inputError]}
-              value={form.credentials}
-              onChangeText={(value) => update('credentials', value)}
-              placeholder="Ex. Orthodontiste exclusif · Ancien interne des hôpitaux"
-              placeholderTextColor={Colors.subtext}
-              maxLength={limits?.credentials_max ?? 200}
-              multiline
-              textAlignVertical="top"
-            />
-            {credentialsError && <Text style={styles.error}>{credentialsError}</Text>}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>
-              Présentation <Text style={styles.optional}>(facultatif)</Text>
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textarea, ledeError && styles.inputError]}
-              value={form.lede}
-              onChangeText={(value) => update('lede', value)}
-              placeholder="Votre parcours, votre approche, ce que vous partagez avec vos confrères…"
-              placeholderTextColor={Colors.subtext}
-              maxLength={ledeMax}
-              multiline
-              textAlignVertical="top"
-            />
-            <Text style={styles.counter}>
-              {form.lede.length} / {ledeMax}
-            </Text>
-            {ledeError && <Text style={styles.error}>{ledeError}</Text>}
-          </View>
-
-          {/* ---- Domaines : résumé, le choix se fait dans une fenêtre ---- */}
-          <View style={styles.field}>
-            <View style={styles.fieldHead}>
-              <Text style={styles.label}>Domaines</Text>
-              <TouchableOpacity onPress={() => setDomainsOpen(true)} hitSlop={10}>
-                <Text style={styles.editButtonText}>Modifier</Text>
-              </TouchableOpacity>
-            </View>
-
-            {form.domains.length > 0 ? (
-              <View style={styles.chips}>
-                {form.domains.map((domain) => (
-                  <View key={domain.id} style={styles.chip}>
-                    <Text style={styles.chipText}>{domain.name}</Text>
-                  </View>
-                ))}
+              {/* ---- Photo (lecture seule : elle se change sur la version web) ---- */}
+              <View style={styles.photoRow}>
+                {photo(64)}
+                <WebOnlyImagesNotice style={styles.flex} />
               </View>
-            ) : (
-              <TouchableOpacity style={styles.emptyBox} onPress={() => setDomainsOpen(true)}>
-                <Ionicons name="add" size={18} color={Colors.lblueDark} />
-                <Text style={styles.emptyBoxText}>Choisir vos domaines</Text>
-              </TouchableOpacity>
-            )}
-            {domainsError && <Text style={styles.error}>{domainsError}</Text>}
-          </View>
 
-          {/* ---- Couleur : titre et explication à gauche, carré de la couleur choisie à droite ---- */}
-          <View style={styles.colorRow}>
-            <View style={styles.flex}>
-              <Text style={styles.label}>Couleur du profil</Text>
-              <Text style={styles.hint}>Couleur principale utilisée pour afficher votre profil.</Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.colorCurrent, { backgroundColor: currentColor }]}
-              onPress={() => setPaletteOpen(true)}
-              accessibilityLabel="Changer la couleur du profil"
-            >
-              <Ionicons name="color-palette-outline" size={22} color={Colors.white} />
-            </TouchableOpacity>
-          </View>
+              {identityFields}
+              {presentationField}
+              {domainsField}
+              {colorField}
+            </>
+          )}
         </ScrollView>
 
         {/* ---- Barre d'action ---- */}
-        <SafeAreaView edges={['bottom']} style={styles.footer}>
+        <SafeAreaView edges={['bottom']} style={[styles.footer, IS_WEB && styles.webFooter]}>
           <TouchableOpacity
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            style={[styles.saveButton, IS_WEB && styles.webSaveButton, saving && styles.saveButtonDisabled]}
             onPress={save}
             disabled={saving}
             activeOpacity={0.8}
@@ -374,10 +528,10 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
       </KeyboardAvoidingView>
 
       {/* ---- Fenêtre : domaines ---- */}
-      <Modal visible={domainsOpen} transparent animationType="slide" onRequestClose={() => setDomainsOpen(false)}>
-        <KeyboardAvoidingView style={styles.modalRoot} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Modal visible={domainsOpen} transparent animationType={IS_WEB ? 'fade' : 'slide'} onRequestClose={() => setDomainsOpen(false)}>
+        <KeyboardAvoidingView style={[styles.modalRoot, IS_WEB && styles.modalRootWeb]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <Pressable style={styles.modalBackdrop} onPress={() => setDomainsOpen(false)} />
-          <View style={[styles.sheet, styles.sheetTall]}>
+          <View style={[styles.sheet, styles.sheetTall, IS_WEB && styles.sheetWeb]}>
             <View style={styles.sheetHead}>
               <Text style={styles.sheetTitle}>Domaines</Text>
               <Text style={styles.sheetCount}>
@@ -453,10 +607,10 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
       </Modal>
 
       {/* ---- Fenêtre : couleur ---- */}
-      <Modal visible={paletteOpen} transparent animationType="slide" onRequestClose={() => setPaletteOpen(false)}>
-        <View style={styles.modalRoot}>
+      <Modal visible={paletteOpen} transparent animationType={IS_WEB ? 'fade' : 'slide'} onRequestClose={() => setPaletteOpen(false)}>
+        <View style={[styles.modalRoot, IS_WEB && styles.modalRootWeb]}>
           <Pressable style={styles.modalBackdrop} onPress={() => setPaletteOpen(false)} />
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, IS_WEB && styles.sheetWeb]}>
             <Text style={styles.sheetTitle}>Couleur du profil</Text>
             <View style={styles.swatches}>
               {colorOptions.map((option) => {
@@ -528,6 +682,107 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Bold',
     fontSize: 20,
     color: Colors.lblueDark,
+  },
+  photoInitialsLarge: {
+    fontSize: 36,
+  },
+  photoBusy: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  photoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 40,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 20,
+    backgroundColor: Colors.lblue3,
+  },
+  photoButtonText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 15,
+    color: Colors.lblueDark,
+  },
+  centerText: {
+    textAlign: 'center',
+  },
+
+  /* ---- Web : en-tête, colonnes, cartes ---- */
+  containerWeb: {
+    backgroundColor: Colors.white,
+  },
+  // Copie de l'en-tête web de « Informations personnelles » (ProfileInfoView.web).
+  webHeader: {
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacings.lg,
+    paddingTop: Spacings.sm,
+    paddingBottom: Spacings.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    height: 100,
+  },
+  webBackButton: {
+    padding: 4,
+    paddingRight: Spacings.md,
+  },
+  webHeaderTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
+  },
+  webContent: {
+    padding: Spacings.lg,
+    paddingBottom: Spacings.xl,
+  },
+  webLayout: {
+    width: '100%',
+    alignSelf: 'center',
+    gap: Spacings.lg,
+  },
+  webLayoutTwo: {
+    maxWidth: WEB_MAX_WIDTH,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+  },
+  webLayoutOne: {
+    maxWidth: WEB_SINGLE_MAX_WIDTH,
+  },
+  webFullRow: {
+    width: '100%',
+  },
+  webLeftColumn: {
+    width: WEB_LEFT_COLUMN,
+  },
+  webCard: {
+    gap: Spacings.lg,
+    padding: Spacings.lg,
+    borderRadius: 16,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.line,
+  },
+  webPhotoBlock: {
+    alignItems: 'center',
+    gap: Spacings.sm,
+  },
+  webDivider: {
+    height: 1,
+    backgroundColor: Colors.line,
+  },
+  webFooter: {
+    alignItems: 'center',
+  },
+  webSaveButton: {
+    width: '100%',
+    maxWidth: 320,
   },
 
   /* ---- Champs ---- */
@@ -668,6 +923,18 @@ const styles = StyleSheet.create({
   modalRoot: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  // Web : fenêtre centrée plutôt que feuille montant du bas.
+  modalRootWeb: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacings.lg,
+  },
+  sheetWeb: {
+    width: '100%',
+    maxWidth: 520,
+    maxHeight: '85%',
+    borderRadius: 24,
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,

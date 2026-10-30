@@ -4,6 +4,7 @@ import { Dimensions, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient } from '@tanstack/react-query';
 import * as Linking from "expo-linking";
+import { webDocumentTitle } from "./src/navigation/webTitles";
 const prefix = Linking.createURL('/');
 
 import { Animated } from 'react-native';
@@ -274,6 +275,7 @@ export default function App({ navigation }) {
       {appIsReady && !showSplash && (
         <NavigationContainer
           linking={linking}
+          documentTitle={{ formatter: webDocumentTitle }}
           ref={navigationRef}
           onReady={() => {
             routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;

@@ -65,7 +65,7 @@ export const ToolsStack = ({ navigation, route }) => {
       <ToolsStackNav.Screen
         name={'chatbot-view'}
         component={ChatbotView}
-        options={{ headerShown: false, title: 'Assitance IA' }}
+        options={{ headerShown: false, title: 'Assistance IA' }}
       />
     </ToolsStackNav.Navigator>
   );

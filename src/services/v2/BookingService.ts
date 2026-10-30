@@ -204,6 +204,9 @@ export interface ExpertBookingLimits {
     credentials_max: number;
     lede_max: number;
     domain_max: number;
+    /** Photo : poids max (Ko) et plus petit côté accepté (px). */
+    avatar_max_kb?: number;
+    avatar_min_edge?: number;
   };
 }
 
@@ -1278,6 +1281,25 @@ export interface ExpertProfileInput {
 export const updateMyProfile = async (input: ExpertProfileInput): Promise<BookingResult<ExpertBookingSetup>> => {
   return axiosInstance
     .put(`${baseUrl}/booking/me/profile`, input)
+    .then((response) => toResult<ExpertBookingSetup>(response))
+    .catch(toFailure);
+};
+
+/**
+ * Photo de profil de l'expert (version web : fichier choisi dans le navigateur).
+ * POST /booking/me/avatar (multipart, champ `avatar`) → configuration à jour.
+ * Le serveur recadre la photo (600 px max) et la convertit en JPEG.
+ */
+export const uploadMyAvatar = async (file: Blob, fileName?: string): Promise<BookingResult<ExpertBookingSetup>> => {
+  const body = new FormData();
+  body.append('avatar', file as any, fileName ?? 'avatar.jpg');
+
+  return axiosInstance
+    .post(`${baseUrl}/booking/me/avatar`, body, {
+      // Le type JSON par défaut transformerait le FormData en JSON : multipart, le navigateur ajoute la frontière.
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    })
     .then((response) => toResult<ExpertBookingSetup>(response))
     .catch(toFailure);
 };
