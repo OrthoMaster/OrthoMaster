@@ -53,7 +53,7 @@ const whenLabel = (session: AgendaSession) => `${relativeDay(session.date)} · $
 
 /** « Dr Martin » : titre éventuel devant le nom. */
 const expertName = (expert: BookingExpertBase | null) =>
-  expert ? [expert.honorific, expert.name].filter(Boolean).join(' ') : 'Expert';
+  expert ? [expert.honorific_short ?? expert.honorific, expert.name].filter(Boolean).join(' ') : 'Expert';
 
 /** « En visio », ou le lieu en présentiel : « Cabinet A · Lyon ». */
 const placeLabel = (session: AgendaSession) => {

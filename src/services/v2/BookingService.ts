@@ -23,8 +23,10 @@ export interface BookingDomain {
 /** Champs communs à la liste et à la fiche. */
 export interface BookingExpertBase {
   id: number;
-  /** Titre affiché au-dessus du nom : « Dr », « Pr »… */
+  /** Titre, forme complète : « Docteur », « Madame »… (liste HONORIFIC_OPTIONS). */
   honorific: string | null;
+  /** Même titre abrégé : « Dr », « Mme »… (affichages courts). */
+  honorific_short?: string | null;
   name: string;
   /** Références affichées sous le nom. */
   credentials: string | null;
@@ -204,11 +206,27 @@ export interface ExpertBookingLimits {
     credentials_max: number;
     lede_max: number;
     domain_max: number;
+    /** Titres proposés (liste fermée du serveur). */
+    honorifics?: HonorificOption[];
     /** Photo : poids max (Ko) et plus petit côté accepté (px). */
     avatar_max_kb?: number;
     avatar_min_edge?: number;
   };
 }
+
+/** Titre de l'expert : forme complète enregistrée, abréviation pour l'affichage court. */
+export interface HonorificOption {
+  value: string;
+  short: string;
+}
+
+/** Même liste que le serveur (ExpertProfileService::HONORIFICS), si limits ne la fournit pas. */
+export const HONORIFIC_OPTIONS: HonorificOption[] = [
+  { value: 'Madame', short: 'Mme' },
+  { value: 'Monsieur', short: 'M.' },
+  { value: 'Docteur', short: 'Dr' },
+  { value: 'Professeur', short: 'Pr' },
+];
 
 /** Palette proposée dans le profil (BrochureDraft::PALETTES). */
 export interface ExpertPaletteOption {

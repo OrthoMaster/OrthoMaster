@@ -43,7 +43,7 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 
 /** Phrase d'explication sous l'état : ce qui se passe et ce qu'il advient de l'argent. */
 const statusText = (booking: MyBooking): string => {
-  const expert = [booking.expert?.honorific, booking.expert?.name].filter(Boolean).join(' ') || "L'expert";
+  const expert = [booking.expert?.honorific_short ?? booking.expert?.honorific, booking.expert?.name].filter(Boolean).join(' ') || "L'expert";
   const free = !booking.payment_required;
 
   switch (booking.status) {

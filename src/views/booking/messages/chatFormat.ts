@@ -11,7 +11,7 @@ export const CONVERSATIONS_KEY = ['booking', 'conversations'];
 /** Nom affiché de l'autre partie : l'expert (« Dr Martin ») ou le demandeur. */
 export const otherName = (c: Pick<ChatConversation, 'role' | 'expert' | 'requester'>) =>
   c.role === 'guest'
-    ? [c.expert?.honorific, c.expert?.name].filter(Boolean).join(' ') || 'Expert'
+    ? [c.expert?.honorific_short ?? c.expert?.honorific, c.expert?.name].filter(Boolean).join(' ') || 'Expert'
     : c.requester?.name || 'Confrère';
 
 const pad = (n: number) => String(n).padStart(2, '0');

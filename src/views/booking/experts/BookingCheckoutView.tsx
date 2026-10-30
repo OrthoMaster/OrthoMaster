@@ -381,7 +381,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
               </View>
               <Text style={styles.doneTitle}>Votre demande est partie</Text>
               <Text style={styles.doneText}>
-                {[expert.honorific, expert.name].filter(Boolean).join(' ') || "L'expert"} a reçu votre demande
+                {[expert.honorific_short ?? expert.honorific, expert.name].filter(Boolean).join(' ') || "L'expert"} a reçu votre demande
                 {result.respond_by ? ` et vous répondra au plus tard le ${formatDeadline(result.respond_by)}.` : '.'}
               </Text>
               {result.payment_required ? (

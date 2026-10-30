@@ -26,6 +26,7 @@ import Spacings from '../../../../constants/Spacings';
 import {
   BookingDomain,
   ExpertBookingSetup,
+  HONORIFIC_OPTIONS,
   createDomain,
   fieldError,
   getDomains,
@@ -39,6 +40,7 @@ import { BookingScreenHeader } from '../components/BookingScreenHeader';
 import { initials } from '../bookingFormat';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { WebOnlyImagesNotice } from './components/WebOnlyImagesNotice';
+import { HonorificSelect, matchHonorific } from './components/HonorificSelect';
 
 const QUERY_KEY = ['booking', 'me'];
 
@@ -104,6 +106,7 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
   const expert = setup?.expert;
   const limits = setup?.limits.profile;
   const palettes = setup?.palettes ?? [];
+  const honorificOptions = limits?.honorifics?.length ? limits.honorifics : HONORIFIC_OPTIONS;
 
   const { data: allDomains, isLoading: domainsLoading } = useQuery({
     queryKey: DOMAINS_KEY,
@@ -114,7 +117,8 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
   // Valeurs de départ figées au montage : sert à détecter une saisie non enregistrée.
   const initial = useMemo<ProfileForm>(
     () => ({
-      honorific: expert?.honorific ?? '',
+      // Titre ancien hors liste (texte libre) : ramené à « Aucun ».
+      honorific: matchHonorific(expert?.honorific, honorificOptions) ?? '',
       name: expert?.name ?? '',
       credentials: expert?.credentials ?? '',
       lede: expert?.lede ?? '',
@@ -334,13 +338,11 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
         <Text style={styles.label}>
           Titre <Text style={styles.optional}>(facultatif)</Text>
         </Text>
-        <TextInput
-          style={[styles.input, honorificError && styles.inputError]}
-          value={form.honorific}
-          onChangeText={(value) => update('honorific', value)}
-          placeholder="Ex. Dr, Pr"
-          placeholderTextColor={Colors.subtext}
-          maxLength={limits?.honorific_max ?? 40}
+        <HonorificSelect
+          value={form.honorific || null}
+          options={honorificOptions}
+          onChange={(value) => update('honorific', value ?? '')}
+          invalid={!!honorificError}
         />
         {honorificError && <Text style={styles.error}>{honorificError}</Text>}
       </View>
