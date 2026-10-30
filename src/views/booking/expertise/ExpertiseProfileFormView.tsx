@@ -288,7 +288,7 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
   const credentialsError = fieldError(errors, 'credentials');
   const ledeError = fieldError(errors, 'lede');
   const domainsError = fieldError(errors, 'domain_ids');
-  const ledeMax = limits?.lede_max ?? 5000;
+  const ledeMax = limits?.lede_max ?? 600;
 
   // « Par défaut » (bleu de l'application) puis les palettes ; aucun libellé à l'écran.
   const colorOptions = [{ key: null as string | null, name: 'Par défaut', color: Colors.lblue }, ...palettes];
