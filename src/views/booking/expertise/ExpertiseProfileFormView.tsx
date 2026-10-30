@@ -296,19 +296,8 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
 
   const avatarUri = avatarPreview ?? expert.avatar_url;
 
-  const header = IS_WEB ? (
-    // Web : même en-tête que « Informations personnelles » (blanc, flèche et titre à gauche).
-    <View style={styles.webHeader}>
-      <TouchableOpacity style={styles.webBackButton} onPress={() => navigation.goBack()} accessibilityLabel="Retour">
-        <Ionicons name="arrow-back" size={20} color={Colors.text} />
-      </TouchableOpacity>
-      <Text style={styles.webHeaderTitle} numberOfLines={1}>
-        Modifier le profil
-      </Text>
-    </View>
-  ) : (
-    <BookingScreenHeader title="Modifier le profil" onBack={() => navigation.goBack()} />
-  );
+  // Web : en-tête large (100 px, flèche et titre à gauche), toujours bleu.
+  const header = <BookingScreenHeader title="Modifier le profil" onBack={() => navigation.goBack()} webLarge />;
 
   const alertBox = message ? (
     <View style={styles.alert}>
@@ -485,8 +474,8 @@ export const ExpertiseProfileFormView = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, IS_WEB && styles.containerWeb]} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle={IS_WEB ? 'dark-content' : 'light-content'} backgroundColor={IS_WEB ? Colors.white : Colors.lblue} />
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.lblue} />
       {header}
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -713,32 +702,6 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Web : en-tête, colonnes, cartes ---- */
-  containerWeb: {
-    backgroundColor: Colors.white,
-  },
-  // Copie de l'en-tête web de « Informations personnelles » (ProfileInfoView.web).
-  webHeader: {
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.sm,
-    paddingBottom: Spacings.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    height: 100,
-  },
-  webBackButton: {
-    padding: 4,
-    paddingRight: Spacings.md,
-  },
-  webHeaderTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.text,
-  },
   webContent: {
     padding: Spacings.lg,
     paddingBottom: Spacings.xl,

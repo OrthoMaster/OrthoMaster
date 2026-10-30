@@ -8,6 +8,8 @@ import {
   RefreshControl,
   StyleSheet,
   StatusBar,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -18,18 +20,31 @@ import Spacings from '../../../../constants/Spacings';
 
 import { useFloatingTabBarInset } from '../../../component/booking/FloatingTabBar';
 import { ExpertBookingSetup, ExpertOwnOffer, getMyBookingSetup } from '../../../services/v2/BookingService';
-import { BookingHeaderButton, BookingScreenHeader } from '../components/BookingScreenHeader';
+import { BookingHeaderAction, BookingHeaderButton, BookingScreenHeader } from '../components/BookingScreenHeader';
 import { formatPrice } from '../bookingFormat';
 import { ModePill } from '../components/ModePill';
 
 const QUERY_KEY = ['booking', 'me'];
 
+const IS_WEB = Platform.OS === 'web';
+/** Web : barre latérale commune (AppTab.web) ; la zone de contenu est le reste. */
+const WEB_SIDEBAR_WIDTH = 200;
+/** Web : deux colonnes dès que la zone de contenu le permet. */
+const WEB_TWO_COLUMNS_FROM = 860;
+const WEB_MAX_WIDTH = 1040;
+const WEB_SINGLE_MAX_WIDTH = 640;
+
 /**
  * Offres de l'expert. Les données viennent du cache ['booking', 'me'] :
  * le formulaire y écrit l'état renvoyé par le serveur, cette liste se met à jour seule.
+ *
+ * Web : en-tête large, cartes sur deux colonnes (une seule sur écran étroit), description
+ * complète et vignettes plus grandes. Mobile : liste d'une colonne, description sur 2 lignes.
  */
 export const ExpertiseOffersView = ({ navigation }) => {
   const bottomInset = useFloatingTabBarInset();
+  const { width: windowWidth } = useWindowDimensions();
+  const twoColumns = IS_WEB && windowWidth - WEB_SIDEBAR_WIDTH >= WEB_TWO_COLUMNS_FROM;
 
   const { data, refetch } = useQuery({
     queryKey: QUERY_KEY,
@@ -51,18 +66,89 @@ export const ExpertiseOffersView = ({ navigation }) => {
 
   const openForm = (offerId?: number) => navigation.navigate('expertise-offer-form', { offerId });
 
+  const renderCard = (offer: ExpertOwnOffer) => (
+    <TouchableOpacity
+      key={offer.id}
+      style={[styles.card, !offer.active_flg && styles.cardInactive]}
+      onPress={() => openForm(offer.id)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.cardTop}>
+        <Text style={styles.cardTitle} numberOfLines={IS_WEB ? undefined : 2}>
+          {offer.title}
+        </Text>
+        {/* État lisible d'un coup d'œil : point vert « Active », œil barré « Masquée ». */}
+        <View style={[styles.statusPill, offer.active_flg ? styles.statusOn : styles.statusOff]}>
+          {offer.active_flg ? (
+            <View style={styles.statusDot} />
+          ) : (
+            <Ionicons name="eye-off-outline" size={15} color={Colors.subtext2} />
+          )}
+          <Text style={[styles.statusText, offer.active_flg ? styles.statusTextOn : styles.statusTextOff]}>
+            {offer.active_flg ? 'Active' : 'Masquée'}
+          </Text>
+        </View>
+      </View>
+
+      {offer.description ? (
+        <Text style={[styles.cardDescription, IS_WEB && styles.cardDescriptionWeb]} numberOfLines={IS_WEB ? undefined : 2}>
+          {offer.description}
+        </Text>
+      ) : null}
+
+      {/* Aperçu des illustrations du thème, en petites vignettes carrées. */}
+      {offer.images?.length ? (
+        <View style={styles.thumbs}>
+          {offer.images.map((image) => (
+            <View key={image.id} style={[styles.thumb, IS_WEB && styles.thumbWeb]}>
+              <Image source={{ uri: image.url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <View style={styles.cardBottom}>
+        <View style={styles.duration}>
+          <Ionicons name="time-outline" size={16} color={Colors.lblueDark} />
+          <Text style={styles.durationText}>{offer.duration_label}</Text>
+        </View>
+
+        {/* Un prix TTC par format proposé. */}
+        <View style={styles.modes}>
+          {offer.modes.length === 0 ? (
+            <Text style={styles.noMode}>Aucun format</Text>
+          ) : (
+            offer.modes.map((mode) => (
+              <View key={mode.mode} style={styles.modeRow}>
+                <ModePill mode={mode.mode} />
+                <Text style={styles.price}>{formatPrice(mode.price, offer.currency)}</Text>
+              </View>
+            ))
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.lblue} />
       <BookingScreenHeader
         title="Offres"
         onBack={() => navigation.goBack()}
-        right={<BookingHeaderButton icon="add" label="Créer une offre" onPress={() => openForm()} />}
+        webLarge
+        right={
+          IS_WEB ? (
+            offers.length > 0 ? <BookingHeaderAction icon="add" label="Créer une offre" onPress={() => openForm()} /> : null
+          ) : (
+            <BookingHeaderButton icon="add" label="Créer une offre" onPress={() => openForm()} />
+          )
+        }
       />
 
       <ScrollView
         style={styles.body}
-        contentContainerStyle={[styles.content, { paddingBottom: bottomInset + Spacings.md }]}
+        contentContainerStyle={[styles.content, IS_WEB && styles.contentWeb, { paddingBottom: bottomInset + Spacings.md }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={pulling} onRefresh={pullToRefresh} colors={[Colors.lblue]} tintColor={Colors.lblue} />
@@ -83,70 +169,22 @@ export const ExpertiseOffersView = ({ navigation }) => {
               <Text style={styles.primaryButtonText}>Créer une offre</Text>
             </TouchableOpacity>
           </View>
+        ) : !IS_WEB ? (
+          // Mobile : une colonne, comme avant.
+          offers.map(renderCard)
         ) : (
-          offers.map((offer) => (
-            <TouchableOpacity
-              key={offer.id}
-              style={[styles.card, !offer.active_flg && styles.cardInactive]}
-              onPress={() => openForm(offer.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardTop}>
-                <Text style={styles.cardTitle} numberOfLines={2}>
-                  {offer.title}
-                </Text>
-                {/* État lisible d'un coup d'œil : point vert « Active », œil barré « Masquée ». */}
-                <View style={[styles.statusPill, offer.active_flg ? styles.statusOn : styles.statusOff]}>
-                  {offer.active_flg ? (
-                    <View style={styles.statusDot} />
-                  ) : (
-                    <Ionicons name="eye-off-outline" size={15} color={Colors.subtext2} />
-                  )}
-                  <Text style={[styles.statusText, offer.active_flg ? styles.statusTextOn : styles.statusTextOff]}>
-                    {offer.active_flg ? 'Active' : 'Masquée'}
-                  </Text>
+          <View style={[styles.webGrid, twoColumns ? styles.webGridTwo : styles.webGridOne]}>
+            {twoColumns ? (
+              // Deux colonnes indépendantes (une offre sur deux) : les cartes gardent leur hauteur naturelle.
+              [0, 1].map((column) => (
+                <View key={column} style={styles.webColumn}>
+                  {offers.filter((_, index) => index % 2 === column).map(renderCard)}
                 </View>
-              </View>
-
-              {offer.description ? (
-                <Text style={styles.cardDescription} numberOfLines={2}>
-                  {offer.description}
-                </Text>
-              ) : null}
-
-              {/* Aperçu des illustrations du thème, en petites vignettes carrées. */}
-              {offer.images?.length ? (
-                <View style={styles.thumbs}>
-                  {offer.images.map((image) => (
-                    <View key={image.id} style={styles.thumb}>
-                      <Image source={{ uri: image.url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-
-              <View style={styles.cardBottom}>
-                <View style={styles.duration}>
-                  <Ionicons name="time-outline" size={16} color={Colors.lblueDark} />
-                  <Text style={styles.durationText}>{offer.duration_label}</Text>
-                </View>
-
-                {/* Un prix TTC par format proposé. */}
-                <View style={styles.modes}>
-                  {offer.modes.length === 0 ? (
-                    <Text style={styles.noMode}>Aucun format</Text>
-                  ) : (
-                    offer.modes.map((mode) => (
-                      <View key={mode.mode} style={styles.modeRow}>
-                        <ModePill mode={mode.mode} />
-                        <Text style={styles.price}>{formatPrice(mode.price, offer.currency)}</Text>
-                      </View>
-                    ))
-                  )}
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
+              ))
+            ) : (
+              offers.map(renderCard)
+            )}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -166,6 +204,28 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacings.md,
     gap: Spacings.sm,
+  },
+
+  /* ---- Web : grille ---- */
+  contentWeb: {
+    padding: Spacings.lg,
+  },
+  webGrid: {
+    width: '100%',
+    alignSelf: 'center',
+    gap: Spacings.md,
+  },
+  webGridTwo: {
+    maxWidth: WEB_MAX_WIDTH,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  webGridOne: {
+    maxWidth: WEB_SINGLE_MAX_WIDTH,
+  },
+  webColumn: {
+    flex: 1,
+    gap: Spacings.md,
   },
 
   /* ---- Carte d'offre ---- */
@@ -197,6 +257,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     fontSize: 16,
     color: Colors.text,
+  },
+  // Web : description complète, retours à la ligne conservés.
+  cardDescriptionWeb: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: Spacings.sm,
   },
   cardDescription: {
     fontFamily: 'Roboto',
@@ -256,6 +322,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacings.xs,
     marginTop: Spacings.sm,
+  },
+  thumbWeb: {
+    width: 72,
+    height: 72,
+    borderRadius: 10,
   },
   thumb: {
     width: 44,
