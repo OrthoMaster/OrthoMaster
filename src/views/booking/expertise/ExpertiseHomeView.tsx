@@ -35,6 +35,17 @@ import { ExpertIdentityCard } from '../components/ExpertIdentityCard';
 
 const QUERY_KEY = ['booking', 'me'];
 
+/* ---- Version web : mise en page sur deux colonnes ---- */
+/** Barre latérale commune du web (AppTab.web) : la zone de contenu est le reste. */
+const WEB_SIDEBAR_WIDTH = 200;
+/** À partir de cette largeur de contenu : profil à gauche, configuration à droite. */
+const WEB_TWO_COLUMNS_FROM = 900;
+const WEB_MAX_WIDTH = 1040;
+/** Colonne du profil, à la largeur d'un téléphone. */
+const WEB_PROFILE_COLUMN = 380;
+/** Une colonne (écran étroit) : largeur bornée pour que les cartes ne s'étirent pas. */
+const WEB_SINGLE_MAX_WIDTH = 560;
+
 const plural = (count: number, singular: string, pluralForm: string) =>
   `${count} ${count > 1 ? pluralForm : singular}`;
 
@@ -168,6 +179,12 @@ export const ExpertiseHomeView = ({ navigation }) => {
     setShowShowcase(true);
   };
 
+  /* ---- Mise en page ---- */
+
+  // Web large : deux colonnes ; web étroit : une colonne bornée et centrée ; mobile : inchangé.
+  const isWeb = Platform.OS === 'web';
+  const wide = isWeb && width - WEB_SIDEBAR_WIDTH >= WEB_TWO_COLUMNS_FROM;
+
   /* ---- Sections ---- */
 
   const exceptionsCount = setup.exceptions.length;
@@ -201,7 +218,11 @@ export const ExpertiseHomeView = ({ navigation }) => {
 
       <ScrollView
         style={styles.body}
-        contentContainerStyle={[styles.content, { paddingBottom: bottomInset + Spacings.md }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: bottomInset + Spacings.md },
+          isWeb && (wide ? styles.webWide : styles.webSingle),
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={pulling} onRefresh={pullToRefresh} colors={[Colors.lblue]} tintColor={Colors.lblue} />
@@ -222,6 +243,9 @@ export const ExpertiseHomeView = ({ navigation }) => {
           </View>
         </View>
 
+        <View style={wide ? styles.webColumns : styles.stack}>
+        {/* Web large : profil et activation dans une colonne de la largeur d'un téléphone, qui reste visible. */}
+        <View style={wide ? styles.webProfileColumn : styles.stack}>
         {/* ---- Identité : comme vos confrères la voient ---- */}
         <ExpertIdentityCard
           expert={expert}
@@ -281,8 +305,11 @@ export const ExpertiseHomeView = ({ navigation }) => {
           )}
         </View>
 
+        </View>
+
         {/* ---- Configuration ---- */}
-        <Text style={styles.sectionTitle}>Configuration</Text>
+        <View style={wide ? styles.webConfigColumn : styles.stack}>
+        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide]}>Configuration</Text>
         <View style={styles.sections}>
           {sections.map((section, index) => (
             <ExpertiseSectionCard
@@ -295,6 +322,8 @@ export const ExpertiseHomeView = ({ navigation }) => {
               onPress={() => navigation.navigate(section.route)}
             />
           ))}
+        </View>
+        </View>
         </View>
       </ScrollView>
 
@@ -315,6 +344,40 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacings.md,
+    gap: Spacings.md,
+  },
+  // Blocs empilés (mobile, web étroit) : même écart que le contenu.
+  stack: {
+    gap: Spacings.md,
+  },
+
+  /* ---- Web ---- */
+  webSingle: {
+    width: '100%',
+    maxWidth: WEB_SINGLE_MAX_WIDTH,
+    alignSelf: 'center',
+  },
+  webWide: {
+    width: '100%',
+    maxWidth: WEB_MAX_WIDTH,
+    alignSelf: 'center',
+    paddingHorizontal: Spacings.lg,
+  },
+  webColumns: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.xl,
+  },
+  // Reste visible pendant le défilement de la configuration.
+  webProfileColumn: {
+    width: WEB_PROFILE_COLUMN,
+    gap: Spacings.md,
+    position: 'sticky' as any,
+    top: Spacings.md,
+  },
+  webConfigColumn: {
+    flex: 1,
+    minWidth: 0,
     gap: Spacings.md,
   },
   card: {
@@ -442,6 +505,10 @@ const styles = StyleSheet.create({
     color: Colors.subtext,
     marginTop: Spacings.xs,
     marginLeft: Spacings.xxs,
+  },
+  // Web large : le titre s'aligne sur le haut de la carte profil (son avatar dépasse au-dessus).
+  sectionTitleWide: {
+    marginTop: 0,
   },
   // Liste sans fond : les lignes se séparent par un filet.
   sections: {
