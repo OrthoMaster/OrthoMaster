@@ -26,6 +26,7 @@ import {
   weekdayIso,
 } from '../../bookingDates';
 import { notify } from '../../bookingActions';
+import { AvailabilityLayout, WEB_MAX_WIDTH, WEB_SIDE_COLUMN, WEB_SINGLE_MAX_WIDTH } from './availabilityLayout';
 
 type PeriodState = 'open' | 'closed' | 'blocked' | 'added';
 
@@ -82,9 +83,12 @@ interface ExceptionsTabProps {
   setup: ExpertBookingSetup;
   apply: (next: ExpertBookingSetup) => void;
   bottomInset: number;
+  layout?: AvailabilityLayout;
 }
 
-export const ExceptionsTab: React.FC<ExceptionsTabProps> = ({ setup, apply, bottomInset }) => {
+export const ExceptionsTab: React.FC<ExceptionsTabProps> = ({ setup, apply, bottomInset, layout = 'mobile' }) => {
+  const web = layout !== 'mobile';
+  const two = layout === 'webTwo';
   const today = todayIn(setup.settings.resolved.timezone);
   const [todayYear, todayMonth] = today.split('-').map(Number);
 
@@ -275,10 +279,12 @@ export const ExceptionsTab: React.FC<ExceptionsTabProps> = ({ setup, apply, bott
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: bottomInset + Spacings.md }]}
+      contentContainerStyle={[styles.content, web && styles.contentWeb, { paddingBottom: bottomInset + Spacings.md }]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.card}>
+      {/* Web : calendrier à gauche, exceptions à venir à droite (une colonne sur écran étroit). */}
+      <View style={web ? [styles.webLayout, two ? styles.webLayoutTwo : styles.webLayoutOne] : styles.mobileStack}>
+      <View style={[styles.card, web && styles.webCard, two && styles.webMain]}>
         {/* ---- Navigation ---- */}
         <View style={styles.monthNav}>
           <TouchableOpacity
@@ -382,7 +388,7 @@ export const ExceptionsTab: React.FC<ExceptionsTabProps> = ({ setup, apply, bott
       </View>
 
       {/* ---- Liste ---- */}
-      <View style={styles.card}>
+      <View style={[styles.card, web && styles.webCard, two && styles.webSide]}>
         <Text style={styles.cardTitle}>Exceptions à venir</Text>
 
         {groups.length === 0 ? (
@@ -419,6 +425,7 @@ export const ExceptionsTab: React.FC<ExceptionsTabProps> = ({ setup, apply, bott
           })
         )}
       </View>
+      </View>
 
       <BookingActionSheet
         visible={!!sheet}
@@ -444,6 +451,37 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+  // Mobile : même empilement qu'avant (l'écart venait de content).
+  mobileStack: {
+    gap: Spacings.md,
+  },
+  /* ---- Web : colonnes ---- */
+  contentWeb: {
+    padding: Spacings.lg,
+  },
+  webLayout: {
+    width: '100%',
+    alignSelf: 'center',
+    gap: Spacings.lg,
+  },
+  webLayoutTwo: {
+    maxWidth: WEB_MAX_WIDTH,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  webLayoutOne: {
+    maxWidth: WEB_SINGLE_MAX_WIDTH,
+  },
+  webSide: {
+    width: WEB_SIDE_COLUMN,
+  },
+  webMain: {
+    flex: 1,
+  },
+  webCard: {
+    padding: Spacings.lg,
+  },
+
   card: {
     padding: Spacings.md,
     borderRadius: 16,

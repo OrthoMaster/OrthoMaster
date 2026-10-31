@@ -19,6 +19,7 @@ import {
 import { LocationPickerSheet, LocationSheetAction } from '../components/LocationPickerSheet';
 import { WEEKDAYS, formatDuration, formatShortDate, fromMinutes, toMinutes } from '../../bookingDates';
 import { notify } from '../../bookingActions';
+import { AvailabilityLayout, WEB_MAX_WIDTH, WEB_SIDE_COLUMN, WEB_SINGLE_MAX_WIDTH } from './availabilityLayout';
 
 const TIME_STEP = 15;
 
@@ -103,9 +104,12 @@ interface WeekTabProps {
   apply: (next: ExpertBookingSetup) => void;
   onDirtyChange: (dirty: boolean) => void;
   bottomInset: number;
+  layout?: AvailabilityLayout;
 }
 
-export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, bottomInset }) => {
+export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, bottomInset, layout = 'mobile' }) => {
+  const web = layout !== 'mobile';
+  const two = layout === 'webTwo';
   const { defaults } = setup.settings;
   const { limits } = setup;
 
@@ -307,12 +311,14 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: bottomInset + Spacings.md }]}
+      contentContainerStyle={[styles.content, web && styles.contentWeb, { paddingBottom: bottomInset + Spacings.md }]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
+      {/* Web : horaires et délais à gauche, semaine type à droite (une colonne sur écran étroit). */}
+      <View style={web ? [styles.webLayout, two ? styles.webLayoutTwo : styles.webLayoutOne] : styles.mobileStack}>
       {/* ---- Horaires ---- */}
-      <View style={styles.card}>
+      <View style={[styles.card, web && styles.webCard, two && styles.webSide]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Horaires des demi-journées</Text>
           {!usesDefaults && (
@@ -410,7 +416,7 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
       </View>
 
       {/* ---- Semaine type ---- */}
-      <View style={styles.card}>
+      <View style={[styles.card, web && styles.webCard, two && styles.webMain]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Semaine type</Text>
           <Text style={styles.counter}>{openCount} / 14</Text>
@@ -488,6 +494,7 @@ export const WeekTab: React.FC<WeekTabProps> = ({ setup, apply, onDirtyChange, b
           </Text>
         </View>
       </View>
+      </View>
 
       <LocationPickerSheet
         visible={!!placeTarget}
@@ -527,6 +534,37 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+  // Mobile : même empilement qu'avant (l'écart venait de content).
+  mobileStack: {
+    gap: Spacings.md,
+  },
+  /* ---- Web : colonnes ---- */
+  contentWeb: {
+    padding: Spacings.lg,
+  },
+  webLayout: {
+    width: '100%',
+    alignSelf: 'center',
+    gap: Spacings.lg,
+  },
+  webLayoutTwo: {
+    maxWidth: WEB_MAX_WIDTH,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  webLayoutOne: {
+    maxWidth: WEB_SINGLE_MAX_WIDTH,
+  },
+  webSide: {
+    width: WEB_SIDE_COLUMN,
+  },
+  webMain: {
+    flex: 1,
+  },
+  webCard: {
+    padding: Spacings.lg,
+  },
+
   card: {
     padding: Spacings.md,
     borderRadius: 16,

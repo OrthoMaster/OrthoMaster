@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -36,12 +36,13 @@ export const BookingActionSheet: React.FC<BookingActionSheetProps> = ({ visible,
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+    <Modal visible={visible} transparent animationType={IS_WEB ? 'fade' : 'slide'} onRequestClose={onClose}>
+      <View style={[styles.overlay, IS_WEB && styles.overlayWeb]}>
         <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={onClose} />
 
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacings.md) }]}>
-          <View style={styles.handle} />
+        {/* Web : fenêtre centrée plutôt que feuille montant du bas. */}
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacings.md) }, IS_WEB && styles.sheetWeb]}>
+          {!IS_WEB && <View style={styles.handle} />}
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
 
@@ -78,11 +79,26 @@ export const BookingActionSheet: React.FC<BookingActionSheetProps> = ({ visible,
   );
 };
 
+/** Web : fenêtre centrée. */
+const IS_WEB = Platform.OS === 'web';
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  overlayWeb: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacings.lg,
+  },
+  sheetWeb: {
+    width: '100%',
+    maxWidth: 440,
+    paddingTop: Spacings.lg,
+    paddingHorizontal: Spacings.lg,
+    borderRadius: 20,
   },
   sheet: {
     paddingTop: Spacings.xs,
