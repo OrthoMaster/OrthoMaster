@@ -20,11 +20,12 @@ import Spacings from '../../../../constants/Spacings';
 
 import { BouncingDots } from '../../../component/LoadingDots';
 import { useFloatingTabBarInset } from '../../../component/booking/FloatingTabBar';
-import { ExpertRequest, getExpertAgendaHistory } from '../../../services/v2/BookingService';
+import { AgendaHistoryItem, getExpertAgendaHistory } from '../../../services/v2/BookingService';
 import { accentOf, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
 import { REQUESTS_ACCENT } from '../requests/requestFormat';
 import { RequestCard } from '../requests/components/RequestCard';
+import { AppointmentCard } from '../appointments/components/AppointmentCard';
 
 const LIST_PADDING = Spacings.lg;
 
@@ -39,7 +40,9 @@ const WEB_GAP = Spacings.md;
 export const EXPERT_AGENDA_HISTORY_KEY = ['booking', 'expert-agenda', 'history'];
 
 /**
- * Rendez-vous acceptés et terminés, le plus récent d'abord.
+ * Rendez-vous passés de l'expert, des deux côtés, comme l'Agenda :
+ *  - ceux qu'il a animés (un confrère a réservé) : carte et fiche des demandes reçues ;
+ *  - ceux qu'il a réservés auprès d'un confrère : carte et fiche de l'onglet Rendez-vous.
  * Paginé, le plus récent d'abord ; la page suivante se charge à l'approche de la fin.
  *
  * Web : contenu centré (même largeur que l'Agenda), cartes sur deux colonnes sur grand écran,
@@ -65,7 +68,11 @@ export const AgendaHistoryView = ({ navigation }) => {
       getNextPageParam: (last) => (last.pagination.has_more ? last.pagination.page + 1 : undefined),
     });
 
-  const bookings = data?.pages.flatMap((page) => page.requests) ?? [];
+  // `items` : les deux rôles ; ancienne réponse (requests seulement) : rendez-vous animés.
+  const items: AgendaHistoryItem[] =
+    data?.pages.flatMap(
+      (page) => page.items ?? page.requests.map((booking) => ({ role: 'host' as const, booking }))
+    ) ?? [];
 
   // Indicateur réservé au tirage manuel (voir AppointmentsView).
   const [pulling, setPulling] = useState(false);
@@ -82,8 +89,17 @@ export const AgendaHistoryView = ({ navigation }) => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   };
 
-  const openRequest = (request: ExpertRequest) =>
-    navigation.navigate('request-detail', { bookingId: request.id, preview: request });
+  const openItem = (item: AgendaHistoryItem) =>
+    item.role === 'guest'
+      ? navigation.navigate('appointment-detail', { bookingId: item.booking.id, preview: item.booking })
+      : navigation.navigate('request-detail', { bookingId: item.booking.id, preview: item.booking });
+
+  const renderCard = (item: AgendaHistoryItem) =>
+    item.role === 'guest' ? (
+      <AppointmentCard booking={item.booking} onPress={() => openItem(item)} />
+    ) : (
+      <RequestCard request={item.booking} accent={accent} onPress={() => openItem(item)} />
+    );
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -105,17 +121,15 @@ export const AgendaHistoryView = ({ navigation }) => {
       <FlatList
         // Changer le nombre de colonnes impose une nouvelle liste.
         key={`columns-${columns}`}
-        data={bookings}
+        data={items}
         numColumns={columns}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={(item) => `${item.role}-${item.booking.id}`}
         renderItem={({ item }) =>
           twoColumns ? (
             // Une carte seule sur la dernière ligne garde la largeur d'une colonne.
-            <View style={styles.webCell}>
-              <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />
-            </View>
+            <View style={styles.webCell}>{renderCard(item)}</View>
           ) : (
-            <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />
+            renderCard(item)
           )
         }
         columnWrapperStyle={twoColumns ? styles.webRow : undefined}
@@ -156,7 +170,7 @@ export const AgendaHistoryView = ({ navigation }) => {
               <Text style={styles.emptyText}>
                 {isError
                   ? 'Vérifiez votre connexion, puis tirez vers le bas pour réessayer.'
-                  : 'Vos rendez-vous terminés apparaîtront ici. Vous pouvez y signaler une absence jusqu’à 24 h après la dernière demi-journée.'}
+                  : 'Vos rendez-vous terminés, animés ou réservés auprès d’un confrère, apparaîtront ici. Vous pouvez y signaler une absence jusqu’à 24 h après la dernière demi-journée.'}
               </Text>
             </View>
           )
