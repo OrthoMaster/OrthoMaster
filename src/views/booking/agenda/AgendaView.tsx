@@ -10,6 +10,8 @@ import {
   RefreshControl,
   StyleSheet,
   StatusBar,
+  ScrollView,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,7 +31,7 @@ import {
   BookingMode,
   getExpertAgenda,
 } from '../../../services/v2/BookingService';
-import { MONTHS, WEEKDAYS, addDays, formatLongDate, weekdayIso } from '../bookingDates';
+import { MONTHS, WEEKDAYS, WEEKDAYS_SHORT, addDays, formatLongDate, monthMatrix, weekdayIso } from '../bookingDates';
 import { accentOf, tint, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
 import { JoinVisioButton } from '../components/JoinVisioButton';
@@ -42,6 +44,16 @@ const LIST_PADDING = Spacings.lg;
 const WEEKS_AHEAD = 27;
 
 export const EXPERT_AGENDA_KEY = ['booking', 'expert-agenda'];
+
+const IS_WEB = Platform.OS === 'web';
+/** Web : barre latérale commune (AppTab.web) ; la zone de contenu est le reste. */
+const WEB_SIDEBAR_WIDTH = 200;
+const WEB_TWO_COLUMNS_FROM = 900;
+const WEB_MAX_WIDTH = 1180;
+const WEB_SIDE_COLUMN = 380;
+const WEB_SINGLE_MAX_WIDTH = 640;
+/** Web : mois proposés dans le calendrier (le mois en cours et les suivants, comme le bandeau mobile). */
+const WEB_MONTHS_AHEAD = 6;
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -104,6 +116,112 @@ const Parties = ({
 );
 
 /**
+ * Version WEB du bandeau de la semaine : calendrier du mois, points matin / après-midi
+ * pour les demi-journées réservées ; toucher un jour filtre la liste (re-toucher pour tout revoir).
+ */
+const MonthCalendar = ({
+  today,
+  selectedDay,
+  onSelect,
+  bookedByDay,
+  accent,
+}: {
+  today: string;
+  selectedDay: string | null;
+  onSelect: (date: string) => void;
+  bookedByDay: Map<string, Set<string>>;
+  accent: string;
+}) => {
+  const [ty, tm] = today.split('-').map(Number);
+  const [offset, setOffset] = useState(0);
+  const year = ty + Math.floor((tm - 1 + offset) / 12);
+  const month = ((tm - 1 + offset) % 12) + 1;
+
+  return (
+    <View style={styles.calendar}>
+      <View style={styles.stripHead}>
+        <TouchableOpacity
+          style={styles.stripArrow}
+          onPress={() => setOffset((o) => Math.max(0, o - 1))}
+          disabled={offset === 0}
+          accessibilityLabel="Mois précédent"
+        >
+          <Ionicons name="chevron-back" size={20} color={offset === 0 ? Colors.border : accent} />
+        </TouchableOpacity>
+        <Text style={styles.stripMonth}>
+          {capitalize(MONTHS[month - 1])} {year}
+        </Text>
+        <TouchableOpacity
+          style={styles.stripArrow}
+          onPress={() => setOffset((o) => Math.min(WEB_MONTHS_AHEAD, o + 1))}
+          disabled={offset === WEB_MONTHS_AHEAD}
+          accessibilityLabel="Mois suivant"
+        >
+          <Ionicons name="chevron-forward" size={20} color={offset === WEB_MONTHS_AHEAD ? Colors.border : accent} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.week}>
+        {WEEKDAYS_SHORT.slice(1).map((letter, i) => (
+          <Text key={i} style={[styles.dayLetter, styles.calendarLetter]}>
+            {letter}
+          </Text>
+        ))}
+      </View>
+
+      {monthMatrix(year, month).map((week, w) => (
+        <View key={w} style={styles.week}>
+          {week.map((date, d) => {
+            if (!date) return <View key={d} style={styles.calendarDay} />;
+            const booked = bookedByDay.get(date);
+            const isToday = date === today;
+            const selected = date === selectedDay;
+            const past = date < today;
+            return (
+              <Pressable
+                key={d}
+                style={({ hovered }: any) => [
+                  styles.calendarDay,
+                  hovered && !selected && !past && { backgroundColor: withAlpha(accent, 0.08) },
+                  selected && { backgroundColor: accent },
+                ]}
+                onPress={() => onSelect(date)}
+                disabled={past}
+                accessibilityLabel={formatLongDate(date)}
+              >
+                <Text
+                  style={[
+                    styles.dayNumber,
+                    styles.calendarNumber,
+                    (!booked || past) && styles.dayNumberIdle,
+                    past && styles.calendarPast,
+                    isToday && !selected && { color: accent },
+                    selected && styles.dayTextSelected,
+                  ]}
+                >
+                  {Number(date.slice(8, 10))}
+                </Text>
+                <View style={styles.dots}>
+                  {(['morning', 'afternoon'] as const).map((period) => (
+                    <View
+                      key={period}
+                      style={[
+                        styles.dot,
+                        { backgroundColor: booked?.has(period) ? (selected ? Colors.white : accent) : 'transparent' },
+                      ]}
+                    />
+                  ))}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+  );
+};
+
+/**
  * Agenda de l'expert, des deux côtés dans une seule liste :
  * les rendez-vous qu'il anime (un confrère a réservé) et ceux qu'il a réservés auprès d'un confrère.
  * Chaque carte dit qui demande et qui est l'expert ; la fiche ouverte dépend du rôle.
@@ -111,10 +229,15 @@ const Parties = ({
  * Prochaine séance mise en avant, demandes envoyées sans réponse, bandeau de la semaine
  * (points matin / après-midi pour les demi-journées réservées), puis séances par jour.
  * Les rendez-vous passés sont dans l'historique (bouton en haut à droite).
+ *
+ * Web : sur grand écran, deux colonnes : à gauche le titre, la prochaine séance et un calendrier
+ * du mois (à la place du bandeau de la semaine) ; à droite les demandes en attente et les séances
+ * par jour. Une seule colonne centrée sur écran étroit.
  */
 export const AgendaView = ({ navigation }) => {
   const bottomInset = useFloatingTabBarInset();
   const { width } = useWindowDimensions();
+  const twoColumns = IS_WEB && width - WEB_SIDEBAR_WIDTH >= WEB_TWO_COLUMNS_FROM;
   const { setup } = useBookingSetup();
   const accent = accentOf(setup?.expert?.palette_color);
 
@@ -212,217 +335,289 @@ export const AgendaView = ({ navigation }) => {
 
   /* ---- En-tête de liste ---- */
 
-  const header = (
-    <View>
-      <View style={styles.head}>
-        <Text style={styles.title}>Agenda</Text>
+  /* ---- Morceaux de l'en-tête (mobile : en-tête de la liste ; web : colonnes) ---- */
+
+  const titleRow = (
+  <>
+    <View style={styles.head}>
+      <Text style={styles.title}>Agenda</Text>
+      <TouchableOpacity
+        style={[styles.historyButton, { borderColor: withAlpha(accent, 0.45), backgroundColor: withAlpha(accent, 0.1) }]}
+        onPress={() => navigation.navigate('agenda-history')}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Rendez-vous passés"
+      >
+        <MaterialCommunityIcons name="history" size={24} color={accent} />
+      </TouchableOpacity>
+    </View>
+  </>
+  );
+
+  const nextCard = (
+  <>
+    {/* ---- Prochaine séance ---- */}
+    {next ? (
+      <Pressable
+        style={({ pressed }) => [styles.next, { backgroundColor: tint(nextColor, 0.14) }, pressed && styles.pressed]}
+        onPress={() => openSession(next)}
+      >
+        <View style={styles.nextHead}>
+          <Text style={[styles.nextKicker, { color: nextColor }]}>Prochaine séance</Text>
+          <Text style={[styles.nextWhen, { color: nextColor }]}>{whenLabel(next)}</Text>
+        </View>
+        <Text style={styles.nextTitle} numberOfLines={2}>
+          {next.offer_title}
+        </Text>
+        <View style={styles.nextMeta}>
+          <MaterialCommunityIcons name={PERIOD_ICONS[next.period]} size={16} color={Colors.lblueDark} />
+          <Text style={styles.nextMetaText}>
+            {capitalize(formatLongDate(next.date, new Date().getFullYear()))} · {PERIOD_LABELS[next.period]}{' '}
+            {next.start_local} – {next.end_local}
+          </Text>
+        </View>
+        <View style={styles.nextMeta}>
+          <MaterialCommunityIcons name={MODE_META[next.mode].icon} size={16} color={MODE_META[next.mode].color} />
+          <Text style={styles.nextMetaText} numberOfLines={1}>
+            {placeLabel(next)}
+            {next.total > 1 ? ` · Séance ${next.index} / ${next.total}` : ''}
+          </Text>
+        </View>
+        <Parties
+          guest={next.role === 'guest'}
+          requesterName={next.requester.name}
+          expert={next.expert}
+          color={nextColor}
+        />
+        {/* Visio seulement en ligne ; en présentiel l'adresse est dans la fiche. */}
+        {next.mode === 'online' ? (
+          <View style={styles.nextJoin}>
+            <JoinVisioButton startAt={next.start_at} endAt={next.end_at} url={next.meet_url} color={nextColor} />
+          </View>
+        ) : null}
+      </Pressable>
+    ) : null}
+  </>
+  );
+
+  const pendingBlock = (
+  <>
+    {/* ---- Demandes envoyées à un confrère, sans réponse ---- */}
+    {!selectedDay && pending.length > 0 ? (
+      <View>
+        <Text style={styles.sectionTitle}>
+          En attente de réponse <Text style={{ color: accent }}>({pending.length})</Text>
+        </Text>
+        <View style={styles.pendingList}>
+          {pending.map((booking) => {
+            const color = accentOf(booking.expert?.palette_color);
+            const first = booking.blocks[0];
+            return (
+              <Pressable
+                key={booking.id}
+                style={({ pressed }) => [styles.row, styles.rowColumn, pressed && styles.pressed]}
+                onPress={() => openPending(booking)}
+                accessibilityRole="button"
+              >
+                <View style={[styles.rowBar, { backgroundColor: withAlpha(color, 0.5) }]} />
+                <View style={styles.pendingHead}>
+                  <Text style={[styles.rowTitle, styles.flex]} numberOfLines={2}>
+                    {booking.offer_title}
+                  </Text>
+                  <View style={[styles.pendingBadge, { backgroundColor: withAlpha(color, 0.12) }]}>
+                    <MaterialCommunityIcons name="timer-sand" size={13} color={color} />
+                    <Text style={[styles.pendingBadgeText, { color }]}>En attente</Text>
+                  </View>
+                </View>
+                {first ? (
+                  <View style={styles.rowMeta}>
+                    <MaterialCommunityIcons
+                      name={MODE_META[booking.mode ?? 'online'].icon}
+                      size={14}
+                      color={MODE_META[booking.mode ?? 'online'].color}
+                    />
+                    <Text style={styles.rowMetaText} numberOfLines={1}>
+                      {capitalize(formatLongDate(first.date, new Date().getFullYear()))}
+                      {booking.blocks_count > 1 ? ` · ${booking.blocks_count} séances` : ''}
+                    </Text>
+                  </View>
+                ) : null}
+                <Parties guest requesterName={null} expert={booking.expert} color={color} />
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    ) : null}
+  </>
+  );
+
+  const weekStrip = (
+  <>
+    {/* ---- Bandeau de la semaine ---- */}
+    {sessions.length > 0 ? (
+      <View style={styles.stripHead}>
         <TouchableOpacity
-          style={[styles.historyButton, { borderColor: withAlpha(accent, 0.45), backgroundColor: withAlpha(accent, 0.1) }]}
-          onPress={() => navigation.navigate('agenda-history')}
+          style={styles.stripArrow}
+          onPress={() => goToWeek(weekIndex - 1)}
+          disabled={weekIndex === 0}
           hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Rendez-vous passés"
+          accessibilityLabel="Semaine précédente"
         >
-          <MaterialCommunityIcons name="history" size={24} color={accent} />
+          <Ionicons name="chevron-back" size={20} color={weekIndex === 0 ? Colors.border : accent} />
+        </TouchableOpacity>
+        <Text style={styles.stripMonth}>{weekMonth}</Text>
+        <TouchableOpacity
+          style={styles.stripArrow}
+          onPress={() => goToWeek(weekIndex + 1)}
+          disabled={weekIndex === WEEKS_AHEAD - 1}
+          hitSlop={8}
+          accessibilityLabel="Semaine suivante"
+        >
+          <Ionicons name="chevron-forward" size={20} color={weekIndex === WEEKS_AHEAD - 1 ? Colors.border : accent} />
         </TouchableOpacity>
       </View>
-
-      {/* ---- Prochaine séance ---- */}
-      {next ? (
-        <Pressable
-          style={({ pressed }) => [styles.next, { backgroundColor: tint(nextColor, 0.14) }, pressed && styles.pressed]}
-          onPress={() => openSession(next)}
-        >
-          <View style={styles.nextHead}>
-            <Text style={[styles.nextKicker, { color: nextColor }]}>Prochaine séance</Text>
-            <Text style={[styles.nextWhen, { color: nextColor }]}>{whenLabel(next)}</Text>
-          </View>
-          <Text style={styles.nextTitle} numberOfLines={2}>
-            {next.offer_title}
-          </Text>
-          <View style={styles.nextMeta}>
-            <MaterialCommunityIcons name={PERIOD_ICONS[next.period]} size={16} color={Colors.lblueDark} />
-            <Text style={styles.nextMetaText}>
-              {capitalize(formatLongDate(next.date, new Date().getFullYear()))} · {PERIOD_LABELS[next.period]}{' '}
-              {next.start_local} – {next.end_local}
-            </Text>
-          </View>
-          <View style={styles.nextMeta}>
-            <MaterialCommunityIcons name={MODE_META[next.mode].icon} size={16} color={MODE_META[next.mode].color} />
-            <Text style={styles.nextMetaText} numberOfLines={1}>
-              {placeLabel(next)}
-              {next.total > 1 ? ` · Séance ${next.index} / ${next.total}` : ''}
-            </Text>
-          </View>
-          <Parties
-            guest={next.role === 'guest'}
-            requesterName={next.requester.name}
-            expert={next.expert}
-            color={nextColor}
-          />
-          {/* Visio seulement en ligne ; en présentiel l'adresse est dans la fiche. */}
-          {next.mode === 'online' ? (
-            <View style={styles.nextJoin}>
-              <JoinVisioButton startAt={next.start_at} endAt={next.end_at} url={next.meet_url} color={nextColor} />
-            </View>
-          ) : null}
-        </Pressable>
-      ) : null}
-
-      {/* ---- Demandes envoyées à un confrère, sans réponse ---- */}
-      {!selectedDay && pending.length > 0 ? (
-        <View>
-          <Text style={styles.sectionTitle}>
-            En attente de réponse <Text style={{ color: accent }}>({pending.length})</Text>
-          </Text>
-          <View style={styles.pendingList}>
-            {pending.map((booking) => {
-              const color = accentOf(booking.expert?.palette_color);
-              const first = booking.blocks[0];
+    ) : null}
+    {sessions.length > 0 ? (
+      <FlatList
+        ref={stripRef}
+        data={weeks}
+        onMomentumScrollEnd={(e) => setWeekIndex(Math.round(e.nativeEvent.contentOffset.x / stripWidth))}
+        keyExtractor={(week) => week[0]}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        style={styles.strip}
+        getItemLayout={(_, index) => ({ length: stripWidth, offset: stripWidth * index, index })}
+        renderItem={({ item: week }) => (
+          <View style={[styles.week, { width: stripWidth }]}>
+            {week.map((date) => {
+              const booked = bookedByDay.get(date);
+              const isToday = date === today;
+              const selected = date === selectedDay;
               return (
                 <Pressable
-                  key={booking.id}
-                  style={({ pressed }) => [styles.row, styles.rowColumn, pressed && styles.pressed]}
-                  onPress={() => openPending(booking)}
-                  accessibilityRole="button"
+                  key={date}
+                  style={[styles.day, selected && { backgroundColor: accent }]}
+                  onPress={() => selectDay(date)}
+                  accessibilityLabel={formatLongDate(date)}
                 >
-                  <View style={[styles.rowBar, { backgroundColor: withAlpha(color, 0.5) }]} />
-                  <View style={styles.pendingHead}>
-                    <Text style={[styles.rowTitle, styles.flex]} numberOfLines={2}>
-                      {booking.offer_title}
-                    </Text>
-                    <View style={[styles.pendingBadge, { backgroundColor: withAlpha(color, 0.12) }]}>
-                      <MaterialCommunityIcons name="timer-sand" size={13} color={color} />
-                      <Text style={[styles.pendingBadgeText, { color }]}>En attente</Text>
-                    </View>
-                  </View>
-                  {first ? (
-                    <View style={styles.rowMeta}>
-                      <MaterialCommunityIcons
-                        name={MODE_META[booking.mode ?? 'online'].icon}
-                        size={14}
-                        color={MODE_META[booking.mode ?? 'online'].color}
+                  <Text style={[styles.dayLetter, selected && styles.dayTextSelected]}>
+                    {WEEKDAYS[weekdayIso(date)].charAt(0)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dayNumber,
+                      !booked && styles.dayNumberIdle,
+                      isToday && !selected && { color: accent },
+                      selected && styles.dayTextSelected,
+                    ]}
+                  >
+                    {Number(date.slice(8, 10))}
+                  </Text>
+                  <View style={styles.dots}>
+                    {(['morning', 'afternoon'] as const).map((period) => (
+                      <View
+                        key={period}
+                        style={[
+                          styles.dot,
+                          {
+                            backgroundColor: booked?.has(period)
+                              ? selected
+                                ? Colors.white
+                                : accent
+                              : 'transparent',
+                          },
+                        ]}
                       />
-                      <Text style={styles.rowMetaText} numberOfLines={1}>
-                        {capitalize(formatLongDate(first.date, new Date().getFullYear()))}
-                        {booking.blocks_count > 1 ? ` · ${booking.blocks_count} séances` : ''}
-                      </Text>
-                    </View>
-                  ) : null}
-                  <Parties guest requesterName={null} expert={booking.expert} color={color} />
+                    ))}
+                  </View>
                 </Pressable>
               );
             })}
           </View>
-        </View>
-      ) : null}
+        )}
+      />
+    ) : null}
+  </>
+  );
 
-      {/* ---- Bandeau de la semaine ---- */}
-      {sessions.length > 0 ? (
-        <View style={styles.stripHead}>
-          <TouchableOpacity
-            style={styles.stripArrow}
-            onPress={() => goToWeek(weekIndex - 1)}
-            disabled={weekIndex === 0}
-            hitSlop={8}
-            accessibilityLabel="Semaine précédente"
-          >
-            <Ionicons name="chevron-back" size={20} color={weekIndex === 0 ? Colors.border : accent} />
-          </TouchableOpacity>
-          <Text style={styles.stripMonth}>{weekMonth}</Text>
-          <TouchableOpacity
-            style={styles.stripArrow}
-            onPress={() => goToWeek(weekIndex + 1)}
-            disabled={weekIndex === WEEKS_AHEAD - 1}
-            hitSlop={8}
-            accessibilityLabel="Semaine suivante"
-          >
-            <Ionicons name="chevron-forward" size={20} color={weekIndex === WEEKS_AHEAD - 1 ? Colors.border : accent} />
-          </TouchableOpacity>
-        </View>
-      ) : null}
-      {sessions.length > 0 ? (
-        <FlatList
-          ref={stripRef}
-          data={weeks}
-          onMomentumScrollEnd={(e) => setWeekIndex(Math.round(e.nativeEvent.contentOffset.x / stripWidth))}
-          keyExtractor={(week) => week[0]}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={styles.strip}
-          getItemLayout={(_, index) => ({ length: stripWidth, offset: stripWidth * index, index })}
-          renderItem={({ item: week }) => (
-            <View style={[styles.week, { width: stripWidth }]}>
-              {week.map((date) => {
-                const booked = bookedByDay.get(date);
-                const isToday = date === today;
-                const selected = date === selectedDay;
-                return (
-                  <Pressable
-                    key={date}
-                    style={[styles.day, selected && { backgroundColor: accent }]}
-                    onPress={() => selectDay(date)}
-                    accessibilityLabel={formatLongDate(date)}
-                  >
-                    <Text style={[styles.dayLetter, selected && styles.dayTextSelected]}>
-                      {WEEKDAYS[weekdayIso(date)].charAt(0)}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.dayNumber,
-                        !booked && styles.dayNumberIdle,
-                        isToday && !selected && { color: accent },
-                        selected && styles.dayTextSelected,
-                      ]}
-                    >
-                      {Number(date.slice(8, 10))}
-                    </Text>
-                    <View style={styles.dots}>
-                      {(['morning', 'afternoon'] as const).map((period) => (
-                        <View
-                          key={period}
-                          style={[
-                            styles.dot,
-                            {
-                              backgroundColor: booked?.has(period)
-                                ? selected
-                                  ? Colors.white
-                                  : accent
-                                : 'transparent',
-                            },
-                          ]}
-                        />
-                      ))}
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-        />
-      ) : null}
+  const filterBlock = (
+  <>
+    {/* ---- Filtre actif ---- */}
+    {selectedDay ? (
+      <View style={styles.filter}>
+        <Text style={styles.filterText} numberOfLines={1}>
+          {selectedDay === today ? "Aujourd'hui" : capitalize(formatLongDate(selectedDay, new Date().getFullYear()))}
+        </Text>
+        <TouchableOpacity
+          style={[styles.filterReset, { borderColor: withAlpha(accent, 0.45) }]}
+          onPress={() => setSelectedDay(null)}
+          hitSlop={6}
+        >
+          <Text style={[styles.filterResetText, { color: accent }]}>Toutes les séances</Text>
+        </TouchableOpacity>
+      </View>
+    ) : null}
+    {selectedDay && visibleSections.length === 0 ? (
+      <Text style={styles.filterEmpty}>Aucune séance ce jour-là.</Text>
+    ) : null}
+  </>
+  );
 
-      {/* ---- Filtre actif ---- */}
-      {selectedDay ? (
-        <View style={styles.filter}>
-          <Text style={styles.filterText} numberOfLines={1}>
-            {selectedDay === today ? "Aujourd'hui" : capitalize(formatLongDate(selectedDay, new Date().getFullYear()))}
-          </Text>
-          <TouchableOpacity
-            style={[styles.filterReset, { borderColor: withAlpha(accent, 0.45) }]}
-            onPress={() => setSelectedDay(null)}
-            hitSlop={6}
-          >
-            <Text style={[styles.filterResetText, { color: accent }]}>Toutes les séances</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-      {selectedDay && visibleSections.length === 0 ? (
-        <Text style={styles.filterEmpty}>Aucune séance ce jour-là.</Text>
-      ) : null}
+  const header = (
+    <View>
+      {titleRow}
+      {nextCard}
+      {pendingBlock}
+      {weekStrip}
+      {filterBlock}
     </View>
   );
+
+  const renderSession = (item: AgendaSession) => {
+    const color = colorOf(item);
+    const mode = MODE_META[item.mode];
+    return (
+      <Pressable
+        style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+        onPress={() => openSession(item)}
+        accessibilityRole="button"
+      >
+        <View style={[styles.rowBar, { backgroundColor: color }]} />
+        <View style={styles.rowTime}>
+          <MaterialCommunityIcons name={PERIOD_ICONS[item.period]} size={18} color={Colors.lblueDark} />
+          <Text style={styles.rowHour}>{item.start_local}</Text>
+          <Text style={styles.rowHourEnd}>{item.end_local}</Text>
+        </View>
+        <View style={styles.rowBody}>
+          <Text style={styles.rowTitle} numberOfLines={2}>
+            {item.offer_title}
+          </Text>
+          <View style={styles.rowMeta}>
+            <MaterialCommunityIcons name={mode.icon} size={14} color={mode.color} />
+            <Text style={styles.rowMetaText} numberOfLines={1}>
+              {placeLabel(item)}
+            </Text>
+            {item.total > 1 ? (
+              <Text style={[styles.rowIndex, { color }]}>
+                {item.index}/{item.total}
+              </Text>
+            ) : null}
+          </View>
+          <Parties
+            guest={item.role === 'guest'}
+            requesterName={item.requester.name}
+            expert={item.expert}
+            color={color}
+          />
+        </View>
+      </Pressable>
+    );
+  };
+
+  const sectionLabel = (date: string) =>
+    date === today ? "Aujourd'hui" : capitalize(formatLongDate(date, new Date().getFullYear()));
 
   const empty = isLoading ? (
     <View style={styles.loading}>
@@ -442,6 +637,59 @@ export const AgendaView = ({ navigation }) => {
     </View>
   );
 
+  if (IS_WEB) {
+    const sessionList = (
+      <>
+        {filterBlock}
+        {sessions.length === 0
+          ? empty
+          : visibleSections.map((section) => (
+              <View key={section.key}>
+                {selectedDay ? null : <Text style={styles.sectionTitle}>{sectionLabel(section.date)}</Text>}
+                <View style={styles.webSessions}>{section.data.map((item) => <View key={item.block_id}>{renderSession(item)}</View>)}</View>
+              </View>
+            ))}
+      </>
+    );
+    const calendar =
+      sessions.length > 0 ? (
+        <MonthCalendar today={today} selectedDay={selectedDay} onSelect={selectDay} bookedByDay={bookedByDay} accent={accent} />
+      ) : null;
+
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <ScrollView
+          contentContainerStyle={[styles.webContent, { paddingBottom: bottomInset + Spacings.md }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {twoColumns ? (
+            <View style={[styles.webLayout, styles.webLayoutTwo]}>
+              {/* Gauche : titre, prochaine séance, calendrier du mois */}
+              <View style={styles.webSide}>
+                {titleRow}
+                {nextCard}
+                {calendar}
+              </View>
+              {/* Droite : demandes en attente, séances par jour */}
+              <View style={styles.webMain}>
+                {pendingBlock}
+                {sessionList}
+              </View>
+            </View>
+          ) : (
+            <View style={[styles.webLayout, styles.webLayoutOne]}>
+              {titleRow}
+              {nextCard}
+              {calendar}
+              {pendingBlock}
+              {sessionList}
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
@@ -451,51 +699,10 @@ export const AgendaView = ({ navigation }) => {
         keyExtractor={(item) => String(item.block_id)}
         renderSectionHeader={({ section }) =>
           selectedDay ? null : (
-          <Text style={styles.sectionTitle}>
-            {section.date === today ? "Aujourd'hui" : capitalize(formatLongDate(section.date, new Date().getFullYear()))}
-          </Text>
+          <Text style={styles.sectionTitle}>{sectionLabel(section.date)}</Text>
           )
         }
-        renderItem={({ item }) => {
-          const color = colorOf(item);
-          const mode = MODE_META[item.mode];
-          return (
-            <Pressable
-              style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-              onPress={() => openSession(item)}
-              accessibilityRole="button"
-            >
-              <View style={[styles.rowBar, { backgroundColor: color }]} />
-              <View style={styles.rowTime}>
-                <MaterialCommunityIcons name={PERIOD_ICONS[item.period]} size={18} color={Colors.lblueDark} />
-                <Text style={styles.rowHour}>{item.start_local}</Text>
-                <Text style={styles.rowHourEnd}>{item.end_local}</Text>
-              </View>
-              <View style={styles.rowBody}>
-                <Text style={styles.rowTitle} numberOfLines={2}>
-                  {item.offer_title}
-                </Text>
-                <View style={styles.rowMeta}>
-                  <MaterialCommunityIcons name={mode.icon} size={14} color={mode.color} />
-                  <Text style={styles.rowMetaText} numberOfLines={1}>
-                    {placeLabel(item)}
-                  </Text>
-                  {item.total > 1 ? (
-                    <Text style={[styles.rowIndex, { color }]}>
-                      {item.index}/{item.total}
-                    </Text>
-                  ) : null}
-                </View>
-                <Parties
-                  guest={item.role === 'guest'}
-                  requesterName={item.requester.name}
-                  expert={item.expert}
-                  color={color}
-                />
-              </View>
-            </Pressable>
-          );
-        }}
+        renderItem={({ item }) => renderSession(item)}
         stickySectionHeadersEnabled={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={header}
@@ -529,6 +736,61 @@ const styles = StyleSheet.create({
   },
   pressed: {
     transform: [{ scale: 0.98 }],
+  },
+
+  /* ---- Web : colonnes ---- */
+  webContent: {
+    paddingHorizontal: Spacings.lg,
+  },
+  webLayout: {
+    width: '100%',
+    alignSelf: 'center',
+  },
+  webLayoutTwo: {
+    maxWidth: WEB_MAX_WIDTH,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.xl,
+  },
+  webLayoutOne: {
+    maxWidth: WEB_SINGLE_MAX_WIDTH,
+  },
+  webSide: {
+    width: WEB_SIDE_COLUMN,
+  },
+  // Aligné sur le haut de la colonne de gauche (titre) : la première section y commence.
+  webMain: {
+    flex: 1,
+    paddingTop: 46 + Spacings.md,
+  },
+  webSessions: {
+    gap: Spacings.sm,
+  },
+  calendar: {
+    marginTop: Spacings.lg,
+    padding: Spacings.md,
+    paddingTop: Spacings.xs,
+    borderRadius: 18,
+    backgroundColor: Colors.white,
+  },
+  calendarLetter: {
+    flex: 1,
+    textAlign: 'center',
+    paddingVertical: Spacings.xxs,
+  },
+  calendarDay: {
+    flex: 1,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: 1,
+    borderRadius: 12,
+  },
+  calendarNumber: {
+    fontSize: 14,
+  },
+  calendarPast: {
+    opacity: 0.45,
   },
 
   /* ---- En-tête ---- */
