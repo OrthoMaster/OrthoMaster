@@ -8,6 +8,8 @@ import {
   RefreshControl,
   StyleSheet,
   StatusBar,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,14 +28,28 @@ import { RequestCard } from '../requests/components/RequestCard';
 
 const LIST_PADDING = Spacings.lg;
 
+const IS_WEB = Platform.OS === 'web';
+/** Web : barre latérale commune (AppTab.web) ; la zone de contenu est le reste. */
+const WEB_SIDEBAR_WIDTH = 200;
+const WEB_TWO_COLUMNS_FROM = 900;
+const WEB_MAX_WIDTH = 1180;
+const WEB_SINGLE_MAX_WIDTH = 640;
+const WEB_GAP = Spacings.md;
+
 export const EXPERT_AGENDA_HISTORY_KEY = ['booking', 'expert-agenda', 'history'];
 
 /**
  * Rendez-vous acceptés et terminés, le plus récent d'abord.
  * Paginé, le plus récent d'abord ; la page suivante se charge à l'approche de la fin.
+ *
+ * Web : contenu centré (même largeur que l'Agenda), cartes sur deux colonnes sur grand écran,
+ * une seule colonne centrée sur écran étroit.
  */
 export const AgendaHistoryView = ({ navigation }) => {
   const bottomInset = useFloatingTabBarInset();
+  const { width } = useWindowDimensions();
+  const twoColumns = IS_WEB && width - WEB_SIDEBAR_WIDTH >= WEB_TWO_COLUMNS_FROM;
+  const columns = twoColumns ? 2 : 1;
   const { setup } = useBookingSetup();
   const accent = accentOf(setup?.expert?.palette_color);
 
@@ -73,7 +89,7 @@ export const AgendaHistoryView = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
 
-      <View style={styles.head}>
+      <View style={[styles.head, IS_WEB && styles.webCentered, IS_WEB && (twoColumns ? styles.webWide : styles.webNarrow)]}>
         <TouchableOpacity
           style={styles.round}
           onPress={() => navigation.goBack()}
@@ -87,11 +103,29 @@ export const AgendaHistoryView = ({ navigation }) => {
       </View>
 
       <FlatList
+        // Changer le nombre de colonnes impose une nouvelle liste.
+        key={`columns-${columns}`}
         data={bookings}
+        numColumns={columns}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />}
+        renderItem={({ item }) =>
+          twoColumns ? (
+            // Une carte seule sur la dernière ligne garde la largeur d'une colonne.
+            <View style={styles.webCell}>
+              <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />
+            </View>
+          ) : (
+            <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />
+          )
+        }
+        columnWrapperStyle={twoColumns ? styles.webRow : undefined}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        contentContainerStyle={[styles.list, { paddingBottom: bottomInset + Spacings.md }]}
+        contentContainerStyle={[
+          styles.list,
+          IS_WEB && styles.webCentered,
+          IS_WEB && (twoColumns ? styles.webWide : styles.webNarrow),
+          { paddingBottom: bottomInset + Spacings.md },
+        ]}
         scrollIndicatorInsets={{ bottom: bottomInset }}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
@@ -158,6 +192,26 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingVertical: Spacings.md,
+  },
+
+  /* ---- Web ---- */
+  webCentered: {
+    width: '100%',
+    alignSelf: 'center',
+  },
+  // Largeur maximale + marges de la liste (paddingHorizontal).
+  webWide: {
+    maxWidth: WEB_MAX_WIDTH + LIST_PADDING * 2,
+  },
+  webNarrow: {
+    maxWidth: WEB_SINGLE_MAX_WIDTH + LIST_PADDING * 2,
+  },
+  webRow: {
+    gap: WEB_GAP,
+  },
+  webCell: {
+    flex: 1,
+    maxWidth: `calc(50% - ${WEB_GAP / 2}px)` as any,
   },
 
   /* ---- En-tête ---- */

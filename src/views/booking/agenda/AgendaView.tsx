@@ -766,12 +766,19 @@ const styles = StyleSheet.create({
   webSessions: {
     gap: Spacings.sm,
   },
+  // Bordure et ombre légère : le calendrier se détache du fond gris.
   calendar: {
     marginTop: Spacings.lg,
     padding: Spacings.md,
     paddingTop: Spacings.xs,
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
     backgroundColor: Colors.white,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
   },
   calendarLetter: {
     flex: 1,
