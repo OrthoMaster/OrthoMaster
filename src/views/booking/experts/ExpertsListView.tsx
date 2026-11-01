@@ -39,6 +39,9 @@ const WEB_TWO_COLUMNS_FROM = 900;
 const WEB_MAX_WIDTH = 1180;
 const WEB_SINGLE_MAX_WIDTH = 640;
 const WEB_GAP = Spacings.lg;
+/** Web : recherche à droite du titre, largeur bornée ; saisie limitée. */
+const WEB_SEARCH_WIDTH = 380;
+const WEB_SEARCH_MAX_LENGTH = 100;
 
 /**
  * Experts, 10 par page, ceux qui acceptent des demandes en tête.
@@ -60,6 +63,8 @@ export const ExpertsListView = ({ navigation }) => {
     : screenWidth - LIST_PADDING * 2;
   const cardWidth = twoColumns ? (innerWidth - WEB_GAP) / 2 : innerWidth;
   const [search, setSearch] = useState('');
+  // Web : le contour du navigateur est retiré du champ, le cadre de la recherche le remplace.
+  const [searchFocused, setSearchFocused] = useState(false);
   const [query, setQuery] = useState('');
 
   // La recherche part au serveur (la liste est paginée) : on attend la fin de la frappe.
@@ -138,19 +143,29 @@ export const ExpertsListView = ({ navigation }) => {
   // En-tête d'écran d'accueil : titre et recherche défilent avec la liste.
   // Passé en élément (pas en composant) : le champ garde le focus pendant la frappe.
   const listHeader = (
-    <View style={[styles.head, IS_WEB && { width: innerWidth, alignSelf: 'center' }]}>
-      <Text style={styles.title}>Trouvez l'expert qui vous correspond</Text>
+    // Web, grand écran : comme l'Agenda, titre à gauche et recherche à droite sur une ligne.
+    <View
+      style={[
+        styles.head,
+        IS_WEB && { width: innerWidth, alignSelf: 'center' },
+        twoColumns && styles.headWeb,
+      ]}
+    >
+      <Text style={[styles.title, twoColumns && styles.titleWeb]}>Trouvez l'expert qui vous correspond</Text>
 
-      <View style={styles.searchWrap}>
+      <View style={[styles.searchWrap, twoColumns && styles.searchWrapWeb, IS_WEB && searchFocused && styles.searchWrapFocused]}>
         <Ionicons name="search" size={18} color={Colors.subtext} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, IS_WEB && styles.searchInputWeb]}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setSearchFocused(false)}
           value={search}
           onChangeText={setSearch}
           placeholder="Rechercher un expert ou un domaine"
           placeholderTextColor={Colors.subtext}
           returnKeyType="search"
           autoCorrect={false}
+          maxLength={IS_WEB ? WEB_SEARCH_MAX_LENGTH : undefined}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch('')} hitSlop={8} accessibilityLabel="Effacer la recherche">
@@ -311,6 +326,27 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     color: Colors.text,
   },
+
+  headWeb: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacings.lg,
+  },
+  titleWeb: {
+    flex: 1,
+    maxWidth: undefined,
+  },
+  searchWrapWeb: {
+    width: WEB_SEARCH_WIDTH,
+    marginTop: 0,
+  },
+  searchWrapFocused: {
+    borderColor: Colors.lblue,
+  },
+  searchInputWeb: {
+    outlineStyle: 'none',
+  } as any,
 
   /* ---- Recherche ---- */
   searchWrap: {
