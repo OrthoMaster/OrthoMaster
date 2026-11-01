@@ -4,11 +4,13 @@ import {
   Text,
   TextInput,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
   StyleSheet,
   StatusBar,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,16 +32,33 @@ const SEARCH_DEBOUNCE_MS = 350;
 /** Marge latérale de l'écran. */
 const LIST_PADDING = Spacings.lg;
 
+const IS_WEB = Platform.OS === 'web';
+/** Web : barre latérale commune (AppTab.web) ; la zone de contenu est le reste. */
+const WEB_SIDEBAR_WIDTH = 200;
+const WEB_TWO_COLUMNS_FROM = 900;
+const WEB_MAX_WIDTH = 1180;
+const WEB_SINGLE_MAX_WIDTH = 640;
+const WEB_GAP = Spacings.lg;
+
 /**
  * Experts, 10 par page, ceux qui acceptent des demandes en tête.
  * La page suivante se charge à l'approche de la fin ; la marge basse tient compte de la
  * barre flottante, sinon la dernière carte et l'indicateur passeraient dessous.
+ *
+ * Web : contenu centré, cartes sur deux colonnes sur grand écran (une colonne sur écran
+ * étroit), thèmes proposés dépliés d'office.
  */
 export const ExpertsListView = ({ navigation }) => {
   const bottomInset = useFloatingTabBarInset();
   // Largeur de fenêtre plutôt que onLayout : fiable dès le premier rendu.
   const { width: screenWidth } = useWindowDimensions();
-  const cardWidth = screenWidth - LIST_PADDING * 2;
+  // Web : la largeur de la fenêtre comprend la barre latérale ; le contenu est borné et centré.
+  const contentWidth = IS_WEB ? screenWidth - WEB_SIDEBAR_WIDTH : screenWidth;
+  const twoColumns = IS_WEB && contentWidth >= WEB_TWO_COLUMNS_FROM;
+  const innerWidth = IS_WEB
+    ? Math.min(contentWidth - LIST_PADDING * 2, twoColumns ? WEB_MAX_WIDTH : WEB_SINGLE_MAX_WIDTH)
+    : screenWidth - LIST_PADDING * 2;
+  const cardWidth = twoColumns ? (innerWidth - WEB_GAP) / 2 : innerWidth;
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
 
@@ -91,6 +110,7 @@ export const ExpertsListView = ({ navigation }) => {
       expert={item}
       width={cardWidth}
       indexInPage={index % PER_PAGE}
+      defaultOpen={IS_WEB}
       // L'aperçu affiche l'en-tête du profil tout de suite, sans attendre la requête.
       onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
     />
@@ -118,7 +138,7 @@ export const ExpertsListView = ({ navigation }) => {
   // En-tête d'écran d'accueil : titre et recherche défilent avec la liste.
   // Passé en élément (pas en composant) : le champ garde le focus pendant la frappe.
   const listHeader = (
-    <View style={styles.head}>
+    <View style={[styles.head, IS_WEB && { width: innerWidth, alignSelf: 'center' }]}>
       <Text style={styles.title}>Trouvez l'expert qui vous correspond</Text>
 
       <View style={styles.searchWrap}>
@@ -141,6 +161,69 @@ export const ExpertsListView = ({ navigation }) => {
     </View>
   );
 
+  const listEmpty = isLoading ? (
+    <View style={styles.loading}>
+      <BouncingDots color={Colors.lblue} size={10} bounceHeight={5} />
+    </View>
+  ) : (
+    emptyState()
+  );
+
+  const listFooter = isFetchingNextPage ? (
+    <View style={styles.footer}>
+      <ActivityIndicator color={Colors.lblue} />
+    </View>
+  ) : null;
+
+  /* ---- Web, grand écran : deux colonnes indépendantes (hauteurs de cartes différentes) ---- */
+  if (twoColumns) {
+    // Chaque carte va dans la colonne la moins remplie, d'après une hauteur estimée
+    // (en-tête + une ligne par thème déplié) : les colonnes restent équilibrées.
+    const estimate = (expert: BookingExpertListItem) =>
+      140 + (expert.online && expert.offers?.length ? 40 + expert.offers.length * 56 : 0);
+    const gridColumns: { expert: BookingExpertListItem; index: number }[][] = [[], []];
+    const heights = [0, 0];
+    experts.forEach((expert, index) => {
+      const target = heights[0] <= heights[1] ? 0 : 1;
+      gridColumns[target].push({ expert, index });
+      heights[target] += estimate(expert) + WEB_GAP;
+    });
+
+    // Pas de FlatList ici : la page suivante se charge quand le bas approche.
+    const onScroll = (e: any) => {
+      const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+      if (layoutMeasurement.height + contentOffset.y >= contentSize.height - layoutMeasurement.height / 2) loadMore();
+    };
+
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <ScrollView
+          contentContainerStyle={[styles.list, styles.listWeb, { paddingBottom: bottomInset + Spacings.md }]}
+          onScroll={onScroll}
+          scrollEventThrottle={200}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {listHeader}
+          {experts.length === 0 ? (
+            listEmpty
+          ) : (
+            <View style={[styles.webGrid, { width: innerWidth }]}>
+              {gridColumns.map((column, c) => (
+                <View key={c} style={styles.webColumn}>
+                  {column.map(({ expert, index }) => (
+                    <View key={expert.id}>{renderExpert({ item: expert, index })}</View>
+                  ))}
+                </View>
+              ))}
+            </View>
+          )}
+          {listFooter}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
@@ -149,7 +232,7 @@ export const ExpertsListView = ({ navigation }) => {
         data={experts}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderExpert}
-        contentContainerStyle={[styles.list, { paddingBottom: bottomInset + Spacings.md }]}
+        contentContainerStyle={[styles.list, IS_WEB && styles.listWeb, { paddingBottom: bottomInset + Spacings.md }]}
         // L'indicateur de défilement s'arrête au-dessus de la barre flottante.
         scrollIndicatorInsets={{ bottom: bottomInset }}
         onEndReached={loadMore}
@@ -196,6 +279,19 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: LIST_PADDING,
+    gap: Spacings.lg,
+  },
+  // Web : cartes centrées dans la zone de contenu.
+  listWeb: {
+    alignItems: 'center',
+  },
+  webGrid: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: WEB_GAP,
+  },
+  webColumn: {
+    flex: 1,
     gap: Spacings.lg,
   },
   footer: {

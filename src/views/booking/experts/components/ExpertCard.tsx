@@ -25,6 +25,8 @@ interface ExpertCardProps {
   width: number;
   /** Rang dans sa page (0–9), pour l'entrée en cascade. */
   indexInPage: number;
+  /** Thèmes dépliés à l'ouverture (web : la place ne manque pas). */
+  defaultOpen?: boolean;
   onPress: () => void;
 }
 
@@ -33,7 +35,7 @@ interface ExpertCardProps {
  * à son profil). Portrait carré à la hauteur du texte, identité à droite.
  * Expert disponible : ses thèmes se déplient sous la carte, une ligne chacun.
  */
-export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPage, onPress }) => {
+export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPage, onPress, defaultOpen = false }) => {
   const [photoSize, setPhotoSize] = useState(PHOTO_MIN);
 
   const enter = useRef(new Animated.Value(0)).current;
@@ -57,7 +59,7 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
   };
 
   const offers = expert.online ? expert.offers ?? [] : [];
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
 
   const toggleOffers = () => {
     try {
@@ -131,7 +133,7 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
         </View>
       </Pressable>
 
-      {/* ---- Thèmes de l'expert, repliés par défaut ---- */}
+      {/* ---- Thèmes de l'expert : repliés par défaut sur mobile, dépliés sur le web ---- */}
       {offers.length > 0 ? (
         <>
           <Pressable
