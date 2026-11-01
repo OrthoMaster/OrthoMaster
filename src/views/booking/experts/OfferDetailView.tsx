@@ -266,6 +266,8 @@ export const OfferDetailView = ({ navigation, route }) => {
 
   const thumbWidth = images.length > 1 ? detailsWidth - INSET * 2 - THUMB_PEEK : detailsWidth - INSET * 2;
   const thumbHeight = Math.round(thumbWidth / THUMB_RATIO);
+  // Web : deux vignettes par ligne dans la colonne des détails.
+  const gridThumbWidth = Math.floor((detailsWidth - INSET * 2 - Spacings.md) / 2);
   const sortedSelection = Object.entries(selection).sort(([a], [b]) => a.localeCompare(b));
 
   // Changer de format change le calendrier : la sélection en cours ne vaut plus.
@@ -407,44 +409,37 @@ export const OfferDetailView = ({ navigation, route }) => {
         <Text style={[styles.description, { color: theme.muted }]}>Pas de description pour ce thème.</Text>
       )}
 
-      {/* ---- Lieux du présentiel (3b) : adresse visible avant de réserver ---- */}
-      {onsiteLocations.length > 0 ? (
-        <View style={styles.places}>
-          <Text style={[styles.placesTitle, { color: theme.ink }]}>
-            {onsiteLocations.length > 1 ? 'Lieux en présentiel' : 'Lieu en présentiel'}
-          </Text>
-          {onsiteLocations.map((location) => (
-            <View key={location.id} style={[styles.placeRow, { backgroundColor: theme.card, borderColor: theme.line }]}>
-              <View style={[styles.placeIcon, { backgroundColor: tint(theme.primary, 0.12) }]}>
-                <Ionicons name="location-outline" size={18} color={theme.primary} />
+      {/* ---- Illustrations, juste après la description ---- */}
+      {/* Web : grille de deux colonnes, sans défilement horizontal ; mobile : défilement horizontal. */}
+      {images.length > 0 && IS_WEB ? (
+        <View style={styles.webGallery}>
+          {images.map((image, i) => (
+            <Pressable
+              key={image.id}
+              onPress={() => setViewerIndex(i)}
+              style={{ width: gridThumbWidth }}
+              accessibilityRole="imagebutton"
+              accessibilityLabel={image.caption ?? `Illustration ${i + 1}`}
+            >
+              <View
+                style={[styles.thumb, { height: Math.round(gridThumbWidth / THUMB_RATIO), backgroundColor: theme.card, borderColor: theme.line }]}
+              >
+                <Image source={{ uri: image.url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                <View style={styles.zoom}>
+                  <Ionicons name="expand-outline" size={16} color={Colors.white} />
+                </View>
               </View>
-              <View style={styles.flex}>
-                <Text style={[styles.placeLabel, { color: theme.ink }]} numberOfLines={1}>
-                  {location.label}
+              {image.caption ? (
+                <Text style={[styles.caption, { color: theme.muted }]} numberOfLines={2}>
+                  {image.caption}
                 </Text>
-                {addressLines(location).map((line) => (
-                  <Text key={line} style={[styles.placeAddress, { color: theme.muted }]} numberOfLines={2}>
-                    {line}
-                  </Text>
-                ))}
-              </View>
-              {location.maps_url ? (
-                <TouchableOpacity
-                  style={[styles.placeRoute, { borderColor: withAlpha(theme.primary, 0.45) }]}
-                  onPress={() => Linking.openURL(location.maps_url).catch(() => {})}
-                  hitSlop={6}
-                  accessibilityLabel={`Itinéraire vers ${location.label}`}
-                >
-                  <Ionicons name="navigate-outline" size={14} color={theme.primary} />
-                  <Text style={[styles.placeRouteText, { color: theme.primary }]}>Itinéraire</Text>
-                </TouchableOpacity>
               ) : null}
-            </View>
+            </Pressable>
           ))}
         </View>
       ) : null}
 
-      {images.length > 0 && (
+      {images.length > 0 && !IS_WEB && (
         <View style={styles.gallery}>
           <ScrollView
             horizontal
@@ -500,6 +495,44 @@ export const OfferDetailView = ({ navigation, route }) => {
           ) : null}
         </View>
       )}
+
+      {/* ---- Lieux du présentiel (3b) : adresse visible avant de réserver ---- */}
+      {onsiteLocations.length > 0 ? (
+        <View style={styles.places}>
+          <Text style={[styles.placesTitle, { color: theme.ink }]}>
+            {onsiteLocations.length > 1 ? 'Lieux en présentiel' : 'Lieu en présentiel'}
+          </Text>
+          {onsiteLocations.map((location) => (
+            <View key={location.id} style={[styles.placeRow, { backgroundColor: theme.card, borderColor: theme.line }]}>
+              <View style={[styles.placeIcon, { backgroundColor: tint(theme.primary, 0.12) }]}>
+                <Ionicons name="location-outline" size={18} color={theme.primary} />
+              </View>
+              <View style={styles.flex}>
+                <Text style={[styles.placeLabel, { color: theme.ink }]} numberOfLines={1}>
+                  {location.label}
+                </Text>
+                {addressLines(location).map((line) => (
+                  <Text key={line} style={[styles.placeAddress, { color: theme.muted }]} numberOfLines={2}>
+                    {line}
+                  </Text>
+                ))}
+              </View>
+              {location.maps_url ? (
+                <TouchableOpacity
+                  style={[styles.placeRoute, { borderColor: withAlpha(theme.primary, 0.45) }]}
+                  onPress={() => Linking.openURL(location.maps_url).catch(() => {})}
+                  hitSlop={6}
+                  accessibilityLabel={`Itinéraire vers ${location.label}`}
+                >
+                  <Ionicons name="navigate-outline" size={14} color={theme.primary} />
+                  <Text style={[styles.placeRouteText, { color: theme.primary }]}>Itinéraire</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      ) : null}
+
     </>
   );
 
@@ -623,7 +656,7 @@ export const OfferDetailView = ({ navigation, route }) => {
   // Avant de réserver, on peut poser ses questions ; la réservation reste dans l'onglet Réserver.
   const contactButton = (
     <TouchableOpacity
-      style={[styles.cta, { backgroundColor: theme.primary }, contacting && styles.ctaBusy]}
+      style={[styles.cta, wide && styles.webContactButton, { backgroundColor: theme.primary }, contacting && styles.ctaBusy]}
       onPress={contactExpert}
       disabled={contacting}
       activeOpacity={0.85}
@@ -665,7 +698,6 @@ export const OfferDetailView = ({ navigation, route }) => {
             <View style={styles.webDetails}>
               {headerBlock}
               <View style={styles.webDetailsBody}>{detailsBody}</View>
-              <View style={styles.webContact}>{contactButton}</View>
             </View>
 
             <View style={[styles.webReserve, { backgroundColor: theme.panel, borderColor: theme.line }]}>
@@ -675,6 +707,11 @@ export const OfferDetailView = ({ navigation, route }) => {
             </View>
           </View>
         </ScrollView>
+
+        {/* Fixé en bas, au bord droit de la colonne des détails (pas de la page). */}
+        <View style={[styles.webContact, { right: (contentWidth - innerWidth) / 2 + WEB_RESERVE_COLUMN + WEB_GAP }]}>
+          {contactButton}
+        </View>
 
         {viewerIndex !== null && (
           <ImageViewer images={images} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
@@ -889,13 +926,28 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: -INSET,
   },
+  // Marge basse : la fin des détails ne reste pas sous le bouton fixé.
   webDetailsBody: {
     marginTop: Spacings.lg,
+    paddingBottom: 52 + Spacings.lg * 2,
   },
   webContact: {
+    position: 'absolute',
+    bottom: Spacings.lg,
+  },
+  webContactButton: {
+    paddingHorizontal: Spacings.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+  },
+  webGallery: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacings.md,
     paddingHorizontal: INSET,
-    marginTop: Spacings.xl,
-    maxWidth: 360 + INSET * 2,
+    marginTop: Spacings.lg,
   },
   webReserve: {
     width: WEB_RESERVE_COLUMN,

@@ -181,9 +181,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10,
   },
+  // zIndex : sur le web, le ScrollView qui suit (transform → contexte d'empilement)
+  // recouvrait la croix et captait le clic.
   header: {
     alignItems: 'center',
     marginTop: Spacings.md,
+    zIndex: 2,
   },
   closeButton: {
     position: 'absolute',
