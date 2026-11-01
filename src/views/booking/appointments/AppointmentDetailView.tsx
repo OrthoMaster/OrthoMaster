@@ -10,8 +10,8 @@ import {
   Easing,
   PanResponder,
   ActivityIndicator,
-  Alert,
   StyleSheet,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,8 +32,16 @@ import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
 import { APPOINTMENTS_ACCENT, STATUS_META, formatDeadline } from './appointmentFormat';
 import { ModePill } from '../components/ModePill';
+import { confirmAction, notify } from '../bookingActions';
 
 const SHEET_RATIO = 0.88;
+
+const IS_WEB = Platform.OS === 'web';
+/** Web : panneau à droite sur toute la hauteur ; largeur selon la zone de contenu (hors barre latérale). */
+const WEB_SIDEBAR_WIDTH = 200;
+const WEB_PANEL_MIN = 460;
+const WEB_PANEL_MAX = 640;
+const WEB_PANEL_RADIUS = 24;
 const SHEET_RADIUS = 28;
 const INSET = Spacings.lg;
 const DISMISS_DISTANCE = 120;
@@ -91,8 +99,11 @@ export const AppointmentDetailView = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
 
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const sheetHeight = Math.round(height * SHEET_RATIO);
+  // Web : panneau à droite (comme le profil d'un expert) ; il glisse depuis la droite.
+  const panelWidth = Math.round(Math.min(WEB_PANEL_MAX, Math.max(WEB_PANEL_MIN, (width - WEB_SIDEBAR_WIDTH) * 0.5), width));
+  const offscreen = IS_WEB ? panelWidth : sheetHeight;
   const queryClient = useQueryClient();
 
   const bookingId: number = route.params?.bookingId;
@@ -109,7 +120,7 @@ export const AppointmentDetailView = ({ navigation, route }) => {
 
   /* ---- Ouverture / fermeture ---- */
 
-  const translateY = useRef(new Animated.Value(sheetHeight)).current;
+  const translateY = useRef(new Animated.Value(offscreen)).current;
   const closing = useRef(false);
 
   useEffect(() => {
@@ -127,13 +138,13 @@ export const AppointmentDetailView = ({ navigation, route }) => {
       e.preventDefault();
       closing.current = true;
       Animated.timing(translateY, {
-        toValue: sheetHeight,
+        toValue: offscreen,
         duration: 240,
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }).start(() => navigation.dispatch(e.data.action));
     });
-  }, [navigation, sheetHeight]);
+  }, [navigation, offscreen]);
 
   const close = () => navigation.goBack();
 
@@ -154,7 +165,7 @@ export const AppointmentDetailView = ({ navigation, route }) => {
   );
 
   const backdropOpacity = translateY.interpolate({
-    inputRange: [0, sheetHeight],
+    inputRange: [0, offscreen],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
@@ -162,30 +173,26 @@ export const AppointmentDetailView = ({ navigation, route }) => {
   /* ---- Retrait de la demande ---- */
 
   const cancel = () => {
-    Alert.alert(
+    // confirm du navigateur sur le web (Alert.alert y est sans effet).
+    confirmAction(
       'Annuler la demande ?',
       booking?.payment_required
         ? "L'expert ne la recevra plus et le montant réservé sur votre carte sera libéré."
         : "L'expert ne la recevra plus.",
-      [
-        { text: 'Garder', style: 'cancel' },
-        {
-          text: 'Annuler la demande',
-          style: 'destructive',
-          onPress: async () => {
-            setCancelling(true);
-            const result = await cancelMyBooking(bookingId);
-            setCancelling(false);
+      'Annuler la demande',
+      async () => {
+        setCancelling(true);
+        const result = await cancelMyBooking(bookingId);
+        setCancelling(false);
 
-            if (result.ok === false) {
-              Alert.alert('Annulation impossible', result.message ?? 'Vérifiez votre connexion puis réessayez.');
-              return;
-            }
-            queryClient.setQueryData(['booking', 'request', bookingId], result.data);
-            queryClient.invalidateQueries({ queryKey: ['booking', 'requests'] });
-          },
-        },
-      ]
+        if (result.ok === false) {
+          notify('Annulation impossible', result.message ?? 'Vérifiez votre connexion puis réessayez.');
+          return;
+        }
+        queryClient.setQueryData(['booking', 'request', bookingId], result.data);
+        queryClient.invalidateQueries({ queryKey: ['booking', 'requests'] });
+      },
+      { destructive: true, cancelText: 'Garder' }
     );
   };
 
@@ -202,9 +209,16 @@ export const AppointmentDetailView = ({ navigation, route }) => {
         <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Fermer" />
       </Animated.View>
 
-      <Animated.View style={[styles.sheet, { height: sheetHeight, transform: [{ translateY }] }]}>
-        <View {...pan.panHandlers} style={styles.grab}>
-          <View style={styles.handle} />
+      <Animated.View
+        style={
+          IS_WEB
+            ? [styles.sheet, styles.panel, { width: panelWidth, transform: [{ translateX: translateY }] }]
+            : [styles.sheet, { height: sheetHeight, transform: [{ translateY }] }]
+        }
+      >
+        {/* Mobile : glisser vers le bas pour fermer ; web : croix ou clic à côté. */}
+        <View {...(IS_WEB ? {} : pan.panHandlers)} style={[styles.grab, IS_WEB && styles.grabWeb]}>
+          {!IS_WEB && <View style={styles.handle} />}
           <View style={styles.titleRow}>
             <Text style={styles.sheetTitle}>Rendez-vous</Text>
             <TouchableOpacity style={styles.round} onPress={close} hitSlop={8} accessibilityLabel="Fermer">
@@ -419,6 +433,23 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: SHEET_RADIUS,
     borderTopRightRadius: SHEET_RADIUS,
     overflow: 'hidden',
+  },
+  // Web : panneau à droite, toute la hauteur, arrondi côté page.
+  panel: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    borderTopRightRadius: 0,
+    borderTopLeftRadius: WEB_PANEL_RADIUS,
+    borderBottomLeftRadius: WEB_PANEL_RADIUS,
+    shadowColor: '#000',
+    shadowOffset: { width: -8, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 28,
+  },
+  grabWeb: {
+    paddingTop: Spacings.lg,
   },
   grab: {
     paddingHorizontal: INSET,

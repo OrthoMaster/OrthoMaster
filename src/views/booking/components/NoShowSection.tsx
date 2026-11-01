@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, ActivityIndicator, Alert, LayoutAnimation, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, ActivityIndicator, LayoutAnimation, StyleSheet } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Colors from '../../../../constants/Colors';
@@ -8,6 +8,7 @@ import Spacings from '../../../../constants/Spacings';
 import { BookingResult, MyBookingBlock, NoShowInfo, NoShowInput, fieldError } from '../../../services/v2/BookingService';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
 import { formatDeadline, formatShortDay } from '../appointments/appointmentFormat';
+import { notify } from '../bookingActions';
 
 const REPORT_STATUS: Record<NonNullable<NoShowInfo['report']>['status'], string> = {
   open: "en cours d'examen par l'équipe OrthoMaster",
@@ -68,7 +69,8 @@ export const NoShowSection: React.FC<NoShowSectionProps> = ({ noshow, blocks, co
     setBusy(false);
 
     if (result.ok === false) {
-      Alert.alert(
+      // notify : alerte du navigateur sur le web (Alert.alert y est sans effet).
+      notify(
         'Signalement impossible',
         fieldError(result.errors, 'block_ids') ?? fieldError(result.errors, 'note') ?? result.message ?? 'Vérifiez votre connexion puis réessayez.'
       );
