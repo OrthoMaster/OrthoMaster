@@ -11,6 +11,7 @@ import { withAlpha } from '../../bookingPalette';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker';
 import { featuredBlock, formatDeadline, formatShortDay } from '../../appointments/appointmentFormat';
 import { REQUEST_STATUS_META, REQUESTS_ACCENT, timeLeft } from '../requestFormat';
+import { ModeLine } from '../../components/ModePill';
 
 const CARD_RADIUS = 20;
 
@@ -74,6 +75,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
         <Text style={styles.title} numberOfLines={2}>
           {request.offer_title}
         </Text>
+        {/* Format : En visio, ou En présentiel avec le lieu de la demi-journée mise en avant. */}
+        <ModeLine mode={request.mode ?? 'online'} location={block?.location} style={styles.modeLine} />
 
         {/* ---- Demi-journée mise en avant ---- */}
         {block ? (
@@ -204,6 +207,9 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Demi-journée ---- */
+  modeLine: {
+    marginTop: Spacings.xs,
+  },
   session: {
     marginTop: Spacings.sm,
     gap: Spacings.xxs,

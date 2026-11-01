@@ -82,3 +82,57 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 });
+
+/** « Cabinet Lyon · 69002 Lyon » : nom du lieu, code postal et ville. */
+export const bookedPlaceLabel = (location?: {
+  label?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
+} | null) =>
+  location ? [location.label, [location.postal_code, location.city].filter(Boolean).join(' ')].filter(Boolean).join(' · ') : '';
+
+/**
+ * Format d'un rendez-vous sur les cartes de liste : pastille, puis en présentiel le lieu
+ * de la demi-journée mise en avant (nom, code postal et ville).
+ */
+export const ModeLine: React.FC<{
+  mode: BookingMode;
+  location?: { label?: string | null; postal_code?: string | null; city?: string | null } | null;
+  style?: StyleProp<ViewStyle>;
+}> = ({ mode, location, style }) => {
+  const place = mode === 'onsite' ? bookedPlaceLabel(location) : '';
+  return (
+    <View style={[lineStyles.row, style]}>
+      <ModePill mode={mode} size="compact" />
+      {place ? (
+        <View style={lineStyles.place}>
+          <MaterialCommunityIcons name="map-marker-outline" size={14} color={Colors.subtext} />
+          <Text style={lineStyles.placeText} numberOfLines={1}>
+            {place}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+};
+
+const lineStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+  },
+  place: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    minWidth: 0,
+  },
+  placeText: {
+    flexShrink: 1,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: Colors.subtext2,
+  },
+});

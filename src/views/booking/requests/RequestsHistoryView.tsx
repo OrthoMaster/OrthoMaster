@@ -23,6 +23,7 @@ import { accentOf, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
 import { REQUESTS_ACCENT } from './requestFormat';
 import { RequestCard } from './components/RequestCard';
+import { useWebList, webListStyles } from '../components/webList';
 
 const LIST_PADDING = Spacings.lg;
 
@@ -34,6 +35,8 @@ export const EXPERT_REQUEST_HISTORY_KEY = ['booking', 'expert-requests', 'histor
  */
 export const RequestsHistoryView = ({ navigation }) => {
   const bottomInset = useFloatingTabBarInset();
+  // Web : contenu centré, deux cartes par ligne sur grand écran.
+  const web = useWebList();
   const { setup } = useBookingSetup();
   const accent = accentOf(setup?.expert?.palette_color);
 
@@ -73,7 +76,7 @@ export const RequestsHistoryView = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
 
-      <View style={styles.head}>
+      <View style={[styles.head, web.centered]}>
         <TouchableOpacity
           style={styles.round}
           onPress={() => navigation.goBack()}
@@ -87,11 +90,17 @@ export const RequestsHistoryView = ({ navigation }) => {
       </View>
 
       <FlatList
+        // Changer le nombre de colonnes impose une nouvelle liste.
+        key={`columns-${web.columns}`}
+        numColumns={web.columns}
+        columnWrapperStyle={web.twoColumns ? webListStyles.row : undefined}
         data={bookings}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />}
+        renderItem={({ item }) =>
+          web.twoColumns ? <View style={webListStyles.cell}><RequestCard request={item} accent={accent} onPress={() => openRequest(item)} /></View> : <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />
+        }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        contentContainerStyle={[styles.list, { paddingBottom: bottomInset + Spacings.md }]}
+        contentContainerStyle={[styles.list, web.centered, { paddingBottom: bottomInset + Spacings.md }]}
         scrollIndicatorInsets={{ bottom: bottomInset }}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}

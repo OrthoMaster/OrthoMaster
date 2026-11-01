@@ -23,6 +23,7 @@ import { accentOf, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
 import { REQUESTS_ACCENT } from './requestFormat';
 import { RequestCard } from './components/RequestCard';
+import { pairUp, useWebList, webListStyles } from '../components/webList';
 
 const LIST_PADDING = Spacings.lg;
 
@@ -37,6 +38,8 @@ export const EXPERT_REQUESTS_KEY = ['booking', 'expert-requests'];
  */
 export const RequestsView = ({ navigation }) => {
   const bottomInset = useFloatingTabBarInset();
+  // Web : contenu centré, deux cartes par ligne sur grand écran.
+  const web = useWebList();
   const { setup } = useBookingSetup();
   const accent = accentOf(setup?.expert?.palette_color);
 
@@ -72,8 +75,15 @@ export const RequestsView = ({ navigation }) => {
     (section) => section.data.length > 0
   );
 
+  // Web, grand écran : chaque ligne porte deux cartes (le compte reste celui des cartes).
+  const listSections = web.twoColumns
+    ? sections.map((section) => ({ ...section, count: section.data.length, data: pairUp(section.data as any[]) as any[] }))
+    : sections.map((section) => ({ ...section, count: section.data.length }));
+
   const openRequest = (request: ExpertRequest) =>
     navigation.navigate('request-detail', { bookingId: request.id, preview: request });
+
+  const renderCard = (item: any) => <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />;
 
   const header = (
     <View style={styles.head}>
@@ -117,19 +127,31 @@ export const RequestsView = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
 
       <SectionList
-        sections={sections}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <RequestCard request={item} accent={accent} onPress={() => openRequest(item)} />}
+        sections={listSections}
+        keyExtractor={(item: any) => (Array.isArray(item) ? item.map((i) => i.id).join('-') : String(item.id))}
+        renderItem={({ item }: { item: any }) =>
+          Array.isArray(item) ? (
+            <View style={webListStyles.row}>
+              {item.map((cell) => (
+                <View key={cell.id} style={webListStyles.cell}>
+                  {renderCard(cell)}
+                </View>
+              ))}
+            </View>
+          ) : (
+            renderCard(item)
+          )
+        }
         renderSectionHeader={({ section }) => (
           <Text style={styles.sectionTitle}>
-            {section.title} <Text style={styles.sectionCount}>({section.data.length})</Text>
+            {section.title} <Text style={styles.sectionCount}>({section.count})</Text>
           </Text>
         )}
         stickySectionHeadersEnabled={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
-        contentContainerStyle={[styles.list, { paddingBottom: bottomInset + Spacings.md }]}
+        contentContainerStyle={[styles.list, web.centered, { paddingBottom: bottomInset + Spacings.md }]}
         scrollIndicatorInsets={{ bottom: bottomInset }}
         showsVerticalScrollIndicator={false}
         refreshControl={

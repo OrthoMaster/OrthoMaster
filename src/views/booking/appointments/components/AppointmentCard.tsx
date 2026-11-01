@@ -11,6 +11,7 @@ import { accentOf, withAlpha } from '../../bookingPalette';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker';
 import { JoinVisioButton } from '../../components/JoinVisioButton';
 import { STATUS_META, featuredBlock, formatShortDay, relativeDay } from '../appointmentFormat';
+import { ModeLine } from '../../components/ModePill';
 
 const CARD_RADIUS = 20;
 const MOTIF_SIZE = 112;
@@ -110,6 +111,8 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
         <Text style={styles.title} numberOfLines={2}>
           {booking.offer_title}
         </Text>
+        {/* Format : En visio, ou En présentiel avec le lieu de la demi-journée mise en avant. */}
+        <ModeLine mode={booking.mode ?? 'online'} location={block?.location} style={styles.modeLine} />
 
         {/* ---- Demi-journée mise en avant ---- */}
         {block ? (
@@ -129,7 +132,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
               </Text>
             </View>
 
-            {booking.status === 'accepted' && upcoming ? (
+            {booking.status === 'accepted' && upcoming && booking.mode !== 'onsite' ? (
               <View style={styles.join}>
                 <JoinVisioButton startAt={block.start_at} endAt={block.end_at} url={block.meet_url} color={accent} />
               </View>
@@ -224,6 +227,10 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     color: Colors.text,
     marginTop: Spacings.md,
+  },
+
+  modeLine: {
+    marginTop: Spacings.xs,
   },
 
   /* ---- Demi-journée ---- */
