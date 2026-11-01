@@ -57,6 +57,14 @@ export interface BookingOfferSummary {
   /** Prix TTC le plus bas des modes actifs. */
   price_from: number | null;
   currency: string;
+  /** Un format par ligne (en ligne d'abord) : prix et, en présentiel, villes où le thème se tient. */
+  formats?: BookingOfferFormat[];
+}
+
+export interface BookingOfferFormat {
+  mode: BookingMode;
+  price: number;
+  places: { postal_code: string | null; city: string | null }[];
 }
 
 /** Sans domaines : la liste ne les affiche pas. */

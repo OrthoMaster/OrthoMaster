@@ -11,6 +11,7 @@ import {
   PanResponder,
   ActivityIndicator,
   StyleSheet,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +26,6 @@ import { initials } from '../bookingFormat';
 import { withAlpha } from '../bookingPalette';
 import { ExpertTheme, expertTheme } from '../expertTheme';
 import { ThemeBackdrop } from '../components/ThemeBackdrop';
-import { SwooshRule } from '../components/SwooshRule';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { OfferCarousel } from './components/OfferCarousel';
 
@@ -42,6 +42,13 @@ const PHOTO_SIZE = 104;
 const AVATAR_GAP = 6;
 const AVATAR_RING = 1.5;
 const AVATAR_SIZE = PHOTO_SIZE + (AVATAR_GAP + AVATAR_RING) * 2;
+
+const IS_WEB = Platform.OS === 'web';
+/** Web : panneau à droite, sur toute la hauteur ; largeur selon la zone de contenu (hors barre latérale). */
+const WEB_SIDEBAR_WIDTH = 200;
+const WEB_PANEL_MIN = 440;
+const WEB_PANEL_MAX = 620;
+const WEB_PANEL_RADIUS = 24;
 
 /** Glisser la feuille vers le bas au-delà de ce seuil (ou d'un geste rapide) la ferme. */
 const DISMISS_DISTANCE = 120;
@@ -86,6 +93,8 @@ const Lede = ({ text, theme }: { text: string; theme: ExpertTheme }) => {
 
 /**
  * Profil d'un expert en feuille basse (écran « transparentModal » de ExpertsStack).
+ * Web : panneau qui glisse depuis la droite sur toute la hauteur, la liste reste visible
+ * derrière le voile (clic à côté ou croix pour fermer).
  * Habillage repris de sa page vitrine web : fond à halo radial, couleurs et typographie
  * du thème de sa palette. Thèmes en carrousel : la carte affichée est celle réservée.
  */
@@ -95,6 +104,12 @@ export const ExpertProfileView = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sheetHeight = Math.round(height * SHEET_RATIO);
+  const panelWidth = Math.round(
+    Math.min(WEB_PANEL_MAX, Math.max(WEB_PANEL_MIN, (width - WEB_SIDEBAR_WIDTH) * 0.5), width)
+  );
+  // Distance hors écran : vers le bas sur mobile, vers la droite sur le web.
+  const offscreen = IS_WEB ? panelWidth : sheetHeight;
+  const contentWidth = IS_WEB ? panelWidth : width;
 
   const expertId: number = route.params?.expertId;
   const preview: BookingExpertListItem | undefined = route.params?.preview;
@@ -112,7 +127,7 @@ export const ExpertProfileView = ({ navigation, route }) => {
 
   /* ---- Ouverture / fermeture ---- */
 
-  const translateY = useRef(new Animated.Value(sheetHeight)).current;
+  const translateY = useRef(new Animated.Value(offscreen)).current;
   const closing = useRef(false);
 
   useEffect(() => {
@@ -131,13 +146,13 @@ export const ExpertProfileView = ({ navigation, route }) => {
       e.preventDefault();
       closing.current = true;
       Animated.timing(translateY, {
-        toValue: sheetHeight,
+        toValue: offscreen,
         duration: 240,
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }).start(() => navigation.dispatch(e.data.action));
     });
-  }, [navigation, sheetHeight]);
+  }, [navigation, offscreen]);
 
   const close = () => navigation.goBack();
 
@@ -158,7 +173,7 @@ export const ExpertProfileView = ({ navigation, route }) => {
   );
 
   const backdropOpacity = translateY.interpolate({
-    inputRange: [0, sheetHeight],
+    inputRange: [0, offscreen],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
@@ -184,18 +199,24 @@ export const ExpertProfileView = ({ navigation, route }) => {
         <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Fermer le profil" />
       </Animated.View>
 
-      <Animated.View style={[styles.sheet, { height: sheetHeight, transform: [{ translateY }] }]}>
-        {/* Fond séparé et rogné aux arrondis : l'avatar, lui, dépasse au-dessus. */}
-        <View style={[StyleSheet.absoluteFill, styles.sheetBackground]}>
+      <Animated.View
+        style={
+          IS_WEB
+            ? [styles.panel, { width: panelWidth, transform: [{ translateX: translateY }] }]
+            : [styles.sheet, { height: sheetHeight, transform: [{ translateY }] }]
+        }
+      >
+        {/* Fond séparé et rogné aux arrondis : l'avatar, lui, dépasse au-dessus (mobile). */}
+        <View style={[StyleSheet.absoluteFill, IS_WEB ? styles.panelBackground : styles.sheetBackground]}>
           <ThemeBackdrop theme={theme} />
         </View>
 
-        {/* ---- Zone de prise : poignée, avatar, fermeture ---- */}
-        <View {...pan.panHandlers} style={styles.grab}>
-          <View style={[styles.handle, { backgroundColor: theme.line }]} />
+        {/* ---- Zone de prise : poignée, avatar, fermeture (web : pas de glissement, avatar dans le panneau) ---- */}
+        <View {...(IS_WEB ? {} : pan.panHandlers)} style={IS_WEB ? styles.grabWeb : styles.grab}>
+          {!IS_WEB && <View style={[styles.handle, { backgroundColor: theme.line }]} />}
 
           {expert && (
-            <View style={[styles.avatar, { backgroundColor: theme.bg, borderColor: theme.primary }]}>
+            <View style={[styles.avatar, IS_WEB && styles.avatarWeb, { backgroundColor: theme.bg, borderColor: theme.primary }]}>
               <View style={[styles.photo, { backgroundColor: theme.card }]}>
                 {expert.avatar_url ? (
                   <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} />
@@ -237,8 +258,8 @@ export const ExpertProfileView = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* Filet de la couleur principale : limite entre l'en-tête fixe et le contenu défilant. */}
-        <SwooshRule color={theme.primary} width={width - INSET * 2} style={styles.rule} />
+        {/* Simple filet : limite entre l'en-tête fixe et le contenu défilant. */}
+        <View style={[styles.rule, { backgroundColor: theme.line }]} />
 
         <ScrollView
           contentContainerStyle={{ paddingTop: Spacings.lg, paddingBottom: Math.max(insets.bottom, Spacings.md) + Spacings.lg }}
@@ -292,7 +313,7 @@ export const ExpertProfileView = ({ navigation, route }) => {
               <OfferCarousel
                 offers={offers}
                 accent={theme.primary}
-                width={width}
+                width={contentWidth}
                 inset={INSET}
                 notchColor={theme.bg}
                 onSelect={openOffer}
@@ -321,6 +342,30 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: SHEET_RADIUS,
     borderTopRightRadius: SHEET_RADIUS,
+  },
+  // Web : panneau à droite, toute la hauteur, arrondi côté page.
+  panel: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    borderTopLeftRadius: WEB_PANEL_RADIUS,
+    borderBottomLeftRadius: WEB_PANEL_RADIUS,
+    shadowColor: '#000',
+    shadowOffset: { width: -8, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 28,
+  },
+  panelBackground: {
+    borderTopLeftRadius: WEB_PANEL_RADIUS,
+    borderBottomLeftRadius: WEB_PANEL_RADIUS,
+    overflow: 'hidden',
+  },
+  grabWeb: {
+    height: AVATAR_SIZE + Spacings.lg + Spacings.md,
+  },
+  avatarWeb: {
+    top: Spacings.lg,
   },
   sheetBackground: {
     borderTopLeftRadius: SHEET_RADIUS,
@@ -390,7 +435,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: INSET,
   },
   rule: {
-    marginLeft: INSET,
+    height: StyleSheet.hairlineWidth * 2,
+    marginHorizontal: INSET,
     marginTop: Spacings.md,
   },
   ledeBlock: {

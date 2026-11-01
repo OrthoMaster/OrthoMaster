@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
 
-import { BookingExpertListItem } from '../../../../services/v2/BookingService';
+import { BookingExpertListItem, BookingOfferFormat, BookingOfferSummary } from '../../../../services/v2/BookingService';
 import { initials, priceLabel } from '../../bookingFormat';
 import { ModePill, sortModes } from '../../components/ModePill';
 
@@ -16,6 +16,20 @@ const PHOTO_RADIUS = 14;
 /** Le portrait carré suit la hauteur du texte, dans ces bornes. */
 const PHOTO_MIN = 92;
 const PHOTO_MAX = 132;
+
+/**
+ * Formats d'un thème : ceux du serveur, ou à défaut (ancienne réponse) les modes seuls,
+ * le prix « dès » restant alors en tête.
+ */
+const formatsOf = (offer: BookingOfferSummary): BookingOfferFormat[] =>
+  offer.formats ?? sortModes(offer.modes).map((mode) => ({ mode, price: null as any, places: [] }));
+
+/** « 69002 Lyon · 75005 Paris » */
+const placesLabel = (format: BookingOfferFormat) =>
+  format.places
+    .map((p) => [p.postal_code, p.city].filter(Boolean).join(' '))
+    .filter(Boolean)
+    .join(' · ');
 
 /** Décalage d'entrée entre deux cartes d'une même page : la liste se déroule au lieu d'apparaître d'un bloc. */
 const STAGGER_MS = 60;
@@ -151,32 +165,58 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
 
           {open ? (
             <View style={styles.offers}>
-              {offers.map((offer) => (
-                <Pressable
-                  key={offer.id}
-                  style={({ pressed }) => [styles.offer, pressed && styles.offerPressed]}
-                  onPress={onPress}
-                  accessibilityRole="button"
-                >
-                  <View style={styles.offerBody}>
-                    <Text style={styles.offerTitle} numberOfLines={1}>
-                      {offer.title}
-                    </Text>
-                    <View style={styles.offerMeta}>
-                      <Text style={styles.offerMetaText}>{offer.duration_label}</Text>
-                      {sortModes(offer.modes).map((mode) => (
-                        <ModePill key={mode} mode={mode} size="compact" />
-                      ))}
+              {offers.map((offer) => {
+                const formats = formatsOf(offer);
+                const legacy = !offer.formats;
+                return (
+                  <Pressable
+                    key={offer.id}
+                    style={({ pressed }) => [styles.offer, pressed && styles.offerPressed]}
+                    onPress={onPress}
+                    accessibilityRole="button"
+                  >
+                    {/* Titre et durée, puis une ligne par format : pastille, villes (présentiel), prix. */}
+                    <View style={styles.offerHead}>
+                      <Text style={styles.offerTitle} numberOfLines={2}>
+                        {offer.title}
+                      </Text>
+                      <View style={styles.offerDuration}>
+                        <Ionicons name="time-outline" size={12} color={Colors.subtext} />
+                        <Text style={styles.offerMetaText}>{offer.duration_label}</Text>
+                      </View>
                     </View>
-                  </View>
-                  {offer.price_from != null ? (
-                    <Text style={styles.offerPrice}>
-                      {offer.price_from > 0 && offer.modes.length > 1 ? 'dès ' : ''}
-                      {priceLabel(offer.price_from, offer.currency)}
-                    </Text>
-                  ) : null}
-                </Pressable>
-              ))}
+
+                    {formats.map((format) => {
+                      const places = format.mode === 'onsite' ? placesLabel(format) : '';
+                      return (
+                        <View key={format.mode} style={styles.formatRow}>
+                          <ModePill mode={format.mode} size="compact" />
+                          <View style={styles.formatPlaces}>
+                            {places ? (
+                              <>
+                                <Ionicons name="location-outline" size={12} color={Colors.subtext} />
+                                <Text style={styles.formatPlacesText} numberOfLines={1}>
+                                  {places}
+                                </Text>
+                              </>
+                            ) : null}
+                          </View>
+                          {!legacy ? (
+                            <Text style={styles.offerPrice}>{priceLabel(format.price, offer.currency)}</Text>
+                          ) : null}
+                        </View>
+                      );
+                    })}
+
+                    {legacy && offer.price_from != null ? (
+                      <Text style={[styles.offerPrice, styles.legacyPrice]}>
+                        {offer.price_from > 0 && offer.modes.length > 1 ? 'dès ' : ''}
+                        {priceLabel(offer.price_from, offer.currency)}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
             </View>
           ) : null}
         </>
@@ -227,13 +267,43 @@ const styles = StyleSheet.create({
     gap: Spacings.xxs,
   },
   offer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.sm,
+    gap: 6,
     paddingVertical: Spacings.xs,
     paddingHorizontal: Spacings.sm,
     borderRadius: 12,
     backgroundColor: Colors.grayLight,
+  },
+  offerHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.sm,
+  },
+  offerDuration: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+  },
+  formatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+  },
+  formatPlaces: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    minWidth: 0,
+  },
+  formatPlacesText: {
+    flexShrink: 1,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: Colors.subtext2,
+  },
+  legacyPrice: {
+    alignSelf: 'flex-end',
   },
   offerPressed: {
     opacity: 0.7,
@@ -242,6 +312,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   offerTitle: {
+    flex: 1,
     fontFamily: 'Poppins-Medium',
     fontSize: 14,
     color: Colors.text,
