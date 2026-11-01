@@ -69,6 +69,7 @@ export const ChatDock = () => {
           <ConversationThread
             conversationId={w.conversationId}
             preview={w.preview}
+            initialDraft={w.draft}
             active={!w.minimized}
             minimized={w.minimized}
             onMinimize={() => chatDock.setMinimized(w.conversationId, true)}

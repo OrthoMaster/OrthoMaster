@@ -131,6 +131,8 @@ interface ConversationThreadProps {
   conversationId: number;
   /** Aperçu (liste, ouverture depuis un thème) : l'en-tête s'affiche sans attendre. */
   preview?: ChatConversation;
+  /** Contact depuis un thème : saisie pré-remplie (rien n'est envoyé tant qu'on n'appuie pas sur Envoyer). */
+  initialDraft?: string;
   /** Écran visible / fenêtre dépliée : relève active et messages marqués lus. */
   active: boolean;
   /** Mobile : flèche de retour à gauche. */
@@ -157,6 +159,7 @@ interface ConversationThreadProps {
 export const ConversationThread: React.FC<ConversationThreadProps> = ({
   conversationId,
   preview,
+  initialDraft,
   active,
   onBack,
   onMinimize,
@@ -190,7 +193,24 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
   const [loading, setLoading] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useState(initialDraft ?? '');
+
+  // Nouveau texte pré-rempli (fil déjà ouvert, autre thème) : il remplace une saisie vide seulement.
+  useEffect(() => {
+    if (!initialDraft) return;
+    setDraft((current) => (current.trim() === '' ? initialDraft : current));
+    // Curseur en fin de texte : on complète directement.
+    const timer = setTimeout(() => {
+      const input: any = inputRef.current;
+      input?.focus();
+      // Web : le navigateur place le curseur au début ; on le met après le texte pré-rempli.
+      if (Platform.OS === 'web' && input?.setSelectionRange) {
+        const end = input.value?.length ?? 0;
+        input.setSelectionRange(end, end);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [initialDraft]);
 
   const lastIdRef = useRef(0);
   const inputRef = useRef<TextInput>(null);

@@ -1478,10 +1478,12 @@ export const getConversation = async (conversationId: number): Promise<ChatConve
  */
 export const startConversation = async (
   offerId: number,
-  mode?: BookingMode | null
+  mode?: BookingMode | null,
+  /** true : fil ouvert sans encadré « à propos du thème » ; la saisie est pré-remplie côté application. */
+  draft = false
 ): Promise<BookingResult<ChatConversationDetail>> => {
   return axiosInstance
-    .post(`${baseUrl}/booking/conversations/start`, { offer_id: offerId, mode: mode ?? null })
+    .post(`${baseUrl}/booking/conversations/start`, { offer_id: offerId, mode: mode ?? null, draft })
     .then((response) => toResult<ChatConversationDetail>(response))
     .catch(toFailure);
 };

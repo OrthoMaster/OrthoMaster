@@ -19,6 +19,8 @@ export interface ChatWindow {
   conversationId: number;
   preview?: ChatConversation;
   minimized: boolean;
+  /** Texte pré-rempli dans la saisie (contact depuis un thème). */
+  draft?: string;
 }
 
 interface DockState {
@@ -44,13 +46,13 @@ export const chatDock = {
   togglePanel: (open?: boolean) => set({ panelOpen: open ?? !state.panelOpen }),
 
   /** Ouvre la fenêtre d'une conversation (remplace celle en cours, ou la déplie) ; ferme le panneau. */
-  open: (conversation: ChatConversation) => {
+  open: (conversation: ChatConversation, draft?: string) => {
     const others = state.windows.filter((w) => w.conversationId !== conversation.id);
     const current = state.windows.find((w) => w.conversationId === conversation.id);
     set({
       panelOpen: false,
       windows: [
-        { conversationId: conversation.id, preview: current?.preview ?? conversation, minimized: false },
+        { conversationId: conversation.id, preview: current?.preview ?? conversation, minimized: false, draft },
         ...others,
       ].slice(0, MAX_CHAT_WINDOWS),
     });

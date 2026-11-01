@@ -149,12 +149,39 @@ const ImageViewer = ({
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(startIndex);
   const current = images[index];
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Boutons précédent / suivant : défilement animé vers l'image voisine.
+  const goTo = (next: number) => {
+    const target = Math.max(0, Math.min(images.length - 1, next));
+    scrollRef.current?.scrollTo({ x: target * width, animated: true });
+    setIndex(target);
+  };
+
+  // Web : flèches du clavier et Échap.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') goTo(index + 1);
+      else if (e.key === 'ArrowLeft') goTo(index - 1);
+      else if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [index, width]);
+
+  // Position de départ (contentOffset n'est pas appliqué sur le web).
+  useEffect(() => {
+    const timer = setTimeout(() => scrollRef.current?.scrollTo({ x: startIndex * width, animated: false }), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <Modal visible animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.viewer}>
         <StatusBar barStyle="light-content" />
         <ScrollView
+          ref={scrollRef}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -165,6 +192,28 @@ const ImageViewer = ({
             <Image key={image.id} source={{ uri: image.url }} style={{ width, height }} resizeMode="contain" />
           ))}
         </ScrollView>
+
+        {/* Précédent / suivant, de part et d'autre de l'image. */}
+        {images.length > 1 && index > 0 ? (
+          <TouchableOpacity
+            style={[styles.viewerNav, styles.viewerPrev]}
+            onPress={() => goTo(index - 1)}
+            hitSlop={8}
+            accessibilityLabel="Image précédente"
+          >
+            <Ionicons name="chevron-back" size={28} color={Colors.white} />
+          </TouchableOpacity>
+        ) : null}
+        {images.length > 1 && index < images.length - 1 ? (
+          <TouchableOpacity
+            style={[styles.viewerNav, styles.viewerNext]}
+            onPress={() => goTo(index + 1)}
+            hitSlop={8}
+            accessibilityLabel="Image suivante"
+          >
+            <Ionicons name="chevron-forward" size={28} color={Colors.white} />
+          </TouchableOpacity>
+        ) : null}
 
         <TouchableOpacity
           style={[styles.viewerClose, { top: insets.top + Spacings.sm }]}
@@ -287,13 +336,14 @@ export const OfferDetailView = ({ navigation, route }) => {
   const contactExpert = async () => {
     if (contacting) return;
     setContacting(true);
-    const result = await startConversation(offer.id, offerMode?.mode ?? null);
+    // Fil ouvert sans message : la saisie est pré-remplie, le demandeur complète et envoie lui-même.
+    const result = await startConversation(offer.id, null, true);
     setContacting(false);
     if (result.ok === false) {
       notify('Conversation indisponible', result.message ?? 'Vérifiez votre connexion puis réessayez.');
       return;
     }
-    openConversation(navigation, result.data);
+    openConversation(navigation, result.data, `Je vous contacte au sujet du thème « ${offer.title} ». `);
   };
 
   const removeSelected = (key: string) => {
@@ -1223,6 +1273,25 @@ const styles = StyleSheet.create({
   viewer: {
     flex: 1,
     backgroundColor: Colors.blackBackground,
+  },
+  viewerNav: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: -26,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewerPrev: {
+    left: Spacings.md,
+  },
+  viewerNext: {
+    right: Spacings.md,
   },
   viewerClose: {
     position: 'absolute',

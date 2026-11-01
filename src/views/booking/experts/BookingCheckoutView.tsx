@@ -56,6 +56,20 @@ const DISMISS_VELOCITY = 1.2;
 /** Adresse de facturation mémorisée sur l'appareil, à la demande de l'utilisateur. */
 const ADDRESS_KEY = '@booking-billing-address';
 
+const IS_WEB = Platform.OS === 'web';
+/** Web : fenêtre centrée ; deux colonnes dès que la zone de contenu le permet. */
+const WEB_SIDEBAR_WIDTH = 200;
+const WEB_TWO_COLUMNS_FROM = 900;
+const WEB_DIALOG_WIDE = 980;
+const WEB_DIALOG_NARROW = 600;
+const WEB_DIALOG_MAX_HEIGHT = 860;
+/** Web : la fenêtre apparaît en glissant un peu vers le haut, pas depuis le bas de l'écran. */
+const WEB_ENTER_OFFSET = 32;
+
+/** Adresse sur deux lignes : rue, puis code postal et ville. */
+const addressLines = (l: { address_line?: string | null; postal_code?: string | null; city?: string | null }) =>
+  [l.address_line, [l.postal_code, l.city].filter(Boolean).join(' ')].filter(Boolean) as string[];
+
 const ACCENT = Colors.lblue;
 const ACCENT_DARK = Colors.lblueDark;
 
@@ -78,13 +92,24 @@ const formatDeadline = (iso: string) => {
  *
  * Paiement : le montant est seulement réservé sur la carte ; il est débité quand l'expert
  * accepte, libéré s'il refuse ou ne répond pas à temps.
+ *
+ * Présentiel : chaque demi-journée montre l'adresse complète de son lieu.
+ * Web : fenêtre centrée ; sur grand écran deux colonnes (rendez-vous et message à gauche,
+ * informations et montant à droite), pied (conditions, paiement) sur toute la largeur.
  */
 export const BookingCheckoutView = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
 
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
-  const sheetHeight = Math.round(height * SHEET_RATIO);
+  const { width, height } = useWindowDimensions();
+  const contentWidth = IS_WEB ? width - WEB_SIDEBAR_WIDTH : width;
+  const twoColumns = IS_WEB && contentWidth >= WEB_TWO_COLUMNS_FROM;
+  const dialogWidth = Math.min(twoColumns ? WEB_DIALOG_WIDE : WEB_DIALOG_NARROW, contentWidth - Spacings.lg * 2);
+  const sheetHeight = IS_WEB
+    ? Math.round(Math.min(height * 0.9, WEB_DIALOG_MAX_HEIGHT))
+    : Math.round(height * SHEET_RATIO);
+  // Distance de l'animation d'entrée / de sortie.
+  const offscreen = IS_WEB ? WEB_ENTER_OFFSET : sheetHeight;
   const queryClient = useQueryClient();
 
   const expertId: number = route.params?.expertId;
@@ -158,7 +183,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
 
   /* ---- Ouverture / fermeture ---- */
 
-  const translateY = useRef(new Animated.Value(sheetHeight)).current;
+  const translateY = useRef(new Animated.Value(offscreen)).current;
   const closing = useRef(false);
 
   useEffect(() => {
@@ -188,13 +213,13 @@ export const BookingCheckoutView = ({ navigation, route }) => {
       }
 
       Animated.timing(translateY, {
-        toValue: sheetHeight,
+        toValue: offscreen,
         duration: 240,
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }).start(() => navigation.dispatch(e.data.action));
     });
-  }, [navigation, sheetHeight]);
+  }, [navigation, offscreen]);
 
   const close = () => navigation.goBack();
 
@@ -215,7 +240,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   );
 
   const backdropOpacity = translateY.interpolate({
-    inputRange: [0, sheetHeight],
+    inputRange: [0, offscreen],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
@@ -350,18 +375,241 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   /* ---- Rendu ---- */
 
   const totalLabel = pricing ? formatPrice(pricing.amount_ttc, currency) : '';
+  // Lieux du présentiel (copie de l'offre) : adresse complète des demi-journées choisies.
+  const onsiteLocations = offer.modes?.find((m) => m.mode === 'onsite')?.locations ?? [];
   const year = new Date().getFullYear();
 
+  /* ---- Sections : une colonne (mobile, web étroit) ou deux (web, grand écran) ---- */
+
+  const identitySection = (
+    <>
+    {/* ---- Vos informations ---- */}
+    <Text style={styles.sectionTitle}>Vos informations</Text>
+    <View style={styles.card} onLayout={(e) => (identityY.current = e.nativeEvent.layout.y)}>
+      <View style={styles.identity}>
+        <View style={styles.identityIcon}>
+          <Ionicons name="person" size={18} color={ACCENT_DARK} />
+        </View>
+        <View style={styles.flex}>
+          <Text style={styles.identityName} numberOfLines={1}>
+            {checkout?.user.name ?? ' '}
+          </Text>
+          <Text style={styles.identityEmail} numberOfLines={1}>
+            {checkout?.user.email ?? ' '}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <Text style={styles.label}>
+        Adresse de facturation <Text style={styles.required}>*</Text>
+      </Text>
+      <TextInput
+        ref={addressInputRef}
+        style={[styles.input, styles.inputAddress, !!addressError && styles.inputError]}
+        value={address}
+        onChangeText={setAddress}
+        placeholder={'Cabinet, rue, code postal, ville'}
+        placeholderTextColor={Colors.subtext}
+        multiline
+        textAlignVertical="top"
+        maxLength={1000}
+        editable={!busy}
+      />
+      {addressError ? <Text style={styles.error}>{addressError}</Text> : null}
+
+      <Pressable
+        style={styles.checkRow}
+        onPress={() => setRememberAddress((v) => !v)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: rememberAddress }}
+      >
+        <View style={[styles.checkbox, rememberAddress && styles.checkboxOn]}>
+          {rememberAddress && <Ionicons name="checkmark" size={14} color={Colors.white} />}
+        </View>
+        <Text style={styles.checkText}>Mémoriser cette adresse sur cet appareil</Text>
+      </Pressable>
+    </View>
+    </>
+  );
+
+  const appointmentSection = (
+    <>
+    {/* ---- Votre rendez-vous ---- */}
+    <Text style={styles.sectionTitle}>Votre rendez-vous</Text>
+    <View style={styles.card}>
+      <View style={styles.expertRow}>
+        <View style={styles.expertAvatar}>
+          {expert.avatar_url ? (
+            <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} />
+          ) : (
+            <Text style={styles.expertInitials}>{initials(expert.name ?? '')}</Text>
+          )}
+        </View>
+        <View style={styles.flex}>
+          {expert.honorific ? (
+            <Text style={styles.expertHonorific} numberOfLines={1}>
+              {expert.honorific}
+            </Text>
+          ) : null}
+          <Text style={styles.expertName} numberOfLines={1}>
+            {expert.name}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.offerTitle}>{offer.title}</Text>
+      <View style={styles.offerMeta}>
+        <MaterialCommunityIcons name={MODE_META[mode].icon} size={15} color={ACCENT_DARK} />
+        <Text style={styles.offerMetaText}>
+          {MODE_META[mode].label} · {offer.duration_label}
+        </Text>
+      </View>
+
+      <View style={styles.blocks}>
+        {blocks.map((block) => {
+          const longDate = capitalize(formatLongDate(block.date, year));
+          return (
+            <View key={`${block.date}|${block.period}`} style={styles.block}>
+              <MaterialCommunityIcons name={PERIOD_ICONS[block.period]} size={18} color={ACCENT_DARK} />
+              <Text style={styles.blockDate} numberOfLines={1}>
+                {longDate}
+              </Text>
+              <Text style={styles.blockHours}>
+                {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
+              </Text>
+              {block.location ? (
+                // Présentiel : nom du lieu, puis rue, code postal et ville.
+                (() => {
+                  const full = onsiteLocations.find((l) => l.id === block.location.id);
+                  return (
+                    <View style={styles.blockPlace}>
+                      <Ionicons name="location-outline" size={13} color={ACCENT_DARK} style={styles.blockPlaceIcon} />
+                      <View style={styles.flex}>
+                        <Text style={styles.blockPlaceName}>{full?.label ?? placeLabel(block.location)}</Text>
+                        {full
+                          ? addressLines(full).map((line) => (
+                              <Text key={line} style={styles.blockHours}>
+                                {line}
+                              </Text>
+                            ))
+                          : null}
+                      </View>
+                    </View>
+                  );
+                })()
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+    </View>
+    </>
+  );
+
+  const messageSection = (
+    <>
+    {/* ---- Message ---- */}
+    <Text style={styles.sectionTitle}>
+      Message à l'expert <Text style={styles.optional}>(facultatif)</Text>
+    </Text>
+    <View style={styles.card}>
+      <TextInput
+        style={[styles.input, styles.inputMessage]}
+        value={message}
+        onChangeText={setMessage}
+        placeholder="Votre contexte, vos questions…"
+        placeholderTextColor={Colors.subtext}
+        multiline
+        textAlignVertical="top"
+        maxLength={messageMax}
+        editable={!busy}
+      />
+      <Text style={styles.counter}>
+        {message.length} / {messageMax}
+      </Text>
+    </View>
+    </>
+  );
+
+  const amountSection = (
+    <>
+    {/* ---- Montant ---- */}
+    <Text style={styles.sectionTitle}>Montant</Text>
+    <View style={styles.card}>
+      {isLoading || !pricing ? (
+        <ActivityIndicator color={ACCENT} style={styles.loader} />
+      ) : (
+        <>
+          <View style={styles.amountRow}>
+            <Text style={styles.amountLabel}>Prix HT</Text>
+            <Text style={[styles.amountValue, free && !zeroPrice && styles.struck]}>
+              {formatPrice(pricing.amount_ht, currency)}
+            </Text>
+          </View>
+          <View style={styles.amountRow}>
+            <Text style={styles.amountLabel}>TVA ({pricing.tva_rate.toString().replace('.', ',')} %)</Text>
+            <Text style={[styles.amountValue, free && !zeroPrice && styles.struck]}>
+              {formatPrice(pricing.tva_amount, currency)}
+            </Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.amountRow}>
+            <Text style={styles.totalLabel}>Total TTC</Text>
+            {zeroPrice ? (
+              <Text style={[styles.totalValue, styles.totalFree]}>Offert</Text>
+            ) : free ? (
+              <View style={styles.freeTotal}>
+                <Text style={[styles.totalStruck, styles.struck]}>{totalLabel}</Text>
+                <Text style={[styles.totalValue, styles.totalFree]}>{formatPrice(0, currency)}</Text>
+              </View>
+            ) : (
+              <Text style={styles.totalValue}>{totalLabel}</Text>
+            )}
+          </View>
+
+          {free ? (
+            <View style={[styles.note, styles.noteFree]}>
+              <Ionicons name="gift-outline" size={18} color={Colors.success} />
+              <Text style={[styles.noteText, { color: Colors.success }]}>
+                Rendez-vous offert : aucun paiement ne vous sera demandé.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.note}>
+              <Ionicons name="shield-checkmark-outline" size={18} color={ACCENT_DARK} />
+              <Text style={styles.noteText}>
+                Le montant est seulement réservé sur votre carte. Il n'est débité que si l'expert accepte
+                votre demande ; sinon, il est libéré.
+              </Text>
+            </View>
+          )}
+        </>
+      )}
+    </View>
+    </>
+  );
+
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, IS_WEB && styles.rootWeb]}>
       <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, { opacity: backdropOpacity }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Fermer le récapitulatif" />
       </Animated.View>
 
-      <Animated.View style={[styles.sheet, { height: sheetHeight, transform: [{ translateY }] }]}>
-        {/* ---- Zone de prise ---- */}
-        <View {...pan.panHandlers} style={styles.grab}>
-          <View style={styles.handle} />
+      <Animated.View
+        style={[
+          styles.sheet,
+          { height: sheetHeight, transform: [{ translateY }] },
+          // Web : fenêtre centrée, arrondie partout, qui apparaît en fondu.
+          IS_WEB && [styles.sheetWeb, { width: dialogWidth, opacity: backdropOpacity }],
+        ]}
+      >
+        {/* ---- Zone de prise (mobile : glisser pour fermer) ---- */}
+        <View {...(IS_WEB ? {} : pan.panHandlers)} style={[styles.grab, IS_WEB && styles.grabWeb]}>
+          {!IS_WEB && <View style={styles.handle} />}
           <View style={styles.titleRow}>
             <Text style={styles.sheetTitle}>{step === 'done' ? 'Demande envoyée' : 'Récapitulatif'}</Text>
             {step === 'form' && (
@@ -409,188 +657,25 @@ export const BookingCheckoutView = ({ navigation, route }) => {
               automaticallyAdjustKeyboardInsets
               showsVerticalScrollIndicator={false}
             >
-              {/* ---- Vos informations ---- */}
-              <Text style={styles.sectionTitle}>Vos informations</Text>
-              <View style={styles.card} onLayout={(e) => (identityY.current = e.nativeEvent.layout.y)}>
-                <View style={styles.identity}>
-                  <View style={styles.identityIcon}>
-                    <Ionicons name="person" size={18} color={ACCENT_DARK} />
+              {twoColumns ? (
+                <View style={styles.webColumns}>
+                  <View style={styles.webColumn}>
+                    {appointmentSection}
+                    {messageSection}
                   </View>
-                  <View style={styles.flex}>
-                    <Text style={styles.identityName} numberOfLines={1}>
-                      {checkout?.user.name ?? ' '}
-                    </Text>
-                    <Text style={styles.identityEmail} numberOfLines={1}>
-                      {checkout?.user.email ?? ' '}
-                    </Text>
+                  <View style={styles.webColumn}>
+                    {identitySection}
+                    {amountSection}
                   </View>
                 </View>
-
-                <View style={styles.divider} />
-
-                <Text style={styles.label}>
-                  Adresse de facturation <Text style={styles.required}>*</Text>
-                </Text>
-                <TextInput
-                  ref={addressInputRef}
-                  style={[styles.input, styles.inputAddress, !!addressError && styles.inputError]}
-                  value={address}
-                  onChangeText={setAddress}
-                  placeholder={'Cabinet, rue, code postal, ville'}
-                  placeholderTextColor={Colors.subtext}
-                  multiline
-                  textAlignVertical="top"
-                  maxLength={1000}
-                  editable={!busy}
-                />
-                {addressError ? <Text style={styles.error}>{addressError}</Text> : null}
-
-                <Pressable
-                  style={styles.checkRow}
-                  onPress={() => setRememberAddress((v) => !v)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: rememberAddress }}
-                >
-                  <View style={[styles.checkbox, rememberAddress && styles.checkboxOn]}>
-                    {rememberAddress && <Ionicons name="checkmark" size={14} color={Colors.white} />}
-                  </View>
-                  <Text style={styles.checkText}>Mémoriser cette adresse sur cet appareil</Text>
-                </Pressable>
-              </View>
-
-              {/* ---- Votre rendez-vous ---- */}
-              <Text style={styles.sectionTitle}>Votre rendez-vous</Text>
-              <View style={styles.card}>
-                <View style={styles.expertRow}>
-                  <View style={styles.expertAvatar}>
-                    {expert.avatar_url ? (
-                      <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} />
-                    ) : (
-                      <Text style={styles.expertInitials}>{initials(expert.name ?? '')}</Text>
-                    )}
-                  </View>
-                  <View style={styles.flex}>
-                    {expert.honorific ? (
-                      <Text style={styles.expertHonorific} numberOfLines={1}>
-                        {expert.honorific}
-                      </Text>
-                    ) : null}
-                    <Text style={styles.expertName} numberOfLines={1}>
-                      {expert.name}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={styles.offerTitle}>{offer.title}</Text>
-                <View style={styles.offerMeta}>
-                  <MaterialCommunityIcons name={MODE_META[mode].icon} size={15} color={ACCENT_DARK} />
-                  <Text style={styles.offerMetaText}>
-                    {MODE_META[mode].label} · {offer.duration_label}
-                  </Text>
-                </View>
-
-                <View style={styles.blocks}>
-                  {blocks.map((block) => {
-                    const longDate = capitalize(formatLongDate(block.date, year));
-                    return (
-                      <View key={`${block.date}|${block.period}`} style={styles.block}>
-                        <MaterialCommunityIcons name={PERIOD_ICONS[block.period]} size={18} color={ACCENT_DARK} />
-                        <Text style={styles.blockDate} numberOfLines={1}>
-                          {longDate}
-                        </Text>
-                        <Text style={styles.blockHours}>
-                          {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
-                        </Text>
-                        {block.location ? (
-                          <View style={styles.blockPlace}>
-                            <Ionicons name="location-outline" size={13} color={ACCENT_DARK} />
-                            <Text style={styles.blockHours} numberOfLines={1}>
-                              {placeLabel(block.location)}
-                            </Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* ---- Message ---- */}
-              <Text style={styles.sectionTitle}>
-                Message à l'expert <Text style={styles.optional}>(facultatif)</Text>
-              </Text>
-              <View style={styles.card}>
-                <TextInput
-                  style={[styles.input, styles.inputMessage]}
-                  value={message}
-                  onChangeText={setMessage}
-                  placeholder="Votre contexte, vos questions…"
-                  placeholderTextColor={Colors.subtext}
-                  multiline
-                  textAlignVertical="top"
-                  maxLength={messageMax}
-                  editable={!busy}
-                />
-                <Text style={styles.counter}>
-                  {message.length} / {messageMax}
-                </Text>
-              </View>
-
-              {/* ---- Montant ---- */}
-              <Text style={styles.sectionTitle}>Montant</Text>
-              <View style={styles.card}>
-                {isLoading || !pricing ? (
-                  <ActivityIndicator color={ACCENT} style={styles.loader} />
-                ) : (
-                  <>
-                    <View style={styles.amountRow}>
-                      <Text style={styles.amountLabel}>Prix HT</Text>
-                      <Text style={[styles.amountValue, free && !zeroPrice && styles.struck]}>
-                        {formatPrice(pricing.amount_ht, currency)}
-                      </Text>
-                    </View>
-                    <View style={styles.amountRow}>
-                      <Text style={styles.amountLabel}>TVA ({pricing.tva_rate.toString().replace('.', ',')} %)</Text>
-                      <Text style={[styles.amountValue, free && !zeroPrice && styles.struck]}>
-                        {formatPrice(pricing.tva_amount, currency)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.amountRow}>
-                      <Text style={styles.totalLabel}>Total TTC</Text>
-                      {zeroPrice ? (
-                        <Text style={[styles.totalValue, styles.totalFree]}>Offert</Text>
-                      ) : free ? (
-                        <View style={styles.freeTotal}>
-                          <Text style={[styles.totalStruck, styles.struck]}>{totalLabel}</Text>
-                          <Text style={[styles.totalValue, styles.totalFree]}>{formatPrice(0, currency)}</Text>
-                        </View>
-                      ) : (
-                        <Text style={styles.totalValue}>{totalLabel}</Text>
-                      )}
-                    </View>
-
-                    {free ? (
-                      <View style={[styles.note, styles.noteFree]}>
-                        <Ionicons name="gift-outline" size={18} color={Colors.success} />
-                        <Text style={[styles.noteText, { color: Colors.success }]}>
-                          Rendez-vous offert : aucun paiement ne vous sera demandé.
-                        </Text>
-                      </View>
-                    ) : (
-                      <View style={styles.note}>
-                        <Ionicons name="shield-checkmark-outline" size={18} color={ACCENT_DARK} />
-                        <Text style={styles.noteText}>
-                          Le montant est seulement réservé sur votre carte. Il n'est débité que si l'expert accepte
-                          votre demande ; sinon, il est libéré.
-                        </Text>
-                      </View>
-                    )}
-                  </>
-                )}
-              </View>
+              ) : (
+                <>
+                  {identitySection}
+                  {appointmentSection}
+                  {messageSection}
+                  {amountSection}
+                </>
+              )}
             </ScrollView>
 
             {/* ---- Pied fixe : conditions, retour, paiement ---- */}
@@ -671,6 +756,24 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  rootWeb: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sheetWeb: {
+    borderRadius: SHEET_RADIUS,
+  },
+  grabWeb: {
+    paddingTop: Spacings.lg,
+  },
+  webColumns: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.xl,
+  },
+  webColumn: {
+    flex: 1,
   },
   sheet: {
     backgroundColor: Colors.white,
@@ -921,8 +1024,17 @@ const styles = StyleSheet.create({
   blockPlace: {
     flexBasis: '100%',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 4,
+    marginTop: 2,
+  },
+  blockPlaceIcon: {
+    marginTop: 3,
+  },
+  blockPlaceName: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    color: Colors.text,
   },
 
   /* ---- Montant ---- */

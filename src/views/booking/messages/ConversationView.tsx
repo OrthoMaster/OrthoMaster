@@ -22,6 +22,7 @@ export const ConversationView = ({ navigation, route }) => {
       <ConversationThread
         conversationId={route.params?.conversationId}
         preview={route.params?.preview}
+        initialDraft={route.params?.draft}
         active={focused}
         onBack={() => navigation.goBack()}
       />
