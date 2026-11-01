@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, ScrollView, Pressable, Animated, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -39,7 +39,15 @@ interface OfferCarouselProps {
   notchColor: string;
   /** Toucher une carte = ouvrir le thème (détails et calendrier). */
   onSelect: (offer: BookingOffer) => void;
+  /** Thème à mettre en avant : défilement jusqu'à lui puis anneau, jusqu'au prochain geste. */
+  focusOfferId?: number;
+  /** Attente avant le défilement (ms), le temps que l'écran finisse de s'ouvrir. */
+  focusDelay?: number;
 }
+
+/** Écart entre la carte et l'anneau de mise en avant. */
+const RING_GAP = 4;
+const RING_WIDTH = 2.5;
 
 /**
  * Thèmes en tickets d'échange à faire défiler : en-tête (format, titre, description),
@@ -52,8 +60,14 @@ export const OfferCarousel: React.FC<OfferCarouselProps> = ({
   inset,
   notchColor,
   onSelect,
+  focusOfferId,
+  focusDelay = 0,
 }) => {
   const [index, setIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  // Thème mis en avant : anneau qui apparaît en fondu une fois le défilement fait.
+  const [focusedId, setFocusedId] = useState<number | null>(null);
+  const ring = useRef(new Animated.Value(0)).current;
 
   const single = offers.length === 1;
   const cardWidth = width - inset * 2 - (single ? 0 : PEEK);
@@ -68,6 +82,32 @@ export const OfferCarousel: React.FC<OfferCarouselProps> = ({
   const bodyLine = Math.round(bodySize * 1.4);
   const dashes = Math.floor((cardWidth - pad * 2) / (DASH + DASH_GAP));
 
+  // Défilement jusqu'au thème demandé, une seule fois, quand les thèmes sont là.
+  const focusDone = useRef(false);
+  useEffect(() => {
+    if (focusDone.current || focusOfferId == null || offers.length === 0) return;
+    const target = offers.findIndex((o) => o.id === focusOfferId);
+    if (target < 0) return;
+    focusDone.current = true;
+
+    const timer = setTimeout(() => {
+      if (target > 0) scrollRef.current?.scrollTo({ x: target * step, animated: true });
+      setIndex(target);
+      setFocusedId(focusOfferId);
+      Animated.sequence([
+        Animated.delay(target > 0 ? 280 : 0),
+        Animated.timing(ring, { toValue: 1, duration: 260, useNativeDriver: true }),
+      ]).start();
+    }, focusDelay);
+    return () => clearTimeout(timer);
+  }, [focusOfferId, offers.length, step]);
+
+  // Premier geste de l'utilisateur : la mise en avant s'efface.
+  const clearFocus = () => {
+    if (focusedId == null) return;
+    Animated.timing(ring, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setFocusedId(null));
+  };
+
   const settle = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     setIndex(Math.max(0, Math.min(offers.length - 1, Math.round(e.nativeEvent.contentOffset.x / step))));
   };
@@ -75,14 +115,17 @@ export const OfferCarousel: React.FC<OfferCarouselProps> = ({
   return (
     <View>
       <ScrollView
+        ref={scrollRef}
         horizontal
         scrollEnabled={!single}
+        onScrollBeginDrag={clearFocus}
         showsHorizontalScrollIndicator={false}
         snapToInterval={step}
         decelerationRate="fast"
         disableIntervalMomentum
         // Marge basse : la tranche n'est pas coupée par le défilement.
-        contentContainerStyle={{ paddingHorizontal: inset, gap: GAP, paddingBottom: DEPTH }}
+        // Marge haute : l'anneau de mise en avant déborde de la carte sans être rogné.
+        contentContainerStyle={{ paddingHorizontal: inset, gap: GAP, paddingBottom: DEPTH + RING_GAP, paddingTop: RING_GAP }}
         onMomentumScrollEnd={settle}
       >
         {offers.map((offer, i) => (
@@ -93,6 +136,13 @@ export const OfferCarousel: React.FC<OfferCarouselProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`${offer.title}, ${offer.duration_label}, ${offerPrice(offer)}`}
           >
+            {/* Anneau du thème touché dans la liste. */}
+            {focusedId === offer.id ? (
+              <Animated.View
+                pointerEvents="none"
+                style={[styles.ring, { borderColor: accent, opacity: ring }]}
+              />
+            ) : null}
             {/* Tranche 3D sous la carte, plus sombre que la couleur principale. */}
             <View style={[styles.edge, { backgroundColor: darken(accent, 0.45) }]}>
               <LinearGradient
@@ -161,6 +211,16 @@ export const OfferCarousel: React.FC<OfferCarouselProps> = ({
 const styles = StyleSheet.create({
   pressed: {
     transform: [{ translateY: DEPTH / 2 }],
+  },
+
+  ring: {
+    position: 'absolute',
+    top: -RING_GAP,
+    left: -RING_GAP,
+    right: -RING_GAP,
+    bottom: -RING_GAP,
+    borderRadius: CARD_RADIUS + RING_GAP,
+    borderWidth: RING_WIDTH,
   },
 
   /* ---- Carte 3D, sans ombre ---- */

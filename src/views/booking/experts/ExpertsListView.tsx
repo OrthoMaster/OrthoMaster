@@ -118,6 +118,10 @@ export const ExpertsListView = ({ navigation }) => {
       defaultOpen={IS_WEB}
       // L'aperçu affiche l'en-tête du profil tout de suite, sans attendre la requête.
       onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
+      // Toucher un thème : le profil s'ouvre puis fait défiler les thèmes jusqu'à celui-ci.
+      onOfferPress={(offerId) =>
+        navigation.navigate('expert-profile', { expertId: item.id, preview: item, focusOfferId: offerId })
+      }
     />
   );
 

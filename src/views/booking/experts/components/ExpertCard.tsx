@@ -24,12 +24,15 @@ const PHOTO_MAX = 132;
 const formatsOf = (offer: BookingOfferSummary): BookingOfferFormat[] =>
   offer.formats ?? sortModes(offer.modes).map((mode) => ({ mode, price: null as any, places: [] }));
 
-/** « 69002 Lyon · 75005 Paris » */
-const placesLabel = (format: BookingOfferFormat) =>
-  format.places
-    .map((p) => [p.postal_code, p.city].filter(Boolean).join(' '))
-    .filter(Boolean)
-    .join(' · ');
+/** Villes affichées sur la ligne ; au-delà, « +N » (un présentiel peut avoir plusieurs adresses). */
+const PLACES_SHOWN = 2;
+
+/** « 69002 Lyon · 75005 Paris +1 » */
+const placesLabel = (format: BookingOfferFormat) => {
+  const labels = format.places.map((p) => [p.postal_code, p.city].filter(Boolean).join(' ')).filter(Boolean);
+  const shown = labels.slice(0, PLACES_SHOWN).join(' · ');
+  return labels.length > PLACES_SHOWN ? `${shown} +${labels.length - PLACES_SHOWN}` : shown;
+};
 
 /** Décalage d'entrée entre deux cartes d'une même page : la liste se déroule au lieu d'apparaître d'un bloc. */
 const STAGGER_MS = 60;
@@ -41,6 +44,8 @@ interface ExpertCardProps {
   indexInPage: number;
   /** Thèmes dépliés à l'ouverture (web : la place ne manque pas). */
   defaultOpen?: boolean;
+  /** Toucher un thème : ouvre le profil sur ce thème (à défaut, comme la carte). */
+  onOfferPress?: (offerId: number) => void;
   onPress: () => void;
 }
 
@@ -49,7 +54,7 @@ interface ExpertCardProps {
  * à son profil). Portrait carré à la hauteur du texte, identité à droite.
  * Expert disponible : ses thèmes se déplient sous la carte, une ligne chacun.
  */
-export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPage, onPress, defaultOpen = false }) => {
+export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPage, onPress, defaultOpen = false, onOfferPress }) => {
   const [photoSize, setPhotoSize] = useState(PHOTO_MIN);
 
   const enter = useRef(new Animated.Value(0)).current;
@@ -172,7 +177,7 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
                   <Pressable
                     key={offer.id}
                     style={({ pressed }) => [styles.offer, pressed && styles.offerPressed]}
-                    onPress={onPress}
+                    onPress={() => (onOfferPress ? onOfferPress(offer.id) : onPress())}
                     accessibilityRole="button"
                   >
                     {/* Titre et durée, puis une ligne par format : pastille, villes (présentiel), prix. */}

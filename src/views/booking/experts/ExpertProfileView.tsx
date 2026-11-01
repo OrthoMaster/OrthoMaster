@@ -113,6 +113,8 @@ export const ExpertProfileView = ({ navigation, route }) => {
 
   const expertId: number = route.params?.expertId;
   const preview: BookingExpertListItem | undefined = route.params?.preview;
+  /** Thème touché dans la liste : le carrousel s'y rend et le met en avant. */
+  const focusOfferId: number | undefined = route.params?.focusOfferId;
 
   const { data, isLoading } = useQuery({
     queryKey: ['booking', 'expert', expertId],
@@ -316,6 +318,9 @@ export const ExpertProfileView = ({ navigation, route }) => {
                 width={contentWidth}
                 inset={INSET}
                 notchColor={theme.bg}
+                focusOfferId={focusOfferId}
+                // Après l'ouverture de la feuille / du panneau (340 ms) : le défilement se voit.
+                focusDelay={420}
                 onSelect={openOffer}
               />
               <Text style={[styles.tapHint, { color: theme.muted }]}>

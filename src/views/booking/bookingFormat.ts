@@ -66,5 +66,8 @@ export const pricesLabel = (prices: number[], currency?: string): string => {
   if (prices.length === 0) return '';
   const min = Math.min(...prices);
   const differ = prices.some((p) => p !== min);
-  return differ ? `dès ${priceLabel(min, currency)}` : priceLabel(min, currency);
+  if (!differ) return priceLabel(min, currency);
+  // « dès Offert » ne veut rien dire : un format offert, l'autre payant → « Offert / 450 € ».
+  if (min === 0) return `${priceLabel(0, currency)} / ${priceLabel(Math.max(...prices), currency)}`;
+  return `dès ${priceLabel(min, currency)}`;
 };
