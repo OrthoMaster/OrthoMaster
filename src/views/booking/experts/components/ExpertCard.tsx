@@ -24,15 +24,9 @@ const PHOTO_MAX = 132;
 const formatsOf = (offer: BookingOfferSummary): BookingOfferFormat[] =>
   offer.formats ?? sortModes(offer.modes).map((mode) => ({ mode, price: null as any, places: [] }));
 
-/** Villes affichées sur la ligne ; au-delà, « +N » (un présentiel peut avoir plusieurs adresses). */
-const PLACES_SHOWN = 2;
-
-/** « 69002 Lyon · 75005 Paris +1 » */
-const placesLabel = (format: BookingOfferFormat) => {
-  const labels = format.places.map((p) => [p.postal_code, p.city].filter(Boolean).join(' ')).filter(Boolean);
-  const shown = labels.slice(0, PLACES_SHOWN).join(' · ');
-  return labels.length > PLACES_SHOWN ? `${shown} +${labels.length - PLACES_SHOWN}` : shown;
-};
+/** Une ligne par lieu : « 69002 Lyon » (un présentiel peut avoir plusieurs adresses). */
+const placeLines = (format: BookingOfferFormat) =>
+  format.places.map((p) => [p.postal_code, p.city].filter(Boolean).join(' ')).filter(Boolean);
 
 /** Décalage d'entrée entre deux cartes d'une même page : la liste se déroule au lieu d'apparaître d'un bloc. */
 const STAGGER_MS = 60;
@@ -192,17 +186,22 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
                     </View>
 
                     {formats.map((format) => {
-                      const places = format.mode === 'onsite' ? placesLabel(format) : '';
+                      const places = format.mode === 'onsite' ? placeLines(format) : [];
                       return (
                         <View key={format.mode} style={styles.formatRow}>
                           <ModePill mode={format.mode} size="compact" />
+                          {/* Une seule icône, alignée sur la première ligne ; une ville par ligne. */}
                           <View style={styles.formatPlaces}>
-                            {places ? (
+                            {places.length > 0 ? (
                               <>
-                                <Ionicons name="location-outline" size={12} color={Colors.subtext} />
-                                <Text style={styles.formatPlacesText} numberOfLines={1}>
-                                  {places}
-                                </Text>
+                                <Ionicons name="location-outline" size={12} color={Colors.subtext} style={styles.formatPlacesIcon} />
+                                <View style={styles.formatPlacesList}>
+                                  {places.map((line, i) => (
+                                    <Text key={i} style={styles.formatPlacesText} numberOfLines={1}>
+                                      {line}
+                                    </Text>
+                                  ))}
+                                </View>
                               </>
                             ) : null}
                           </View>
@@ -289,20 +288,29 @@ const styles = StyleSheet.create({
     gap: 3,
     marginTop: 2,
   },
+  // Haut aligné : pastille, première ville et prix sur la même ligne, les autres villes dessous.
   formatRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: Spacings.xs,
   },
   formatPlaces: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 3,
+    minWidth: 0,
+    paddingTop: 2,
+  },
+  formatPlacesIcon: {
+    marginTop: 2,
+  },
+  formatPlacesList: {
+    flex: 1,
     minWidth: 0,
   },
   formatPlacesText: {
-    flexShrink: 1,
+    lineHeight: 17,
     fontFamily: 'Poppins-Regular',
     fontSize: 12,
     color: Colors.subtext2,
