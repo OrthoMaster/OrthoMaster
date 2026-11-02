@@ -4,7 +4,7 @@
  *  - Tutorat    → espace rendez-vous experts (booking)
  *  - Diplôme    → pré-inscription au Diplôme Pharmacie (training-diploma)
  */
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -44,8 +44,8 @@ const ILLUSTRATIONS = {
   diplome: { uri: `${ILLUSTRATION_BASE}/diplome_3d.png` },
 };
 
-/** L'illustration dépasse du haut de la carte d'autant. */
-const POP = 20;
+/** Part de la hauteur de l'illustration qui dépasse au-dessus de la carte. */
+const POP_RATIO = 0.4;
 const FACE_PADDING = Spacings.md;
 
 /** Web : trois cartes côte à côte dès que la zone de contenu le permet. */
@@ -72,9 +72,14 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
 
   const translateY = press.interpolate({ inputRange: [0, 1], outputRange: [0, PRESS_DEPTH] });
 
+  // La hauteur de l'illustration dépend de la largeur de la carte (40 %) : mesurée au rendu.
+  // Une marge en % se calcule sur la largeur du parent, pas sur la hauteur de l'image.
+  const [pop, setPop] = useState(0);
+
   return (
     <Pressable
-      style={[styles.cardWrapper, style]}
+      // Place au-dessus de la carte pour la partie de l'illustration qui dépasse.
+      style={[styles.cardWrapper, style, { marginTop: pop }]}
       onPress={onPress}
       onPressIn={() => animatePress(1)}
       onPressOut={() => animatePress(0)}
@@ -83,8 +88,14 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
     >
       <View style={[styles.cardEdge, { backgroundColor: edge }]}>
         <Animated.View style={[styles.cardFace, { backgroundColor: face, transform: [{ translateY }] }]}>
-          {/* Illustration 3D sur 40 % de la largeur, qui dépasse un peu du haut de la carte. */}
-          <View style={styles.illustrationBox}>
+          {/* Illustration 3D sur 40 % de la largeur ; 40 % de sa hauteur dépasse du haut de la carte. */}
+          <View
+            style={[styles.illustrationBox, { marginTop: -(pop + FACE_PADDING), opacity: pop ? 1 : 0 }]}
+            onLayout={(e) => {
+              const next = Math.round(e.nativeEvent.layout.height * POP_RATIO);
+              if (next !== pop) setPop(next);
+            }}
+          >
             <Image source={illustration} style={styles.illustration} resizeMode="contain" />
           </View>
 
@@ -211,15 +222,14 @@ const styles = StyleSheet.create({
   // Place en haut et entre les cartes pour l'illustration qui dépasse.
   content: {
     padding: Spacings.lg,
-    paddingTop: Spacings.lg + POP,
-    gap: Spacings.lg + POP,
+    gap: Spacings.lg,
   },
   contentGrid: {
     flexDirection: 'row',
     alignItems: 'stretch',
     maxWidth: 1200,
     width: '100%',
-    paddingTop: Spacings.xl + POP,
+    paddingTop: Spacings.xl,
   },
 
   /* ---- Carte 3D ---- */
@@ -242,15 +252,14 @@ const styles = StyleSheet.create({
     gap: Spacings.sm,
   },
   // Carré : l'image (contain) garde ses proportions ; la place est réservée avant le chargement.
-  // Marge haute négative : le carré remonte au-dessus de la carte, de POP au-delà du bord.
+  // Marge haute négative (calculée au rendu) : le carré remonte au-dessus de la carte.
   illustrationBox: {
     width: '40%',
     // Carte très large (web sur une colonne, tablette) : l'image ne grossit pas au-delà.
     maxWidth: 220,
     aspectRatio: 1,
-    // Calé en bas : seul le haut dépasse.
-    alignSelf: 'flex-end',
-    marginTop: -(POP + FACE_PADDING),
+    // Calé en haut : 40 % au-dessus de la carte, même si le texte rend la carte plus haute.
+    alignSelf: 'flex-start',
   },
   illustration: {
     width: '100%',
