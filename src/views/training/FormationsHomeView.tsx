@@ -101,11 +101,13 @@ interface EntryCardProps {
   badge?: number;
   layout: CardLayout;
   motion: Motion;
+  /** Part de la hauteur de l'illustration au-dessus de la carte (POP_RATIO par défaut). */
+  popRatio?: number;
   onPress: () => void;
   style?: any;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration, face, edge, badge, layout, motion, onPress, style }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration, face, edge, badge, layout, motion, popRatio = POP_RATIO, onPress, style }) => {
   const motionTransform = useIllustrationMotion(motion);
 
   const press = useRef(new Animated.Value(0)).current;
@@ -119,7 +121,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
   // La hauteur de l'illustration dépend de la largeur de la carte (40 %) : mesurée au rendu.
   // Une marge en % se calcule sur la largeur du parent, pas sur la hauteur de l'image.
   const [size, setSize] = useState(0);
-  const pop = Math.round(size * POP_RATIO);
+  const pop = Math.round(size * popRatio);
 
   return (
     <Pressable
@@ -245,6 +247,8 @@ export const FormationsHomeView = ({ navigation }) => {
           edge={Colors.lblueDark}
           layout="row"
           motion="sway"
+          // Mobile : illustration Tutorat un peu plus basse que les autres.
+          popRatio={IS_WEB ? POP_RATIO : 0.3}
           badge={pendingRequests}
           onPress={() => navigation.navigate('booking')}
           style={cardStyle}
