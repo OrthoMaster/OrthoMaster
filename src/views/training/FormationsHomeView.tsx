@@ -240,7 +240,7 @@ export const FormationsHomeView = ({ navigation }) => {
 
       <ScrollView
         style={styles.body}
-        contentContainerStyle={[styles.content, IS_WEB && styles.contentGrid]}
+        contentContainerStyle={[styles.content, IS_WEB && styles.contentGrid, IS_WEB && columns >= 3 && styles.contentGridCentered]}
         showsVerticalScrollIndicator={false}
       >
         <EntryCard
@@ -311,6 +311,10 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacings.lg,
     gap: Spacings.lg,
+  },
+  // lg / md : la rangée incomplète (3 cartes sur 4 colonnes…) est centrée.
+  contentGridCentered: {
+    justifyContent: 'center',
   },
   contentGrid: {
     flexDirection: 'row',
