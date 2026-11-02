@@ -31,8 +31,8 @@ import { EXPERT_REQUESTS_KEY } from '../booking/requests/RequestsView';
 import { DIPLOMA_COLOR, DIPLOMA_COLOR_DARK } from './DiplomaView';
 
 const IS_WEB = Platform.OS === 'web';
-/** Web : en-tête vert foncé, pour ne pas se confondre avec la carte E-learning (vert clair). */
-const HEADER_COLOR = IS_WEB ? Colors.lgreenDark : Colors.lgreen;
+/** En-tête vert foncé, pour ne pas se confondre avec la carte E-learning (vert clair). */
+const HEADER_COLOR = Colors.lgreenDark;
 const isTablet = !IS_WEB && Dimensions.get('window').width >= 768;
 
 /** Hauteur de la tranche : la face s'enfonce d'autant quand on appuie. */
@@ -182,7 +182,7 @@ export const FormationsHomeView = ({ navigation }) => {
       // (l'espace rendez-vous les passe en sombre) : on le refait à chaque prise de focus.
       if (Platform.OS !== 'web') {
         StatusBar.setBarStyle('light-content', true);
-        if (Platform.OS === 'android') StatusBar.setBackgroundColor(Colors.lgreen, true);
+        if (Platform.OS === 'android') StatusBar.setBackgroundColor(HEADER_COLOR, true);
       }
     }, [navigation])
   );
@@ -211,7 +211,7 @@ export const FormationsHomeView = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.lgreen} />
+      <StatusBar barStyle="light-content" backgroundColor={HEADER_COLOR} />
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Formations</Text>
@@ -306,15 +306,17 @@ const styles = StyleSheet.create({
   cardFace: {
     borderRadius: 16,
     padding: FACE_PADDING,
-    paddingLeft: Spacings.xs,
+    // Côté image / côté texte.
+    paddingLeft: Spacings.sm,
+    paddingRight: Spacings.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.sm,
   },
   cardFaceReverse: {
     flexDirection: 'row-reverse',
-    paddingLeft: FACE_PADDING,
-    paddingRight: Spacings.xs,
+    paddingLeft: Spacings.lg,
+    paddingRight: Spacings.sm,
   },
   // Carré : l'image (contain) garde ses proportions ; la place est réservée avant le chargement.
   // Marge haute négative (calculée au rendu) : le carré remonte au-dessus de la carte.
