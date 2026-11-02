@@ -1011,8 +1011,8 @@ const styles = StyleSheet.create({
     height: 100,
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 28,
+    fontFamily: 'Poppins-Bold',
     textAlign: 'right',
     color: Colors.white,
   },

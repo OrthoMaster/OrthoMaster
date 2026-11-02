@@ -280,10 +280,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacings.lg,
   },
-  // Même titre que l'en-tête Médias.
+  // Web : même titre que Diplôme, Mes formations, Médias, Outils, Mon équipe.
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
+    fontSize: IS_WEB ? 28 : 20,
+    fontFamily: IS_WEB ? 'Poppins-Bold' : 'Poppins-Medium',
     color: Colors.white,
   },
   body: {

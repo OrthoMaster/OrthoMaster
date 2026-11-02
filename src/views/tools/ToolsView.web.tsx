@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.lg,
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 28,
+    fontFamily: 'Poppins-Bold',
     color: Colors.white,
   },
   column: {

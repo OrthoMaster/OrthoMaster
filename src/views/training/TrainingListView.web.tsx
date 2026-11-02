@@ -655,8 +655,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 28,
+    fontFamily: 'Poppins-Bold',
     textAlign: 'right',
     color: Colors.white,
   },
