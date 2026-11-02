@@ -21,7 +21,6 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 
 import Colors from '../../../constants/Colors';
@@ -72,7 +71,8 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, icon, face, e
     >
       <View style={[styles.cardEdge, { backgroundColor: edge }]}>
         <Animated.View style={[styles.cardFace, { backgroundColor: face, transform: [{ translateY }] }]}>
-          <View style={styles.iconCircle}>
+          {/* Pastille blanche : les icônes en couleur ressortent sur toutes les couleurs de carte. */}
+          <View style={[styles.iconCircle, { borderBottomColor: edge }]}>
             <Image source={icon} style={styles.icon} resizeMode="contain" />
           </View>
 
@@ -86,10 +86,6 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, icon, face, e
               )}
             </View>
             <Text style={styles.description} numberOfLines={3}>{description}</Text>
-          </View>
-
-          <View style={styles.arrow}>
-            <Ionicons name="chevron-forward" size={20} color={edge} />
           </View>
         </Animated.View>
       </View>
@@ -235,7 +231,9 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: Colors.white,
+    // Liseré bas de la couleur foncée de la carte : même relief que la carte elle-même.
+    borderBottomWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -263,14 +261,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: Colors.white,
     marginTop: Spacings.xxxs,
-  },
-  arrow: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   badge: {
     minWidth: 22,
