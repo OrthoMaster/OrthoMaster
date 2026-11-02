@@ -8,6 +8,8 @@ import Spacings from '../../../../../constants/Spacings';
 import { BookingExpertListItem, BookingOfferFormat, BookingOfferSummary } from '../../../../services/v2/BookingService';
 import { initials, priceLabel } from '../../bookingFormat';
 import { ModePill, sortModes } from '../../components/ModePill';
+import { SearchReason } from './SearchReason';
+import { CONSULT_COLOR } from '../../bookingKinds';
 
 const CARD_RADIUS = 20;
 const CARD_PADDING = Spacings.sm;
@@ -132,6 +134,19 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
               {expert.credentials}
             </Text>
           ) : null}
+
+          {/* Consultation sur mesure : prix de 30 minutes. */}
+          {expert.consultation ? (
+            <View style={styles.consultChip}>
+              <Ionicons name="chatbubbles-outline" size={12} color={CONSULT_COLOR} />
+              <Text style={styles.consultChipText} numberOfLines={1}>
+                Consultation · {priceLabel(expert.consultation.price_30, expert.consultation.currency)} / 30 min
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Recherche intelligente : pourquoi l'expert correspond. */}
+          {expert.reason ? <SearchReason text={expert.reason} /> : null}
         </View>
 
         {/* Badge d'état, accroché au coin supérieur droit de la carte ; même forme pour les deux états. */}
@@ -412,5 +427,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: Colors.subtext2,
+  },
+  consultChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    marginTop: Spacings.xxs,
+    paddingHorizontal: Spacings.xs,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: '#F3E8FF',
+  },
+  consultChipText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 11,
+    color: CONSULT_COLOR,
   },
 });

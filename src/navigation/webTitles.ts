@@ -12,7 +12,9 @@ const ROUTE_TITLES: Record<string, string> = {
   // Espace rendez-vous (Formations › Tutorat)
   booking: 'Tutorat',
   'booking-experts': 'Experts',
+  'booking-choice': 'Tutorat',
   'experts-list': 'Experts',
+  'consultation-request': 'Consultation',
   'expert-profile': 'Profil de l’expert',
   'expert-offer': 'Détail de l’offre',
   'expert-checkout': 'Récapitulatif',

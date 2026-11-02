@@ -73,6 +73,107 @@ export interface BookingExpertListItem extends BookingExpertBase {
   online: boolean;
   /** Offres actives, seulement pour un expert qui accepte des demandes. */
   offers?: BookingOfferSummary[];
+  /** Consultation sur mesure proposée ; null sinon. */
+  consultation?: ConsultationInfo | null;
+  /** Recherche intelligente : pourquoi l'expert correspond (null sans Gemini). */
+  reason?: string | null;
+}
+
+/* ---- v3 : types de rendez-vous ---- */
+
+/** offer : thème proposé par l'expert ; consultation : sujet libre, en ligne, par 30 minutes. */
+export type BookingKind = 'offer' | 'consultation';
+
+/** Consultation sur mesure d'un expert, côté demandeur. */
+export interface ConsultationInfo {
+  /** Prix TTC de 30 minutes. */
+  price_30: number;
+  currency: string;
+  step_minutes: number;
+  max_minutes: number;
+  /** Durées proposées : 30, 60, 90… */
+  durations: number[];
+  subject_max: number;
+  /** Hors calendrier : heures de début possibles (HH:MM). */
+  off_calendar: { first_start: string; last_start: string };
+}
+
+/** Thème dans la liste « Thèmes » : le thème d'abord, l'expert en second. */
+export interface BookingTheme extends BookingOfferSummary {
+  description: string | null;
+  blocks_count: number;
+  image: BookingOfferImage | null;
+  expert: {
+    id: number;
+    honorific_short: string | null;
+    name: string;
+    credentials: string | null;
+    avatar_url: string | null;
+    palette_color: string | null;
+  };
+  /** Recherche intelligente : pourquoi le thème correspond. */
+  reason?: string | null;
+}
+
+export interface BookingThemesPage {
+  themes: BookingTheme[];
+  pagination: { page: number; per_page: number; total: number; has_more: boolean };
+}
+
+export type SmartSearchType = 'experts' | 'themes';
+
+export interface SmartSearchResult<T> {
+  type: SmartSearchType;
+  query: string;
+  results: T[];
+  /** Faux : Gemini indisponible, classement par les mots seuls (pas de raison). */
+  used_llm: boolean;
+}
+
+/** Heure de début possible d'une consultation dans le calendrier. */
+export interface ConsultationTime {
+  start_local: string;
+  end_local: string;
+  start_at: string;
+  end_at: string;
+}
+
+export interface ConsultationCalendar {
+  timezone: string;
+  first_date: string;
+  last_date: string;
+  days: { date: string; times: ConsultationTime[] }[];
+}
+
+/** Consultation en préparation, passée de l'écran de demande au récapitulatif. */
+export interface ConsultationDraft {
+  duration_minutes: number;
+  date: string;
+  start_local: string;
+  end_local: string;
+  subject: string;
+  off_calendar: boolean;
+}
+
+/** Réglages de la consultation de l'expert connecté. */
+export interface ExpertConsultationSettings {
+  enabled: boolean;
+  /** Prix TTC de 30 minutes ; null tant qu'il n'est pas renseigné. */
+  price: number | null;
+  max_minutes: number;
+  step_minutes: number;
+  max_minutes_limit: number;
+  price_max: number;
+}
+
+/** Rendez-vous accepté qui chevauche une demande : simple avertissement pour l'expert. */
+export interface BookingConflict {
+  booking_id: number;
+  title: string;
+  kind: BookingKind;
+  date: string;
+  start_local: string;
+  end_local: string;
 }
 
 export interface BookingExpertsPage {
@@ -140,6 +241,8 @@ export interface BookingExpertDetail {
   first_date: string;
   last_date: string;
   offers: BookingOffer[];
+  /** Consultation sur mesure proposée ; null sinon. */
+  consultation?: ConsultationInfo | null;
 }
 
 export interface BookingBlock {
@@ -352,6 +455,8 @@ export interface ExpertBookingSetup {
   grid: Record<BookingMode, ExpertGridSlot[]>;
   rules: ExpertAvailabilityRule[];
   exceptions: ExpertAvailabilityException[];
+  /** Consultation sur mesure : réglages et bornes de saisie. */
+  consultation?: ExpertConsultationSettings;
   /** Présent après certaines écritures, pour le toast ou la sélection. */
   result?:
     | { created: number; skipped: number }
@@ -464,6 +569,8 @@ const toFailure = (e: AxiosError<any>): BookingResult<never> => ({
 export const getBookingExperts = async (params?: {
   page?: number;
   q?: string;
+  /** 1 : seulement les experts qui proposent la consultation sur mesure. */
+  consultation?: number;
 }): Promise<BookingExpertsPage | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/experts`, { params })
@@ -476,6 +583,49 @@ export const getBookingExperts = async (params?: {
     .catch((e: AxiosError) => {
       return null;
     });
+};
+
+/**
+ * Thèmes réservables (10 par page), le plus récent d'abord.
+ * GET /booking/themes?page=&q=
+ */
+export const getBookingThemes = async (params?: { page?: number; q?: string }): Promise<BookingThemesPage | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/themes`, { params })
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/**
+ * Recherche intelligente (un tour) : experts ou thèmes, avec une raison courte.
+ * GET /booking/search?type=experts|themes&q=
+ */
+export const smartSearchExperts = async (q: string): Promise<SmartSearchResult<BookingExpertListItem> | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/search`, { params: { type: 'experts', q } })
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+export const smartSearchThemes = async (q: string): Promise<SmartSearchResult<BookingTheme> | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/search`, { params: { type: 'themes', q } })
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/**
+ * Heures de début d'une consultation dans le calendrier de l'expert, pour une durée.
+ * GET /booking/experts/{expertId}/consultation-slots?duration_minutes=&from=&to=
+ */
+export const getConsultationSlots = async (
+  expertId: number,
+  params: { duration_minutes: number; from?: string; to?: string }
+): Promise<ConsultationCalendar | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/experts/${expertId}/consultation-slots`, { params })
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
 };
 
 /**
@@ -670,6 +820,21 @@ export const updateMyBookingSettings = async (
 };
 
 /**
+ * Consultation sur mesure : activation, prix de 30 minutes, durée maximale.
+ * PUT /booking/me/consultation
+ */
+export const updateMyConsultation = async (input: {
+  enabled?: boolean;
+  price?: number | null;
+  max_minutes?: number | null;
+}): Promise<BookingResult<ExpertBookingSetup>> => {
+  return axiosInstance
+    .put(`${baseUrl}/booking/me/consultation`, input)
+    .then((response) => toResult<ExpertBookingSetup>(response))
+    .catch(toFailure);
+};
+
+/**
  * POST /booking/me/offers
  */
 export const createMyOffer = async (
@@ -839,6 +1004,9 @@ export interface BookingPricing {
 
 export interface BookingCheckout {
   user: { name: string; email: string };
+  kind?: BookingKind;
+  duration_minutes?: number;
+  subject_max?: number;
   mode: BookingMode;
   pricing: BookingPricing;
   /** Politique d'annulation du mode, en vigueur aujourd'hui. */
@@ -859,16 +1027,40 @@ export interface BookingRequest extends BookingPricing {
   /** ISO 8601 ; renseigné quand la demande est transmise à l'expert. */
   respond_by: string | null;
   mode: BookingMode;
-  blocks: { date: string; period: BookingPeriod; start_local: string; end_local: string; location: BookedLocation | null }[];
+  kind?: BookingKind;
+  off_calendar?: boolean;
+  duration_minutes?: number | null;
+  blocks: {
+    date: string;
+    period: BookingPeriod;
+    start_local: string;
+    end_local: string;
+    off_calendar?: boolean;
+    location: BookedLocation | null;
+  }[];
 }
 
-export interface BookingCheckoutInput {
-  offer_id: number;
-  mode: BookingMode;
-  blocks: { date: string; period: BookingPeriod }[];
-  address: string;
-  message?: string | null;
-}
+export type BookingCheckoutInput =
+  | {
+      kind?: 'offer';
+      offer_id: number;
+      mode: BookingMode;
+      blocks: { date: string; period: BookingPeriod }[];
+      /** Des demi-journées hors calendrier font partie de la demande. */
+      off_calendar?: boolean;
+      address: string;
+      message?: string | null;
+    }
+  | {
+      kind: 'consultation';
+      expert_id: number;
+      date: string;
+      start_time: string;
+      duration_minutes: number;
+      subject: string;
+      address: string;
+      message?: string | null;
+    };
 
 export type BookingIntent =
   | { requires_payment: false; booking: BookingRequest }
@@ -902,6 +1094,19 @@ const toPaymentFailure = (e: AxiosError<any>): BookingResult<never> & { code?: s
 export const getBookingCheckout = async (offerId: number, mode: BookingMode): Promise<BookingCheckout | null> => {
   return axiosInstance
     .get(`${baseUrl}/payments/bookings/checkout`, { params: { offer_id: offerId, mode } })
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/**
+ * Récapitulatif d'une consultation : prix de 30 minutes × tranches.
+ * GET /payments/bookings/checkout?kind=consultation&expert_id=&duration_minutes=
+ */
+export const getConsultationCheckout = async (expertId: number, durationMinutes: number): Promise<BookingCheckout | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/payments/bookings/checkout`, {
+      params: { kind: 'consultation', expert_id: expertId, duration_minutes: durationMinutes },
+    })
     .then((response) => (response.data?.success == true ? response.data.data : null))
     .catch(() => null);
 };
@@ -948,6 +1153,8 @@ export interface MyBookingBlock {
   id: number;
   date: string;
   period: BookingPeriod;
+  /** Demandée hors calendrier (présentiel : lieu choisi par l'expert à l'acceptation). */
+  off_calendar?: boolean;
   /** HH:MM dans le fuseau de l'expert. */
   start_local: string;
   end_local: string;
@@ -989,6 +1196,12 @@ export interface MyBooking {
   id: number;
   status: MyBookingStatus;
   offer_title: string;
+  kind?: BookingKind;
+  off_calendar?: boolean;
+  /** Consultation : durée en minutes. */
+  duration_minutes?: number | null;
+  /** Consultation (fiche détaillée) : sujet décrit par le demandeur. */
+  subject?: string | null;
   mode: BookingMode;
   blocks_count: number;
   expert: BookingExpertBase | null;
@@ -1081,6 +1294,9 @@ export interface ExpertRequest {
   id: number;
   status: MyBookingStatus;
   offer_title: string;
+  kind?: BookingKind;
+  off_calendar?: boolean;
+  duration_minutes?: number | null;
   mode: BookingMode;
   blocks_count: number;
   requester: { name: string };
@@ -1095,6 +1311,13 @@ export interface ExpertRequest {
 
 export interface ExpertRequestDetail extends ExpertRequest {
   message: string | null;
+  /** Consultation : sujet décrit par le demandeur. */
+  subject?: string | null;
+  /** Rendez-vous déjà acceptés qui chevauchent cette demande (avertissement). */
+  conflicts?: BookingConflict[];
+  /** Présentiel hors calendrier : choisir un lieu pour accepter. */
+  needs_location?: boolean;
+  locations?: { id: number; label: string; city: string; address_line: string; postal_code: string | null }[];
   payment_required: boolean;
   amount_ht: number;
   /** En pourcentage, copié à la création de la demande. */
@@ -1162,9 +1385,12 @@ export const getDeclineReasons = async (): Promise<DeclineReasons | null> => {
  * Accepte la demande : le montant réservé est débité.
  * POST /booking/me/requests/{bookingId}/accept
  */
-export const acceptExpertRequest = async (bookingId: number): Promise<BookingResult<ExpertRequestDetail>> => {
+export const acceptExpertRequest = async (
+  bookingId: number,
+  input?: { location_id?: number | null }
+): Promise<BookingResult<ExpertRequestDetail>> => {
   return axiosInstance
-    .post(`${baseUrl}/booking/me/requests/${bookingId}/accept`)
+    .post(`${baseUrl}/booking/me/requests/${bookingId}/accept`, input ?? {})
     .then((response) => toResult<ExpertRequestDetail>(response))
     .catch(toFailure);
 };

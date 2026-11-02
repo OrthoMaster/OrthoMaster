@@ -30,6 +30,7 @@ import { BlockPlace } from '../components/BlockPlace';
 import { NoShowSection } from '../components/NoShowSection';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
+import { KindTags, blockHours } from '../components/KindTags';
 import { APPOINTMENTS_ACCENT, STATUS_META, formatDeadline } from './appointmentFormat';
 import { ModePill } from '../components/ModePill';
 import { confirmAction, notify } from '../bookingActions';
@@ -277,6 +278,18 @@ export const AppointmentDetailView = ({ navigation, route }) => {
             </View>
 
             <Text style={styles.offerTitle}>{booking.offer_title}</Text>
+            <KindTags
+              kind={booking.kind}
+              durationMinutes={booking.duration_minutes}
+              offCalendar={booking.off_calendar}
+              style={{ marginTop: Spacings.xxs }}
+            />
+            {/* Consultation : le sujet envoyé à l'expert. */}
+            {(booking as any).subject ? (
+              <Text style={{ marginTop: Spacings.xs, fontFamily: 'Roboto', fontSize: 14, lineHeight: 20, color: Colors.text }}>
+                {(booking as any).subject}
+              </Text>
+            ) : null}
             <View style={styles.modeRow}>
               <ModePill mode={booking.mode ?? 'online'} />
             </View>
@@ -291,7 +304,7 @@ export const AppointmentDetailView = ({ navigation, route }) => {
                   <View style={styles.flex}>
                     <Text style={styles.blockDate}>{capitalize(formatLongDate(block.date, year))}</Text>
                     <Text style={styles.blockHours}>
-                      {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
+                      {blockHours(block, booking.kind)}
                     </Text>
                     {block.location ? <BlockPlace location={block.location} color={accentOf(expert?.palette_color)} /> : null}
                     {/* Visio seulement en ligne ; en présentiel, le lieu ci-dessus. */}

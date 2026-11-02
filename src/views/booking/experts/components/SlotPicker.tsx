@@ -23,6 +23,8 @@ export const PERIOD_ICONS: Record<BookingPeriod, 'weather-sunset-up' | 'weather-
 
 export interface SelectedBlock extends BookingBlock {
   date: string;
+  /** Demandée hors calendrier : horaires (et lieu en présentiel) fixés par l'expert à l'acceptation. */
+  off_calendar?: boolean;
 }
 
 export type SlotSelection = Record<string, SelectedBlock>;
@@ -57,6 +59,11 @@ interface SlotPickerProps {
   theme: ExpertTheme;
   selection: SlotSelection;
   onChange: (next: SlotSelection) => void;
+  /**
+   * Hors calendrier (v3) : tous les jours dans les bornes deviennent sélectionnables ;
+   * une demi-journée non ouverte se demande quand même, l'expert accepte ou refuse.
+   */
+  allowOffCalendar?: boolean;
 }
 
 const PERIODS: BookingPeriod[] = ['morning', 'afternoon'];
@@ -84,6 +91,7 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
   theme,
   selection,
   onChange,
+  allowOffCalendar = false,
 }) => {
   const [firstY, firstM] = firstDate.split('-').map(Number);
   const [lastY, lastM] = lastDate.split('-').map(Number);
@@ -147,6 +155,17 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
   };
 
   /* ---- Sélection ---- */
+
+  // Demi-journée demandée hors calendrier : horaires fixés par l'expert s'il accepte.
+  const offBlock = (period: BookingPeriod): BookingBlock & { off_calendar: true } => ({
+    period,
+    start_at: '',
+    end_at: '',
+    start_local: '',
+    end_local: '',
+    location: null,
+    off_calendar: true,
+  });
 
   const toggleBlock = (date: string, block: BookingBlock) => {
     const key = blockKey(date, block.period);
@@ -219,7 +238,9 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
                   if (!date) return <View key={d} style={styles.day} />;
 
                   const blocks = blocksByDate[date];
-                  const available = !!blocks && blocks.length > 0;
+                  const inBounds = date >= firstDate && date <= lastDate;
+                  const open = !!blocks && blocks.length > 0;
+                  const available = open || (allowOffCalendar && inBounds);
                   const active = selectedDate === date;
                   const hasChosen = PERIODS.some((p) => selection[blockKey(date, p)]);
 
@@ -236,10 +257,17 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
                       accessibilityLabel={formatLongDate(date)}
                       accessibilityState={{ disabled: !available, selected: active }}
                     >
-                      <View style={[styles.dayCircle, { backgroundColor: background }]}>
+                      <View
+                        style={[
+                          styles.dayCircle,
+                          { backgroundColor: !open && !active && !hasChosen ? 'transparent' : background },
+                          // Hors calendrier : contour pointillé pour les jours non ouverts.
+                          !open && available && !active && !hasChosen && { borderWidth: 1, borderStyle: 'dashed', borderColor: c.dot },
+                        ]}
+                      >
                         <Text style={[styles.dayNumber, { color }]}>{Number(date.slice(8))}</Text>
                       </View>
-                      {available && (
+                      {open && (
                         <View style={styles.dots}>
                           {blocks.map((block) => (
                             <View
@@ -267,8 +295,12 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
                     ]}
                   />
                   {PERIODS.map((period) => {
-                    const block = openBlocks.find((b) => b.period === period);
-                    const chosen = !!block && !!selection[blockKey(selectedDate!, period)];
+                    const calendarBlock = openBlocks.find((b) => b.period === period);
+                    const chosenOff = !calendarBlock && !!selection[blockKey(selectedDate!, period)]?.off_calendar;
+                    // Hors calendrier : la demi-journée non ouverte reste demandable.
+                    const block = calendarBlock ?? (allowOffCalendar ? offBlock(period) : undefined);
+                    const chosen = !!block && (!!selection[blockKey(selectedDate!, period)] || chosenOff);
+                    const isOff = !calendarBlock && !!block;
 
                     if (!block) {
                       return (
@@ -287,6 +319,7 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
                           chosen
                             ? { backgroundColor: theme.primary, borderColor: theme.primary }
                             : { backgroundColor: theme.card, borderColor: tint(theme.primary, 0.35) },
+                          isOff && !chosen && { borderStyle: 'dashed' },
                         ]}
                         onPress={() => toggleBlock(selectedDate!, block)}
                         activeOpacity={0.75}
@@ -306,7 +339,7 @@ export const SlotPicker: React.FC<SlotPickerProps> = ({
                           {chosen && <Ionicons name="checkmark-circle" size={16} color={theme.onPrimary} />}
                         </View>
                         <Text style={[styles.slotHours, { color: chosen ? theme.onPrimary : theme.muted }]}>
-                          {block.start_local} – {block.end_local}
+                          {isOff ? 'Hors calendrier · à confirmer' : `${block.start_local} – ${block.end_local}`}
                         </Text>
                         {/* Présentiel : chaque demi-journée peut se tenir dans un lieu différent. */}
                         {block.location ? (

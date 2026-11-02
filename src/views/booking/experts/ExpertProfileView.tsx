@@ -22,7 +22,8 @@ import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
 import { BookingExpertListItem, BookingOffer, getBookingExpert } from '../../../services/v2/BookingService';
-import { initials } from '../bookingFormat';
+import { initials, priceLabel } from '../bookingFormat';
+import { CONSULT_COLOR, CONSULT_COLOR_DARK, CONSULT_SOFT } from '../bookingKinds';
 import { withAlpha } from '../bookingPalette';
 import { ExpertTheme, expertTheme } from '../expertTheme';
 import { ThemeBackdrop } from '../components/ThemeBackdrop';
@@ -125,6 +126,8 @@ export const ExpertProfileView = ({ navigation, route }) => {
   const expert = data?.expert ?? preview;
   const offers = data?.offers ?? [];
   const online = (data ? data.expert.online !== false : preview?.online) ?? false;
+  // Consultation sur mesure (v3) : proposée en plus (ou à la place) des thèmes.
+  const consultation = data ? data.consultation ?? null : preview?.consultation ?? null;
   const theme = expertTheme(expert?.palette, expert?.palette_color);
 
   /* ---- Ouverture / fermeture ---- */
@@ -291,12 +294,36 @@ export const ExpertProfileView = ({ navigation, route }) => {
             </View>
           ) : null}
 
+          {/* ---- Consultation sur mesure ---- */}
+          {online && consultation ? (
+            <TouchableOpacity
+              style={[styles.consultCard, { borderColor: withAlpha(CONSULT_COLOR, 0.3) }]}
+              onPress={() => navigation.navigate('consultation-request', { expertId, preview: expert })}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Demander une consultation sur mesure"
+            >
+              <View style={styles.consultIcon}>
+                <Ionicons name="chatbubbles-outline" size={22} color={CONSULT_COLOR} />
+              </View>
+              <View style={styles.flex}>
+                <Text style={styles.consultTitle}>Consultation sur mesure</Text>
+                <Text style={styles.consultText}>
+                  Votre sujet, en visio · {priceLabel(consultation.price_30, consultation.currency)} les 30 minutes
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={CONSULT_COLOR} />
+            </TouchableOpacity>
+          ) : null}
+
           {/* ---- Thèmes ---- */}
+          {!(online && consultation && offers.length === 0 && !isLoading) ? (
           <Text style={[styles.sectionTitle, { color: theme.ink }]}>
             {offers.length > 1 ? "Thèmes de l'échange" : "Thème de l'échange"}
           </Text>
+          ) : null}
 
-          {isLoading ? (
+          {online && consultation && offers.length === 0 && !isLoading ? null : isLoading ? (
             <ActivityIndicator color={theme.primary} style={styles.loading} />
           ) : !online || offers.length === 0 ? (
             <View
@@ -336,6 +363,39 @@ export const ExpertProfileView = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  consultCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    marginHorizontal: INSET,
+    marginTop: Spacings.lg,
+    padding: Spacings.md,
+    borderRadius: 18,
+    borderWidth: 1,
+    backgroundColor: CONSULT_SOFT,
+  },
+  consultIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  consultTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 16,
+    color: CONSULT_COLOR_DARK,
+  },
+  consultText: {
+    fontFamily: 'Roboto',
+    fontSize: 13,
+    lineHeight: 18,
+    color: CONSULT_COLOR_DARK,
+  },
   /* ---- Structure ---- */
   root: {
     flex: 1,

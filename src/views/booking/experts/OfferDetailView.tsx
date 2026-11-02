@@ -275,6 +275,8 @@ export const OfferDetailView = ({ navigation, route }) => {
 
   const [tab, setTab] = useState<DetailTab>(route.params?.initialTab ?? 'details');
   const [selection, setSelection] = useState<SlotSelection>({});
+  // Hors calendrier (v3) : demander des demi-journées que l'expert n'a pas ouvertes.
+  const [offCalendar, setOffCalendar] = useState(false);
 
   // Modes actifs de l'offre, en ligne d'abord ; le premier est choisi d'office.
   const modes = MODE_ORDER.map((m) => offer?.modes?.find((om) => om.mode === m)).filter(Boolean) as BookingOffer['modes'];
@@ -614,7 +616,35 @@ export const OfferDetailView = ({ navigation, route }) => {
           theme={theme}
           selection={selection}
           onChange={setSelection}
+          allowOffCalendar={offCalendar}
         />
+      ) : null}
+
+      {/* ---- Hors calendrier : aucune date ne convient ---- */}
+      {detail && offerMode ? (
+        <TouchableOpacity
+          style={[styles.offToggle, { borderColor: theme.line, backgroundColor: offCalendar ? tint(theme.primary, 0.1) : theme.card }]}
+          onPress={() => {
+            // Revenir au calendrier retire les demi-journées hors calendrier déjà choisies.
+            if (offCalendar) {
+              const kept = Object.fromEntries(Object.entries(selection).filter(([, b]) => !b.off_calendar));
+              setSelection(kept);
+            }
+            setOffCalendar((v) => !v);
+          }}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: offCalendar }}
+        >
+          <Ionicons name={offCalendar ? 'checkbox' : 'square-outline'} size={20} color={theme.primary} />
+          <View style={styles.flex}>
+            <Text style={[styles.offToggleTitle, { color: theme.ink }]}>Proposer une autre date</Text>
+            <Text style={[styles.offToggleText, { color: theme.muted }]}>
+              {offerMode.mode === 'onsite'
+                ? "Hors calendrier : l'expert confirme les horaires et le lieu s'il accepte."
+                : "Hors calendrier : l'expert confirme les horaires s'il accepte."}
+            </Text>
+          </View>
+        </TouchableOpacity>
       ) : null}
 
       {/* ---- Demi-journées retenues, dans l'ordre chronologique ---- */}
@@ -651,7 +681,9 @@ export const OfferDetailView = ({ navigation, route }) => {
                       color={theme.primary}
                     />
                     <Text style={[styles.pickedHours, { color: theme.muted }]}>
-                      {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
+                      {block.off_calendar
+                        ? `${PERIOD_LABELS[block.period]} · Hors calendrier, à confirmer`
+                        : `${PERIOD_LABELS[block.period]} · ${block.start_local} – ${block.end_local}`}
                     </Text>
                   </View>
                   {block.location ? (
@@ -816,6 +848,25 @@ export const OfferDetailView = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  offToggle: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.sm,
+    marginTop: Spacings.sm,
+    padding: Spacings.md,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  offToggleTitle: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+  },
+  offToggleText: {
+    fontFamily: 'Roboto',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+  },
   /* ---- Structure ---- */
   container: {
     flex: 1,

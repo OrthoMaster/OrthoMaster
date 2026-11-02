@@ -12,6 +12,7 @@ import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker
 import { JoinVisioButton } from '../../components/JoinVisioButton';
 import { STATUS_META, featuredBlock, formatShortDay, relativeDay } from '../appointmentFormat';
 import { ModeLine } from '../../components/ModePill';
+import { KindTags, blockHours } from '../../components/KindTags';
 
 const CARD_RADIUS = 20;
 const MOTIF_SIZE = 112;
@@ -65,7 +66,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
     ],
   };
 
-  const blockLabel = upcoming ? 'Prochaine demi-journée' : 'Première demi-journée';
+  const blockLabel = booking.kind === 'consultation' ? 'Créneau' : upcoming ? 'Prochaine demi-journée' : 'Première demi-journée';
 
   return (
     <Pressable
@@ -111,6 +112,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
         <Text style={styles.title} numberOfLines={2}>
           {booking.offer_title}
         </Text>
+        <KindTags kind={booking.kind} durationMinutes={booking.duration_minutes} offCalendar={booking.off_calendar} />
         {/* Format : En visio, ou En présentiel avec le lieu de la demi-journée mise en avant. */}
         <ModeLine mode={booking.mode ?? 'online'} location={block?.location} style={styles.modeLine} />
 
@@ -128,7 +130,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
               <MaterialCommunityIcons name={PERIOD_ICONS[block.period]} size={16} color={Colors.lblueDark} />
               <Text style={styles.blockDate}>{formatShortDay(block.date)}</Text>
               <Text style={styles.blockHours}>
-                {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
+                {blockHours(block, booking.kind)}
               </Text>
             </View>
 

@@ -34,6 +34,8 @@ import {
   createBookingPaymentIntent,
   fieldError,
   getBookingCheckout,
+  getConsultationCheckout,
+  ConsultationDraft,
 } from '../../../services/v2/BookingService';
 import { formatLongDate } from '../bookingDates';
 import { formatPrice, initials } from '../bookingFormat';
@@ -46,6 +48,7 @@ import { notify } from '../bookingActions';
 import { useBookingPayment } from './bookingPayment';
 import { PERIOD_ICONS, PERIOD_LABELS, SelectedBlock, placeLabel } from './components/SlotPicker';
 import { MODE_META } from '../components/ModePill';
+import { CONSULT_COLOR_DARK, durationText } from '../bookingKinds';
 
 const SHEET_RATIO = 0.92;
 const SHEET_RADIUS = 28;
@@ -117,8 +120,12 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   const expert = route.params?.expert ?? {};
   const blocks: SelectedBlock[] = route.params?.blocks ?? [];
   const offerRouteKey: string | undefined = route.params?.offerRouteKey;
+  // Consultation sur mesure (v3) : pas de thème, un horaire, toujours en ligne.
+  const consultation: ConsultationDraft | undefined = route.params?.consultation;
   // Format choisi sur l'écran du thème ; en ligne par défaut (seul format avant v2).
-  const mode: BookingMode = route.params?.mode ?? 'online';
+  const mode: BookingMode = consultation ? 'online' : route.params?.mode ?? 'online';
+  // Demi-journées demandées hors calendrier : signalées au serveur.
+  const offCalendar = consultation ? consultation.off_calendar : blocks.some((b) => b.off_calendar);
 
   const payment = useBookingPayment();
 
@@ -127,9 +134,12 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   const isExpert = !!me?.is_expert;
 
   const { data: checkout, isLoading } = useQuery({
-    queryKey: ['booking', 'checkout', offer?.id, mode],
-    queryFn: () => getBookingCheckout(offer.id, mode),
-    enabled: !!offer,
+    queryKey: consultation
+      ? ['booking', 'checkout', 'consultation', expertId, consultation.duration_minutes]
+      : ['booking', 'checkout', offer?.id, mode],
+    queryFn: () =>
+      consultation ? getConsultationCheckout(expertId, consultation.duration_minutes) : getBookingCheckout(offer.id, mode),
+    enabled: !!offer || !!consultation,
   });
 
   const free = checkout ? !checkout.payment_enabled : false;
@@ -289,16 +299,30 @@ export const BookingCheckoutView = ({ navigation, route }) => {
 
     setBusyState(true);
     try {
-      const intent = await createBookingPaymentIntent({
-        offer_id: offer.id,
-        mode,
-        blocks: blocks.map((b) => ({ date: b.date, period: b.period })),
-        address: address.trim(),
-        message: message.trim() || null,
-      });
+      const intent = await createBookingPaymentIntent(
+        consultation
+          ? {
+              kind: 'consultation',
+              expert_id: expertId,
+              date: consultation.date,
+              start_time: consultation.start_local,
+              duration_minutes: consultation.duration_minutes,
+              subject: consultation.subject,
+              address: address.trim(),
+              message: message.trim() || null,
+            }
+          : {
+              offer_id: offer.id,
+              mode,
+              blocks: blocks.map((b) => ({ date: b.date, period: b.period })),
+              off_calendar: offCalendar || undefined,
+              address: address.trim(),
+              message: message.trim() || null,
+            }
+      );
 
       if (intent.ok === false) {
-        if (intent.code === SLOT_TAKEN || fieldError(intent.errors, 'blocks')) {
+        if (intent.code === SLOT_TAKEN || fieldError(intent.errors, 'blocks') || fieldError(intent.errors, 'start_time') || fieldError(intent.errors, 'date')) {
           backToCalendar(intent.message);
         } else if (fieldError(intent.errors, 'address')) {
           setServerErrors(intent.errors);
@@ -370,13 +394,13 @@ export const BookingCheckoutView = ({ navigation, route }) => {
     }
   };
 
-  if (!offer) return null;
+  if (!offer && !consultation) return null;
 
   /* ---- Rendu ---- */
 
   const totalLabel = pricing ? formatPrice(pricing.amount_ttc, currency) : '';
   // Lieux du présentiel (copie de l'offre) : adresse complète des demi-journées choisies.
-  const onsiteLocations = offer.modes?.find((m) => m.mode === 'onsite')?.locations ?? [];
+  const onsiteLocations = offer?.modes?.find((m) => m.mode === 'onsite')?.locations ?? [];
   const year = new Date().getFullYear();
 
   /* ---- Sections : une colonne (mobile, web étroit) ou deux (web, grand écran) ---- */
@@ -459,14 +483,32 @@ export const BookingCheckoutView = ({ navigation, route }) => {
         </View>
       </View>
 
-      <Text style={styles.offerTitle}>{offer.title}</Text>
+      <Text style={styles.offerTitle}>{consultation ? 'Consultation sur mesure' : offer.title}</Text>
       <View style={styles.offerMeta}>
         <MaterialCommunityIcons name={MODE_META[mode].icon} size={15} color={ACCENT_DARK} />
         <Text style={styles.offerMetaText}>
-          {MODE_META[mode].label} · {offer.duration_label}
+          {MODE_META[mode].label} · {consultation ? durationText(consultation.duration_minutes) : offer.duration_label}
         </Text>
       </View>
 
+      {consultation ? (
+        <View style={styles.blocks}>
+          <View style={styles.block}>
+            <Ionicons name="time-outline" size={18} color={ACCENT_DARK} />
+            <Text style={styles.blockDate} numberOfLines={1}>
+              {capitalize(formatLongDate(consultation.date, year))}
+            </Text>
+            <Text style={styles.blockHours}>
+              {consultation.start_local} – {consultation.end_local}
+              {consultation.off_calendar ? ' · Hors calendrier' : ''}
+            </Text>
+          </View>
+          <Text style={styles.subjectLabel}>Votre sujet</Text>
+          <Text style={styles.subjectText} numberOfLines={6}>
+            {consultation.subject}
+          </Text>
+        </View>
+      ) : (
       <View style={styles.blocks}>
         {blocks.map((block) => {
           const longDate = capitalize(formatLongDate(block.date, year));
@@ -477,8 +519,17 @@ export const BookingCheckoutView = ({ navigation, route }) => {
                 {longDate}
               </Text>
               <Text style={styles.blockHours}>
-                {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
+                {block.off_calendar
+                  ? `${PERIOD_LABELS[block.period]} · Hors calendrier`
+                  : `${PERIOD_LABELS[block.period]} · ${block.start_local} – ${block.end_local}`}
               </Text>
+              {block.off_calendar ? (
+                <Text style={styles.blockHours}>
+                  {mode === 'onsite'
+                    ? "Horaires et lieu confirmés par l'expert s'il accepte."
+                    : "Horaires confirmés par l'expert s'il accepte."}
+                </Text>
+              ) : null}
               {block.location ? (
                 // Présentiel : nom du lieu, puis rue, code postal et ville.
                 (() => {
@@ -504,6 +555,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
           );
         })}
       </View>
+      )}
     </View>
     </>
   );
@@ -745,6 +797,18 @@ export const BookingCheckoutView = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  subjectLabel: {
+    marginTop: Spacings.xs,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    color: CONSULT_COLOR_DARK,
+  },
+  subjectText: {
+    fontFamily: 'Roboto',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.text,
+  },
   flex: {
     flex: 1,
   },

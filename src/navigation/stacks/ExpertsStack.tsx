@@ -1,7 +1,9 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
+import { BookingChoiceView } from '../../views/booking/experts/BookingChoiceView';
 import { ExpertsListView } from '../../views/booking/experts/ExpertsListView';
+import { ConsultationRequestView } from '../../views/booking/experts/ConsultationRequestView';
 import { ExpertProfileView } from '../../views/booking/experts/ExpertProfileView';
 import { OfferDetailView } from '../../views/booking/experts/OfferDetailView';
 import { BookingCheckoutView } from '../../views/booking/experts/BookingCheckoutView';
@@ -10,7 +12,11 @@ import { ConversationView } from '../../views/booking/messages/ConversationView'
 const ExpertsStackNav = createStackNavigator();
 
 /**
- * Pile de l'onglet Experts (utilisateur) : liste → profil en feuille basse → thème
+ * Pile de l'onglet Experts (utilisateur) : choix Thèmes / Consultation (v3) →
+ * Thèmes : liste Experts | Thèmes → profil … ; Consultation : experts qui la proposent →
+ * demande (sujet, durée, horaire) → récapitulatif.
+ *
+ * Avant v3 : liste → profil en feuille basse → thème
  * (détails et calendrier des demi-journées sur le même écran) → récapitulatif et paiement
  * en feuille basse.
  * Le retour remonte d'abord dans cette pile avant de sortir de l'espace rendez-vous.
@@ -19,10 +25,12 @@ export const ExpertsStack = () => {
   return (
     <ExpertsStackNav.Navigator
       id={'experts-stack' as undefined}
-      initialRouteName="experts-list"
+      initialRouteName="booking-choice"
       screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
     >
+      <ExpertsStackNav.Screen name="booking-choice" component={BookingChoiceView} />
       <ExpertsStackNav.Screen name="experts-list" component={ExpertsListView} />
+      <ExpertsStackNav.Screen name="consultation-request" component={ConsultationRequestView} />
       <ExpertsStackNav.Screen
         name="expert-profile"
         component={ExpertProfileView}

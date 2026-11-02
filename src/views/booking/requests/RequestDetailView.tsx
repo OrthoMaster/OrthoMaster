@@ -45,6 +45,7 @@ import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
 import { formatDeadline } from '../appointments/appointmentFormat';
 import { REQUESTS_ACCENT, REQUEST_STATUS_META, timeLeft } from './requestFormat';
 import { ModePill } from '../components/ModePill';
+import { KindTags, blockHours } from '../components/KindTags';
 import { confirmAction, notify } from '../bookingActions';
 
 const SHEET_RATIO = 0.88;
@@ -120,6 +121,9 @@ export const RequestDetailView = ({ navigation, route }) => {
   const [note, setNote] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState<'accept' | 'decline' | null>(null);
+  // Présentiel hors calendrier : lieu choisi par l'expert pour accepter.
+  const [locationId, setLocationId] = useState<number | null>(null);
+  const needsLocation = !!full?.needs_location;
 
   const { data: reasons } = useQuery({
     queryKey: ['booking', 'decline-reasons'],
@@ -192,6 +196,10 @@ export const RequestDetailView = ({ navigation, route }) => {
   };
 
   const accept = () => {
+    if (needsLocation && !locationId) {
+      notify('Choisissez le lieu', 'Cette demande est hors calendrier : indiquez où se tiendra le rendez-vous.');
+      return;
+    }
     // confirm du navigateur sur le web (Alert.alert y est sans effet).
     confirmAction(
       'Accepter la demande ?',
@@ -201,7 +209,7 @@ export const RequestDetailView = ({ navigation, route }) => {
       'Accepter',
       async () => {
         setBusy('accept');
-        const result = await acceptExpertRequest(bookingId);
+        const result = await acceptExpertRequest(bookingId, needsLocation ? { location_id: locationId } : undefined);
         setBusy(null);
 
         if (result.ok === false) {
@@ -334,9 +342,19 @@ export const RequestDetailView = ({ navigation, route }) => {
             <View style={styles.modeRow}>
               <ModePill mode={request.mode ?? 'online'} />
             </View>
+            <KindTags
+              kind={request.kind}
+              durationMinutes={request.duration_minutes}
+              offCalendar={request.off_calendar}
+              style={styles.kindTags}
+            />
 
             <Text style={styles.blocksTitle}>
-              {request.blocks.length > 1 ? `${request.blocks.length} demi-journées` : '1 demi-journée'}
+              {request.kind === 'consultation'
+                ? 'Créneau demandé'
+                : request.blocks.length > 1
+                  ? `${request.blocks.length} demi-journées`
+                  : '1 demi-journée'}
             </Text>
             <View style={styles.blocks}>
               {request.blocks.map((block) => (
@@ -345,7 +363,8 @@ export const RequestDetailView = ({ navigation, route }) => {
                   <View style={styles.flex}>
                     <Text style={styles.blockDate}>{capitalize(formatLongDate(block.date, year))}</Text>
                     <Text style={styles.blockHours}>
-                      {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
+                      {blockHours(block, request.kind)}
+                      {block.off_calendar ? ' · hors calendrier' : ''}
                     </Text>
                     {block.location ? <BlockPlace location={block.location} color={accent} /> : null}
                     {/* Visio seulement en ligne ; en présentiel, le lieu ci-dessus. */}
@@ -368,6 +387,67 @@ export const RequestDetailView = ({ navigation, route }) => {
 
           {full ? (
             <>
+              {/* ---- Chevauchement avec des rendez-vous acceptés (avertissement seulement) ---- */}
+              {full.conflicts && full.conflicts.length > 0 ? (
+                <View style={[styles.card, styles.warnCard]}>
+                  <View style={styles.warnHead}>
+                    <Ionicons name="warning-outline" size={18} color={Colors.warning} />
+                    <Text style={styles.warnTitle}>Vous avez déjà un rendez-vous à ce moment</Text>
+                  </View>
+                  {full.conflicts.map((c) => (
+                    <Text key={`${c.booking_id}-${c.date}-${c.start_local}`} style={styles.warnText}>
+                      {capitalize(formatLongDate(c.date, year))} · {c.start_local} – {c.end_local} · {c.title}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+
+              {/* ---- Consultation : sujet du demandeur ---- */}
+              {full.subject ? (
+                <>
+                  <Text style={styles.sectionTitle}>Son sujet</Text>
+                  <View style={styles.card}>
+                    <Text style={styles.body}>{full.subject}</Text>
+                  </View>
+                </>
+              ) : null}
+
+              {/* ---- Présentiel hors calendrier : lieu à choisir pour accepter ---- */}
+              {needsLocation ? (
+                <>
+                  <Text style={styles.sectionTitle}>Lieu du rendez-vous</Text>
+                  <View style={styles.card}>
+                    <Text style={styles.locHint}>
+                      Demande hors calendrier : choisissez où se tiendra le rendez-vous, puis acceptez.
+                    </Text>
+                    {(full.locations ?? []).length === 0 ? (
+                      <Text style={styles.locHint}>Ajoutez d'abord une adresse dans Expertise › Disponibilités.</Text>
+                    ) : (
+                      (full.locations ?? []).map((l) => {
+                        const on = l.id === locationId;
+                        return (
+                          <TouchableOpacity
+                            key={l.id}
+                            style={[styles.locRow, on && styles.locRowOn]}
+                            onPress={() => setLocationId(l.id)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected: on }}
+                          >
+                            <Ionicons name={on ? 'radio-button-on' : 'radio-button-off'} size={18} color={Colors.lblueDark} />
+                            <View style={styles.flex}>
+                              <Text style={styles.locLabel}>{l.label}</Text>
+                              <Text style={styles.locHint}>
+                                {[l.address_line, [l.postal_code, l.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })
+                    )}
+                  </View>
+                </>
+              ) : null}
+
               {/* ---- Message du demandeur ---- */}
               {full.message ? (
                 <>
@@ -645,6 +725,57 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Cartes ---- */
+  kindTags: {
+    marginTop: Spacings.xs,
+  },
+  warnCard: {
+    marginTop: Spacings.md,
+    borderColor: Colors.warning,
+    backgroundColor: Colors.warningBackground,
+    gap: Spacings.xxs,
+  },
+  warnHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+  },
+  warnTitle: {
+    flex: 1,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: '#8A5300',
+  },
+  warnText: {
+    fontFamily: 'Roboto',
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#8A5300',
+  },
+  locRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.sm,
+    padding: Spacings.sm,
+    marginTop: Spacings.xs,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  locRowOn: {
+    borderColor: Colors.lblue,
+    backgroundColor: Colors.lblue3,
+  },
+  locLabel: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.text,
+  },
+  locHint: {
+    fontFamily: 'Roboto',
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.subtext2,
+  },
   card: {
     padding: Spacings.md,
     borderRadius: 18,

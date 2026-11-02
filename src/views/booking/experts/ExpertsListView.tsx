@@ -15,19 +15,34 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
 import { BouncingDots } from '../../../component/LoadingDots';
 import { useFloatingTabBarInset } from '../../../component/booking/FloatingTabBar';
-import { BookingExpertListItem, getBookingExperts } from '../../../services/v2/BookingService';
+import {
+  BookingExpertListItem,
+  BookingTheme,
+  getBookingExpert,
+  getBookingExperts,
+  getBookingThemes,
+  smartSearchExperts,
+  smartSearchThemes,
+} from '../../../services/v2/BookingService';
+import { notify } from '../bookingActions';
+import { CONSULT_COLOR } from '../bookingKinds';
 import { ExpertCard } from './components/ExpertCard';
+import { ThemeCard } from './components/ThemeCard';
 
 /** Même valeur que BookingExpertController::PER_PAGE : sert au rang d'entrée en cascade. */
 const PER_PAGE = 10;
-const SEARCH_DEBOUNCE_MS = 350;
+/** Recherche intelligente (Gemini) : on attend un peu plus la fin de la frappe. */
+const SEARCH_DEBOUNCE_MS = 700;
+const SMART_MIN_LENGTH = 2;
+
+type Segment = 'experts' | 'themes';
 
 /** Marge latérale de l'écran. */
 const LIST_PADDING = Spacings.lg;
@@ -44,6 +59,12 @@ const WEB_SEARCH_WIDTH = 380;
 const WEB_SEARCH_MAX_LENGTH = 100;
 
 /**
+ * Thèmes (v3) : deux listes au choix, « Experts » (comme avant) et « Thèmes » (le thème d'abord,
+ * l'expert en second). La recherche est intelligente (un tour, Gemini) : chaque résultat dit
+ * pourquoi il correspond.
+ * Consultation (route.params.purpose = 'consultation') : seulement les experts qui la proposent ;
+ * toucher un expert ouvre la demande de consultation.
+ *
  * Experts, 10 par page, ceux qui acceptent des demandes en tête.
  * La page suivante se charge à l'approche de la fin ; la marge basse tient compte de la
  * barre flottante, sinon la dernière carte et l'indicateur passeraient dessous.
@@ -51,7 +72,12 @@ const WEB_SEARCH_MAX_LENGTH = 100;
  * Web : contenu centré, cartes sur deux colonnes sur grand écran (une colonne sur écran
  * étroit), thèmes proposés dépliés d'office.
  */
-export const ExpertsListView = ({ navigation }) => {
+export const ExpertsListView = ({ navigation, route }) => {
+  const consultationMode = route?.params?.purpose === 'consultation';
+  const [segment, setSegment] = useState<Segment>(consultationMode ? 'experts' : route?.params?.segment ?? 'experts');
+  const showThemes = segment === 'themes' && !consultationMode;
+  const queryClient = useQueryClient();
+  const [openingThemeId, setOpeningThemeId] = useState<number | null>(null);
   const bottomInset = useFloatingTabBarInset();
   // Largeur de fenêtre plutôt que onLayout : fiable dès le premier rendu.
   const { width: screenWidth } = useWindowDimensions();
@@ -67,31 +93,58 @@ export const ExpertsListView = ({ navigation }) => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [query, setQuery] = useState('');
 
-  // La recherche part au serveur (la liste est paginée) : on attend la fin de la frappe.
+  // La recherche part au serveur : on attend la fin de la frappe.
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [search]);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ['booking', 'experts', query],
+  // Recherche intelligente à partir de 2 caractères ; sinon, les listes paginées.
+  const smart = query.length >= SMART_MIN_LENGTH;
+
+  const expertsQuery = useInfiniteQuery({
+    queryKey: ['booking', 'experts', consultationMode ? 'consultation' : 'all'],
     queryFn: async ({ pageParam }) => {
-      const page = await getBookingExperts({ page: pageParam, q: query || undefined });
+      const page = await getBookingExperts({ page: pageParam, consultation: consultationMode ? 1 : undefined });
       // Une page en échec doit passer en erreur, pas se lire comme une liste vide.
       if (!page) throw new Error('experts');
       return page;
     },
     initialPageParam: 1,
     getNextPageParam: (last) => (last.pagination.has_more ? last.pagination.page + 1 : undefined),
+    enabled: !showThemes && !smart,
   });
+
+  const themesQuery = useInfiniteQuery({
+    queryKey: ['booking', 'themes'],
+    queryFn: async ({ pageParam }) => {
+      const page = await getBookingThemes({ page: pageParam });
+      if (!page) throw new Error('themes');
+      return page;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.pagination.has_more ? last.pagination.page + 1 : undefined),
+    enabled: showThemes && !smart,
+  });
+
+  const smartQuery = useQuery({
+    queryKey: ['booking', 'smart-search', showThemes ? 'themes' : 'experts', query],
+    queryFn: async () => {
+      const result = showThemes ? await smartSearchThemes(query) : await smartSearchExperts(query);
+      if (!result) throw new Error('search');
+      return result;
+    },
+    enabled: smart,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const active = smart ? null : showThemes ? themesQuery : expertsQuery;
+  const isLoading = smart ? smartQuery.isLoading : active!.isLoading;
+  const isError = smart ? smartQuery.isError : active!.isError;
+  const refetch = () => (smart ? smartQuery.refetch() : active!.refetch());
+  const fetchNextPage = () => active?.fetchNextPage();
+  const hasNextPage = !smart && !!active?.hasNextPage;
+  const isFetchingNextPage = !smart && !!active?.isFetchingNextPage;
 
   // Indicateur réservé au tirage manuel : un rechargement en arrière-plan ne fait pas sauter la liste.
   const [pulling, setPulling] = useState(false);
@@ -104,7 +157,56 @@ export const ExpertsListView = ({ navigation }) => {
     }
   };
 
-  const experts = useMemo(() => data?.pages.flatMap((page) => page.experts) ?? [], [data]);
+  const experts = useMemo(() => {
+    const list: BookingExpertListItem[] = smart
+      ? ((smartQuery.data?.results as BookingExpertListItem[]) ?? [])
+      : expertsQuery.data?.pages.flatMap((page) => page.experts) ?? [];
+    // Consultation : seulement les experts qui la proposent.
+    return consultationMode ? list.filter((e) => !!e.consultation) : list;
+  }, [smart, smartQuery.data, expertsQuery.data, consultationMode]);
+
+  const themes = useMemo(
+    () =>
+      smart
+        ? ((smartQuery.data?.results as BookingTheme[]) ?? [])
+        : themesQuery.data?.pages.flatMap((page) => page.themes) ?? [],
+    [smart, smartQuery.data, themesQuery.data]
+  );
+
+  // Thème touché : la fiche de l'expert (offres complètes, lieux) est chargée puis le thème s'ouvre.
+  const openTheme = async (theme: BookingTheme) => {
+    if (openingThemeId) return;
+    setOpeningThemeId(theme.id);
+    try {
+      const detail = await queryClient.fetchQuery({
+        queryKey: ['booking', 'expert', theme.expert.id],
+        queryFn: () => getBookingExpert(theme.expert.id),
+      });
+      const offer = detail?.offers.find((o) => o.id === theme.id);
+      if (!detail || !offer) {
+        notify('Thème indisponible', "Ce thème n'est plus proposé. Tirez la liste pour la rafraîchir.");
+        return;
+      }
+      navigation.navigate('expert-offer', {
+        expertId: theme.expert.id,
+        offer,
+        expert: {
+          name: detail.expert.name,
+          honorific: detail.expert.honorific,
+          avatar_url: detail.expert.avatar_url,
+          palette: detail.expert.palette,
+          palette_color: detail.expert.palette_color,
+        },
+      });
+    } finally {
+      setOpeningThemeId(null);
+    }
+  };
+
+  const changeSegment = (next: Segment) => {
+    if (next === segment) return;
+    setSegment(next);
+  };
 
   const loadMore = () => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
@@ -115,9 +217,14 @@ export const ExpertsListView = ({ navigation }) => {
       expert={item}
       width={cardWidth}
       indexInPage={index % PER_PAGE}
-      defaultOpen={IS_WEB}
+      defaultOpen={IS_WEB && !consultationMode}
       // L'aperçu affiche l'en-tête du profil tout de suite, sans attendre la requête.
-      onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
+      // Consultation : la demande s'ouvre directement.
+      onPress={() =>
+        consultationMode
+          ? navigation.navigate('consultation-request', { expertId: item.id, preview: item })
+          : navigation.navigate('expert-profile', { expertId: item.id, preview: item })
+      }
       // Toucher un thème : le profil s'ouvre puis fait défiler les thèmes jusqu'à celui-ci.
       onOfferPress={(offerId) =>
         navigation.navigate('expert-profile', { expertId: item.id, preview: item, focusOfferId: offerId })
@@ -125,12 +232,30 @@ export const ExpertsListView = ({ navigation }) => {
     />
   );
 
+  const renderTheme = ({ item, index }: { item: BookingTheme; index: number }) => (
+    <ThemeCard
+      theme={item}
+      width={cardWidth}
+      indexInPage={index % PER_PAGE}
+      opening={openingThemeId === item.id}
+      onPress={() => openTheme(item)}
+    />
+  );
+
   const emptyState = () => {
-    const kind = isError ? 'error' : query ? 'search' : 'none';
+    const kind = isError ? 'error' : smart ? 'search' : 'none';
     const content = {
       error: { icon: 'wifi-off', title: 'Erreur de chargement', text: 'Tirez vers le bas pour réessayer.' },
-      search: { icon: 'account-search-outline', title: 'Aucun résultat', text: 'Essayez un autre nom ou un autre domaine.' },
-      none: { icon: 'account-clock-outline', title: 'Aucun expert', text: 'Les experts arrivent bientôt.' },
+      search: {
+        icon: showThemes ? 'text-search' : 'account-search-outline',
+        title: 'Aucun résultat',
+        text: 'Décrivez autrement votre besoin, ou essayez un nom ou un domaine.',
+      },
+      none: showThemes
+        ? { icon: 'lightbulb-on-outline', title: 'Aucun thème', text: 'Les thèmes arrivent bientôt.' }
+        : consultationMode
+          ? { icon: 'chat-question-outline', title: 'Aucun expert', text: "Aucun expert ne propose encore de consultation." }
+          : { icon: 'account-clock-outline', title: 'Aucun expert', text: 'Les experts arrivent bientôt.' },
     }[kind];
 
     return (
@@ -155,7 +280,58 @@ export const ExpertsListView = ({ navigation }) => {
         twoColumns && styles.headWeb,
       ]}
     >
-      <Text style={[styles.title, twoColumns && styles.titleWeb]}>Trouvez l'expert qui vous correspond</Text>
+      <View style={[styles.titleBlock, twoColumns && styles.titleWeb]}>
+        {navigation.canGoBack() ? (
+          <TouchableOpacity
+            style={styles.back}
+            onPress={() => navigation.goBack()}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Retour"
+          >
+            <Ionicons name="chevron-back" size={20} color={Colors.text} />
+            <Text style={styles.backText}>{consultationMode ? 'Consultation' : 'Thèmes'}</Text>
+          </TouchableOpacity>
+        ) : null}
+        <Text style={[styles.title, twoColumns && styles.titleInline]}>
+          {consultationMode
+            ? 'Choisissez votre expert'
+            : showThemes
+              ? 'Trouvez le thème qui vous correspond'
+              : "Trouvez l'expert qui vous correspond"}
+        </Text>
+
+        {/* Experts | Thèmes */}
+        {!consultationMode ? (
+          <View style={styles.segment} accessibilityRole="tablist">
+            {(['experts', 'themes'] as Segment[]).map((key) => {
+              const on = segment === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.segmentItem, on && styles.segmentItemOn]}
+                  onPress={() => changeSegment(key)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: on }}
+                >
+                  <Ionicons
+                    name={key === 'experts' ? 'people-outline' : 'bulb-outline'}
+                    size={16}
+                    color={on ? Colors.white : Colors.lblueDark}
+                  />
+                  <Text style={[styles.segmentText, on && styles.segmentTextOn]}>
+                    {key === 'experts' ? 'Experts' : 'Thèmes'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          <Text style={styles.consultHint}>
+            Échange en visio sur le sujet de votre choix, réservé par tranches de 30 minutes.
+          </Text>
+        )}
+      </View>
 
       <View style={[styles.searchWrap, twoColumns && styles.searchWrapWeb, IS_WEB && searchFocused && styles.searchWrapFocused]}>
         <Ionicons name="search" size={18} color={Colors.subtext} />
@@ -165,7 +341,7 @@ export const ExpertsListView = ({ navigation }) => {
           onBlur={() => setSearchFocused(false)}
           value={search}
           onChangeText={setSearch}
-          placeholder="Rechercher un expert ou un domaine"
+          placeholder={showThemes ? 'Décrivez votre besoin, un sujet…' : 'Un expert, un domaine, un besoin…'}
           placeholderTextColor={Colors.subtext}
           returnKeyType="search"
           autoCorrect={false}
@@ -179,6 +355,18 @@ export const ExpertsListView = ({ navigation }) => {
       </View>
     </View>
   );
+
+  // Recherche intelligente : petit rappel sous l'en-tête, avec le nombre de résultats.
+  const smartHint = smart ? (
+    <View style={[styles.smartHint, IS_WEB && { width: innerWidth, alignSelf: 'center' }]}>
+      <Ionicons name="sparkles" size={14} color={Colors.lblueDark} />
+      <Text style={styles.smartHintText}>
+        {smartQuery.isFetching
+          ? 'Recherche intelligente en cours…'
+          : `Recherche intelligente · ${(showThemes ? themes : experts).length} résultat(s)`}
+      </Text>
+    </View>
+  ) : null;
 
   const listEmpty = isLoading ? (
     <View style={styles.loading}>
@@ -198,14 +386,17 @@ export const ExpertsListView = ({ navigation }) => {
   if (twoColumns) {
     // Chaque carte va dans la colonne la moins remplie, d'après une hauteur estimée
     // (en-tête + une ligne par thème déplié) : les colonnes restent équilibrées.
-    const estimate = (expert: BookingExpertListItem) =>
-      140 + (expert.online && expert.offers?.length ? 40 + expert.offers.length * 56 : 0);
-    const gridColumns: { expert: BookingExpertListItem; index: number }[][] = [[], []];
+    const estimate = (item: any) =>
+      showThemes
+        ? (item.image ? cardWidth * 0.42 : 64) + 190 + (item.formats?.length ?? 1) * 26
+        : 140 + (!consultationMode && item.online && item.offers?.length ? 40 + item.offers.length * 56 : 0);
+    const items: any[] = showThemes ? themes : experts;
+    const gridColumns: { item: any; index: number }[][] = [[], []];
     const heights = [0, 0];
-    experts.forEach((expert, index) => {
+    items.forEach((item, index) => {
       const target = heights[0] <= heights[1] ? 0 : 1;
-      gridColumns[target].push({ expert, index });
-      heights[target] += estimate(expert) + WEB_GAP;
+      gridColumns[target].push({ item, index });
+      heights[target] += estimate(item) + WEB_GAP;
     });
 
     // Pas de FlatList ici : la page suivante se charge quand le bas approche.
@@ -224,14 +415,15 @@ export const ExpertsListView = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           {listHeader}
-          {experts.length === 0 ? (
+          {smartHint}
+          {items.length === 0 ? (
             listEmpty
           ) : (
             <View style={[styles.webGrid, { width: innerWidth }]}>
               {gridColumns.map((column, c) => (
                 <View key={c} style={styles.webColumn}>
-                  {column.map(({ expert, index }) => (
-                    <View key={expert.id}>{renderExpert({ item: expert, index })}</View>
+                  {column.map(({ item, index }) => (
+                    <View key={item.id}>{showThemes ? renderTheme({ item, index }) : renderExpert({ item, index })}</View>
                   ))}
                 </View>
               ))}
@@ -248,9 +440,9 @@ export const ExpertsListView = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
 
       <FlatList
-        data={experts}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderExpert}
+        data={(showThemes ? themes : experts) as any[]}
+        keyExtractor={(item) => `${showThemes ? 't' : 'e'}${item.id}`}
+        renderItem={showThemes ? renderTheme : renderExpert}
         contentContainerStyle={[styles.list, IS_WEB && styles.listWeb, { paddingBottom: bottomInset + Spacings.md }]}
         // L'indicateur de défilement s'arrête au-dessus de la barre flottante.
         scrollIndicatorInsets={{ bottom: bottomInset }}
@@ -263,7 +455,12 @@ export const ExpertsListView = ({ navigation }) => {
         refreshControl={
           <RefreshControl refreshing={pulling} onRefresh={pullToRefresh} colors={[Colors.lblue]} tintColor={Colors.lblue} />
         }
-        ListHeaderComponent={listHeader}
+        ListHeaderComponent={
+          <>
+            {listHeader}
+            {smartHint}
+          </>
+        }
         // Premier chargement sous l'en-tête : le titre reste en place, seule la grille attend.
         ListEmptyComponent={
           isLoading ? (
@@ -321,6 +518,68 @@ const styles = StyleSheet.create({
   head: {
     paddingTop: Spacings.lg,
     paddingBottom: Spacings.md,
+  },
+  titleBlock: {
+    gap: Spacings.sm,
+  },
+  back: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 2,
+    marginLeft: -4,
+  },
+  backText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.text,
+  },
+  titleInline: {
+    maxWidth: undefined,
+  },
+  segment: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    padding: 4,
+    gap: 4,
+    borderRadius: 14,
+    backgroundColor: Colors.lblue3,
+  },
+  segmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: Spacings.md,
+    paddingVertical: Spacings.xs,
+    borderRadius: 10,
+  },
+  segmentItemOn: {
+    backgroundColor: Colors.lblue,
+  },
+  segmentText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.lblueDark,
+  },
+  segmentTextOn: {
+    color: Colors.white,
+  },
+  consultHint: {
+    fontFamily: 'Roboto',
+    fontSize: 14,
+    lineHeight: 20,
+    color: CONSULT_COLOR,
+  },
+  smartHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: -Spacings.xs,
+  },
+  smartHintText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
+    color: Colors.lblueDark,
   },
   // Limité à 90 % de la largeur : le titre ne colle pas au bord droit.
   title: {

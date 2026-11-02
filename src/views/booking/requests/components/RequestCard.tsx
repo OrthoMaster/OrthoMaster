@@ -12,6 +12,7 @@ import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker
 import { featuredBlock, formatDeadline, formatShortDay } from '../../appointments/appointmentFormat';
 import { REQUEST_STATUS_META, REQUESTS_ACCENT, timeLeft } from '../requestFormat';
 import { ModeLine } from '../../components/ModePill';
+import { KindTags, blockHours } from '../../components/KindTags';
 
 const CARD_RADIUS = 20;
 
@@ -75,19 +76,18 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
         <Text style={styles.title} numberOfLines={2}>
           {request.offer_title}
         </Text>
+        <KindTags kind={request.kind} durationMinutes={request.duration_minutes} offCalendar={request.off_calendar} />
         {/* Format : En visio, ou En présentiel avec le lieu de la demi-journée mise en avant. */}
         <ModeLine mode={request.mode ?? 'online'} location={block?.location} style={styles.modeLine} />
 
         {/* ---- Demi-journée mise en avant ---- */}
         {block ? (
           <View style={styles.session}>
-            <Text style={styles.sessionLabel}>{upcoming ? 'Prochaine demi-journée' : 'Première demi-journée'}</Text>
+            <Text style={styles.sessionLabel}>{request.kind === 'consultation' ? 'Créneau' : upcoming ? 'Prochaine demi-journée' : 'Première demi-journée'}</Text>
             <View style={styles.block}>
               <MaterialCommunityIcons name={PERIOD_ICONS[block.period]} size={16} color={Colors.lblueDark} />
               <Text style={styles.blockDate}>{formatShortDay(block.date)}</Text>
-              <Text style={styles.blockHours}>
-                {PERIOD_LABELS[block.period]} · {block.start_local} – {block.end_local}
-              </Text>
+              <Text style={styles.blockHours}>{blockHours(block, request.kind)}</Text>
             </View>
           </View>
         ) : null}

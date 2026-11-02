@@ -32,6 +32,7 @@ import { notify } from '../bookingActions';
 import { withAlpha } from '../bookingPalette';
 import { expertTheme } from '../expertTheme';
 import { ExpertIdentityCard } from '../components/ExpertIdentityCard';
+import { ConsultationSettingsCard } from './components/ConsultationSettingsCard';
 
 const QUERY_KEY = ['booking', 'me'];
 
@@ -131,7 +132,8 @@ export const ExpertiseHomeView = ({ navigation }) => {
 
   const activeOffers = setup.offers.filter((offer) => offer.active_flg);
   const liveRules = setup.rules.filter((rule) => !rule.expired);
-  const missingOffer = activeOffers.length === 0;
+  // La consultation sur mesure (v3) suffit à recevoir des demandes, sans thème.
+  const missingOffer = activeOffers.length === 0 && !setup.consultation?.enabled;
   const missingRule = liveRules.length === 0;
   const incomplete = resolved.enabled_flg && (missingOffer || missingRule);
   const statusKey: ExpertStatus = !resolved.enabled_flg ? 'off' : incomplete ? 'incomplete' : 'online';
@@ -304,6 +306,9 @@ export const ExpertiseHomeView = ({ navigation }) => {
             </View>
           )}
         </View>
+
+        {/* ---- Consultation sur mesure (v3) ---- */}
+        <ConsultationSettingsCard setup={setup} />
 
         </View>
 
