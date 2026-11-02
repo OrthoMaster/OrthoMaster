@@ -16,7 +16,6 @@ import {
   StyleSheet,
   StatusBar,
   Platform,
-  useWindowDimensions,
   Dimensions,
   ImageSourcePropType,
 } from 'react-native';
@@ -51,21 +50,8 @@ const ILLUSTRATIONS = {
 const POP_RATIO = 0.4;
 const FACE_PADDING = Spacings.md;
 
-/**
- * Web (illustration au-dessus du texte) : image plus grande et carte plus basse,
- * donc une plus grande part de l'image dépasse et des marges plus serrées.
- */
-const COLUMN_POP_RATIO = 0.5;
-/**
- * Web : le bas de l'image descend sur la zone du texte d'autant (part de sa hauteur).
- * Le bas des illustrations 3D est transparent : rien ne recouvre le texte.
- */
-const COLUMN_SINK_RATIO = 0.1;
-const COLUMN_FACE_PADDING = Spacings.sm;
-
-/** Web : nombre de colonnes selon la largeur de la fenêtre (lg ≥ 1200 : 4, md ≥ 992 : 3, sinon 2). */
-const WEB_SIDEBAR_WIDTH = 200;
-const webColumns = (windowWidth: number) => (windowWidth >= 1200 ? 4 : windowWidth >= 992 ? 3 : 2);
+/** Web : une seule colonne, cartes centrées et limitées en largeur (comme sur mobile). */
+const WEB_CARD_MAX_WIDTH = 640;
 
 /**
  * Animation de l'illustration, différente pour chaque carte : lente et discrète.
@@ -103,9 +89,8 @@ const useIllustrationMotion = (motion: Motion) => {
  * Disposition de la carte :
  *  - row         : illustration à gauche, texte à droite (mobile)
  *  - row-reverse : texte à gauche, illustration à droite (mobile, E-learning)
- *  - column      : illustration centrée en haut, texte dessous aligné à gauche (web)
  */
-type CardLayout = 'row' | 'row-reverse' | 'column';
+type CardLayout = 'row' | 'row-reverse';
 
 interface EntryCardProps {
   title: string;
@@ -134,9 +119,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
   // La hauteur de l'illustration dépend de la largeur de la carte (40 %) : mesurée au rendu.
   // Une marge en % se calcule sur la largeur du parent, pas sur la hauteur de l'image.
   const [size, setSize] = useState(0);
-  const column = layout === 'column';
-  const pop = Math.round(size * (column ? COLUMN_POP_RATIO : POP_RATIO));
-  const sink = column ? Math.round(size * COLUMN_SINK_RATIO) : 0;
+  const pop = Math.round(size * POP_RATIO);
 
   return (
     <Pressable
@@ -153,7 +136,6 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
           style={[
             styles.cardFace,
             layout === 'row-reverse' && styles.cardFaceReverse,
-            layout === 'column' && styles.cardFaceColumn,
             { backgroundColor: face, transform: [{ translateY }] },
           ]}
         >
@@ -161,12 +143,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
           <View
             style={[
               styles.illustrationBox,
-              layout === 'column' && styles.illustrationBoxColumn,
-              {
-                marginTop: -(pop + (column ? COLUMN_FACE_PADDING : FACE_PADDING)),
-                marginBottom: -sink,
-                opacity: size ? 1 : 0,
-              },
+              { marginTop: -(pop + FACE_PADDING), opacity: size ? 1 : 0 },
             ]}
             onLayout={(e) => {
               const next = Math.round(e.nativeEvent.layout.height);
@@ -178,7 +155,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
             </Animated.View>
           </View>
 
-          <View style={[styles.texts, layout === 'column' && styles.textsColumn]}>
+          <View style={styles.texts}>
             <View style={styles.titleRow}>
               <Text style={styles.title} numberOfLines={1}>{title}</Text>
               {!!badge && badge > 0 && (
@@ -196,7 +173,6 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
 };
 
 export const FormationsHomeView = ({ navigation }) => {
-  const { width: windowWidth } = useWindowDimensions();
 
   // Barre d'onglets visible : l'espace rendez-vous (Tutorat) la masque en entrant.
   useFocusEffect(
@@ -210,10 +186,6 @@ export const FormationsHomeView = ({ navigation }) => {
       }
     }, [navigation])
   );
-  // Web : grille de cartes de largeur fixe (une rangée incomplète garde la même largeur de carte).
-  const columns = webColumns(windowWidth);
-  const gridWidth = windowWidth - WEB_SIDEBAR_WIDTH - Spacings.lg * 2;
-  const cardWidth = Math.floor((gridWidth - Spacings.lg * (columns - 1)) / columns);
 
   /* ---- Tutorat : texte selon le rôle, pastille des demandes en attente (expert) ---- */
   const { data: bookingSetup } = useQuery({
@@ -234,9 +206,8 @@ export const FormationsHomeView = ({ navigation }) => {
   });
   const pendingRequests = expertRequests?.pending.length ?? 0;
 
-  const cardStyle = IS_WEB ? { width: cardWidth } : null;
-  // Web : illustration centrée au-dessus du texte. Mobile : côte à côte, E-learning et Diplôme inversées.
-  const layoutFor = (mobile: CardLayout): CardLayout => (IS_WEB ? 'column' : mobile);
+  const cardStyle = IS_WEB ? styles.cardWeb : null;
+  // Mobile et web : côte à côte, E-learning et Diplôme inversées (texte à gauche).
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -248,7 +219,7 @@ export const FormationsHomeView = ({ navigation }) => {
 
       <ScrollView
         style={styles.body}
-        contentContainerStyle={[styles.content, IS_WEB && styles.contentGrid, IS_WEB && columns >= 3 && styles.contentGridCentered]}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
         <EntryCard
@@ -257,7 +228,7 @@ export const FormationsHomeView = ({ navigation }) => {
           illustration={ILLUSTRATIONS.elearning}
           face={Colors.lgreen}
           edge={Colors.lgreenDark}
-          layout={layoutFor('row-reverse')}
+          layout="row-reverse"
           motion="float"
           onPress={() => navigation.navigate('training-list')}
           style={cardStyle}
@@ -272,7 +243,7 @@ export const FormationsHomeView = ({ navigation }) => {
           illustration={ILLUSTRATIONS.tutorat}
           face={Colors.lblue}
           edge={Colors.lblueDark}
-          layout={layoutFor('row')}
+          layout="row"
           motion="sway"
           badge={pendingRequests}
           onPress={() => navigation.navigate('booking')}
@@ -284,7 +255,7 @@ export const FormationsHomeView = ({ navigation }) => {
           illustration={ILLUSTRATIONS.diplome}
           face={DIPLOMA_COLOR}
           edge={DIPLOMA_COLOR_DARK}
-          layout={layoutFor('row-reverse')}
+          layout="row-reverse"
           motion="breathe"
           onPress={() => navigation.navigate('training-diploma')}
           style={cardStyle}
@@ -320,28 +291,19 @@ const styles = StyleSheet.create({
     padding: Spacings.lg,
     gap: Spacings.lg,
   },
-  // lg / md : la rangée incomplète (3 cartes sur 4 colonnes…) est centrée.
-  contentGridCentered: {
-    justifyContent: 'center',
-  },
-  contentGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'stretch',
-    columnGap: Spacings.lg,
-    rowGap: Spacings.lg,
-    paddingTop: Spacings.xl,
-  },
 
   /* ---- Carte 3D ---- */
   cardWrapper: {},
+  cardWeb: {
+    width: '100%',
+    maxWidth: WEB_CARD_MAX_WIDTH,
+    alignSelf: 'center',
+  },
   cardEdge: {
-    flex: IS_WEB ? 1 : undefined,
     borderRadius: 16,
     paddingBottom: PRESS_DEPTH,
   },
   cardFace: {
-    flex: IS_WEB ? 1 : undefined,
     borderRadius: 16,
     padding: FACE_PADDING,
     paddingLeft: Spacings.xs,
@@ -354,17 +316,6 @@ const styles = StyleSheet.create({
     paddingLeft: FACE_PADDING,
     paddingRight: Spacings.xs,
   },
-  cardFaceColumn: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    justifyContent: 'flex-start',
-    padding: COLUMN_FACE_PADDING,
-    // paddingLeft / paddingRight explicites : paddingLeft de cardFace l'emporterait sur paddingHorizontal.
-    paddingLeft: Spacings.lg,
-    paddingRight: Spacings.lg,
-    // Texte collé sous l'image.
-    gap: 0,
-  },
   // Carré : l'image (contain) garde ses proportions ; la place est réservée avant le chargement.
   // Marge haute négative (calculée au rendu) : le carré remonte au-dessus de la carte.
   illustrationBox: {
@@ -375,23 +326,12 @@ const styles = StyleSheet.create({
     // Calé en haut : 40 % au-dessus de la carte, même si le texte rend la carte plus haute.
     alignSelf: 'flex-start',
   },
-  // Web : centrée, le texte passe dessous.
-  illustrationBoxColumn: {
-    alignSelf: 'center',
-    width: '55%',
-    maxWidth: 260,
-  },
   illustration: {
     width: '100%',
     height: '100%',
   },
   texts: {
     flex: 1,
-  },
-  textsColumn: {
-    flex: undefined,
-    alignSelf: 'stretch',
-    paddingHorizontal: 0,
   },
   titleRow: {
     flexDirection: 'row',
