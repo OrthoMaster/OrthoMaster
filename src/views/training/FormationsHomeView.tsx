@@ -53,12 +53,17 @@ const FACE_PADDING = Spacings.md;
  * Web (illustration au-dessus du texte) : image plus grande et carte plus basse,
  * donc une plus grande part de l'image dépasse et des marges plus serrées.
  */
-const COLUMN_POP_RATIO = 0.6;
+const COLUMN_POP_RATIO = 0.5;
+/**
+ * Web : le bas de l'image descend sur la zone du texte d'autant (part de sa hauteur).
+ * Le bas des illustrations 3D est transparent : rien ne recouvre le texte.
+ */
+const COLUMN_SINK_RATIO = 0.1;
 const COLUMN_FACE_PADDING = Spacings.sm;
 
-/** Web : trois cartes côte à côte dès que la zone de contenu le permet. */
-const WEB_GRID_MIN_WIDTH = 900;
+/** Web : nombre de colonnes selon la largeur de la fenêtre (lg ≥ 1200 : 4, md ≥ 992 : 3, sinon 2). */
 const WEB_SIDEBAR_WIDTH = 200;
+const webColumns = (windowWidth: number) => (windowWidth >= 1200 ? 4 : windowWidth >= 992 ? 3 : 2);
 
 /**
  * Animation de l'illustration, différente pour chaque carte : lente et discrète.
@@ -126,7 +131,10 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
 
   // La hauteur de l'illustration dépend de la largeur de la carte (40 %) : mesurée au rendu.
   // Une marge en % se calcule sur la largeur du parent, pas sur la hauteur de l'image.
-  const [pop, setPop] = useState(0);
+  const [size, setSize] = useState(0);
+  const column = layout === 'column';
+  const pop = Math.round(size * (column ? COLUMN_POP_RATIO : POP_RATIO));
+  const sink = column ? Math.round(size * COLUMN_SINK_RATIO) : 0;
 
   return (
     <Pressable
@@ -152,12 +160,15 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
             style={[
               styles.illustrationBox,
               layout === 'column' && styles.illustrationBoxColumn,
-              { marginTop: -(pop + (layout === 'column' ? COLUMN_FACE_PADDING : FACE_PADDING)), opacity: pop ? 1 : 0 },
+              {
+                marginTop: -(pop + (column ? COLUMN_FACE_PADDING : FACE_PADDING)),
+                marginBottom: -sink,
+                opacity: size ? 1 : 0,
+              },
             ]}
             onLayout={(e) => {
-              const ratio = layout === 'column' ? COLUMN_POP_RATIO : POP_RATIO;
-              const next = Math.round(e.nativeEvent.layout.height * ratio);
-              if (next !== pop) setPop(next);
+              const next = Math.round(e.nativeEvent.layout.height);
+              if (next !== size) setSize(next);
             }}
           >
             <Animated.View style={[styles.illustration, { transform: motionTransform }]}>
@@ -191,7 +202,10 @@ export const FormationsHomeView = ({ navigation }) => {
       if (Platform.OS !== 'web') navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } });
     }, [navigation])
   );
-  const webGrid = IS_WEB && windowWidth - WEB_SIDEBAR_WIDTH >= WEB_GRID_MIN_WIDTH;
+  // Web : grille de cartes de largeur fixe (une rangée incomplète garde la même largeur de carte).
+  const columns = webColumns(windowWidth);
+  const gridWidth = windowWidth - WEB_SIDEBAR_WIDTH - Spacings.lg * 2;
+  const cardWidth = Math.floor((gridWidth - Spacings.lg * (columns - 1)) / columns);
 
   /* ---- Tutorat : texte selon le rôle, pastille des demandes en attente (expert) ---- */
   const { data: bookingSetup } = useQuery({
@@ -212,7 +226,7 @@ export const FormationsHomeView = ({ navigation }) => {
   });
   const pendingRequests = expertRequests?.pending.length ?? 0;
 
-  const cardStyle = webGrid ? styles.cardGridItem : null;
+  const cardStyle = IS_WEB ? { width: cardWidth } : null;
   // Web : illustration centrée au-dessus du texte. Mobile : côte à côte, E-learning et Diplôme inversées.
   const layoutFor = (mobile: CardLayout): CardLayout => (IS_WEB ? 'column' : mobile);
 
@@ -226,7 +240,7 @@ export const FormationsHomeView = ({ navigation }) => {
 
       <ScrollView
         style={styles.body}
-        contentContainerStyle={[styles.content, webGrid && styles.contentGrid]}
+        contentContainerStyle={[styles.content, IS_WEB && styles.contentGrid]}
         showsVerticalScrollIndicator={false}
       >
         <EntryCard
@@ -300,17 +314,15 @@ const styles = StyleSheet.create({
   },
   contentGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'stretch',
-    maxWidth: 1200,
-    width: '100%',
+    columnGap: Spacings.lg,
+    rowGap: Spacings.lg,
     paddingTop: Spacings.xl,
   },
 
   /* ---- Carte 3D ---- */
   cardWrapper: {},
-  cardGridItem: {
-    flex: 1,
-  },
   cardEdge: {
     flex: IS_WEB ? 1 : undefined,
     borderRadius: 16,
