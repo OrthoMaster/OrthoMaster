@@ -190,9 +190,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacings.lg,
   },
+  // Même titre que l'en-tête Médias.
   headerTitle: {
-    fontSize: IS_WEB ? 28 : 20,
-    fontFamily: IS_WEB ? 'Poppins-Bold' : 'Poppins-Medium',
+    fontSize: 20,
+    fontFamily: 'Poppins-Medium',
     color: Colors.white,
   },
   body: {

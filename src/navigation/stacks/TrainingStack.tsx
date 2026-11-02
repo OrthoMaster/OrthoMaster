@@ -61,7 +61,8 @@ export const TrainingStack = () => {
         component={TrainingListView}
         options={{
           headerShown: false,
-          animation: 'slide_from_left',
+          // Ouvert depuis l'accueil Formations : arrive par la droite.
+          animation: 'slide_from_right',
         }}
       />
       <TrainingStackNav.Screen
