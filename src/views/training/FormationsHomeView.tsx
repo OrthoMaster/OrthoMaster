@@ -32,6 +32,8 @@ import { EXPERT_REQUESTS_KEY } from '../booking/requests/RequestsView';
 import { DIPLOMA_COLOR, DIPLOMA_COLOR_DARK } from './DiplomaView';
 
 const IS_WEB = Platform.OS === 'web';
+/** Web : en-tête vert foncé, pour ne pas se confondre avec la carte E-learning (vert clair). */
+const HEADER_COLOR = IS_WEB ? Colors.lgreenDark : Colors.lgreen;
 const isTablet = !IS_WEB && Dimensions.get('window').width >= 768;
 
 /** Hauteur de la tranche : la face s'enfonce d'autant quand on appuie. */
@@ -289,11 +291,11 @@ export const FormationsHomeView = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.lgreen,
+    backgroundColor: HEADER_COLOR,
   },
   header: {
     height: IS_WEB || isTablet ? 100 : 60,
-    backgroundColor: Colors.lgreen,
+    backgroundColor: HEADER_COLOR,
     justifyContent: 'center',
     paddingHorizontal: Spacings.lg,
   },
