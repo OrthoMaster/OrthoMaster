@@ -4,13 +4,14 @@
  *  - Tutorat    → espace rendez-vous experts (booking)
  *  - Diplôme    → pré-inscription au Diplôme Pharmacie (training-diploma)
  */
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   Image,
   Pressable,
   Animated,
+  Easing,
   ScrollView,
   StyleSheet,
   StatusBar,
@@ -52,6 +53,46 @@ const FACE_PADDING = Spacings.md;
 const WEB_GRID_MIN_WIDTH = 900;
 const WEB_SIDEBAR_WIDTH = 200;
 
+/**
+ * Animation de l'illustration, différente pour chaque carte : lente et discrète.
+ *  - float  : flotte de haut en bas
+ *  - sway   : se balance légèrement
+ *  - breathe: grossit et rétrécit doucement
+ */
+type Motion = 'float' | 'sway' | 'breathe';
+
+const useIllustrationMotion = (motion: Motion) => {
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const half = motion === 'float' ? 2400 : motion === 'sway' ? 2800 : 3200;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(progress, { toValue: 1, duration: half, easing: Easing.inOut(Easing.sin), useNativeDriver: !IS_WEB }),
+        Animated.timing(progress, { toValue: 0, duration: half, easing: Easing.inOut(Easing.sin), useNativeDriver: !IS_WEB }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [motion, progress]);
+
+  if (motion === 'float') {
+    return [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }];
+  }
+  if (motion === 'sway') {
+    return [{ rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ['-3deg', '3deg'] }) }];
+  }
+  return [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }];
+};
+
+/**
+ * Disposition de la carte :
+ *  - row         : illustration à gauche, texte à droite (mobile)
+ *  - row-reverse : texte à gauche, illustration à droite (mobile, E-learning)
+ *  - column      : illustration centrée en haut, texte dessous aligné à gauche (web)
+ */
+type CardLayout = 'row' | 'row-reverse' | 'column';
+
 interface EntryCardProps {
   title: string;
   description: string;
@@ -59,11 +100,15 @@ interface EntryCardProps {
   face: string;
   edge: string;
   badge?: number;
+  layout: CardLayout;
+  motion: Motion;
   onPress: () => void;
   style?: any;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration, face, edge, badge, onPress, style }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration, face, edge, badge, layout, motion, onPress, style }) => {
+  const motionTransform = useIllustrationMotion(motion);
+
   const press = useRef(new Animated.Value(0)).current;
 
   const animatePress = (toValue: number) => {
@@ -87,19 +132,32 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
       accessibilityLabel={title}
     >
       <View style={[styles.cardEdge, { backgroundColor: edge }]}>
-        <Animated.View style={[styles.cardFace, { backgroundColor: face, transform: [{ translateY }] }]}>
+        <Animated.View
+          style={[
+            styles.cardFace,
+            layout === 'row-reverse' && styles.cardFaceReverse,
+            layout === 'column' && styles.cardFaceColumn,
+            { backgroundColor: face, transform: [{ translateY }] },
+          ]}
+        >
           {/* Illustration 3D sur 40 % de la largeur ; 40 % de sa hauteur dépasse du haut de la carte. */}
           <View
-            style={[styles.illustrationBox, { marginTop: -(pop + FACE_PADDING), opacity: pop ? 1 : 0 }]}
+            style={[
+              styles.illustrationBox,
+              layout === 'column' && styles.illustrationBoxColumn,
+              { marginTop: -(pop + FACE_PADDING), opacity: pop ? 1 : 0 },
+            ]}
             onLayout={(e) => {
               const next = Math.round(e.nativeEvent.layout.height * POP_RATIO);
               if (next !== pop) setPop(next);
             }}
           >
-            <Image source={illustration} style={styles.illustration} resizeMode="contain" />
+            <Animated.View style={[styles.illustration, { transform: motionTransform }]}>
+              <Image source={illustration} style={styles.illustration} resizeMode="contain" />
+            </Animated.View>
           </View>
 
-          <View style={styles.texts}>
+          <View style={[styles.texts, layout === 'column' && styles.textsColumn]}>
             <View style={styles.titleRow}>
               <Text style={styles.title} numberOfLines={1}>{title}</Text>
               {!!badge && badge > 0 && (
@@ -147,6 +205,8 @@ export const FormationsHomeView = ({ navigation }) => {
   const pendingRequests = expertRequests?.pending.length ?? 0;
 
   const cardStyle = webGrid ? styles.cardGridItem : null;
+  // Web : illustration centrée au-dessus du texte. Mobile : côte à côte, E-learning inversée.
+  const layoutFor = (mobile: CardLayout): CardLayout => (IS_WEB ? 'column' : mobile);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -167,6 +227,8 @@ export const FormationsHomeView = ({ navigation }) => {
           illustration={ILLUSTRATIONS.elearning}
           face={Colors.lgreen}
           edge={Colors.lgreenDark}
+          layout={layoutFor('row-reverse')}
+          motion="float"
           onPress={() => navigation.navigate('training-list')}
           style={cardStyle}
         />
@@ -180,6 +242,8 @@ export const FormationsHomeView = ({ navigation }) => {
           illustration={ILLUSTRATIONS.tutorat}
           face={Colors.lblue}
           edge={Colors.lblueDark}
+          layout={layoutFor('row')}
+          motion="sway"
           badge={pendingRequests}
           onPress={() => navigation.navigate('booking')}
           style={cardStyle}
@@ -190,6 +254,8 @@ export const FormationsHomeView = ({ navigation }) => {
           illustration={ILLUSTRATIONS.diplome}
           face={DIPLOMA_COLOR}
           edge={DIPLOMA_COLOR_DARK}
+          layout={layoutFor('row')}
+          motion="breathe"
           onPress={() => navigation.navigate('training-diploma')}
           style={cardStyle}
         />
@@ -251,6 +317,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.sm,
   },
+  cardFaceReverse: {
+    flexDirection: 'row-reverse',
+    paddingLeft: FACE_PADDING,
+    paddingRight: Spacings.xs,
+  },
+  cardFaceColumn: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+    paddingLeft: FACE_PADDING,
+  },
   // Carré : l'image (contain) garde ses proportions ; la place est réservée avant le chargement.
   // Marge haute négative (calculée au rendu) : le carré remonte au-dessus de la carte.
   illustrationBox: {
@@ -261,12 +338,21 @@ const styles = StyleSheet.create({
     // Calé en haut : 40 % au-dessus de la carte, même si le texte rend la carte plus haute.
     alignSelf: 'flex-start',
   },
+  // Web : centrée, le texte passe dessous.
+  illustrationBoxColumn: {
+    alignSelf: 'center',
+  },
   illustration: {
     width: '100%',
     height: '100%',
   },
   texts: {
     flex: 1,
+  },
+  textsColumn: {
+    flex: undefined,
+    alignSelf: 'stretch',
+    paddingHorizontal: Spacings.xs,
   },
   titleRow: {
     flexDirection: 'row',
