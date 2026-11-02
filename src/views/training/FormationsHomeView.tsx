@@ -202,6 +202,12 @@ export const FormationsHomeView = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       if (Platform.OS !== 'web') navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } });
+      // Heure, batterie… en blanc. <StatusBar> ne se réapplique pas au retour sur l'écran
+      // (l'espace rendez-vous les passe en sombre) : on le refait à chaque prise de focus.
+      if (Platform.OS !== 'web') {
+        StatusBar.setBarStyle('light-content', true);
+        if (Platform.OS === 'android') StatusBar.setBackgroundColor(Colors.lgreen, true);
+      }
     }, [navigation])
   );
   // Web : grille de cartes de largeur fixe (une rangée incomplète garde la même largeur de carte).
