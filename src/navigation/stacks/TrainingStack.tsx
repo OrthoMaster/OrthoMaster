@@ -14,7 +14,9 @@ import { LessonContentWithXML } from "../../views/training/LessonContentWithXML"
 import { CartView } from '../../views/training/CartView';
 import { PreviewView } from '../../views/training/PreviewView';
 
-import { BookingTabs } from './BookingTabs';
+import { FormationsHomeView } from '../../views/training/FormationsHomeView';
+import { DiplomaView } from '../../views/training/DiplomaView';
+import { BookingSpace } from './BookingSpace';
 
 const forZoomFromCenter = ({ current, layouts }) => {
   return {
@@ -40,9 +42,20 @@ export const TrainingStack = () => {
   return (
     <TrainingStackNav.Navigator
       id={"training-stack" as undefined}
-      initialRouteName='training-list'
+      initialRouteName='training-home'
       screenOptions={{ title: 'Mes Formations' }} // for web
     >
+      {/* Accueil Formations : E-learning, Tutorat, Diplôme */}
+      <TrainingStackNav.Screen
+        name="training-home"
+        component={FormationsHomeView}
+        options={{ headerShown: false, title: 'Formations' }}
+      />
+      <TrainingStackNav.Screen
+        name="training-diploma"
+        component={DiplomaView}
+        options={{ headerShown: false, title: 'Diplôme' }}
+      />
       <TrainingStackNav.Screen
         name="training-list"
         component={TrainingListView}
@@ -189,10 +202,10 @@ export const TrainingStack = () => {
 
       <TrainingStackNav.Screen
         name="booking"
-        component={BookingTabs}
+        component={BookingSpace}
         options={{
           headerShown: false,
-          presentation: Platform.OS === 'web' ? 'transparentModal' : 'card',
+          title: 'Tutorat',
           animation: 'slide_from_right',
         }}
       />

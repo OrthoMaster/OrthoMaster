@@ -446,13 +446,14 @@ function AppContent() {
       }
     }
 
-    // Messagerie rendez-vous : Formations → espace rendez-vous → Messages → la conversation.
+    // Messagerie rendez-vous : Formations → Tutorat (espace rendez-vous) → Messages → la conversation.
     if (action === 'booking-message') {
       const conversationId = Number(data?.conversation_id);
       if (conversationId) {
         runOrQueue(() => {
           (navigationRef.current as any)?.navigate('training', {
             screen: 'booking',
+            initial: false,
             params: {
               screen: 'booking-messages',
               params: { screen: 'conversation', params: { conversationId }, initial: false },
@@ -473,7 +474,7 @@ function AppContent() {
         return ['media', { screen: 'flash-media-home', params: { eventId: id ? String(id) : undefined } }];
       },
       // pop : la racine de l'onglet est reprise, sans s'empiler sur l'écran déjà ouvert
-      'training': () => ['training', { screen: 'training-list', pop: true }],
+      'training': () => ['training', { screen: 'training-list', pop: true, initial: false }],
       'tools': () => ['tools', { screen: 'tools-home', pop: true }],
       'profile': () => ['profile', { screen: 'profile-view', pop: true }],
       'document': () => ['profile', { screen: 'document-view' }],
@@ -569,6 +570,7 @@ function AppContent() {
           },
         },
         'training': {
+          initialRouteName: 'training-home',
           screens: {
             'training-list': { path: 'open/training-list' },
           },

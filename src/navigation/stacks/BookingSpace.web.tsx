@@ -1,58 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { getMyBookingSetup } from '../../services/v2/BookingService';
-import BookingIntroModal, { BOOKING_INTRO_STORAGE_KEY } from '../../views/booking/components/BookingIntroModal';
 import { BookingTabs } from './BookingTabs';
 import { ChatDock } from '../../views/booking/messages/ChatDock.web';
 
 /**
- * Version WEB : espace rendez-vous ouvert depuis la barre latérale (« Rendez-vous »),
- * et non plus depuis une carte de la page Formations comme sur mobile.
+ * Version WEB : espace rendez-vous, ouvert depuis Formations › Tutorat.
  *
- * Même règle que la carte mobile : l'utilisateur (non expert) voit l'introduction
- * à sa première visite, sauf s'il a coché « ne plus afficher ».
- * Ici il est déjà dans l'espace : fermer ou continuer referme simplement l'introduction.
- *
- * Porte aussi la messagerie web (ChatDock) : elle flotte au-dessus de tous les onglets.
+ * Porte aussi la messagerie web (ChatDock) : elle flotte au-dessus des écrans de l'espace.
  */
-export const BookingSpace = ({ navigation }) => {
-  const { data: setup } = useQuery({
-    queryKey: ['booking', 'me'],
-    queryFn: () => getMyBookingSetup(),
-    staleTime: 60 * 1000,
-  });
-  const [showIntro, setShowIntro] = useState(false);
-
-  useEffect(() => {
-    if (!setup || setup.is_expert) return;
-
-    let cancelled = false;
-    AsyncStorage.getItem(BOOKING_INTRO_STORAGE_KEY)
-      .catch(() => null)
-      .then((neverShow) => {
-        if (!cancelled && neverShow !== 'true') setShowIntro(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [setup?.is_expert]);
-
-  return (
-    <View style={styles.flex}>
-      <BookingTabs navigation={navigation} />
-      {/* Messagerie à la Facebook : panneau à droite et fenêtres en bas à droite, par-dessus la page. */}
-      <ChatDock />
-      <BookingIntroModal
-        visible={showIntro}
-        onClose={() => setShowIntro(false)}
-        onContinue={() => setShowIntro(false)}
-      />
-    </View>
-  );
-};
+export const BookingSpace = ({ navigation }) => (
+  <View style={styles.flex}>
+    <BookingTabs navigation={navigation} />
+    {/* Messagerie à la Facebook : panneau à droite et fenêtres en bas à droite, par-dessus la page. */}
+    <ChatDock />
+  </View>
+);
 
 const styles = StyleSheet.create({
   flex: {

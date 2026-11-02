@@ -6,9 +6,11 @@
  * rendez-vous n'ont pas de `title` : on leur donne ici un titre lisible.
  */
 const ROUTE_TITLES: Record<string, string> = {
-  // Espace rendez-vous
-  'rendez-vous': 'Rendez-vous',
-  booking: 'Rendez-vous',
+  // Formations
+  'training-home': 'Formations',
+  'training-diploma': 'Diplôme',
+  // Espace rendez-vous (Formations › Tutorat)
+  booking: 'Tutorat',
   'booking-experts': 'Experts',
   'experts-list': 'Experts',
   'expert-profile': 'Profil de l’expert',

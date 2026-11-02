@@ -16,25 +16,19 @@ import {
   RefreshControl,
   Dimensions,
   Image,
-  Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 
-import { Portal, Dialog, Button } from 'react-native-paper';
-
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
-import { Styles } from '../../../constants/Styles';
 
 import { BouncingDots } from '../../component/LoadingDots';
 import { useQuery } from "@tanstack/react-query";
 import { getTrainings } from "../../services/v2/TrainingService";
 
-import { preRegDiploma } from '../../services/v2/CompanyService';
-import { DiplomaModalContent } from '../company/components/DiplomaModalContent';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const HEADER_HEIGHT = 100;
@@ -391,18 +385,11 @@ export const TrainingListView = ({ navigation, route }) => {
     }
   };
 
-  /** Pre-reg Diploma - STA */
-  const [showPreRegDiplomaModal, setShowPreRegDiplomaModal] = useState(false);
-  const [showAlertDialog, setShowAlertDialog] = useState(false);
-  const [alertMessage, setAlertMessage] = useState(false);
-
-  const preReg = async () => {
-    setShowPreRegDiplomaModal(false);
-    const result = await preRegDiploma();
-    setAlertMessage(result.message);
-    setShowAlertDialog(true);
-  }
-  /** Pre-reg Diploma - END */
+  // Accueil Formations en dessous ; ouvert par un lien direct, il est remis à sa place.
+  const goBack = () => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('training-home');
+  };
 
   return (
     <SafeAreaView
@@ -428,9 +415,14 @@ export const TrainingListView = ({ navigation, route }) => {
         ]}
       >
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>
-            Mes formations
-          </Text>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity onPress={goBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="Retour">
+              <Ionicons name="chevron-back" size={30} color={Colors.white} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>
+              Mes formations
+            </Text>
+          </View>
           <View style={styles.headerRightIcons}>
             <TouchableOpacity style={styles.buttonCart} onPress={() => {
               navigation.navigate('cart-view')
@@ -591,34 +583,6 @@ export const TrainingListView = ({ navigation, route }) => {
                   </TouchableOpacity>
                 ))}
 
-                {/* Preinscription Diploma */}
-                {training.id == '1' &&
-                  <TouchableOpacity
-                    key={'preinscription'}
-                    style={[styles.pkgItem, { width: itemSize }]}
-                    onPress={() => { setShowPreRegDiplomaModal(true); }}
-                    activeOpacity={0.8}
-                  >
-                    <View style={{
-                      width: itemSize - 6,
-                      height: itemSize - 6,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderWidth: 4,
-                      borderColor: training.color,
-                      borderRadius: itemSize,
-                    }}>
-                      <Image
-                        style={{ width: itemSize * 0.65, height: itemSize * 0.65, marginTop: 10, marginRight: 5}}
-                        resizeMode="contain"
-                        source={require('../../../assets/v2_images/icon/add-diploma.png')}
-                      />
-                    </View>
-                    <Text numberOfLines={2} ellipsizeMode='tail'
-                      style={[styles.pkgTitle, { color: training.color, fontFamily: 'Poppins-Bold' }]}>
-                      Diplôme Pharmacie</Text>
-                  </TouchableOpacity>
-                }
               </View>
             </View>
           </View>
@@ -650,34 +614,6 @@ export const TrainingListView = ({ navigation, route }) => {
       )}
 
 
-      <Portal>
-        {/* Alert Dialog */}
-        <Dialog
-          visible={showAlertDialog}
-          onDismiss={() => setShowAlertDialog(false)}
-          style={Styles.dialogWeb}
-        >
-          <Dialog.Title style={[Styles.dialogWebTitle, { color: Colors.warning }]}>Pré-inscription Diplôme</Dialog.Title>
-          <Dialog.Content>
-            <Text style={Styles.dialogWebContent}>{alertMessage}</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button
-              textColor={Colors.gray} labelStyle={{ fontFamily: 'Poppins-Medium' }}
-              onPress={() => { setShowAlertDialog(false) }}>Fermer</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-
-      {/* Pre-reg Diploma */}
-      <Modal
-        visible={showPreRegDiplomaModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowPreRegDiplomaModal(false)}
-      >
-        <DiplomaModalContent onPreReg={preReg} onClose={() => setShowPreRegDiplomaModal(false)}/>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -702,6 +638,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacings.lg,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    marginLeft: -Spacings.xs,
   },
   headerRightIcons: {
     flexDirection: 'row',

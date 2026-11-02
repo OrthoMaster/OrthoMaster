@@ -12,7 +12,6 @@ import { ProfileStack } from './stacks/ProfileStack';
 import { CompanyStack } from './stacks/CompanyStack';
 import { FlashStack } from './stacks/FlashStack';
 import { ToolsStack } from './stacks/ToolsStack';
-import { BookingSpace } from './stacks/BookingSpace.web';
 
 import { useQuery } from '@tanstack/react-query';
 import { useGetUser } from '../../src/hooks/auth.hook';
@@ -27,15 +26,13 @@ const SIDEBAR_WIDTH = 200;
 const menuItems = [
   { name: 'home', title: 'Accueil', icon: require('../../assets/v2_images/icon/nav/home.png'), activeColor: Colors.primary, inactiveColor: Colors.orange2, component: HomeStack },
   { name: 'training', title: 'Formations', icon: require('../../assets/v2_images/icon/nav/training.png'), activeColor: Colors.lgreen, inactiveColor: Colors.lgreen2, component: TrainingStack },
-  // Rendez-vous experts : sur le web, une entrée de la barre latérale (sur mobile, une carte dans Formations).
-  { name: 'rendez-vous', title: 'Rendez-vous', icon: require('../../assets/v2_images/icon/nav/rendezvous.png'), activeColor: Colors.lblue, inactiveColor: Colors.lblue2, component: BookingSpace },
   { name: 'media', title: 'Médias', icon: require('../../assets/v2_images/icon/nav/media.png'), activeColor: Colors.red, inactiveColor: Colors.red2, component: FlashStack },
   { name: 'tools', title: 'Outils', icon: require('../../assets/v2_images/icon/nav/tool.png'), activeColor: Colors.blue, inactiveColor: Colors.blue2, component: ToolsStack },
   { name: 'company', title: 'Équipe', icon: require('../../assets/v2_images/icon/nav/company.png'), activeColor: Colors.purple, inactiveColor: Colors.purple2, component: CompanyStack, requiresCompany: true },
   { name: 'profile', title: 'Profil', icon: require('../../assets/v2_images/icon/nav/profile.png'), activeColor: Colors.purple, inactiveColor: Colors.purple2, component: ProfileStack },
 ];
 
-/** Écran de premier niveau actif (barre latérale), en descendant la pile d'états. */
+/** L'écran `name` est-il ouvert, à n'importe quel niveau de la pile d'états ? */
 const isInside = (state: any, name: string): boolean => {
   if (!state?.routes) return false;
   const route = state.routes[state.index ?? 0];
@@ -46,7 +43,7 @@ const Sidebar = () => {
   const { data: user } = useGetUser();
   const [activeRoute, setActiveRoute] = useState('home');
 
-  /* ---- Rendez-vous : pastille des demandes en attente (expert) ---- */
+  /* ---- Formations › Tutorat : pastille des demandes en attente (expert) ---- */
   const { data: bookingSetup } = useQuery({
     queryKey: ['booking', 'me'],
     queryFn: () => getMyBookingSetup(),
@@ -82,9 +79,9 @@ const Sidebar = () => {
 
   useEffect(() => {
     const unsubscribe = navigationRef.current?.addListener('state', () => {
-      // Écrans internes de l'espace rendez-vous (experts-list, agenda-home…) : pas de préfixe commun.
-      if (isInside(navigationRef.current?.getRootState(), 'rendez-vous')) {
-        setActiveRoute('rendez-vous');
+      // Écrans de l'espace rendez-vous (Formations › Tutorat : experts-list, agenda-home…) : pas de préfixe commun.
+      if (isInside(navigationRef.current?.getRootState(), 'booking')) {
+        setActiveRoute('training');
         return;
       }
 
@@ -120,10 +117,11 @@ const Sidebar = () => {
 
     const nav = navigationRef.current as any;
 
-    if (routeName === 'media') {
-      const route = nav.getRootState().routes.find((r: any) => r.name === 'media');
+    // Médias, Formations : la pile est vidée, la rubrique repart de son accueil.
+    if (routeName === 'media' || routeName === 'training') {
+      const route = nav.getRootState().routes.find((r: any) => r.name === routeName);
 
-      nav.navigate('media');
+      nav.navigate(routeName);
 
       // Pile vidée : la rubrique repart de son accueil
       if (route?.state?.key) {
@@ -163,7 +161,7 @@ const Sidebar = () => {
             <Text style={[styles.menuText, { color: activeRoute === item.name ? item.activeColor : item.inactiveColor }]}>
               {item.title}
             </Text>
-            {item.name === 'rendez-vous' && pendingRequests > 0 && (
+            {item.name === 'training' && pendingRequests > 0 && (
               <View style={styles.countBadge}>
                 <Text style={styles.countBadgeText}>{pendingRequests > 9 ? '9+' : pendingRequests}</Text>
               </View>

@@ -16,8 +16,6 @@ import {
   Dimensions,
   Image,
   Platform,
-  Modal,
-  Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -31,14 +29,7 @@ import { BouncingDots } from '../../component/LoadingDots';
 import { useQuery } from "@tanstack/react-query";
 import { getTrainings } from "../../services/v2/TrainingService";
 
-import { preRegDiploma } from '../../services/v2/CompanyService';
-import { DiplomaModalContent } from '../company/components/DiplomaModalContent';
-
 import TrainingIntroModal from './components/TrainingIntroModal';
-
-import { getMyBookingSetup } from '../../services/v2/BookingService';
-import { BookingEntryCard } from './components/BookingEntryCard';
-import BookingIntroModal, { BOOKING_INTRO_STORAGE_KEY } from '../booking/components/BookingIntroModal';
 
 const SCROLL_DOWN_AMOUNT = 400;
 
@@ -338,40 +329,11 @@ export const TrainingListView = ({ navigation, route }) => {
     useCallback(() => () => cancelPendingIntro(), [cancelPendingIntro])
   );
 
-  /** Pre-reg Diploma - STA */
-  const [showPreRegDiplomaModal, setShowPreRegDiplomaModal] = useState(false);
-  const preReg = async () => {
-    setShowPreRegDiplomaModal(false);
-    const result = await preRegDiploma();
-    if (result) {
-      Alert.alert('Pré-inscription', result.message);
-    }
-  }
-  /** Pre-reg Diploma - END */
-
-  /** Rendez-vous experts - STA */
-  const { data: bookingSetup } = useQuery({
-    queryKey: ['booking', 'me'],
-    queryFn: () => getMyBookingSetup(),
-    staleTime: 60 * 1000,
-  });
-  const isBookingExpert = bookingSetup?.is_expert === true;
-  const [showBookingIntro, setShowBookingIntro] = useState(false);
-
-  const openBooking = async () => {
-    cancelPendingIntro();
-
-    // L'introduction s'adresse aux utilisateurs ; l'expert entre directement.
-    if (!isBookingExpert) {
-      const neverShow = await AsyncStorage.getItem(BOOKING_INTRO_STORAGE_KEY).catch(() => null);
-      if (neverShow !== 'true') {
-        setShowBookingIntro(true);
-        return;
-      }
-    }
-    navigation.navigate('booking');
+  // Accueil Formations en dessous ; ouvert par un lien direct, il est remis à sa place.
+  const goBack = () => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('training-home');
   };
-  /** Rendez-vous experts - END */
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -380,7 +342,12 @@ export const TrainingListView = ({ navigation, route }) => {
       {/* Static Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Mes formations</Text>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity onPress={goBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="Retour">
+              <Ionicons name="chevron-back" size={26} color={Colors.white} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Mes formations</Text>
+          </View>
           <View style={styles.headerRightIcons}>
             <TouchableOpacity onPress={() => { navigation.navigate('cart-view') }}>
               <Image
@@ -456,11 +423,6 @@ export const TrainingListView = ({ navigation, route }) => {
             />
           }>
 
-          {/* Rendez-vous experts */}
-          {!error && (
-            <BookingEntryCard isExpert={isBookingExpert} onPress={openBooking} />
-          )}
-
           {/* Training cards with grid pkg layout */}
           {!error && trainings && Array.isArray(trainings) && trainings.map((training) => (
             <View key={training.id} style={styles.trainingCard}>
@@ -494,34 +456,6 @@ export const TrainingListView = ({ navigation, route }) => {
                   ))}
 
 
-                  {/* Preinscription Diploma */}
-                  {training.id == '1' &&
-                    <TouchableOpacity
-                      key={'preinscription'}
-                      style={[styles.pkgItem, { width: itemSize }]}
-                      onPress={() => { cancelPendingIntro(); setShowPreRegDiplomaModal(true); }}
-                      activeOpacity={0.8}
-                    >
-                      <View style={{
-                        width: itemSize - 6,
-                        height: itemSize - 6,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderWidth: 4,
-                        borderColor: training.color,
-                        borderRadius: itemSize,
-                      }}>
-                        <Image
-                          style={{ width: itemSize * 0.65, height: itemSize * 0.65, marginTop: 10, marginRight: 5 }}
-                          resizeMode="contain"
-                          source={require('../../../assets/v2_images/icon/add-diploma.png')}
-                        />
-                      </View>
-                      <Text numberOfLines={2} ellipsizeMode='tail'
-                        style={[styles.pkgTitle, { color: training.color, fontFamily: 'Poppins-Bold' }]}>
-                        Diplôme Pharmacie</Text>
-                    </TouchableOpacity>
-                  }
                 </View>
               </View>
             </View>
@@ -558,22 +492,6 @@ export const TrainingListView = ({ navigation, route }) => {
         }}
       />
 
-      {/* Pre-reg Diploma */}
-      <Modal
-        visible={showPreRegDiplomaModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowPreRegDiplomaModal(false)}
-      >
-        <DiplomaModalContent onPreReg={preReg} onClose={() => setShowPreRegDiplomaModal(false)} />
-      </Modal>
-
-      {/* Rendez-vous experts : introduction */}
-      <BookingIntroModal
-        visible={showBookingIntro}
-        onClose={() => setShowBookingIntro(false)}
-        onContinue={() => navigation.navigate('booking')}
-      />
 
     </SafeAreaView>
   );
@@ -598,6 +516,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacings.lg,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    marginLeft: -Spacings.xs,
   },
   headerRightIcons: {
     flexDirection: 'row',

@@ -235,9 +235,17 @@ export default function App({ navigation }) {
             'invoice-view': 'open/invoice/:invoiceId',
           }
         },
-        training: { path: 'training', alias: ['open/training-list'] },
-        // Espace rendez-vous experts (barre latérale web).
-        'rendez-vous': 'rendez-vous',
+        training: {
+          path: 'training',
+          // Ouvert par un lien direct, un écran garde l'accueil Formations en dessous.
+          initialRouteName: 'training-home',
+          screens: {
+            'training-home': '',
+            'training-list': { path: 'e-learning', alias: [{ path: 'open/training-list', exact: true }] },
+            'training-diploma': 'diplome',
+            booking: 'tutorat',
+          }
+        },
         media: {
           screens: {
             'flash-media-home': 'open/media-preview/:id?',
