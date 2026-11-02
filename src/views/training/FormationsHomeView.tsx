@@ -49,6 +49,13 @@ const ILLUSTRATIONS = {
 const POP_RATIO = 0.4;
 const FACE_PADDING = Spacings.md;
 
+/**
+ * Web (illustration au-dessus du texte) : image plus grande et carte plus basse,
+ * donc une plus grande part de l'image dépasse et des marges plus serrées.
+ */
+const COLUMN_POP_RATIO = 0.6;
+const COLUMN_FACE_PADDING = Spacings.sm;
+
 /** Web : trois cartes côte à côte dès que la zone de contenu le permet. */
 const WEB_GRID_MIN_WIDTH = 900;
 const WEB_SIDEBAR_WIDTH = 200;
@@ -145,10 +152,11 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
             style={[
               styles.illustrationBox,
               layout === 'column' && styles.illustrationBoxColumn,
-              { marginTop: -(pop + FACE_PADDING), opacity: pop ? 1 : 0 },
+              { marginTop: -(pop + (layout === 'column' ? COLUMN_FACE_PADDING : FACE_PADDING)), opacity: pop ? 1 : 0 },
             ]}
             onLayout={(e) => {
-              const next = Math.round(e.nativeEvent.layout.height * POP_RATIO);
+              const ratio = layout === 'column' ? COLUMN_POP_RATIO : POP_RATIO;
+              const next = Math.round(e.nativeEvent.layout.height * ratio);
               if (next !== pop) setPop(next);
             }}
           >
@@ -205,7 +213,7 @@ export const FormationsHomeView = ({ navigation }) => {
   const pendingRequests = expertRequests?.pending.length ?? 0;
 
   const cardStyle = webGrid ? styles.cardGridItem : null;
-  // Web : illustration centrée au-dessus du texte. Mobile : côte à côte, E-learning inversée.
+  // Web : illustration centrée au-dessus du texte. Mobile : côte à côte, E-learning et Diplôme inversées.
   const layoutFor = (mobile: CardLayout): CardLayout => (IS_WEB ? 'column' : mobile);
 
   return (
@@ -254,7 +262,7 @@ export const FormationsHomeView = ({ navigation }) => {
           illustration={ILLUSTRATIONS.diplome}
           face={DIPLOMA_COLOR}
           edge={DIPLOMA_COLOR_DARK}
-          layout={layoutFor('row')}
+          layout={layoutFor('row-reverse')}
           motion="breathe"
           onPress={() => navigation.navigate('training-diploma')}
           style={cardStyle}
@@ -326,7 +334,9 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'stretch',
     justifyContent: 'flex-start',
-    paddingLeft: FACE_PADDING,
+    padding: COLUMN_FACE_PADDING,
+    paddingHorizontal: FACE_PADDING,
+    gap: Spacings.xs,
   },
   // Carré : l'image (contain) garde ses proportions ; la place est réservée avant le chargement.
   // Marge haute négative (calculée au rendu) : le carré remonte au-dessus de la carte.
@@ -341,6 +351,8 @@ const styles = StyleSheet.create({
   // Web : centrée, le texte passe dessous.
   illustrationBoxColumn: {
     alignSelf: 'center',
+    width: '55%',
+    maxWidth: 260,
   },
   illustration: {
     width: '100%',
@@ -352,7 +364,7 @@ const styles = StyleSheet.create({
   textsColumn: {
     flex: undefined,
     alignSelf: 'stretch',
-    paddingHorizontal: Spacings.xs,
+    paddingHorizontal: 0,
   },
   titleRow: {
     flexDirection: 'row',
