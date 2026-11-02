@@ -251,7 +251,7 @@ export const PreviewView = ({ navigation, route }) => {
   };
   const handleCelebrationClose = () => {
     setShowCelebration(false);
-    navigation.popToTop();
+    navigation.popTo('training-list');
   };
 
   return (

@@ -154,7 +154,7 @@ export const CartView = ({ navigation }) => {
   };
 
   const handleClose = () => {
-    navigation.popToTop();
+    navigation.popTo('training-list');
   };
 
   return (

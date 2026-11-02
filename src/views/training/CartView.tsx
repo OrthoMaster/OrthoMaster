@@ -318,7 +318,7 @@ export const CartView = ({ navigation }) => {
         <View style={styles.headerLeft}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.popToTop()}
+            onPress={() => navigation.popTo('training-list')}
           >
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
@@ -388,7 +388,7 @@ export const CartView = ({ navigation }) => {
                 </Text>
                 <TouchableOpacity
                   style={styles.browseButton}
-                  onPress={() => navigation.popToTop()}
+                  onPress={() => navigation.popTo('training-list')}
                 >
                   <Text style={styles.browseButtonText}>Parcourir les formations</Text>
                 </TouchableOpacity>
