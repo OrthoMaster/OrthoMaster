@@ -74,9 +74,23 @@ function AppContent() {
   useDeviceToken(!!user);
 
   const pendingDeepLink = useRef(false);
+  const deepLinkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Điều hướng bị hoãn khi navigation chưa ready -> lưu hẳn 1 callback
   const pendingNavigation = useRef<(() => void) | null>(null);
+
+  // Lu par des callbacks créés au montage, qui verraient sinon le user initial
+  const userRef = useRef(user);
+  userRef.current = user;
+
+  // Une seule minuterie : celle d'un lien précédent couperait la protection du suivant
+  const protectDeepLink = (duration = 5000) => {
+    pendingDeepLink.current = true;
+    if (deepLinkTimer.current) clearTimeout(deepLinkTimer.current);
+    deepLinkTimer.current = setTimeout(() => {
+      pendingDeepLink.current = false;
+    }, duration);
+  };
 
   const appState = useRef(AppState.currentState);
   const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
@@ -124,12 +138,26 @@ function AppContent() {
     return true;
   };
 
+  // Sans user, seul AuthStack est monté : les écrans visés n'existent pas et l'action serait perdue
+  const isAppNavigationReady = () => !!userRef.current && !!navigationRef.current?.isReady();
+
   const runOrQueue = (fn: () => void) => {
-    if (navigationRef.current?.isReady()) {
+    if (isAppNavigationReady()) {
       fn();
     } else {
       pendingNavigation.current = fn;
     }
+  };
+
+  const flushPendingNavigation = () => {
+    if (!pendingNavigation.current || !isAppNavigationReady()) return;
+
+    const run = pendingNavigation.current;
+    pendingNavigation.current = null;
+
+    // Une remise à zéro encore en cours ne doit pas recouvrir l'écran qui s'ouvre
+    protectDeepLink();
+    run();
   };
 
   /** Bắt tay URL cho 2 route nằm trong HomeStack (không khai trong linking config) */
@@ -161,6 +189,10 @@ function AppContent() {
     const update = await Updates.checkForUpdateAsync();
     if (update.isAvailable) {
       await Updates.fetchUpdateAsync();
+
+      // Le rechargement efface la réponse à la notification : la mise à jour attendra le prochain lancement
+      if (pendingDeepLink.current || pendingNavigation.current) return;
+
       await Updates.reloadAsync();
     }
   };
@@ -202,7 +234,7 @@ function AppContent() {
     if (resetInProgress.current) return;
 
     // deep link ưu tiên hơn reset — không điều hướng về home đè lên link
-    if (pendingDeepLink.current) {
+    if (pendingDeepLink.current || pendingNavigation.current) {
       const now = Date.now();
       await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
       await AsyncStorage.setItem(LAST_DATE_KEY, new Date().toDateString());
@@ -222,7 +254,7 @@ function AppContent() {
       await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
       await AsyncStorage.setItem(LAST_DATE_KEY, today);
 
-      if (navigationRef.current?.isReady()) {
+      if (navigationRef.current?.isReady() && !pendingDeepLink.current) {
         navigationRef.current.navigate('home', { screen: 'home' });
       }
 
@@ -239,21 +271,13 @@ function AppContent() {
   useEffect(() => {
     Linking.getInitialURL().then((url) => {
       if (url) {
-        pendingDeepLink.current = true;
-        setTimeout(() => {
-          pendingDeepLink.current = false;
-        }, 5000);
-
+        protectDeepLink();
         handleDeepLink(url);
       }
     });
 
     const sub = Linking.addEventListener('url', (event) => {
-      pendingDeepLink.current = true;
-      setTimeout(() => {
-        pendingDeepLink.current = false;
-      }, 3000);
-
+      protectDeepLink(3000);
       handleDeepLink(event.url);
     });
 
@@ -317,6 +341,9 @@ function AppContent() {
       setShowSessionExpired(false);
     }
     previousUserRef.current = user?.id || null;
+
+    // AppTab vient d'être monté : un lien reçu sur l'écran de connexion peut aboutir
+    if (user) flushPendingNavigation();
   }, [user]);
 
   // ---------- Force login on unauthorized ----------
@@ -392,8 +419,7 @@ function AppContent() {
     const action = data?.action || 'notification';
 
     // notification ưu tiên hơn reset app
-    pendingDeepLink.current = true;
-    setTimeout(() => { pendingDeepLink.current = false; }, 5000);
+    protectDeepLink();
 
     // 2 route trong HomeStack -> đi qua pushToHomeStack, không dùng params lồng
     if (action === 'podcast') {
@@ -446,7 +472,10 @@ function AppContent() {
         const id = d?.id ?? d?.id_event ?? d?.event_id ?? d?.eventId;
         return ['media', { screen: 'flash-media-home', params: { eventId: id ? String(id) : undefined } }];
       },
-      'training': () => ['training', { screen: 'training-list' }],
+      // pop : la racine de l'onglet est reprise, sans s'empiler sur l'écran déjà ouvert
+      'training': () => ['training', { screen: 'training-list', pop: true }],
+      'tools': () => ['tools', { screen: 'tools-home', pop: true }],
+      'profile': () => ['profile', { screen: 'profile-view', pop: true }],
       'document': () => ['profile', { screen: 'document-view' }],
       'company': () => ['company', { screen: 'company-view' }],
       'podcast': (d) => {
@@ -473,13 +502,19 @@ function AppContent() {
     });
   };
 
-  useEffect(() => {
-    Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (response) {
-        handleNotificationNavigation(response.notification.request.content.data);
-      }
-    });
+  const handledResponseId = useRef<string | null>(null);
 
+  // Au démarrage à froid, la même réponse peut arriver par les deux voies
+  const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
+    const id = response.notification.request.identifier;
+    if (id === handledResponseId.current) return;
+    handledResponseId.current = id;
+
+    Notifications.clearLastNotificationResponseAsync().catch(() => { });
+    handleNotificationNavigation(response.notification.request.content.data);
+  };
+
+  useEffect(() => {
     notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
       // Nouveau message reçu app ouverte : pastille de l'onglet Messages et liste à jour.
       const data: any = notification.request.content.data;
@@ -489,10 +524,14 @@ function AppContent() {
       }
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data;
-      handleNotificationNavigation(data);
-    });
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+
+    // Lu après l'abonnement : iOS peut livrer le clic entre les deux, et il serait alors manqué
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (response) handleNotificationResponse(response);
+      })
+      .catch((error) => sendError('notification-response', error));
 
     return () => {
       notificationListener.current?.remove();
@@ -541,13 +580,14 @@ function AppContent() {
         },
         'profile': {
           screens: {
-            'profile-view': { path: 'open/profile-view/:screen' },
+            'profile-view': { path: 'open/profile', alias: ['open/profile-view/:screen'] },
             'notification-list': { path: 'open/notifications' },
             'document-view': { path: 'open/documents' },
           },
         },
         'tools': {
           screens: {
+            'tools-home': { path: 'open/tools' },
             'products-view': 'tools/products-view',
           },
         },
@@ -565,11 +605,7 @@ function AppContent() {
             routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
 
             // flush điều hướng bị hoãn
-            if (pendingNavigation.current) {
-              const run = pendingNavigation.current;
-              pendingNavigation.current = null;
-              run();
-            }
+            flushPendingNavigation();
           }}
           onStateChange={() => {
             routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;

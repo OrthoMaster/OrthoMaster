@@ -154,6 +154,24 @@ export default function App({ navigation }) {
       return;
     }
 
+    // Mes formations
+    if (path.includes('open/training-list')) {
+      window.location.href = `orthomaster://open/training-list`;
+      return;
+    }
+
+    // Outils
+    if (path.includes('open/tools')) {
+      window.location.href = `orthomaster://open/tools`;
+      return;
+    }
+
+    // Profil
+    if (/open\/profile\/?$/.test(path)) {
+      window.location.href = `orthomaster://open/profile`;
+      return;
+    }
+
     // Espace pro
     if (path.includes('open/company')) {
       window.location.href = `orthomaster://open/company`;
@@ -217,7 +235,7 @@ export default function App({ navigation }) {
             'invoice-view': 'open/invoice/:invoiceId',
           }
         },
-        training: 'training',
+        training: { path: 'training', alias: ['open/training-list'] },
         // Espace rendez-vous experts (barre latérale web).
         'rendez-vous': 'rendez-vous',
         media: {
@@ -227,6 +245,7 @@ export default function App({ navigation }) {
         },
         tools: {
           screens: {
+            'tools-home': { path: 'tools', alias: ['open/tools'] },
             'products-view': 'tools/products-view',
           }
         },
@@ -235,7 +254,7 @@ export default function App({ navigation }) {
             'company-view': 'open/company',
           }
         },
-        profile: 'profile',
+        profile: { path: 'profile', alias: ['open/profile'] },
       }
     }
   };
