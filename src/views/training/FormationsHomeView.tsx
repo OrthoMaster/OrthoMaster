@@ -335,8 +335,11 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     justifyContent: 'flex-start',
     padding: COLUMN_FACE_PADDING,
-    paddingHorizontal: FACE_PADDING,
-    gap: Spacings.xs,
+    // paddingLeft / paddingRight explicites : paddingLeft de cardFace l'emporterait sur paddingHorizontal.
+    paddingLeft: Spacings.lg,
+    paddingRight: Spacings.lg,
+    // Texte collé sous l'image.
+    gap: 0,
   },
   // Carré : l'image (contain) garde ses proportions ; la place est réservée avant le chargement.
   // Marge haute négative (calculée au rendu) : le carré remonte au-dessus de la carte.
