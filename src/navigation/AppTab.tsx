@@ -127,6 +127,20 @@ export const AppTab = ({ }) => {
 
       <Tab.Screen name="training"
         component={TrainingStack}
+        listeners={({ navigation }) => ({
+          // Onglet déjà ouvert : un nouvel appui ramène à l'accueil Formations, quel que soit l'écran ouvert.
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const route = state.routes.find((r) => r.name === 'training');
+            const isFocused = state.routes[state.index]?.name === 'training';
+            if (!isFocused || !route?.state?.key) return;
+
+            (e as any).preventDefault();
+            if ((route.state.index ?? 0) > 0) {
+              navigation.dispatch({ ...StackActions.popToTop(), target: route.state.key });
+            }
+          },
+        })}
         options={{
           headerShown: false,
           tabBarLabel: ({ focused }) => (

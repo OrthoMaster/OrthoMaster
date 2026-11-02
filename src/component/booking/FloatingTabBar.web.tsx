@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -16,8 +17,8 @@ const MESSAGES_ROUTE = 'booking-messages';
  * sur mobile (FloatingTabBar.tsx), fixée en bas et centrée dans la zone de contenu
  * (à droite de la barre latérale), par-dessus la page.
  *
- * Différence avec le mobile : pas de bouton de sortie, on entre et on sort par
- * l'entrée « Rendez-vous » de la barre latérale.
+ * Comme sur mobile, le premier bouton (flèche) n'est pas un onglet : il ramène à
+ * l'accueil Formations, d'où l'on est entré (Formations › Tutorat).
  */
 
 export const FLOATING_TAB_BAR_HEIGHT = 66;
@@ -43,8 +44,11 @@ const TAB_GAP = Spacings.xs;
 const SIDEBAR_WIDTH = 200;
 const LABEL_CHAR_WIDTH = 8.5;
 
+/** Bouton de sortie + séparateur (largeur, marges comprises). */
+const EXIT_WIDTH = ITEM_HEIGHT + TAB_GAP + 1 + Spacings.sm * 2;
+
 const estimateBarWidth = (tabCount: number, label: string | null) => {
-  const tabs = tabCount * ITEM_HEIGHT + (tabCount - 1) * TAB_GAP;
+  const tabs = EXIT_WIDTH + tabCount * ITEM_HEIGHT + (tabCount - 1) * TAB_GAP;
   const labelWidth = label ? Spacings.xs + label.length * LABEL_CHAR_WIDTH + Spacings.md - ICON_INSET : 0;
   return tabs + labelWidth + (BAR_PADDING + BAR_BORDER) * 2;
 };
@@ -55,11 +59,11 @@ const estimateBarWidth = (tabCount: number, label: string | null) => {
 export const useFloatingTabBarInset = () => FLOATING_TAB_BAR_HEIGHT + BAR_GAP * 2;
 
 type FloatingTabBarProps = BottomTabBarProps & {
-  /** Gardé pour la compatibilité avec le mobile ; pas de bouton de sortie sur le web. */
+  /** Premier bouton : ce n'est pas un onglet mais la sortie vers l'accueil Formations. */
   onExit: () => void;
 };
 
-export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation }) => {
+export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation, onExit }) => {
   const { width: windowWidth } = useWindowDimensions();
   const { panelOpen } = useChatDock();
 
@@ -78,6 +82,21 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
     // Pleine largeur de la zone de contenu pour centrer la barre ; box-none laisse passer les clics à côté.
     <View pointerEvents="box-none" style={styles.wrapper}>
       <Animated.View layout={LAYOUT_TRANSITION} style={styles.bar}>
+        {/* Sortie : jamais active, donc jamais de libellé ; cercle distinct pour ne pas passer pour un onglet. */}
+        <Pressable
+          style={({ hovered }: any) => [styles.exit, hovered && styles.exitHovered]}
+          onPress={() => {
+            chatDock.togglePanel(false);
+            onExit();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Retour aux formations"
+        >
+          <Ionicons name="arrow-back" size={ICON_SIZE} color={Colors.white} />
+        </Pressable>
+
+        <View style={styles.divider} />
+
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isMessages = route.name === MESSAGES_ROUTE;
@@ -177,6 +196,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
+  },
+
+  /* ---- Sortie ---- */
+  exit: {
+    width: ITEM_HEIGHT,
+    height: ITEM_HEIGHT,
+    borderRadius: ITEM_HEIGHT / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exitHovered: {
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+  },
+  // Écart marqué : la sortie se lit comme un bouton à part, pas comme un onglet de plus.
+  divider: {
+    width: 1,
+    height: 28,
+    marginHorizontal: Spacings.sm - TAB_GAP,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
 
   /* ---- Onglets ---- */

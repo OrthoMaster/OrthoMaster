@@ -104,7 +104,11 @@ export const BookingTabs = ({ navigation }) => {
     });
   }, [navigation]);
 
-  const exit = useCallback(() => navigation.goBack(), [navigation]);
+  // Retour à l'accueil Formations ; ouvert par un lien direct (web), il n'y a rien derrière.
+  const exit = useCallback(() => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('training-home');
+  }, [navigation]);
 
   /* ---- Chargement / erreur ---- */
   if (isLoading) {
