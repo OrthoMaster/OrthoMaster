@@ -36,6 +36,18 @@ const isTablet = !IS_WEB && Dimensions.get('window').width >= 768;
 /** Hauteur de la tranche : la face s'enfonce d'autant quand on appuie. */
 const PRESS_DEPTH = 5;
 
+/** Illustrations 3D hébergées sur S3 : modifiables sans nouvelle version de l'application. */
+const ILLUSTRATION_BASE = 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/settings/formations';
+const ILLUSTRATIONS = {
+  elearning: { uri: `${ILLUSTRATION_BASE}/elearning_3d.png` },
+  tutorat: { uri: `${ILLUSTRATION_BASE}/tutorat_3d.png` },
+  diplome: { uri: `${ILLUSTRATION_BASE}/diplome_3d.png` },
+};
+
+/** L'illustration dépasse du haut de la carte d'autant. */
+const POP = 20;
+const FACE_PADDING = Spacings.md;
+
 /** Web : trois cartes côte à côte dès que la zone de contenu le permet. */
 const WEB_GRID_MIN_WIDTH = 900;
 const WEB_SIDEBAR_WIDTH = 200;
@@ -43,7 +55,7 @@ const WEB_SIDEBAR_WIDTH = 200;
 interface EntryCardProps {
   title: string;
   description: string;
-  icon: ImageSourcePropType;
+  illustration: ImageSourcePropType;
   face: string;
   edge: string;
   badge?: number;
@@ -51,7 +63,7 @@ interface EntryCardProps {
   style?: any;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ title, description, icon, face, edge, badge, onPress, style }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration, face, edge, badge, onPress, style }) => {
   const press = useRef(new Animated.Value(0)).current;
 
   const animatePress = (toValue: number) => {
@@ -71,9 +83,9 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, icon, face, e
     >
       <View style={[styles.cardEdge, { backgroundColor: edge }]}>
         <Animated.View style={[styles.cardFace, { backgroundColor: face, transform: [{ translateY }] }]}>
-          {/* Pastille blanche : les icônes en couleur ressortent sur toutes les couleurs de carte. */}
-          <View style={[styles.iconCircle, { borderBottomColor: edge }]}>
-            <Image source={icon} style={styles.icon} resizeMode="contain" />
+          {/* Illustration 3D sur 40 % de la largeur, qui dépasse un peu du haut de la carte. */}
+          <View style={styles.illustrationBox}>
+            <Image source={illustration} style={styles.illustration} resizeMode="contain" />
           </View>
 
           <View style={styles.texts}>
@@ -141,7 +153,7 @@ export const FormationsHomeView = ({ navigation }) => {
         <EntryCard
           title="E-learning"
           description="Vos formations en ligne, à suivre à votre rythme."
-          icon={require('../../../assets/v2_images/icon/nav/training.png')}
+          illustration={ILLUSTRATIONS.elearning}
           face={Colors.lgreen}
           edge={Colors.lgreenDark}
           onPress={() => navigation.navigate('training-list')}
@@ -154,7 +166,7 @@ export const FormationsHomeView = ({ navigation }) => {
               ? 'Vos demandes, votre agenda et vos disponibilités.'
               : 'Échangez avec un expert sur un sujet de votre pratique.'
           }
-          icon={require('../../../assets/v2_images/icon/nav/rendezvous.png')}
+          illustration={ILLUSTRATIONS.tutorat}
           face={Colors.lblue}
           edge={Colors.lblueDark}
           badge={pendingRequests}
@@ -164,7 +176,7 @@ export const FormationsHomeView = ({ navigation }) => {
         <EntryCard
           title="Diplôme"
           description="Pré-inscription au Diplôme Pharmacie."
-          icon={require('../../../assets/v2_images/icon/add-diploma.png')}
+          illustration={ILLUSTRATIONS.diplome}
           face={DIPLOMA_COLOR}
           edge={DIPLOMA_COLOR_DARK}
           onPress={() => navigation.navigate('training-diploma')}
@@ -196,16 +208,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.darkBackground,
   },
+  // Place en haut et entre les cartes pour l'illustration qui dépasse.
   content: {
     padding: Spacings.lg,
-    gap: Spacings.lg,
+    paddingTop: Spacings.lg + POP,
+    gap: Spacings.lg + POP,
   },
   contentGrid: {
     flexDirection: 'row',
     alignItems: 'stretch',
     maxWidth: 1200,
     width: '100%',
-    paddingTop: Spacings.xl,
+    paddingTop: Spacings.xl + POP,
   },
 
   /* ---- Carte 3D ---- */
@@ -221,25 +235,26 @@ const styles = StyleSheet.create({
   cardFace: {
     flex: IS_WEB ? 1 : undefined,
     borderRadius: 16,
-    padding: Spacings.md,
+    padding: FACE_PADDING,
+    paddingLeft: Spacings.xs,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.md,
-    minHeight: 110,
+    gap: Spacings.sm,
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Colors.white,
-    // Liseré bas de la couleur foncée de la carte : même relief que la carte elle-même.
-    borderBottomWidth: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
+  // Carré : l'image (contain) garde ses proportions ; la place est réservée avant le chargement.
+  // Marge haute négative : le carré remonte au-dessus de la carte, de POP au-delà du bord.
+  illustrationBox: {
+    width: '40%',
+    // Carte très large (web sur une colonne, tablette) : l'image ne grossit pas au-delà.
+    maxWidth: 220,
+    aspectRatio: 1,
+    // Calé en bas : seul le haut dépasse.
+    alignSelf: 'flex-end',
+    marginTop: -(POP + FACE_PADDING),
   },
-  icon: {
-    width: 40,
-    height: 40,
+  illustration: {
+    width: '100%',
+    height: '100%',
   },
   texts: {
     flex: 1,
