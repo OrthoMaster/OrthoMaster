@@ -41,9 +41,9 @@ const PRESS_DEPTH = 5;
 /** Illustrations 3D hébergées sur S3 : modifiables sans nouvelle version de l'application. */
 const ILLUSTRATION_BASE = 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/settings/formations';
 const ILLUSTRATIONS = {
-  elearning: { uri: `${ILLUSTRATION_BASE}/elearning_3d.png` },
-  tutorat: { uri: `${ILLUSTRATION_BASE}/tutorat_3d.png` },
-  diplome: { uri: `${ILLUSTRATION_BASE}/diplome_3d.png` },
+  elearning: { uri: `${ILLUSTRATION_BASE}/elearning.png` },
+  tutorat: { uri: `${ILLUSTRATION_BASE}/tutorat.png` },
+  diplome: { uri: `${ILLUSTRATION_BASE}/diplome.png` },
 };
 
 /** Part de la hauteur de l'illustration qui dépasse au-dessus de la carte. */
