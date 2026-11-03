@@ -37,8 +37,10 @@ import {
   getBookingCheckout,
   getConsultationCheckout,
   ConsultationDraft,
+  BookingWindowInput,
 } from '../../../services/v2/BookingService';
 import { formatLongDate } from '../bookingDates';
+import { windowLabel } from '../bookingWindows';
 import { formatPrice, initials } from '../bookingFormat';
 import { markBookingCompleted } from '../bookingFlow';
 import { ShowcaseWebViewModal } from '../components/ShowcaseWebViewModal';
@@ -121,13 +123,15 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   const offer: BookingOffer = route.params?.offer;
   const expert = route.params?.expert ?? {};
   const blocks: SelectedBlock[] = route.params?.blocks ?? [];
+  // Hors calendrier par créneaux : thème (route.params.windows) ou consultation (consultation.windows).
+  const windows: BookingWindowInput[] = route.params?.consultation?.windows ?? route.params?.windows ?? [];
   const offerRouteKey: string | undefined = route.params?.offerRouteKey;
   // Consultation sur mesure (v3) : pas de thème, un horaire, toujours en ligne.
   const consultation: ConsultationDraft | undefined = route.params?.consultation;
   // Format choisi sur l'écran du thème ; en ligne par défaut (seul format avant v2).
   const mode: BookingMode = consultation ? 'online' : route.params?.mode ?? 'online';
   // Demi-journées demandées hors calendrier : signalées au serveur.
-  const offCalendar = consultation ? consultation.off_calendar : blocks.some((b) => b.off_calendar);
+  const offCalendar = consultation ? consultation.off_calendar : windows.length > 0 || blocks.some((b) => b.off_calendar);
 
   const payment = useBookingPayment();
 
@@ -318,8 +322,9 @@ export const BookingCheckoutView = ({ navigation, route }) => {
           ? {
               kind: 'consultation',
               expert_id: expertId,
-              date: consultation.date,
-              start_time: consultation.start_local,
+              ...(windows.length > 0
+                ? { windows }
+                : { date: consultation.date, start_time: consultation.start_local }),
               duration_minutes: consultation.duration_minutes,
               subject: consultation.subject,
               address: address.trim(),
@@ -327,8 +332,9 @@ export const BookingCheckoutView = ({ navigation, route }) => {
           : {
               offer_id: offer.id,
               mode,
-              blocks: blocks.map((b) => ({ date: b.date, period: b.period })),
-              off_calendar: offCalendar || undefined,
+              ...(windows.length > 0
+                ? { windows }
+                : { blocks: blocks.map((b) => ({ date: b.date, period: b.period })), off_calendar: offCalendar || undefined }),
               address: address.trim(),
             }
       );
@@ -503,8 +509,28 @@ export const BookingCheckoutView = ({ navigation, route }) => {
         </Text>
       </View>
 
+      {windows.length > 0 ? (
+        // Créneaux proposés : l'expert choisit l'horaire dans l'un d'eux s'il accepte.
+        <View style={styles.blocks}>
+          {windows.map((w, i) => (
+            <View key={i} style={styles.block}>
+              <Ionicons name="calendar-outline" size={18} color={ACCENT_DARK} />
+              <Text style={styles.blockDate}>
+                Créneau {i + 1} · {windowLabel(w, year)}
+              </Text>
+            </View>
+          ))}
+          <Text style={styles.blockHours}>
+            {mode === 'onsite'
+              ? "L'expert choisit l'horaire dans un de ces créneaux, et le lieu, s'il accepte."
+              : "L'expert choisit l'horaire dans un de ces créneaux s'il accepte."}
+          </Text>
+        </View>
+      ) : null}
+
       {consultation ? (
         <View style={styles.blocks}>
+          {windows.length === 0 ? (
           <View style={styles.block}>
             <Ionicons name="time-outline" size={18} color={ACCENT_DARK} />
             <Text style={styles.blockDate} numberOfLines={1}>
@@ -515,6 +541,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
               {consultation.off_calendar ? ' · Hors calendrier' : ''}
             </Text>
           </View>
+          ) : null}
           <Text style={styles.subjectLabel}>Votre sujet</Text>
           <Text style={styles.subjectText} numberOfLines={6}>
             {consultation.subject}

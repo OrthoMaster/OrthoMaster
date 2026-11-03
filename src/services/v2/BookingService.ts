@@ -150,13 +150,58 @@ export interface ConsultationCalendar {
 }
 
 /** Consultation en préparation, passée de l'écran de demande au récapitulatif. */
+/**
+ * Hors calendrier par créneaux (1 à 3, sur un ou plusieurs jours) : l'expert choisit l'horaire
+ * exact dans l'un d'eux en acceptant. Consultation : heures (HH:MM, par 30 min). Thème : demi-journées.
+ */
+export interface BookingWindowInput {
+  start_date: string;
+  end_date: string;
+  start_time?: string;
+  end_time?: string;
+  start_period?: BookingPeriod;
+  end_period?: BookingPeriod;
+}
+
+/** Créneau renvoyé par le serveur ; « past » : plus aucun horaire possible dedans. */
+export interface BookingWindow {
+  position: number;
+  start_date: string;
+  start_time: string | null;
+  start_period: BookingPeriod | null;
+  end_date: string;
+  end_time: string | null;
+  end_period: BookingPeriod | null;
+  start_at: string;
+  end_at: string;
+  past: boolean;
+}
+
+/** Thème par créneaux : première demi-journée possible (suivie des suivantes) que l'expert peut choisir. */
+export interface BookingWindowOption {
+  window: number;
+  /** « Y-m-d|période », à renvoyer tel quel (window_start). */
+  value: string;
+  date: string;
+  period: BookingPeriod;
+  start_local: string;
+  end_local: string;
+  end_date: string;
+  start_at: string;
+  end_at: string;
+  available: boolean;
+}
+
 export interface ConsultationDraft {
   duration_minutes: number;
+  /** Agenda de l'expert : jour et horaire. Créneaux : vides, voir windows. */
   date: string;
   start_local: string;
   end_local: string;
   subject: string;
   off_calendar: boolean;
+  /** Autre date : créneaux proposés (l'expert choisit l'horaire). */
+  windows?: BookingWindowInput[];
 }
 
 /** Réglages de la consultation de l'expert connecté. */
@@ -1057,6 +1102,7 @@ export interface BookingRequest extends BookingPricing {
     off_calendar?: boolean;
     location: BookedLocation | null;
   }[];
+  windows?: BookingWindow[];
 }
 
 export type BookingCheckoutInput =
@@ -1064,7 +1110,9 @@ export type BookingCheckoutInput =
       kind?: 'offer';
       offer_id: number;
       mode: BookingMode;
-      blocks: { date: string; period: BookingPeriod }[];
+      /** Demi-journées du calendrier ; ou bien windows (hors calendrier par créneaux). */
+      blocks?: { date: string; period: BookingPeriod }[];
+      windows?: BookingWindowInput[];
       /** Des demi-journées hors calendrier font partie de la demande. */
       off_calendar?: boolean;
       address: string;
@@ -1073,8 +1121,10 @@ export type BookingCheckoutInput =
   | {
       kind: 'consultation';
       expert_id: number;
-      date: string;
-      start_time: string;
+      /** Agenda de l'expert ; ou bien windows (autre date, par créneaux). */
+      date?: string;
+      start_time?: string;
+      windows?: BookingWindowInput[];
       duration_minutes: number;
       subject: string;
       address: string;
@@ -1224,7 +1274,10 @@ export interface MyBooking {
   mode: BookingMode;
   blocks_count: number;
   expert: BookingExpertBase | null;
+  /** Vide tant que l'expert n'a pas choisi l'horaire d'une demande par créneaux. */
   blocks: MyBookingBlock[];
+  /** Créneaux proposés hors calendrier (vide sinon). */
+  windows?: BookingWindow[];
   amount_ttc: number;
   currency: string;
   payment_required: boolean;
@@ -1319,7 +1372,10 @@ export interface ExpertRequest {
   mode: BookingMode;
   blocks_count: number;
   requester: { name: string };
+  /** Vide tant que l'horaire d'une demande par créneaux n'est pas choisi. */
   blocks: MyBookingBlock[];
+  /** Créneaux proposés hors calendrier (vide sinon). */
+  windows?: BookingWindow[];
   respond_by: string | null;
   requested_at: string | null;
   responded_at: string | null;
@@ -1334,6 +1390,10 @@ export interface ExpertRequestDetail extends ExpertRequest {
   subject?: string | null;
   /** Rendez-vous déjà acceptés qui chevauchent cette demande (avertissement). */
   conflicts?: BookingConflict[];
+  /** Demande par créneaux : choisir l'horaire pour accepter. */
+  needs_window_choice?: boolean;
+  /** Thème par créneaux : premières demi-journées possibles (consultation : calculé dans l'application). */
+  window_options?: BookingWindowOption[];
   /** Présentiel hors calendrier : choisir un lieu pour accepter. */
   needs_location?: boolean;
   locations?: { id: number; label: string; city: string; address_line: string; postal_code: string | null }[];
@@ -1406,7 +1466,8 @@ export const getDeclineReasons = async (): Promise<DeclineReasons | null> => {
  */
 export const acceptExpertRequest = async (
   bookingId: number,
-  input?: { location_id?: number | null }
+  /** window_start : demande par créneaux, « Y-m-d H:i » (consultation) ou « Y-m-d|période » (thème). */
+  input?: { location_id?: number | null; window_start?: string | null }
 ): Promise<BookingResult<ExpertRequestDetail>> => {
   return axiosInstance
     .post(`${baseUrl}/booking/me/requests/${bookingId}/accept`, input ?? {})

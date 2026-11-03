@@ -47,6 +47,8 @@ import { REQUESTS_ACCENT, REQUEST_STATUS_META, timeLeft } from './requestFormat'
 import { ModePill } from '../components/ModePill';
 import { KindTags, blockHours } from '../components/KindTags';
 import { confirmAction, notify } from '../bookingActions';
+import { WindowsList } from '../components/WindowsList';
+import { WindowChoicePicker } from './components/WindowChoicePicker';
 
 const SHEET_RATIO = 0.88;
 
@@ -124,6 +126,10 @@ export const RequestDetailView = ({ navigation, route }) => {
   // Présentiel hors calendrier : lieu choisi par l'expert pour accepter.
   const [locationId, setLocationId] = useState<number | null>(null);
   const needsLocation = !!full?.needs_location;
+  // Demande par créneaux : horaire choisi par l'expert pour accepter.
+  const [windowStart, setWindowStart] = useState<string | null>(null);
+  const [windowMissing, setWindowMissing] = useState(false);
+  const needsWindowChoice = !!full?.needs_window_choice;
 
   const { data: reasons } = useQuery({
     queryKey: ['booking', 'decline-reasons'],
@@ -196,6 +202,11 @@ export const RequestDetailView = ({ navigation, route }) => {
   };
 
   const accept = () => {
+    if (needsWindowChoice && !windowStart) {
+      setWindowMissing(true);
+      notify("Choisissez l'horaire", 'Le confrère a proposé des créneaux : choisissez l’horaire du rendez-vous dans l’un d’eux.');
+      return;
+    }
     if (needsLocation && !locationId) {
       notify('Choisissez le lieu', 'Cette demande est hors calendrier : indiquez où se tiendra le rendez-vous.');
       return;
@@ -209,7 +220,10 @@ export const RequestDetailView = ({ navigation, route }) => {
       'Accepter',
       async () => {
         setBusy('accept');
-        const result = await acceptExpertRequest(bookingId, needsLocation ? { location_id: locationId } : undefined);
+        const result = await acceptExpertRequest(bookingId, {
+          ...(needsLocation ? { location_id: locationId } : {}),
+          ...(needsWindowChoice ? { window_start: windowStart } : {}),
+        });
         setBusy(null);
 
         if (result.ok === false) {
@@ -349,6 +363,14 @@ export const RequestDetailView = ({ navigation, route }) => {
               style={styles.kindTags}
             />
 
+            {/* Créneaux proposés (horaire à choisir plus bas, ou déjà choisi ci-dessous). */}
+            {request.windows?.length && !request.blocks.length ? (
+              <View style={styles.windowsBox}>
+                <WindowsList windows={request.windows} color={accent} />
+              </View>
+            ) : null}
+
+            {request.blocks.length ? (
             <Text style={styles.blocksTitle}>
               {request.kind === 'consultation'
                 ? 'Créneau demandé'
@@ -356,6 +378,7 @@ export const RequestDetailView = ({ navigation, route }) => {
                   ? `${request.blocks.length} demi-journées`
                   : '1 demi-journée'}
             </Text>
+            ) : null}
             <View style={styles.blocks}>
               {request.blocks.map((block) => (
                 <View key={`${block.date}|${block.period}`} style={styles.block}>
@@ -408,6 +431,33 @@ export const RequestDetailView = ({ navigation, route }) => {
                   <Text style={styles.sectionTitle}>Son sujet</Text>
                   <View style={styles.card}>
                     <Text style={styles.body}>{full.subject}</Text>
+                  </View>
+                </>
+              ) : null}
+
+              {/* ---- Créneaux : horaire à choisir pour accepter ---- */}
+              {needsWindowChoice && full.windows?.length ? (
+                <>
+                  <Text style={styles.sectionTitle}>Horaire du rendez-vous</Text>
+                  <View style={[styles.card, windowMissing && !windowStart && styles.cardError]}>
+                    <Text style={styles.locHint}>
+                      {request.kind === 'consultation'
+                        ? 'Choisissez un créneau, puis l’heure de début : la fin suit la durée estimée.'
+                        : 'Choisissez la première demi-journée : les suivantes s’enchaînent.'}
+                    </Text>
+                    <WindowChoicePicker
+                      kind={request.kind === 'consultation' ? 'consultation' : 'offer'}
+                      windows={full.windows}
+                      durationMinutes={full.duration_minutes}
+                      options={full.window_options}
+                      value={windowStart}
+                      onChange={(v) => {
+                        setWindowStart(v);
+                        if (v) setWindowMissing(false);
+                      }}
+                      color={accent}
+                      error={windowMissing && !windowStart}
+                    />
                   </View>
                 </>
               ) : null}
@@ -831,6 +881,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.xxs,
     marginTop: Spacings.xxs,
+  },
+  windowsBox: {
+    marginTop: Spacings.sm,
+  },
+  cardError: {
+    borderWidth: 1,
+    borderColor: Colors.danger,
   },
   blocksTitle: {
     fontFamily: 'Poppins-Medium',

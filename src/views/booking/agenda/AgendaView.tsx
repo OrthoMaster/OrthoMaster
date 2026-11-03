@@ -33,6 +33,7 @@ import {
 } from '../../../services/v2/BookingService';
 import { MONTHS, WEEKDAYS, WEEKDAYS_SHORT, addDays, formatLongDate, monthMatrix, weekdayIso } from '../bookingDates';
 import { accentOf, tint, withAlpha } from '../bookingPalette';
+import { WindowsList } from '../components/WindowsList';
 import { useBookingSetup } from '../useBookingSetup';
 import { JoinVisioButton } from '../components/JoinVisioButton';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../experts/components/SlotPicker';
@@ -441,6 +442,8 @@ export const AgendaView = ({ navigation }) => {
                       {booking.blocks_count > 1 ? ` · ${booking.blocks_count} séances` : ''}
                     </Text>
                   </View>
+                ) : booking.windows?.length ? (
+                  <WindowsList windows={booking.windows} compact title={null} color={color} />
                 ) : null}
                 <Parties guest requesterName={null} expert={booking.expert} color={color} />
               </Pressable>

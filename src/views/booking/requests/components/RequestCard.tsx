@@ -13,6 +13,7 @@ import { featuredBlock, formatDeadline, formatShortDay } from '../../appointment
 import { REQUEST_STATUS_META, REQUESTS_ACCENT, timeLeft } from '../requestFormat';
 import { ModeLine } from '../../components/ModePill';
 import { KindTags, blockHours } from '../../components/KindTags';
+import { WindowsList } from '../../components/WindowsList';
 
 const CARD_RADIUS = 20;
 
@@ -89,6 +90,11 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
               <Text style={styles.blockDate}>{formatShortDay(block.date)}</Text>
               <Text style={styles.blockHours}>{blockHours(block, request.kind)}</Text>
             </View>
+          </View>
+        ) : request.windows?.length ? (
+          // Créneaux proposés : horaire à choisir en acceptant.
+          <View style={styles.session}>
+            <WindowsList windows={request.windows} compact title="Créneaux proposés · horaire à choisir" />
           </View>
         ) : null}
 

@@ -11,6 +11,7 @@ import { accentOf, withAlpha } from '../../bookingPalette';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker';
 import { JoinVisioButton } from '../../components/JoinVisioButton';
 import { STATUS_META, featuredBlock, formatShortDay, relativeDay } from '../appointmentFormat';
+import { WindowsList } from '../../components/WindowsList';
 import { ModeLine } from '../../components/ModePill';
 import { KindTags, blockHours } from '../../components/KindTags';
 
@@ -140,6 +141,11 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
               </View>
             ) : null}
 
+          </View>
+        ) : booking.windows?.length ? (
+          // Créneaux proposés : l'expert n'a pas encore choisi l'horaire.
+          <View style={styles.session}>
+            <WindowsList windows={booking.windows} compact />
           </View>
         ) : null}
       </View>

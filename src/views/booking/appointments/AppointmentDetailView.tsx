@@ -25,6 +25,7 @@ import { MyBooking, MyBookingDetail, cancelMyBooking, getMyBooking, reportMyNoSh
 import { formatLongDate } from '../bookingDates';
 import { formatPrice, initials } from '../bookingFormat';
 import { accentOf, withAlpha } from '../bookingPalette';
+import { WindowsList } from '../components/WindowsList';
 import { JoinVisioButton } from '../components/JoinVisioButton';
 import { BlockPlace } from '../components/BlockPlace';
 import { NoShowSection } from '../components/NoShowSection';
@@ -294,9 +295,19 @@ export const AppointmentDetailView = ({ navigation, route }) => {
               <ModePill mode={booking.mode ?? 'online'} />
             </View>
 
+            {/* Créneaux proposés : l'expert choisit l'horaire dans l'un d'eux s'il accepte. */}
+            {booking.windows?.length && !booking.blocks.length ? (
+              <View style={styles.windowsBox}>
+                <WindowsList windows={booking.windows} color={accentOf(expert?.palette_color)} />
+                <Text style={styles.windowsHint}>L'expert choisira l'horaire dans un de ces créneaux s'il accepte.</Text>
+              </View>
+            ) : null}
+
+            {booking.blocks.length ? (
             <Text style={styles.blocksTitle}>
               {booking.blocks.length > 1 ? `${booking.blocks.length} demi-journées` : '1 demi-journée'}
             </Text>
+            ) : null}
             <View style={styles.blocks}>
               {booking.blocks.map((block) => (
                 <View key={`${block.date}|${block.period}`} style={styles.block}>
@@ -595,6 +606,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.xxs,
     marginTop: Spacings.xxs,
+  },
+  windowsBox: {
+    marginTop: Spacings.sm,
+    gap: Spacings.xs,
+  },
+  windowsHint: {
+    fontFamily: 'Roboto',
+    fontSize: 12,
+    color: Colors.subtext,
   },
   blocksTitle: {
     fontFamily: 'Poppins-Medium',

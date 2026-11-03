@@ -26,6 +26,7 @@ import {
   BookingMode,
   BookingOffer,
   BookingOfferImage,
+  BookingWindowInput,
   getBookingExpert,
   startConversation,
 } from '../../../services/v2/BookingService';
@@ -36,6 +37,7 @@ import { tint, withAlpha } from '../bookingPalette';
 import { useBookingDirty } from '../BookingExitGuard';
 import { expertTheme } from '../expertTheme';
 import { ThemeBackdrop } from '../components/ThemeBackdrop';
+import { WindowsEditor } from '../components/WindowsEditor';
 import { SegmentedTabs } from '../components/SegmentedTabs';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS, SlotPicker, SlotSelection, placeLabel } from './components/SlotPicker';
@@ -275,8 +277,11 @@ export const OfferDetailView = ({ navigation, route }) => {
 
   const [tab, setTab] = useState<DetailTab>(route.params?.initialTab ?? 'details');
   const [selection, setSelection] = useState<SlotSelection>({});
-  // Hors calendrier (v3) : demander des demi-journées que l'expert n'a pas ouvertes.
+  // Hors calendrier : 1 à 3 créneaux (demi-journées, sur un ou plusieurs jours) ;
+  // l'expert choisit les demi-journées dans l'un d'eux s'il accepte.
   const [offCalendar, setOffCalendar] = useState(false);
+  const [windows, setWindows] = useState<BookingWindowInput[]>([]);
+  const [editingWindow, setEditingWindow] = useState(false);
 
   // Modes actifs de l'offre, en ligne d'abord ; le premier est choisi d'office.
   const modes = MODE_ORDER.map((m) => offer?.modes?.find((om) => om.mode === m)).filter(Boolean) as BookingOffer['modes'];
@@ -290,28 +295,29 @@ export const OfferDetailView = ({ navigation, route }) => {
   const images = offer?.images ?? [];
   const required = offer?.blocks_count ?? 1;
   const selectedCount = Object.keys(selection).length;
-  const complete = selectedCount === required;
+  const complete = offCalendar ? windows.length > 0 && !editingWindow : selectedCount === required;
+  const pendingCount = offCalendar ? windows.length : selectedCount;
 
   /* ---- Sortie avec une sélection en cours ---- */
 
-  useBookingDirty(selectedCount > 0);
+  useBookingDirty(pendingCount > 0);
 
   useEffect(() => {
     return navigation.addListener('beforeRemove', (e) => {
       // Demande envoyée depuis le récapitulatif : la sélection n'est pas perdue, elle est partie.
-      if (takeBookingCompleted(route.key) || selectedCount === 0) return;
+      if (takeBookingCompleted(route.key) || pendingCount === 0) return;
 
       e.preventDefault();
       // confirm du navigateur sur le web (Alert.alert y est sans effet).
       confirmAction(
         'Abandonner votre sélection ?',
-        'Les demi-journées choisies ne seront pas conservées.',
+        offCalendar ? 'Les créneaux proposés ne seront pas conservés.' : 'Les demi-journées choisies ne seront pas conservées.',
         'Abandonner',
         () => navigation.dispatch(e.data.action),
         { destructive: true, cancelText: 'Continuer' }
       );
     });
-  }, [navigation, route.key, selectedCount]);
+  }, [navigation, route.key, pendingCount, offCalendar]);
 
   if (!offer) return null;
 
@@ -362,7 +368,7 @@ export const OfferDetailView = ({ navigation, route }) => {
       offer,
       mode: offerMode.mode,
       expert,
-      blocks: sortedSelection.map(([, block]) => block),
+      ...(offCalendar ? { windows, blocks: [] } : { blocks: sortedSelection.map(([, block]) => block) }),
       offerRouteKey: route.key,
     });
   };
@@ -445,7 +451,7 @@ export const OfferDetailView = ({ navigation, route }) => {
     <UnderlineTabs
       tabs={[
         { key: 'details', label: 'Détails' },
-        { key: 'calendar', label: 'Réserver', badge: selectedCount || undefined },
+        { key: 'calendar', label: 'Réserver', badge: pendingCount || undefined },
       ]}
       value={tab}
       onChange={setTab}
@@ -603,7 +609,7 @@ export const OfferDetailView = ({ navigation, route }) => {
           />
         </View>
       ) : null}
-      {detail && offerMode ? (
+      {detail && offerMode && !offCalendar ? (
         <SlotPicker
           // Nouveau format : calendrier rechargé depuis le premier mois, aucun jour ouvert.
           key={offerMode.mode}
@@ -616,7 +622,7 @@ export const OfferDetailView = ({ navigation, route }) => {
           theme={theme}
           selection={selection}
           onChange={setSelection}
-          allowOffCalendar={offCalendar}
+          allowOffCalendar={false}
         />
       ) : null}
 
@@ -625,10 +631,12 @@ export const OfferDetailView = ({ navigation, route }) => {
         <TouchableOpacity
           style={[styles.offToggle, { borderColor: theme.line, backgroundColor: offCalendar ? tint(theme.primary, 0.1) : theme.card }]}
           onPress={() => {
-            // Revenir au calendrier retire les demi-journées hors calendrier déjà choisies.
+            // Calendrier ou créneaux : l'un ou l'autre, la saisie de l'autre est retirée.
             if (offCalendar) {
-              const kept = Object.fromEntries(Object.entries(selection).filter(([, b]) => !b.off_calendar));
-              setSelection(kept);
+              setWindows([]);
+              setEditingWindow(false);
+            } else {
+              setSelection({});
             }
             setOffCalendar((v) => !v);
           }}
@@ -640,14 +648,29 @@ export const OfferDetailView = ({ navigation, route }) => {
             <Text style={[styles.offToggleTitle, { color: theme.ink }]}>Proposer une autre date</Text>
             <Text style={[styles.offToggleText, { color: theme.muted }]}>
               {offerMode.mode === 'onsite'
-                ? "Hors calendrier : l'expert confirme les horaires et le lieu s'il accepte."
-                : "Hors calendrier : l'expert confirme les horaires s'il accepte."}
+                ? "Proposez jusqu'à 3 créneaux : l'expert y choisit les demi-journées et le lieu s'il accepte."
+                : "Proposez jusqu'à 3 créneaux : l'expert y choisit les demi-journées s'il accepte."}
             </Text>
           </View>
         </TouchableOpacity>
       ) : null}
 
+      {/* ---- Créneaux hors calendrier (demi-journées, sur un ou plusieurs jours) ---- */}
+      {detail && offerMode && offCalendar ? (
+        <WindowsEditor
+          kind="theme"
+          windows={windows}
+          onChange={setWindows}
+          blocksCount={required}
+          firstDate={detail.first_date}
+          lastDate={detail.last_date}
+          color={theme.primary}
+          onEditingChange={setEditingWindow}
+        />
+      ) : null}
+
       {/* ---- Demi-journées retenues, dans l'ordre chronologique ---- */}
+      {!offCalendar ? (
       <View style={styles.picked}>
         <Text style={[styles.pickedTitle, { color: theme.ink }]}>
           {required > 1 ? 'Vos demi-journées' : 'Votre demi-journée'}
@@ -732,6 +755,7 @@ export const OfferDetailView = ({ navigation, route }) => {
           })
         )}
       </View>
+      ) : null}
     </>
   );
 
@@ -752,10 +776,16 @@ export const OfferDetailView = ({ navigation, route }) => {
     <View style={styles.progressRow}>
       <Text style={[styles.progressText, { color: theme.muted }]} numberOfLines={2}>
         <Text style={[styles.progressCount, { color: theme.ink }]}>
-          {selectedCount} / {required}
+          {offCalendar ? `${windows.length} / 3` : `${selectedCount} / ${required}`}
         </Text>
         {'\n'}
-        {required > 1 ? 'demi-journées choisies' : 'demi-journée choisie'}
+        {offCalendar
+          ? windows.length > 1
+            ? 'créneaux proposés'
+            : 'créneau proposé'
+          : required > 1
+            ? 'demi-journées choisies'
+            : 'demi-journée choisie'}
       </Text>
 
       <TouchableOpacity

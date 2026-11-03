@@ -21,6 +21,7 @@ import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
 import {
+  BookingWindowInput,
   ConsultationDraft,
   ConsultationTime,
   getBookingExpert,
@@ -34,6 +35,8 @@ import { formatPrice, initials } from '../bookingFormat';
 import { MONTHS, WEEKDAYS_SHORT, formatLongDate, fromMinutes, isoDate, monthMatrix, toMinutes } from '../bookingDates';
 import { CONSULT_COLOR, CONSULT_COLOR_DARK, CONSULT_SOFT, durationText } from '../bookingKinds';
 import { tint, withAlpha } from '../bookingPalette';
+import { consultationWindowError } from '../bookingWindows';
+import { WindowsEditor } from '../components/WindowsEditor';
 
 /** Sujet : court, l'échange se poursuit ensuite dans la messagerie (même borne que le serveur). */
 const SUBJECT_MAX = 300;
@@ -85,6 +88,9 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   const [hour, setHour] = useState<number | null>(null);
   const [minute, setMinute] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  // Autre date : créneaux proposés (l'expert choisit l'horaire dedans).
+  const [windows, setWindows] = useState<BookingWindowInput[]>([]);
+  const [editingWindow, setEditingWindow] = useState(false);
   const start = hour !== null && minute !== null ? `${pad2(hour)}:${pad2(minute)}` : null;
   const time =
     start && duration ? { start_local: start, end_local: fromMinutes(toMinutes(start) + duration) } : null;
@@ -97,7 +103,7 @@ export const ConsultationRequestView = ({ navigation, route }) => {
     if (info && duration === null) setDuration(info.durations[1] ?? info.durations[0] ?? null);
   }, [info]);
 
-  const dirty = subject.trim().length > 0 || !!time || !!selectedDate;
+  const dirty = subject.trim().length > 0 || !!time || !!selectedDate || windows.length > 0;
   useBookingDirty(dirty);
 
   useEffect(() => {
@@ -255,7 +261,19 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   const subjectMax = Math.min(info?.subject_max ?? SUBJECT_MAX, SUBJECT_MAX);
   const total = info && duration ? info.price_30 * (duration / 30) : null;
   const subjectError = submitted && !subject.trim() ? 'Décrivez le sujet de votre consultation.' : null;
-  const timeError = submitted && (!time || !selectedDate) ? 'Choisissez une heure et un jour.' : null;
+  const timeError = submitted && where === 'calendar' && (!time || !selectedDate) ? 'Choisissez une heure et un jour.' : null;
+  // Créneaux : la durée estimée peut avoir changé depuis leur ajout.
+  const shortWindow = duration ? windows.some((w) => consultationWindowError(w, duration) !== null) : false;
+  const windowsError =
+    submitted && where === 'other'
+      ? windows.length === 0
+        ? editingWindow
+          ? 'Ajoutez le créneau en cours avec « Ajouter ce créneau ».'
+          : 'Proposez au moins un créneau.'
+        : shortWindow
+          ? 'Un créneau est plus court que la durée estimée : retirez-le ou réduisez la durée.'
+          : null
+      : null;
 
   // Continuer avec un champ manquant : on remonte jusqu'à lui (sujet d'abord, puis horaire).
   const scrollRef = useRef<ScrollView>(null);
@@ -280,20 +298,31 @@ export const ConsultationRequestView = ({ navigation, route }) => {
       setTimeout(() => subjectRef.current?.focus(), 350);
       return;
     }
-    if (!time || !selectedDate) {
+    if (where === 'calendar' ? !time || !selectedDate : windows.length === 0 || shortWindow) {
       scrollToSection('time');
       return;
     }
     if (!duration) return;
 
-    const draft: ConsultationDraft = {
-      duration_minutes: duration,
-      date: selectedDate,
-      start_local: time.start_local,
-      end_local: time.end_local,
-      subject: subject.trim(),
-      off_calendar: where === 'other',
-    };
+    const draft: ConsultationDraft =
+      where === 'calendar'
+        ? {
+            duration_minutes: duration,
+            date: selectedDate!,
+            start_local: time!.start_local,
+            end_local: time!.end_local,
+            subject: subject.trim(),
+            off_calendar: false,
+          }
+        : {
+            duration_minutes: duration,
+            date: '',
+            start_local: '',
+            end_local: '',
+            subject: subject.trim(),
+            off_calendar: true,
+            windows,
+          };
 
     navigation.navigate('expert-checkout', {
       expertId,
@@ -521,129 +550,149 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                   <View style={styles.note}>
                     <Ionicons name="information-circle-outline" size={16} color={CONSULT_COLOR_DARK} />
                     <Text style={styles.noteText}>
-                      Hors calendrier : proposez le jour et l'heure qui vous conviennent, l'expert accepte ou refuse.
+                      Proposez jusqu'à 3 créneaux qui vous conviennent (sur un ou plusieurs jours) : l'expert choisit
+                      l'horaire dans l'un d'eux s'il accepte.
                     </Text>
                   </View>
                 ) : null}
 
-                {/* ---- Heure de début (24 h) : une ligne heure : minutes, réglée avec − / + ---- */}
-                {timeError ? <Text style={styles.error}>{timeError}</Text> : null}
-                <View style={[styles.card, styles.timeCard, submitted && !time && styles.cardError]}>
-                  <Text style={styles.pickerLabel}>Heure de début</Text>
-                  <View style={styles.stepperRow}>
-                    {stepper(
-                      hour !== null ? pad2(hour) : '--',
-                      () => stepHour(-1),
-                      () => stepHour(1),
-                      nextHour(-1) !== null,
-                      nextHour(1) !== null,
-                      'heure'
-                    )}
-                    <Text style={styles.stepperColon}>:</Text>
-                    {stepper(
-                      minute !== null && hour !== null ? pad2(minute) : '--',
-                      () => stepMinute(-1),
-                      () => stepMinute(1),
-                      nextMinute(-1) !== null,
-                      nextMinute(1) !== null,
-                      'minutes'
-                    )}
-                    {time ? (
-                      <View style={styles.stepperEnd}>
-                        <Ionicons name="arrow-forward" size={14} color={Colors.subtext2} />
-                        <Text style={styles.stepperEndText}>{time.end_local}</Text>
-                      </View>
+                {where === 'calendar' ? (
+                  <>
+                  {/* ---- Heure de début (24 h) : une ligne heure : minutes, réglée avec − / + ---- */}
+                  {timeError ? <Text style={styles.error}>{timeError}</Text> : null}
+                  <View style={[styles.card, styles.timeCard, submitted && !time && styles.cardError]}>
+                    <Text style={styles.pickerLabel}>Heure de début</Text>
+                    <View style={styles.stepperRow}>
+                      {stepper(
+                        hour !== null ? pad2(hour) : '--',
+                        () => stepHour(-1),
+                        () => stepHour(1),
+                        nextHour(-1) !== null,
+                        nextHour(1) !== null,
+                        'heure'
+                      )}
+                      <Text style={styles.stepperColon}>:</Text>
+                      {stepper(
+                        minute !== null && hour !== null ? pad2(minute) : '--',
+                        () => stepMinute(-1),
+                        () => stepMinute(1),
+                        nextMinute(-1) !== null,
+                        nextMinute(1) !== null,
+                        'minutes'
+                      )}
+                      {time ? (
+                        <View style={styles.stepperEnd}>
+                          <Ionicons name="arrow-forward" size={14} color={Colors.subtext2} />
+                          <Text style={styles.stepperEndText}>{time.end_local}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    {where === 'calendar' && openHours.length === 0 && calendar ? (
+                      <Text style={styles.pickerHint}>Aucune heure libre ce mois-ci pour cette durée.</Text>
                     ) : null}
                   </View>
-                  {where === 'calendar' && openHours.length === 0 && calendar ? (
-                    <Text style={styles.pickerHint}>Aucune heure libre ce mois-ci pour cette durée.</Text>
-                  ) : null}
-                </View>
 
-                <View style={[styles.card, submitted && !selectedDate && styles.cardError]}>
-                  <View style={styles.monthNav}>
-                    <TouchableOpacity
-                      style={[styles.navButton, canMonth(-1) && styles.navButtonOn]}
-                      onPress={() => changeMonth(-1)}
-                      disabled={!canMonth(-1)}
-                      accessibilityLabel="Mois précédent"
-                    >
-                      <Ionicons name="chevron-back" size={20} color={canMonth(-1) ? CONSULT_COLOR : Colors.border} />
-                    </TouchableOpacity>
-                    <View style={styles.monthTitleWrap}>
-                      <Text style={styles.monthTitle}>
-                        {month ? `${capitalize(MONTHS[month.month - 1])} ${month.year}` : ' '}
-                      </Text>
-                      {isFetching && <ActivityIndicator size="small" color={CONSULT_COLOR} />}
+                  <View style={[styles.card, submitted && !selectedDate && styles.cardError]}>
+                    <View style={styles.monthNav}>
+                      <TouchableOpacity
+                        style={[styles.navButton, canMonth(-1) && styles.navButtonOn]}
+                        onPress={() => changeMonth(-1)}
+                        disabled={!canMonth(-1)}
+                        accessibilityLabel="Mois précédent"
+                      >
+                        <Ionicons name="chevron-back" size={20} color={canMonth(-1) ? CONSULT_COLOR : Colors.border} />
+                      </TouchableOpacity>
+                      <View style={styles.monthTitleWrap}>
+                        <Text style={styles.monthTitle}>
+                          {month ? `${capitalize(MONTHS[month.month - 1])} ${month.year}` : ' '}
+                        </Text>
+                        {isFetching && <ActivityIndicator size="small" color={CONSULT_COLOR} />}
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.navButton, canMonth(1) && styles.navButtonOn]}
+                        onPress={() => changeMonth(1)}
+                        disabled={!canMonth(1)}
+                        accessibilityLabel="Mois suivant"
+                      >
+                        <Ionicons name="chevron-forward" size={20} color={canMonth(1) ? CONSULT_COLOR : Colors.border} />
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={[styles.navButton, canMonth(1) && styles.navButtonOn]}
-                      onPress={() => changeMonth(1)}
-                      disabled={!canMonth(1)}
-                      accessibilityLabel="Mois suivant"
-                    >
-                      <Ionicons name="chevron-forward" size={20} color={canMonth(1) ? CONSULT_COLOR : Colors.border} />
-                    </TouchableOpacity>
-                  </View>
 
-                  <View style={styles.weekHeader}>
-                    {WEEKDAYS_SHORT.slice(1).map((label, i) => (
-                      <Text key={i} style={styles.weekHeaderText}>
-                        {label}
-                      </Text>
-                    ))}
-                  </View>
+                    <View style={styles.weekHeader}>
+                      {WEEKDAYS_SHORT.slice(1).map((label, i) => (
+                        <Text key={i} style={styles.weekHeaderText}>
+                          {label}
+                        </Text>
+                      ))}
+                    </View>
 
-                  {month &&
-                    monthMatrix(month.year, month.month).map((week, w) => {
-                      return (
-                        <Fragment key={w}>
-                          <View style={styles.week}>
-                            {week.map((date, d) => {
-                              if (!date) return <View key={d} style={styles.day} />;
-                              const enabled = dayEnabled(date);
-                              const active = date === selectedDate;
-                              const chosen = active;
-                              return (
-                                <TouchableOpacity
-                                  key={d}
-                                  style={styles.day}
-                                  disabled={!enabled}
-                                  onPress={() => setSelectedDate(active ? null : date)}
-                                  accessibilityLabel={formatLongDate(date)}
-                                >
-                                  <View
-                                    style={[
-                                      styles.dayCircle,
-                                      enabled && styles.dayCircleOn,
-                                      (active || chosen) && styles.dayCircleActive,
-                                      where === 'other' && enabled && !active && styles.dayCircleOther,
-                                    ]}
+                    {month &&
+                      monthMatrix(month.year, month.month).map((week, w) => {
+                        return (
+                          <Fragment key={w}>
+                            <View style={styles.week}>
+                              {week.map((date, d) => {
+                                if (!date) return <View key={d} style={styles.day} />;
+                                const enabled = dayEnabled(date);
+                                const active = date === selectedDate;
+                                const chosen = active;
+                                return (
+                                  <TouchableOpacity
+                                    key={d}
+                                    style={styles.day}
+                                    disabled={!enabled}
+                                    onPress={() => setSelectedDate(active ? null : date)}
+                                    accessibilityLabel={formatLongDate(date)}
                                   >
-                                    <Text
+                                    <View
                                       style={[
-                                        styles.dayNumber,
-                                        { color: active || chosen ? Colors.white : enabled ? CONSULT_COLOR_DARK : Colors.border },
+                                        styles.dayCircle,
+                                        enabled && styles.dayCircleOn,
+                                        (active || chosen) && styles.dayCircleActive,
                                       ]}
                                     >
-                                      {Number(date.slice(8))}
-                                    </Text>
-                                  </View>
-                                </TouchableOpacity>
-                              );
-                            })}
-                          </View>
+                                      <Text
+                                        style={[
+                                          styles.dayNumber,
+                                          { color: active || chosen ? Colors.white : enabled ? CONSULT_COLOR_DARK : Colors.border },
+                                        ]}
+                                      >
+                                        {Number(date.slice(8))}
+                                      </Text>
+                                    </View>
+                                  </TouchableOpacity>
+                                );
+                              })}
+                            </View>
 
-                        </Fragment>
-                      );
-                    })}
+                          </Fragment>
+                        );
+                      })}
 
-                  {where === 'calendar' && !isFetching && calendar && calendar.days.length === 0 && (
-                    <Text style={styles.noSlot}>
-                      Aucun horaire libre ce mois-ci pour cette durée. Essayez le mois suivant ou « Autre date ».
-                    </Text>
-                  )}
-                </View>
+                    {where === 'calendar' && !isFetching && calendar && calendar.days.length === 0 && (
+                      <Text style={styles.noSlot}>
+                        Aucun horaire libre ce mois-ci pour cette durée. Essayez le mois suivant ou « Autre date ».
+                      </Text>
+                    )}
+                  </View>
+                  </>
+                ) : (
+                  // ---- Autre date : 1 à 3 créneaux, l'expert choisit l'horaire dedans ----
+                  <>
+                    {windowsError ? <Text style={styles.error}>{windowsError}</Text> : null}
+                    <WindowsEditor
+                      kind="consultation"
+                      windows={windows}
+                      onChange={setWindows}
+                      minutes={duration ?? 30}
+                      firstDate={firstDate ?? ''}
+                      lastDate={lastDate ?? ''}
+                      color={CONSULT_COLOR}
+                      error={!!windowsError}
+                      onEditingChange={setEditingWindow}
+                    />
+                  </>
+                )}
               </View>
             ) : null}
           </View>
@@ -654,7 +703,19 @@ export const ConsultationRequestView = ({ navigation, route }) => {
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacings.sm) + Spacings.sm }]}>
             <View style={[styles.footerInner, IS_WEB && (twoColumns ? styles.columnsWeb : styles.innerWeb)]}>
               <View style={styles.flex}>
-                {/* Jour, puis début et fin choisis, au-dessus du prix. */}
+                {/* Jour, puis début et fin choisis, au-dessus du prix ; autre date : créneaux proposés. */}
+                {where === 'other' ? (
+                  <View style={styles.footerLine}>
+                    <Ionicons name="calendar-outline" size={14} color={windows.length ? CONSULT_COLOR_DARK : Colors.subtext} />
+                    <Text style={[styles.footerLabel, windows.length > 0 && styles.footerLabelOn]} numberOfLines={1}>
+                      {windows.length
+                        ? `${windows.length} créneau${windows.length > 1 ? 'x' : ''} proposé${windows.length > 1 ? 's' : ''}`
+                        : 'Créneaux à proposer'}
+                      {duration ? ` · ${durationText(duration)}` : ''}
+                    </Text>
+                  </View>
+                ) : (
+                <>
                 <View style={styles.footerLine}>
                   <Ionicons name="calendar-outline" size={14} color={selectedDate ? CONSULT_COLOR_DARK : Colors.subtext} />
                   <Text style={[styles.footerLabel, !!selectedDate && styles.footerLabelOn]} numberOfLines={1}>
@@ -668,6 +729,8 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                     {duration ? ` · ${durationText(duration)}` : ''}
                   </Text>
                 </View>
+                </>
+                )}
                 <Text style={styles.footerTotal}>
                   {total !== null ? formatPrice(total, info.currency.toUpperCase()) : ' '}
                 </Text>
@@ -1019,12 +1082,6 @@ const styles = StyleSheet.create({
   },
   dayCircleOn: {
     backgroundColor: CONSULT_SOFT,
-  },
-  dayCircleOther: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: CONSULT_COLOR,
   },
   dayCircleActive: {
     backgroundColor: CONSULT_COLOR,
