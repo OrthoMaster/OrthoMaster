@@ -11,6 +11,7 @@ import {
   StatusBar,
   Platform,
   KeyboardAvoidingView,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,7 +33,7 @@ import { confirmAction } from '../bookingActions';
 import { formatPrice, initials } from '../bookingFormat';
 import { MONTHS, WEEKDAYS_SHORT, formatLongDate, fromMinutes, isoDate, monthMatrix, toMinutes } from '../bookingDates';
 import { CONSULT_COLOR, CONSULT_COLOR_DARK, CONSULT_SOFT, durationText } from '../bookingKinds';
-import { withAlpha } from '../bookingPalette';
+import { tint, withAlpha } from '../bookingPalette';
 
 /** Sujet : court, l'échange se poursuit ensuite dans la messagerie (même borne que le serveur). */
 const SUBJECT_MAX = 300;
@@ -41,7 +42,10 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 
 const IS_WEB = Platform.OS === 'web';
 const WEB_MAX_WIDTH = 720;
-const WEB_HEADER_MAX_WIDTH = 880;
+/** Web : deux colonnes dès que la zone de contenu (hors barre latérale) le permet. */
+const WEB_SIDEBAR_WIDTH = 200;
+const WEB_TWO_COLUMNS_FROM = 960;
+const WEB_TWO_COLUMNS_MAX_WIDTH = 1180;
 const INSET = Spacings.lg;
 
 type Where = 'calendar' | 'other';
@@ -58,6 +62,8 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 export const ConsultationRequestView = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const twoColumns = IS_WEB && width - WEB_SIDEBAR_WIDTH >= WEB_TWO_COLUMNS_FROM;
 
   const expertId: number = route.params?.expertId;
   const preview = route.params?.preview;
@@ -256,8 +262,15 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   const subjectRef = useRef<TextInput>(null);
   const innerY = useRef(0);
   const sectionY = useRef<{ subject: number; time: number }>({ subject: 0, time: 0 });
-  const scrollToSection = (key: 'subject' | 'time') =>
-    scrollRef.current?.scrollTo({ y: Math.max(0, innerY.current + sectionY.current[key] - Spacings.md), animated: true });
+  // Le sujet est dans la première colonne, l'horaire dans la seconde (l'une sous l'autre hors grand écran).
+  const columnY = useRef<{ left: number; right: number }>({ left: 0, right: 0 });
+  const scrollToSection = (key: 'subject' | 'time') => {
+    const column = key === 'subject' ? columnY.current.left : columnY.current.right;
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, innerY.current + column + sectionY.current[key] - Spacings.md),
+      animated: true,
+    });
+  };
 
   const submit = () => {
     setSubmitted(true);
@@ -352,9 +365,9 @@ export const ConsultationRequestView = ({ navigation, route }) => {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* ---- En-tête fixe (ne défile pas) : titre, fermeture à droite ; plus large sur le web ---- */}
-        <View style={styles.headerBar}>
+        <View style={[styles.headerBar, IS_WEB && styles.headerBarWeb]}>
           <View style={[styles.header, IS_WEB && styles.headerWeb]}>
-            <Text style={styles.headerTitle}>Consultation sur mesure</Text>
+            <Text style={[styles.headerTitle, IS_WEB && styles.headerTitleWeb]}>Consultation sur mesure</Text>
             <TouchableOpacity
               style={[styles.close, { borderColor: withAlpha(CONSULT_COLOR, 0.45), backgroundColor: withAlpha(CONSULT_COLOR, 0.1) }]}
               onPress={() => navigation.goBack()}
@@ -373,69 +386,79 @@ export const ConsultationRequestView = ({ navigation, route }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* Web, grand écran : deux colonnes (expert et sujet | durée et horaire) ; sinon une seule. */}
           <View
-            style={[styles.inner, IS_WEB && styles.innerWeb]}
+            style={[
+              twoColumns ? styles.columns : styles.inner,
+              IS_WEB && (twoColumns ? styles.columnsWeb : styles.innerWeb),
+            ]}
             onLayout={(e) => (innerY.current = e.nativeEvent.layout.y)}
           >
-            {/* ---- Expert : titre, nom, références ---- */}
-            <View style={styles.hero}>
-              <View style={[styles.avatar, { backgroundColor: expert?.palette_color ?? CONSULT_COLOR }]}>
-                {expert?.avatar_url ? (
-                  <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} />
-                ) : (
-                  <Text style={styles.avatarText}>{initials(expert?.name ?? '')}</Text>
-                )}
-              </View>
-              <View style={styles.flex}>
-                {expert?.honorific ? (
-                  <Text style={[styles.kicker, { color: expert?.palette_color ?? CONSULT_COLOR }]} numberOfLines={1}>
-                    {expert.honorific}
+            <View style={twoColumns ? styles.column : styles.inner} onLayout={(e) => (columnY.current.left = e.nativeEvent.layout.y)}>
+              {/* ---- Expert : titre, nom, références ---- */}
+              <View style={[styles.hero, { backgroundColor: tint(expert?.palette_color ?? CONSULT_COLOR, 0.12) }]}>
+                <View style={[styles.avatar, { backgroundColor: expert?.palette_color ?? CONSULT_COLOR }]}>
+                  {expert?.avatar_url ? (
+                    <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} />
+                  ) : (
+                    <Text style={styles.avatarText}>{initials(expert?.name ?? '')}</Text>
+                  )}
+                </View>
+                <View style={styles.flex}>
+                  {expert?.honorific ? (
+                    <Text style={[styles.kicker, { color: expert?.palette_color ?? CONSULT_COLOR }]} numberOfLines={1}>
+                      {expert.honorific}
+                    </Text>
+                  ) : null}
+                  <Text style={styles.expertName} numberOfLines={2}>
+                    {expert?.name ?? ''}
                   </Text>
-                ) : null}
-                <Text style={styles.expertName} numberOfLines={2}>
-                  {expert?.name ?? ''}
-                </Text>
-                {expert?.credentials ? (
-                  <Text style={styles.credentials} numberOfLines={2}>
-                    {expert.credentials}
-                  </Text>
-                ) : null}
+                  {expert?.credentials ? (
+                    <Text style={styles.credentials} numberOfLines={2}>
+                      {expert.credentials}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
+
+              {!info ? (
+                <ActivityIndicator color={CONSULT_COLOR} style={styles.loader} />
+              ) : (
+                <>
+                  {/* ---- Sujet ---- */}
+                  <Text
+                    style={styles.sectionTitle}
+                    onLayout={(e) => (sectionY.current.subject = e.nativeEvent.layout.y)}
+                  >
+                    Votre sujet <Text style={styles.required}>*</Text>
+                  </Text>
+                  <View>
+                    <TextInput
+                      ref={subjectRef}
+                      style={[styles.input, !!subjectError && styles.inputError, IS_WEB && ({ outlineStyle: 'none' } as any)]}
+                      value={subject}
+                      onChangeText={setSubject}
+                      placeholder="Décrivez votre question, le cas, ce que vous attendez de l'échange…"
+                      placeholderTextColor={Colors.subtext}
+                      multiline
+                      textAlignVertical="top"
+                      maxLength={subjectMax}
+                    />
+                    <View style={styles.inputFoot}>
+                      {subjectError ? <Text style={styles.error}>{subjectError}</Text> : <View />}
+                      <Text style={styles.counter}>
+                        {subject.length} / {subjectMax}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
 
-            {!info ? (
-              <ActivityIndicator color={CONSULT_COLOR} style={styles.loader} />
-            ) : (
-              <>
-                {/* ---- Sujet ---- */}
-                <Text
-                  style={styles.sectionTitle}
-                  onLayout={(e) => (sectionY.current.subject = e.nativeEvent.layout.y)}
-                >
-                  Votre sujet <Text style={styles.required}>*</Text>
-                </Text>
-                <View>
-                  <TextInput
-                    ref={subjectRef}
-                    style={[styles.input, !!subjectError && styles.inputError, IS_WEB && ({ outlineStyle: 'none' } as any)]}
-                    value={subject}
-                    onChangeText={setSubject}
-                    placeholder="Décrivez votre question, le cas, ce que vous attendez de l'échange…"
-                    placeholderTextColor={Colors.subtext}
-                    multiline
-                    textAlignVertical="top"
-                    maxLength={subjectMax}
-                  />
-                  <View style={styles.inputFoot}>
-                    {subjectError ? <Text style={styles.error}>{subjectError}</Text> : <View />}
-                    <Text style={styles.counter}>
-                      {subject.length} / {subjectMax}
-                    </Text>
-                  </View>
-                </View>
-
+            {info ? (
+              <View style={twoColumns ? styles.column : styles.inner} onLayout={(e) => (columnY.current.right = e.nativeEvent.layout.y)}>
                 {/* ---- Durée ---- */}
-                <Text style={styles.sectionTitle}>Durée estimée</Text>
+                <Text style={[styles.sectionTitle, twoColumns && styles.sectionTitleFirst]}>Durée estimée</Text>
                 <View style={styles.chips}>
                   {info.durations.map((minutes) => {
                     const on = minutes === duration;
@@ -610,15 +633,15 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                     </Text>
                   )}
                 </View>
-              </>
-            )}
+              </View>
+            ) : null}
           </View>
         </ScrollView>
 
         {/* ---- Pied : total et suite ---- */}
         {info ? (
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacings.sm) + Spacings.sm }]}>
-            <View style={[styles.footerInner, IS_WEB && styles.innerWeb]}>
+            <View style={[styles.footerInner, IS_WEB && (twoColumns ? styles.columnsWeb : styles.innerWeb)]}>
               <View style={styles.flex}>
                 {/* Jour, puis début et fin choisis, au-dessus du prix. */}
                 <View style={styles.footerLine}>
@@ -711,11 +734,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacings.md,
   },
-  // Web : un peu plus large que le contenu, toujours centré.
+  // Web : même hauteur et même titre que l'en-tête des Formations (100, Poppins-Bold 28), sur toute la largeur.
+  headerBarWeb: {
+    height: 100,
+    justifyContent: 'center',
+    paddingVertical: 0,
+    paddingHorizontal: Spacings.lg,
+  },
   headerWeb: {
     width: '100%',
-    maxWidth: WEB_HEADER_MAX_WIDTH,
+  },
+  headerTitleWeb: {
+    fontSize: 28,
+    lineHeight: 36,
+  },
+  /* ---- Web, grand écran : deux colonnes ---- */
+  columns: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.xl,
+  },
+  columnsWeb: {
+    width: '100%',
+    maxWidth: WEB_TWO_COLUMNS_MAX_WIDTH,
     alignSelf: 'center',
+  },
+  column: {
+    flex: 1,
+    minWidth: 0,
+    gap: Spacings.sm,
+  },
+  sectionTitleFirst: {
+    marginTop: 0,
   },
   headerTitle: {
     flex: 1,
@@ -738,8 +788,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.md,
     padding: Spacings.md,
+    // Fond : teinte claire de la couleur de l'expert (posée dans le rendu).
     borderRadius: 20,
-    backgroundColor: Colors.white,
   },
   avatar: {
     width: 64,
