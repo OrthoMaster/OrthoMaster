@@ -35,9 +35,9 @@ interface ConsultationExpertCardProps {
 
 /**
  * Carte d'un expert dans la liste Consultation (mobile et web), aux couleurs choisies par
- * l'expert (palette ; à défaut, le bleu de l'espace) : pas de thèmes, le prix de 30 minutes
- * au coin supérieur droit, tous ses domaines en petites pastilles, et deux boutons :
- * écrire (rond) ou réserver une consultation (avec libellé).
+ * l'expert (palette ; à défaut, le bleu de l'espace) : pas de thèmes, tous ses domaines en
+ * petites pastilles ; en bas, le prix de 30 minutes à gauche (sous le portrait) et deux
+ * boutons à droite : écrire (rond) ou réserver une consultation (avec libellé).
  */
 export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
   expert,
@@ -130,18 +130,18 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
 
             {expert.reason ? <SearchReason text={expert.reason} /> : null}
           </View>
-
-          {/* Prix de 30 minutes, au coin supérieur droit. */}
-          {consult ? (
-            <View style={styles.price} pointerEvents="none">
-              <Text style={[styles.priceValue, { color: accent }]}>{priceLabel(consult.price_30, consult.currency)}</Text>
-              <Text style={styles.priceUnit}> / 30 min</Text>
-            </View>
-          ) : null}
         </Pressable>
 
-        {/* ---- Actions, aux couleurs de l'expert : écrire (rond), réserver (avec libellé) ---- */}
+        {/* ---- Prix (à gauche, sous le portrait) et actions aux couleurs de l'expert ---- */}
         <View style={styles.actions}>
+          <View style={styles.price}>
+            {consult ? (
+              <>
+                <Text style={styles.priceValue}>{priceLabel(consult.price_30, consult.currency)}</Text>
+                <Text style={styles.priceUnit}> / 30 min</Text>
+              </>
+            ) : null}
+          </View>
           <Pressable
             style={({ pressed }) => [
               styles.action,
@@ -200,11 +200,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: Colors.white,
   },
-  // Marge haute : la première ligne passe sous le prix sans le toucher.
+  // Première ligne (titre) alignée sur le haut du portrait.
   info: {
     flex: 1,
     alignItems: 'flex-start',
-    paddingTop: Spacings.lg,
   },
   honorific: {
     fontFamily: 'Poppins-Medium',
@@ -242,26 +241,25 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   price: {
-    position: 'absolute',
-    top: CARD_PADDING,
-    right: Spacings.md,
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'baseline',
+    paddingLeft: Spacings.xxs,
   },
   priceValue: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 15,
+    fontSize: 17,
+    color: Colors.text,
   },
   priceUnit: {
     fontFamily: 'Poppins-Regular',
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.subtext2,
   },
-  // Sous la carte, alignées à droite, sans séparateur.
+  // Bas de la carte, sans séparateur : prix à gauche, boutons à droite.
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
     gap: Spacings.xs,
     paddingHorizontal: CARD_PADDING,
     paddingBottom: CARD_PADDING,

@@ -4,12 +4,14 @@
  *  - Consultation : sujet libre, toujours en ligne, par tranches de 30 minutes.
  * Libellés et couleurs partagés par les écrans (mobile et web).
  */
+import Colors from '../../../constants/Colors';
 import { BookingKind } from '../../services/v2/BookingService';
 
-/** Violet de la Consultation (le bleu de l'espace rendez-vous reste celui des Thèmes). */
-export const CONSULT_COLOR = '#7C3AED';
-export const CONSULT_COLOR_DARK = '#5B21B6';
-export const CONSULT_SOFT = '#F3E8FF';
+/** Violet doux de la Consultation (Colors.purple) ; le bleu de l'espace rendez-vous reste celui des Thèmes. */
+export const CONSULT_COLOR = Colors.purple;
+/** Même violet assombri : textes sur fond clair, dégradés. */
+export const CONSULT_COLOR_DARK = '#745F89';
+export const CONSULT_SOFT = Colors.purple3;
 
 export const KIND_LABELS: Record<BookingKind, string> = {
   offer: 'Thèmes',

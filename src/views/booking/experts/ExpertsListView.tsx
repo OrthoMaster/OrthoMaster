@@ -97,19 +97,37 @@ export const ExpertsListView = ({ navigation, route }) => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [query, setQuery] = useState('');
 
+  // Consultation : filtres Nom et Ville, combinables avec la recherche par domaine / besoin (IA).
+  const [nameFilter, setNameFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [nameQuery, setNameQuery] = useState('');
+  const [cityQuery, setCityQuery] = useState('');
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
   // La recherche part au serveur : on attend la fin de la frappe.
   useEffect(() => {
-    const timer = setTimeout(() => setQuery(search.trim()), SEARCH_DEBOUNCE_MS);
+    const timer = setTimeout(() => {
+      setQuery(search.trim());
+      setNameQuery(nameFilter.trim());
+      setCityQuery(cityFilter.trim());
+    }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, nameFilter, cityFilter]);
+  const filters = consultationMode
+    ? { name: nameQuery || undefined, city: cityQuery || undefined }
+    : {};
 
   // Recherche intelligente à partir de 2 caractères ; sinon, les listes paginées.
   const smart = query.length >= SMART_MIN_LENGTH;
 
   const expertsQuery = useInfiniteQuery({
-    queryKey: ['booking', 'experts', consultationMode ? 'consultation' : 'all'],
+    queryKey: ['booking', 'experts', consultationMode ? 'consultation' : 'all', nameQuery, cityQuery],
     queryFn: async ({ pageParam }) => {
-      const page = await getBookingExperts({ page: pageParam, consultation: consultationMode ? 1 : undefined });
+      const page = await getBookingExperts({
+        page: pageParam,
+        consultation: consultationMode ? 1 : undefined,
+        ...filters,
+      });
       // Une page en échec doit passer en erreur, pas se lire comme une liste vide.
       if (!page) throw new Error('experts');
       return page;
@@ -132,9 +150,18 @@ export const ExpertsListView = ({ navigation, route }) => {
   });
 
   const smartQuery = useQuery({
-    queryKey: ['booking', 'smart-search', showThemes ? 'themes' : 'experts', query],
+    queryKey: [
+      'booking',
+      'smart-search',
+      showThemes ? 'themes' : consultationMode ? 'consultation' : 'experts',
+      query,
+      nameQuery,
+      cityQuery,
+    ],
     queryFn: async () => {
-      const result = showThemes ? await smartSearchThemes(query) : await smartSearchExperts(query);
+      const result = showThemes
+        ? await smartSearchThemes(query)
+        : await smartSearchExperts(query, consultationMode ? { consultation: 1, ...filters } : undefined);
       if (!result) throw new Error('search');
       return result;
     },
@@ -296,16 +323,54 @@ export const ExpertsListView = ({ navigation, route }) => {
   // En-tête d'écran d'accueil : titre et recherche défilent avec la liste.
   // Passé en élément (pas en composant) : le champ garde le focus pendant la frappe.
   const accent = consultationMode ? CONSULT_COLOR : Colors.lblueDark;
+
+  // Champ de filtre (Consultation) ; flex : part de la largeur sur sa ligne.
+  const filterField = (
+    key: string,
+    icon: keyof typeof Ionicons.glyphMap,
+    value: string,
+    onChange: (text: string) => void,
+    placeholder: string,
+    flex?: number
+  ) => (
+    <View
+      style={[
+        styles.searchWrap,
+        styles.filterWrap,
+        flex ? { flex } : null,
+        IS_WEB && focusedField === key && { borderColor: CONSULT_COLOR },
+      ]}
+    >
+      <Ionicons name={icon} size={17} color={key === 'domain' ? CONSULT_COLOR : Colors.subtext} />
+      <TextInput
+        style={[styles.searchInput, IS_WEB && styles.searchInputWeb]}
+        onFocus={() => setFocusedField(key)}
+        onBlur={() => setFocusedField((f) => (f === key ? null : f))}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={Colors.subtext}
+        returnKeyType="search"
+        autoCorrect={false}
+        maxLength={WEB_SEARCH_MAX_LENGTH}
+      />
+      {value.length > 0 && (
+        <TouchableOpacity onPress={() => onChange('')} hitSlop={8} accessibilityLabel="Effacer">
+          <Ionicons name="close-circle" size={18} color={Colors.subtext} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
   const listHeader = (
     // Web, grand écran : comme l'Agenda, titre à gauche et recherche à droite sur une ligne.
     <View
       style={[
         styles.head,
         IS_WEB && { width: innerWidth, alignSelf: 'center' },
-        twoColumns && styles.headWeb,
+        twoColumns && !consultationMode && styles.headWeb,
       ]}
     >
-      <View style={[styles.titleBlock, twoColumns && styles.titleWeb]}>
+      <View style={[styles.titleBlock, twoColumns && !consultationMode && styles.titleWeb]}>
         {/* Bouton rond (même gabarit que la fermeture du profil) et parcours en cours. */}
         <View style={styles.backRow}>
           {navigation.canGoBack() ? (
@@ -361,6 +426,16 @@ export const ExpertsListView = ({ navigation, route }) => {
         )}
       </View>
 
+      {consultationMode ? (
+        // Trois filtres combinables : domaine / besoin (IA), nom, ville.
+        <View style={[styles.filters, twoColumns && styles.filtersWeb]}>
+          {filterField('domain', 'sparkles-outline', search, setSearch, 'Domaine, besoin…', twoColumns ? 2 : undefined)}
+          <View style={[styles.filtersPair, twoColumns && styles.filtersPairWeb]}>
+            {filterField('name', 'person-outline', nameFilter, setNameFilter, "Nom de l'expert", 1)}
+            {filterField('city', 'location-outline', cityFilter, setCityFilter, 'Ville', 1)}
+          </View>
+        </View>
+      ) : (
       <View style={[styles.searchWrap, twoColumns && styles.searchWrapWeb, IS_WEB && searchFocused && styles.searchWrapFocused]}>
         <Ionicons name="search" size={18} color={Colors.subtext} />
         <TextInput
@@ -381,14 +456,15 @@ export const ExpertsListView = ({ navigation, route }) => {
           </TouchableOpacity>
         )}
       </View>
+      )}
     </View>
   );
 
   // Recherche intelligente : petit rappel sous l'en-tête, avec le nombre de résultats.
   const smartHint = smart ? (
     <View style={[styles.smartHint, IS_WEB && { width: innerWidth, alignSelf: 'center' }]}>
-      <Ionicons name="sparkles" size={14} color={Colors.lblueDark} />
-      <Text style={styles.smartHintText}>
+      <Ionicons name="sparkles" size={14} color={accent} />
+      <Text style={[styles.smartHintText, { color: accent }]}>
         {smartQuery.isFetching
           ? 'Recherche intelligente en cours…'
           : `Recherche intelligente · ${(showThemes ? themes : experts).length} résultat(s)`}
@@ -604,7 +680,9 @@ const styles = StyleSheet.create({
   segmentTextOn: {
     color: Colors.white,
   },
+  // Collé au titre (l'écart du bloc est réduit pour ce seul texte).
   consultHint: {
+    marginTop: -Spacings.xs,
     fontFamily: 'Roboto',
     fontSize: 14,
     lineHeight: 20,
@@ -651,6 +729,27 @@ const styles = StyleSheet.create({
   searchInputWeb: {
     outlineStyle: 'none',
   } as any,
+
+  /* ---- Filtres (Consultation) ---- */
+  filters: {
+    gap: Spacings.sm,
+    marginTop: Spacings.md,
+  },
+  filtersWeb: {
+    flexDirection: 'row',
+  },
+  filtersPair: {
+    flexDirection: 'row',
+    gap: Spacings.sm,
+  },
+  filtersPairWeb: {
+    flex: 2,
+  },
+  filterWrap: {
+    marginTop: 0,
+    paddingHorizontal: Spacings.sm,
+    minWidth: 0,
+  },
 
   /* ---- Recherche ---- */
   searchWrap: {

@@ -9,7 +9,7 @@ import { BookingExpertListItem, BookingOfferFormat, BookingOfferSummary } from '
 import { initials, priceLabel } from '../../bookingFormat';
 import { ModePill, sortModes } from '../../components/ModePill';
 import { SearchReason } from './SearchReason';
-import { CONSULT_COLOR } from '../../bookingKinds';
+import { CONSULT_COLOR, CONSULT_SOFT } from '../../bookingKinds';
 
 const CARD_RADIUS = 20;
 const CARD_PADDING = Spacings.sm;
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.xs,
     paddingVertical: 2,
     borderRadius: 8,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: CONSULT_SOFT,
   },
   consultChipText: {
     fontFamily: 'Poppins-Medium',
