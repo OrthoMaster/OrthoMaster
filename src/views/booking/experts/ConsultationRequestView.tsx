@@ -327,6 +327,32 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   const year = new Date().getFullYear();
 
   // Réglage − valeur + (heure ou minutes).
+  // Durée estimée : sous le sujet (web, deux colonnes) ou en tête de la partie horaire.
+  const durationBlock = info ? (
+    <>
+      <Text style={styles.sectionTitle}>Durée estimée</Text>
+      <View style={styles.chips}>
+        {info.durations.map((minutes) => {
+          const on = minutes === duration;
+          return (
+            <TouchableOpacity
+              key={minutes}
+              style={[styles.chip, on && styles.chipOn]}
+              onPress={() => changeDuration(minutes)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on }}
+            >
+              <Text style={[styles.chipTitle, on && styles.chipTextOn]}>{durationText(minutes)}</Text>
+              <Text style={[styles.chipSub, on && styles.chipTextOn]}>
+                {formatPrice(info.price_30 * (minutes / 30), info.currency.toUpperCase())}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </>
+  ) : null;
+
   const stepper = (
     value: string,
     onMinus: () => void,
@@ -451,36 +477,21 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                       </Text>
                     </View>
                   </View>
+                  {twoColumns ? durationBlock : null}
                 </>
               )}
             </View>
 
             {info ? (
               <View style={twoColumns ? styles.column : styles.inner} onLayout={(e) => (columnY.current.right = e.nativeEvent.layout.y)}>
-                {/* ---- Durée ---- */}
-                <Text style={[styles.sectionTitle, twoColumns && styles.sectionTitleFirst]}>Durée estimée</Text>
-                <View style={styles.chips}>
-                  {info.durations.map((minutes) => {
-                    const on = minutes === duration;
-                    return (
-                      <TouchableOpacity
-                        key={minutes}
-                        style={[styles.chip, on && styles.chipOn]}
-                        onPress={() => changeDuration(minutes)}
-                        accessibilityRole="radio"
-                        accessibilityState={{ selected: on }}
-                      >
-                        <Text style={[styles.chipTitle, on && styles.chipTextOn]}>{durationText(minutes)}</Text>
-                        <Text style={[styles.chipSub, on && styles.chipTextOn]}>
-                          {formatPrice(info.price_30 * (minutes / 30), info.currency.toUpperCase())}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                {/* Durée : dans la seconde colonne seulement sur un écran étroit (web grand écran : sous le sujet). */}
+                {!twoColumns ? durationBlock : null}
 
                 {/* ---- Horaire ---- */}
-                <Text style={styles.sectionTitle} onLayout={(e) => (sectionY.current.time = e.nativeEvent.layout.y)}>
+                <Text
+                  style={[styles.sectionTitle, twoColumns && styles.sectionTitleFirst]}
+                  onLayout={(e) => (sectionY.current.time = e.nativeEvent.layout.y)}
+                >
                   Horaire
                 </Text>
                 <View style={styles.segment}>
