@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
     fontSize: 14,
     lineHeight: 20,
-    color: CONSULT_COLOR,
+    color: Colors.subtext,
   },
   smartHint: {
     flexDirection: 'row',

@@ -7,8 +7,7 @@ import Spacings from '../../../../../constants/Spacings';
 
 import { BookingExpertListItem } from '../../../../services/v2/BookingService';
 import { initials, priceLabel } from '../../bookingFormat';
-import { CONSULT_COLOR, CONSULT_SOFT } from '../../bookingKinds';
-import { CHAT_BLUE } from '../../messages/chatFormat';
+import { accentOf, tint, withAlpha } from '../../bookingPalette';
 import { SearchReason } from './SearchReason';
 
 const CARD_RADIUS = 20;
@@ -17,8 +16,6 @@ const PHOTO_RADIUS = 14;
 const PHOTO_MIN = 92;
 const PHOTO_MAX = 132;
 const STAGGER_MS = 60;
-/** Pastilles de domaines affichées ; au-delà, « +n ». */
-const MAX_DOMAINS = 3;
 const ACTION_SIZE = 42;
 
 interface ConsultationExpertCardProps {
@@ -28,18 +25,19 @@ interface ConsultationExpertCardProps {
   indexInPage: number;
   /** Toucher la carte : profil de l'expert. */
   onPress: () => void;
-  /** Bouton bleu : écrire à l'expert. */
+  /** Bouton rond : écrire à l'expert. */
   onMessage: () => void;
-  /** Bouton violet : demander une consultation. */
+  /** Bouton « Réserver » : demander une consultation. */
   onBook: () => void;
   /** Ouverture du fil en cours (bouton message en attente). */
   messaging?: boolean;
 }
 
 /**
- * Carte d'un expert dans la liste Consultation (mobile et web) : pas de thèmes, le prix de
- * 30 minutes au coin supérieur droit, les domaines en petites pastilles, et deux boutons
- * ronds : écrire (bleu) ou réserver une consultation (violet).
+ * Carte d'un expert dans la liste Consultation (mobile et web), aux couleurs choisies par
+ * l'expert (palette ; à défaut, le bleu de l'espace) : pas de thèmes, le prix de 30 minutes
+ * au coin supérieur droit, tous ses domaines en petites pastilles, et deux boutons :
+ * écrire (rond) ou réserver une consultation (avec libellé).
  */
 export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
   expert,
@@ -82,13 +80,13 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
   };
 
   const domains = expert.domains ?? [];
-  const shown = domains.slice(0, MAX_DOMAINS);
-  const more = domains.length - shown.length;
   const consult = expert.consultation;
+  const accent = accentOf(expert.palette_color);
+  const soft = tint(accent, 0.14);
 
   return (
     <Animated.View style={[{ width }, animated]}>
-      <View style={styles.card}>
+      <View style={[styles.card, { shadowColor: accent, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.16, shadowRadius: 14 }]}>
         <Pressable
           style={styles.main}
           onPress={onPress}
@@ -97,7 +95,7 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
           accessibilityRole="button"
           accessibilityLabel={[expert.honorific, expert.name].filter(Boolean).join(' ')}
         >
-          <View style={[styles.photo, { width: photoSize, height: photoSize }]}>
+          <View style={[styles.photo, { width: photoSize, height: photoSize, backgroundColor: accent }]}>
             {expert.avatar_url ? (
               <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : (
@@ -107,7 +105,7 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
 
           <View style={styles.info} onLayout={fitPhoto}>
             {expert.honorific ? (
-              <Text style={styles.honorific} numberOfLines={1}>
+              <Text style={[styles.honorific, { color: accent }]} numberOfLines={1}>
                 {expert.honorific}
               </Text>
             ) : null}
@@ -120,20 +118,13 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
               </Text>
             ) : null}
 
-            {shown.length > 0 ? (
+            {domains.length > 0 ? (
               <View style={styles.domains}>
-                {shown.map((d) => (
-                  <View key={d.id} style={styles.domain}>
-                    <Text style={styles.domainText} numberOfLines={1}>
-                      {d.name}
-                    </Text>
+                {domains.map((d) => (
+                  <View key={d.id} style={[styles.domain, { backgroundColor: soft }]}>
+                    <Text style={[styles.domainText, { color: accent }]}>{d.name}</Text>
                   </View>
                 ))}
-                {more > 0 ? (
-                  <View style={styles.domain}>
-                    <Text style={styles.domainText}>+{more}</Text>
-                  </View>
-                ) : null}
               </View>
             ) : null}
 
@@ -143,20 +134,20 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
           {/* Prix de 30 minutes, au coin supérieur droit. */}
           {consult ? (
             <View style={styles.price} pointerEvents="none">
-              <Text style={styles.priceValue}>{priceLabel(consult.price_30, consult.currency)}</Text>
+              <Text style={[styles.priceValue, { color: accent }]}>{priceLabel(consult.price_30, consult.currency)}</Text>
               <Text style={styles.priceUnit}> / 30 min</Text>
             </View>
           ) : null}
         </Pressable>
 
-        {/* ---- Actions : écrire (bleu), réserver (violet) ---- */}
+        {/* ---- Actions, aux couleurs de l'expert : écrire (rond), réserver (avec libellé) ---- */}
         <View style={styles.actions}>
-          <View style={styles.visio}>
-            <Ionicons name="videocam-outline" size={14} color={Colors.subtext} />
-            <Text style={styles.visioText}>En visio, par 30 min</Text>
-          </View>
           <Pressable
-            style={({ pressed }) => [styles.action, styles.actionMessage, pressed && styles.actionPressed]}
+            style={({ pressed }) => [
+              styles.action,
+              { borderColor: withAlpha(accent, 0.45), backgroundColor: withAlpha(accent, 0.1) },
+              pressed && styles.actionPressed,
+            ]}
             onPress={onMessage}
             disabled={messaging}
             hitSlop={4}
@@ -164,19 +155,20 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
             accessibilityLabel={`Écrire à ${expert.name}`}
           >
             {messaging ? (
-              <ActivityIndicator size="small" color={CHAT_BLUE} />
+              <ActivityIndicator size="small" color={accent} />
             ) : (
-              <Ionicons name="chatbubble-ellipses-outline" size={20} color={CHAT_BLUE} />
+              <Ionicons name="chatbubble-ellipses-outline" size={20} color={accent} />
             )}
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.action, styles.actionBook, pressed && styles.actionPressed]}
+            style={({ pressed }) => [styles.book, { backgroundColor: accent }, pressed && styles.actionPressed]}
             onPress={onBook}
             hitSlop={4}
             accessibilityRole="button"
             accessibilityLabel={`Réserver une consultation avec ${expert.name}`}
           >
-            <Ionicons name="calendar-outline" size={20} color={Colors.white} />
+            <Ionicons name="calendar-outline" size={18} color={Colors.white} />
+            <Text style={styles.bookText}>Réserver</Text>
           </Pressable>
         </View>
       </View>
@@ -188,10 +180,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: CARD_RADIUS,
     backgroundColor: Colors.white,
-    shadowColor: CONSULT_COLOR,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
+    // Ombre aux couleurs de l'expert : posée avec la couleur (le web les veut ensemble).
     elevation: 5,
   },
   main: {
@@ -201,7 +190,6 @@ const styles = StyleSheet.create({
     padding: CARD_PADDING,
   },
   photo: {
-    backgroundColor: CONSULT_COLOR,
     borderRadius: PHOTO_RADIUS,
     overflow: 'hidden',
     alignItems: 'center',
@@ -223,7 +211,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: CONSULT_COLOR,
   },
   name: {
     fontFamily: 'Poppins-Bold',
@@ -245,17 +232,14 @@ const styles = StyleSheet.create({
     marginTop: Spacings.xs,
   },
   domain: {
-    maxWidth: 160,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 999,
-    backgroundColor: CONSULT_SOFT,
   },
   domainText: {
     fontFamily: 'Poppins-Medium',
     fontSize: 10.5,
     lineHeight: 15,
-    color: CONSULT_COLOR,
   },
   price: {
     position: 'absolute',
@@ -267,48 +251,41 @@ const styles = StyleSheet.create({
   priceValue: {
     fontFamily: 'Poppins-Bold',
     fontSize: 15,
-    color: CONSULT_COLOR,
   },
   priceUnit: {
     fontFamily: 'Poppins-Regular',
     fontSize: 12,
     color: Colors.subtext2,
   },
+  // Sous la carte, alignées à droite, sans séparateur.
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: Spacings.xs,
-    marginHorizontal: CARD_PADDING,
-    paddingVertical: Spacings.xs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-  },
-  visio: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingLeft: Spacings.xxs,
-  },
-  visioText: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 12,
-    color: Colors.subtext,
+    paddingHorizontal: CARD_PADDING,
+    paddingBottom: CARD_PADDING,
   },
   action: {
     width: ACTION_SIZE,
     height: ACTION_SIZE,
     borderRadius: ACTION_SIZE / 2,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionMessage: {
-    borderWidth: 1.5,
-    borderColor: 'rgba(10, 124, 255, 0.35)',
-    backgroundColor: 'rgba(10, 124, 255, 0.08)',
+  book: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: ACTION_SIZE,
+    paddingHorizontal: Spacings.md,
+    borderRadius: ACTION_SIZE / 2,
   },
-  actionBook: {
-    backgroundColor: CONSULT_COLOR,
+  bookText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.white,
   },
   actionPressed: {
     opacity: 0.7,
