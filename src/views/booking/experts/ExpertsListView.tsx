@@ -97,11 +97,9 @@ export const ExpertsListView = ({ navigation, route }) => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [query, setQuery] = useState('');
 
-  // Consultation : filtres Nom et Ville, combinables avec la recherche par domaine / besoin (IA).
+  // Consultation : filtre Nom, combinable avec la recherche par domaine / besoin (IA).
   const [nameFilter, setNameFilter] = useState('');
-  const [cityFilter, setCityFilter] = useState('');
   const [nameQuery, setNameQuery] = useState('');
-  const [cityQuery, setCityQuery] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // La recherche part au serveur : on attend la fin de la frappe.
@@ -109,19 +107,18 @@ export const ExpertsListView = ({ navigation, route }) => {
     const timer = setTimeout(() => {
       setQuery(search.trim());
       setNameQuery(nameFilter.trim());
-      setCityQuery(cityFilter.trim());
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [search, nameFilter, cityFilter]);
+  }, [search, nameFilter]);
   const filters = consultationMode
-    ? { name: nameQuery || undefined, city: cityQuery || undefined }
+    ? { name: nameQuery || undefined }
     : {};
 
   // Recherche intelligente à partir de 2 caractères ; sinon, les listes paginées.
   const smart = query.length >= SMART_MIN_LENGTH;
 
   const expertsQuery = useInfiniteQuery({
-    queryKey: ['booking', 'experts', consultationMode ? 'consultation' : 'all', nameQuery, cityQuery],
+    queryKey: ['booking', 'experts', consultationMode ? 'consultation' : 'all', nameQuery],
     queryFn: async ({ pageParam }) => {
       const page = await getBookingExperts({
         page: pageParam,
@@ -156,7 +153,6 @@ export const ExpertsListView = ({ navigation, route }) => {
       showThemes ? 'themes' : consultationMode ? 'consultation' : 'experts',
       query,
       nameQuery,
-      cityQuery,
     ],
     queryFn: async () => {
       const result = showThemes
@@ -362,30 +358,26 @@ export const ExpertsListView = ({ navigation, route }) => {
     </View>
   );
   const listHeader = (
-    // Web, grand écran : comme l'Agenda, titre à gauche et recherche à droite sur une ligne.
-    <View
-      style={[
-        styles.head,
-        IS_WEB && { width: innerWidth, alignSelf: 'center' },
-        twoColumns && !consultationMode && styles.headWeb,
-      ]}
-    >
+    <View style={[styles.head, IS_WEB && { width: innerWidth, alignSelf: 'center' }]}>
+      {/* Parcours en cours à gauche ; à droite, bouton rond de fermeture (même gabarit que celui du profil). */}
+      <View style={styles.topRow}>
+        <Text style={[styles.kicker, { color: accent }]}>{consultationMode ? 'Consultation' : 'Thèmes'}</Text>
+        {navigation.canGoBack() ? (
+          <TouchableOpacity
+            style={[styles.close, { borderColor: withAlpha(accent, 0.45), backgroundColor: withAlpha(accent, 0.1) }]}
+            onPress={() => navigation.goBack()}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Fermer"
+          >
+            <Ionicons name="close" size={26} color={accent} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {/* Web, grand écran (Thèmes) : comme l'Agenda, titre à gauche et recherche à droite sur une ligne. */}
+      <View style={twoColumns && !consultationMode ? styles.headWeb : null}>
       <View style={[styles.titleBlock, twoColumns && !consultationMode && styles.titleWeb]}>
-        {/* Bouton rond (même gabarit que la fermeture du profil) et parcours en cours. */}
-        <View style={styles.backRow}>
-          {navigation.canGoBack() ? (
-            <TouchableOpacity
-              style={[styles.back, { borderColor: withAlpha(accent, 0.45), backgroundColor: withAlpha(accent, 0.1) }]}
-              onPress={() => navigation.goBack()}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Retour"
-            >
-              <Ionicons name="chevron-back" size={24} color={accent} style={styles.backIcon} />
-            </TouchableOpacity>
-          ) : null}
-          <Text style={[styles.backText, { color: accent }]}>{consultationMode ? 'Consultation' : 'Thèmes'}</Text>
-        </View>
         <Text style={[styles.title, twoColumns && styles.titleInline]}>
           {consultationMode
             ? 'Choisissez votre expert'
@@ -427,13 +419,10 @@ export const ExpertsListView = ({ navigation, route }) => {
       </View>
 
       {consultationMode ? (
-        // Trois filtres combinables : domaine / besoin (IA), nom, ville.
+        // Deux filtres combinables : domaine / besoin (IA), nom. Côte à côte sur grand écran.
         <View style={[styles.filters, twoColumns && styles.filtersWeb]}>
           {filterField('domain', 'sparkles-outline', search, setSearch, 'Domaine, besoin…', twoColumns ? 2 : undefined)}
-          <View style={[styles.filtersPair, twoColumns && styles.filtersPairWeb]}>
-            {filterField('name', 'person-outline', nameFilter, setNameFilter, "Nom de l'expert", 1)}
-            {filterField('city', 'location-outline', cityFilter, setCityFilter, 'Ville', 1)}
-          </View>
+          {filterField('name', 'person-outline', nameFilter, setNameFilter, "Nom de l'expert", twoColumns ? 1 : undefined)}
         </View>
       ) : (
       <View style={[styles.searchWrap, twoColumns && styles.searchWrapWeb, IS_WEB && searchFocused && styles.searchWrapFocused]}>
@@ -457,6 +446,7 @@ export const ExpertsListView = ({ navigation, route }) => {
         )}
       </View>
       )}
+      </View>
     </View>
   );
 
@@ -626,13 +616,16 @@ const styles = StyleSheet.create({
   titleBlock: {
     gap: Spacings.sm,
   },
-  backRow: {
+  // Ligne du haut : parcours à gauche, fermeture à droite (hauteur du bouton, même sans lui).
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.sm,
+    justifyContent: 'space-between',
+    minHeight: 46,
+    marginBottom: Spacings.xs,
   },
   // Même gabarit que le bouton de fermeture du profil expert.
-  back: {
+  close: {
     width: 46,
     height: 46,
     borderRadius: 23,
@@ -640,11 +633,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Le chevron paraît décentré vers la droite : léger recalage.
-  backIcon: {
-    marginLeft: -2,
-  },
-  backText: {
+  kicker: {
     fontFamily: 'Poppins-Bold',
     fontSize: 13,
     letterSpacing: 1,
@@ -737,13 +726,6 @@ const styles = StyleSheet.create({
   },
   filtersWeb: {
     flexDirection: 'row',
-  },
-  filtersPair: {
-    flexDirection: 'row',
-    gap: Spacings.sm,
-  },
-  filtersPairWeb: {
-    flex: 2,
   },
   filterWrap: {
     marginTop: 0,

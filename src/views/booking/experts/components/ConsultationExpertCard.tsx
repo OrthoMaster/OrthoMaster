@@ -133,7 +133,7 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
         </Pressable>
 
         {/* ---- Prix (à gauche, sous le portrait) et actions aux couleurs de l'expert ---- */}
-        <View style={styles.actions}>
+        <View style={[styles.actions, { backgroundColor: tint(accent, 0.08) }]}>
           <View style={styles.price}>
             {consult ? (
               <>
@@ -145,7 +145,8 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
           <Pressable
             style={({ pressed }) => [
               styles.action,
-              { borderColor: withAlpha(accent, 0.45), backgroundColor: withAlpha(accent, 0.1) },
+              // Fond blanc : le bouton se détache du pied de carte teinté.
+              { borderColor: withAlpha(accent, 0.45), backgroundColor: Colors.white },
               pressed && styles.actionPressed,
             ]}
             onPress={onMessage}
@@ -256,10 +257,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.subtext2,
   },
-  // Bas de la carte, sans séparateur : prix à gauche, boutons à droite.
+  // Pied de carte sur fond très clair de la couleur de l'expert : prix à gauche, boutons à droite.
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingTop: CARD_PADDING,
+    borderBottomLeftRadius: CARD_RADIUS,
+    borderBottomRightRadius: CARD_RADIUS,
     gap: Spacings.xs,
     paddingHorizontal: CARD_PADDING,
     paddingBottom: CARD_PADDING,

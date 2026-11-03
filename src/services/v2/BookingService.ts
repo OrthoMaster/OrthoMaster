@@ -581,8 +581,6 @@ export const getBookingExperts = async (params?: {
   consultation?: number;
   /** Filtre Nom (nom, titre). */
   name?: string;
-  /** Filtre Ville : ville ou début de code postal d'un lieu de l'expert. */
-  city?: string;
 }): Promise<BookingExpertsPage | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/experts`, { params })
@@ -614,11 +612,11 @@ export const getBookingThemes = async (params?: { page?: number; q?: string }): 
  */
 /**
  * Recherche intelligente d'experts. Consultation : sur leurs domaines, références et présentation
- * (sans les thèmes), parmi ceux qui la proposent ; name / city restreignent les candidats.
+ * (sans les thèmes), parmi ceux qui la proposent ; name restreint les candidats.
  */
 export const smartSearchExperts = async (
   q: string,
-  filters?: { consultation?: number; name?: string; city?: string }
+  filters?: { consultation?: number; name?: string }
 ): Promise<SmartSearchResult<BookingExpertListItem> | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/search`, { params: { type: 'experts', q, ...filters } })
