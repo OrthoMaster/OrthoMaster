@@ -6,6 +6,7 @@ import { ExpertiseOffersView } from '../../views/booking/expertise/ExpertiseOffe
 import { ExpertiseOfferFormView } from '../../views/booking/expertise/ExpertiseOfferFormView';
 import { ExpertiseAvailabilityView } from '../../views/booking/expertise/ExpertiseAvailabilityView';
 import { ExpertiseProfileFormView } from '../../views/booking/expertise/ExpertiseProfileFormView';
+import { ExpertiseConsultationView } from '../../views/booking/expertise/ExpertiseConsultationView';
 
 const ExpertiseStackNav = createStackNavigator();
 
@@ -30,6 +31,12 @@ export const ExpertiseStack = () => {
         options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
       />
       <ExpertiseStackNav.Screen name="expertise-availability" component={ExpertiseAvailabilityView} />
+      {/* Consultation : prix, durée, délai — l'activation reste sur l'accueil Expertise. */}
+      <ExpertiseStackNav.Screen
+        name="expertise-consultation"
+        component={ExpertiseConsultationView}
+        options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
+      />
       <ExpertiseStackNav.Screen
         name="expertise-profile"
         component={ExpertiseProfileFormView}

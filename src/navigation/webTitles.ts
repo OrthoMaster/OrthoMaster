@@ -38,6 +38,7 @@ const ROUTE_TITLES: Record<string, string> = {
   'expertise-offers': 'Mes offres',
   'expertise-offer-form': 'Offre',
   'expertise-availability': 'Disponibilités',
+  'expertise-consultation': 'Consultation',
 };
 
 const APP_NAME = 'OrthoMaster';

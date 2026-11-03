@@ -834,6 +834,8 @@ export const updateMyConsultation = async (input: {
   enabled?: boolean;
   price?: number | null;
   max_minutes?: number | null;
+  /** Délai minimum propre (jours) ; null = même délai que les thèmes. */
+  min_notice_days?: number | null;
 }): Promise<BookingResult<ExpertBookingSetup>> => {
   return axiosInstance
     .put(`${baseUrl}/booking/me/consultation`, input)

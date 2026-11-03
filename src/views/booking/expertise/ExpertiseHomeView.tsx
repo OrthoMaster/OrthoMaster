@@ -25,14 +25,17 @@ import {
   expertShowcaseUrl,
   getMyBookingSetup,
   updateMyBookingSettings,
+  updateMyConsultation,
 } from '../../../services/v2/BookingService';
 import { ExpertiseSectionCard } from '../components/ExpertiseSectionCard';
 import { ShowcaseWebViewModal } from '../components/ShowcaseWebViewModal';
-import { notify } from '../bookingActions';
+import { confirmAction, notify } from '../bookingActions';
 import { withAlpha } from '../bookingPalette';
 import { expertTheme } from '../expertTheme';
 import { ExpertIdentityCard } from '../components/ExpertIdentityCard';
-import { ConsultationSettingsCard } from './components/ConsultationSettingsCard';
+import { ExpertiseServiceCard } from './components/ExpertiseServiceCard';
+import { CONSULT_COLOR, CONSULT_SOFT, durationText } from '../bookingKinds';
+import { formatPrice } from '../bookingFormat';
 
 const QUERY_KEY = ['booking', 'me'];
 
@@ -55,8 +58,8 @@ type ExpertStatus = 'online' | 'incomplete' | 'off';
 /** online : reçoit des demandes ; incomplete : activé mais rien à réserver ; off : désactivé. */
 const STATUS: Record<ExpertStatus, { dot: string; text: string; label: string }> = {
   online: { dot: Colors.success, text: Colors.success, label: 'Reçoit des demandes' },
-  incomplete: { dot: Colors.warning, text: Colors.yellowDark, label: 'Activé · profil incomplet' },
-  off: { dot: Colors.gray, text: Colors.subtext2, label: 'Demandes désactivées' },
+  incomplete: { dot: Colors.warning, text: Colors.yellowDark, label: 'Activé · incomplet' },
+  off: { dot: Colors.gray, text: Colors.subtext2, label: 'Désactivé' },
 };
 
 /** Pastille posée sur l'avatar ; pulsation seulement quand l'expert reçoit des demandes. */
@@ -102,7 +105,7 @@ export const ExpertiseHomeView = ({ navigation }) => {
   const bottomInset = useFloatingTabBarInset();
   const { width } = useWindowDimensions();
   const [showShowcase, setShowShowcase] = useState(false);
-  const [savingToggle, setSavingToggle] = useState(false);
+  const [savingToggle, setSavingToggle] = useState<'themes' | 'consultation' | null>(null);
 
   // Indicateur réservé au tirage manuel : lié à isFetching, il apparaissait à chaque retour
   // sur l'écran (rechargement du cache partagé) et décalait la page vers le bas sur iOS.
@@ -132,11 +135,23 @@ export const ExpertiseHomeView = ({ navigation }) => {
 
   const activeOffers = setup.offers.filter((offer) => offer.active_flg);
   const liveRules = setup.rules.filter((rule) => !rule.expired);
-  // La consultation sur mesure (v3) suffit à recevoir des demandes, sans thème.
-  const missingOffer = activeOffers.length === 0 && !setup.consultation?.enabled;
+  const missingOffer = activeOffers.length === 0;
   const missingRule = liveRules.length === 0;
-  const incomplete = resolved.enabled_flg && (missingOffer || missingRule);
-  const statusKey: ExpertStatus = !resolved.enabled_flg ? 'off' : incomplete ? 'incomplete' : 'online';
+
+  /* ---- Thèmes et Consultation : deux activations indépendantes ---- */
+  const themesOn = resolved.enabled_flg;
+  // Thèmes : il faut un thème actif et des demi-journées ouvertes pour être réservé.
+  const themesKey: ExpertStatus = !themesOn ? 'off' : missingOffer || missingRule ? 'incomplete' : 'online';
+  const consult = setup.consultation;
+  const consultOn = !!consult?.enabled;
+  const consultKey: ExpertStatus = !consultOn ? 'off' : consult?.price == null ? 'incomplete' : 'online';
+  // Pastille du profil : en ligne si l'un des deux reçoit des demandes.
+  const statusKey: ExpertStatus =
+    themesKey === 'online' || consultKey === 'online'
+      ? 'online'
+      : themesKey === 'incomplete' || consultKey === 'incomplete'
+        ? 'incomplete'
+        : 'off';
   const status = STATUS[statusKey];
 
   // Lien vitrine seulement une fois la page publiée (brochure_published_at).
@@ -151,22 +166,63 @@ export const ExpertiseHomeView = ({ navigation }) => {
   /* ---- Actions ---- */
 
   // Optimiste : l'interrupteur bascule tout de suite, retour arrière si le serveur refuse.
-  const toggleEnabled = async (value: boolean) => {
+  const toggleThemes = async (value: boolean) => {
+    // Pas de demande sur les thèmes sans au moins un thème actif.
+    if (value && missingOffer) {
+      confirmAction(
+        'Aucun thème actif',
+        'Créez et activez au moins un thème avant d’accepter des demandes sur vos thèmes.',
+        'Créer un thème',
+        () => navigation.navigate('expertise-offer-form')
+      );
+      return;
+    }
+
     const previous = setup;
     queryClient.setQueryData(QUERY_KEY, {
       ...setup,
       settings: { ...settings, resolved: { ...resolved, enabled_flg: value } },
     });
 
-    setSavingToggle(true);
+    setSavingToggle('themes');
     const result = await updateMyBookingSettings({ enabled_flg: value });
-    setSavingToggle(false);
+    setSavingToggle(null);
 
     if (result.ok) {
       queryClient.setQueryData(QUERY_KEY, result.data);
     } else {
       queryClient.setQueryData(QUERY_KEY, previous);
-      notify('Enregistrement impossible', result.message ?? 'Réessayez dans un instant.');
+      const failure = result as Extract<typeof result, { ok: false }>;
+      notify('Enregistrement impossible', failure.message ?? 'Réessayez dans un instant.');
+    }
+  };
+
+  const toggleConsultation = async (value: boolean) => {
+    if (!consult) return;
+    // Pas de consultation sans prix : on passe par ses réglages.
+    if (value && consult.price == null) {
+      confirmAction(
+        'Prix manquant',
+        'Indiquez d’abord votre prix pour 30 minutes dans les réglages de la consultation.',
+        'Régler',
+        () => navigation.navigate('expertise-consultation')
+      );
+      return;
+    }
+
+    const previous = setup;
+    queryClient.setQueryData(QUERY_KEY, { ...setup, consultation: { ...consult, enabled: value } });
+
+    setSavingToggle('consultation');
+    const result = await updateMyConsultation({ enabled: value });
+    setSavingToggle(null);
+
+    if (result.ok) {
+      queryClient.setQueryData(QUERY_KEY, result.data);
+    } else {
+      queryClient.setQueryData(QUERY_KEY, previous);
+      const failure = result as Extract<typeof result, { ok: false }>;
+      notify('Enregistrement impossible', failure.message ?? 'Réessayez dans un instant.');
     }
   };
 
@@ -195,24 +251,24 @@ export const ExpertiseHomeView = ({ navigation }) => {
     : plural(liveRules.length, 'demi-journée', 'demi-journées') +
       (exceptionsCount > 0 ? ` · ${plural(exceptionsCount, 'exception', 'exceptions')}` : '');
 
-  const sections = [
-    {
-      key: 'offers',
-      route: 'expertise-offers',
-      icon: 'school-outline' as const,
-      title: 'Offres',
-      summary: missingOffer ? 'Aucune offre active' : plural(activeOffers.length, 'offre active', 'offres actives'),
-      warning: missingOffer,
-    },
-    {
-      key: 'availability',
-      route: 'expertise-availability',
-      icon: 'calendar-clock' as const,
-      title: 'Disponibilités',
-      summary: availabilitySummary,
-      warning: missingRule,
-    },
-  ];
+  const themesSummary = missingOffer
+    ? 'Aucun thème actif'
+    : plural(activeOffers.length, 'thème actif', 'thèmes actifs') +
+      (setup.offers.length > activeOffers.length ? ` · ${setup.offers.length - activeOffers.length} inactif(s)` : '');
+
+  const noticeDays = consult?.min_notice_resolved ?? resolved.min_notice_days;
+  const consultSummary =
+    consult?.price == null
+      ? 'Prix pour 30 minutes à définir'
+      : `${formatPrice(consult.price)} / 30 min · jusqu’à ${durationText(consult.max_minutes)} · délai ${noticeDays} j`;
+
+  const themesWarning =
+    themesOn && missingOffer
+      ? 'Aucun thème actif : vos thèmes ne sont pas proposés.'
+      : themesOn && missingRule
+        ? 'Aucune demi-journée ouverte : ouvrez-en dans Disponibilités pour être réservé.'
+        : null;
+  const consultWarning = consultOn && consult?.price == null ? 'Indiquez votre prix pour 30 minutes.' : null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -272,61 +328,71 @@ export const ExpertiseHomeView = ({ navigation }) => {
           )}
         </ExpertIdentityCard>
 
-        {/* ---- Activation ---- */}
-        <View style={styles.card}>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTexts}>
-              <Text style={styles.toggleTitle}>Accepter les demandes</Text>
-              <Text style={styles.toggleHint}>
-                {resolved.enabled_flg
-                  ? 'Vos confrères peuvent vous proposer un rendez-vous.'
-                  : "Votre profil n'apparaît pas à vos confrères."}
-              </Text>
-            </View>
-            <Switch
-              value={resolved.enabled_flg}
-              onValueChange={toggleEnabled}
-              disabled={savingToggle}
-              trackColor={{ false: Colors.disabledBackground, true: Colors.lblue }}
-              thumbColor={Colors.white}
-              // iOS peint ce fond sous la piste : fixe, il déborde en gris à droite quand l'interrupteur est activé.
-              ios_backgroundColor={resolved.enabled_flg ? Colors.lblue : Colors.disabledBackground}
-            />
-          </View>
-
-          {incomplete && (
-            <View style={styles.warning}>
-              <MaterialCommunityIcons name="alert-outline" size={20} color={Colors.warning} />
-              <Text style={styles.warningText}>
-                Profil incomplet : ajoutez
-                {missingOffer ? ' au moins une offre active' : ''}
-                {missingOffer && missingRule ? ' et' : ''}
-                {missingRule ? ' au moins une demi-journée dans la semaine type' : ''} pour recevoir des demandes.
-              </Text>
-            </View>
-          )}
         </View>
 
-        {/* ---- Consultation sur mesure (v3) ---- */}
-        <ConsultationSettingsCard setup={setup} />
-
-        </View>
-
-        {/* ---- Configuration ---- */}
+        {/* ---- Mes services : Thèmes et Consultation, même présentation ---- */}
         <View style={wide ? styles.webConfigColumn : styles.stack}>
-        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide]}>Configuration</Text>
+        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide]}>Mes services</Text>
+
+        <ExpertiseServiceCard
+          icon="lightbulb-on-outline"
+          color={Colors.lblue}
+          soft={Colors.lblue3}
+          title="Thèmes"
+          description="Des thèmes préparés à l'avance, réservés par demi-journées, en visio ou sur place."
+          enabled={themesOn}
+          saving={savingToggle === 'themes'}
+          onToggle={toggleThemes}
+          stateLabel={themesKey === 'online' ? 'Reçoit des demandes' : themesKey === 'incomplete' ? 'Activé · incomplet' : 'Désactivé'}
+          stateColor={STATUS[themesKey].text}
+          warning={themesWarning}
+          links={[
+            {
+              icon: 'school-outline',
+              title: 'Mes thèmes',
+              summary: themesSummary,
+              warning: themesOn && missingOffer,
+              onPress: () => navigation.navigate('expertise-offers'),
+            },
+          ]}
+        />
+
+        {consult ? (
+          <ExpertiseServiceCard
+            icon="chat-question-outline"
+            color={CONSULT_COLOR}
+            soft={CONSULT_SOFT}
+            title="Consultation"
+            description="Vos confrères vous posent leur propre question, en visio, par tranches de 30 minutes."
+            enabled={consultOn}
+            saving={savingToggle === 'consultation'}
+            onToggle={toggleConsultation}
+            stateLabel={consultKey === 'online' ? 'Reçoit des demandes' : consultKey === 'incomplete' ? 'Activé · incomplet' : 'Désactivé'}
+            stateColor={STATUS[consultKey].text}
+            warning={consultWarning}
+            links={[
+              {
+                icon: 'cash-clock',
+                title: 'Prix, durée et délai',
+                summary: consultSummary,
+                warning: consultOn && consult.price == null,
+                onPress: () => navigation.navigate('expertise-consultation'),
+              },
+            ]}
+          />
+        ) : null}
+
+        {/* ---- Commun aux deux services ---- */}
+        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide]}>Mon agenda</Text>
         <View style={styles.sections}>
-          {sections.map((section, index) => (
-            <ExpertiseSectionCard
-              key={section.key}
-              last={index === sections.length - 1}
-              icon={section.icon}
-              title={section.title}
-              summary={section.summary}
-              warning={section.warning}
-              onPress={() => navigation.navigate(section.route)}
-            />
-          ))}
+          <ExpertiseSectionCard
+            last
+            icon="calendar-clock"
+            title="Disponibilités"
+            summary={`${availabilitySummary} · thèmes et consultation`}
+            warning={themesOn && missingRule}
+            onPress={() => navigation.navigate('expertise-availability')}
+          />
         </View>
         </View>
         </View>
