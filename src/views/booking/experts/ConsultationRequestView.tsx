@@ -93,8 +93,9 @@ export const ConsultationRequestView = ({ navigation, route }) => {
 
   /* ---- Calendrier ---- */
 
-  const firstDate = detail?.first_date;
-  const lastDate = detail?.last_date;
+  // Bornes propres à la consultation (son délai minimum peut différer de celui des thèmes).
+  const firstDate = info?.first_date ?? detail?.first_date;
+  const lastDate = info?.last_date ?? detail?.last_date;
   const [month, setMonth] = useState<{ year: number; month: number } | null>(null);
 
   useEffect(() => {

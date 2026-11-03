@@ -88,6 +88,9 @@ export type BookingKind = 'offer' | 'consultation';
 export interface ConsultationInfo {
   /** Prix TTC de 30 minutes. */
   price_30: number;
+  /** Premier et dernier jour réservables pour une consultation (délai minimum propre). */
+  first_date?: string;
+  last_date?: string;
   currency: string;
   step_minutes: number;
   max_minutes: number;
@@ -161,6 +164,10 @@ export interface ExpertConsultationSettings {
   /** Prix TTC de 30 minutes ; null tant qu'il n'est pas renseigné. */
   price: number | null;
   max_minutes: number;
+  /** Délai minimum propre (jours) ; null = même délai que les thèmes. */
+  min_notice_days?: number | null;
+  min_notice_resolved?: number;
+  themes_min_notice?: number;
   step_minutes: number;
   max_minutes_limit: number;
   price_max: number;
