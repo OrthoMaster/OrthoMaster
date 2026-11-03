@@ -97,7 +97,8 @@ const formatDeadline = (iso: string) => {
  * accepte, libéré s'il refuse ou ne répond pas à temps.
  *
  * Présentiel : chaque demi-journée montre l'adresse complète de son lieu.
- * Web : fenêtre centrée ; sur grand écran deux colonnes (rendez-vous et message à gauche,
+ * Pas de message à l'expert ici : la messagerie permet de lui écrire directement.
+ * Web : fenêtre centrée ; sur grand écran deux colonnes (rendez-vous à gauche,
  * informations et montant à droite), pied (conditions, paiement) sur toute la largeur.
  */
 export const BookingCheckoutView = ({ navigation, route }) => {
@@ -147,13 +148,11 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   const zeroPrice = checkout?.pricing.amount_ttc === 0;
   const pricing = checkout?.pricing;
   const currency = (pricing?.currency ?? offer?.currency ?? 'eur').toUpperCase();
-  const messageMax = checkout?.message_max ?? 300;
 
   /* ---- Saisie ---- */
 
   const [address, setAddress] = useState('');
   const [rememberAddress, setRememberAddress] = useState(true);
-  const [message, setMessage] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string[]>>({});
@@ -309,7 +308,6 @@ export const BookingCheckoutView = ({ navigation, route }) => {
               duration_minutes: consultation.duration_minutes,
               subject: consultation.subject,
               address: address.trim(),
-              message: message.trim() || null,
             }
           : {
               offer_id: offer.id,
@@ -317,7 +315,6 @@ export const BookingCheckoutView = ({ navigation, route }) => {
               blocks: blocks.map((b) => ({ date: b.date, period: b.period })),
               off_calendar: offCalendar || undefined,
               address: address.trim(),
-              message: message.trim() || null,
             }
       );
 
@@ -560,31 +557,6 @@ export const BookingCheckoutView = ({ navigation, route }) => {
     </>
   );
 
-  const messageSection = (
-    <>
-    {/* ---- Message ---- */}
-    <Text style={styles.sectionTitle}>
-      Message à l'expert <Text style={styles.optional}>(facultatif)</Text>
-    </Text>
-    <View style={styles.card}>
-      <TextInput
-        style={[styles.input, styles.inputMessage]}
-        value={message}
-        onChangeText={setMessage}
-        placeholder="Votre contexte, vos questions…"
-        placeholderTextColor={Colors.subtext}
-        multiline
-        textAlignVertical="top"
-        maxLength={messageMax}
-        editable={!busy}
-      />
-      <Text style={styles.counter}>
-        {message.length} / {messageMax}
-      </Text>
-    </View>
-    </>
-  );
-
   const amountSection = (
     <>
     {/* ---- Montant ---- */}
@@ -713,7 +685,6 @@ export const BookingCheckoutView = ({ navigation, route }) => {
                 <View style={styles.webColumns}>
                   <View style={styles.webColumn}>
                     {appointmentSection}
-                    {messageSection}
                   </View>
                   <View style={styles.webColumn}>
                     {identitySection}
@@ -724,7 +695,6 @@ export const BookingCheckoutView = ({ navigation, route }) => {
                 <>
                   {identitySection}
                   {appointmentSection}
-                  {messageSection}
                   {amountSection}
                 </>
               )}
@@ -890,11 +860,6 @@ const styles = StyleSheet.create({
     marginTop: Spacings.lg,
     marginBottom: Spacings.sm,
   },
-  optional: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 13,
-    color: Colors.subtext,
-  },
   card: {
     padding: Spacings.md,
     borderRadius: 18,
@@ -955,9 +920,6 @@ const styles = StyleSheet.create({
   inputAddress: {
     minHeight: 84,
   },
-  inputMessage: {
-    minHeight: 96,
-  },
   inputError: {
     borderColor: Colors.danger,
   },
@@ -965,13 +927,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: 12,
     color: Colors.danger,
-    marginTop: Spacings.xxs,
-  },
-  counter: {
-    alignSelf: 'flex-end',
-    fontFamily: 'Poppins-Regular',
-    fontSize: 12,
-    color: Colors.subtext,
     marginTop: Spacings.xxs,
   },
   checkRow: {
