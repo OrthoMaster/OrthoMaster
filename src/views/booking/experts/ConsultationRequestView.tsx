@@ -32,6 +32,12 @@ import { confirmAction } from '../bookingActions';
 import { formatPrice, initials } from '../bookingFormat';
 import { MONTHS, WEEKDAYS_SHORT, formatLongDate, fromMinutes, isoDate, monthMatrix, toMinutes } from '../bookingDates';
 import { CONSULT_COLOR, CONSULT_COLOR_DARK, CONSULT_SOFT, durationText } from '../bookingKinds';
+import { withAlpha } from '../bookingPalette';
+
+/** Sujet : court, l'échange se poursuit ensuite dans la messagerie (même borne que le serveur). */
+const SUBJECT_MAX = 300;
+const MINUTES = [0, 30];
+const pad2 = (n: number) => String(n).padStart(2, '0');
 
 const IS_WEB = Platform.OS === 'web';
 const WEB_MAX_WIDTH = 720;
@@ -42,10 +48,11 @@ type Where = 'calendar' | 'other';
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /**
- * Demande de consultation sur mesure (mobile et web) : sujet, durée, puis horaire —
- * dans l'agenda de l'expert (heures libres toutes les 30 minutes) ou à une autre date
- * (« hors calendrier », 7 h – 21 h, l'expert accepte ou refuse). Le récapitulatif et le
- * paiement réutilisent l'écran des thèmes.
+ * Demande de consultation sur mesure (mobile et web) : sujet, durée estimée, puis horaire —
+ * dans l'agenda de l'expert ou à une autre date (« hors calendrier », 7 h – 21 h, l'expert
+ * accepte ou refuse). L'heure de début se choisit au-dessus du calendrier (heure, puis
+ * minutes, en 24 h) ; dans l'agenda, heures et jours sans créneau libre sont grisés l'un
+ * en fonction de l'autre. Le récapitulatif et le paiement réutilisent l'écran des thèmes.
  */
 export const ConsultationRequestView = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
@@ -67,14 +74,23 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   const [duration, setDuration] = useState<number | null>(null);
   const [where, setWhere] = useState<Where>('calendar');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [time, setTime] = useState<{ start_local: string; end_local: string } | null>(null);
+  // Heure de début choisie au-dessus du calendrier : heure puis minutes.
+  const [hour, setHour] = useState<number | null>(null);
+  const [minute, setMinute] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const start = hour !== null && minute !== null ? `${pad2(hour)}:${pad2(minute)}` : null;
+  const time =
+    start && duration ? { start_local: start, end_local: fromMinutes(toMinutes(start) + duration) } : null;
+  const clearTime = () => {
+    setHour(null);
+    setMinute(null);
+  };
 
   useEffect(() => {
     if (info && duration === null) setDuration(info.durations[1] ?? info.durations[0] ?? null);
   }, [info]);
 
-  const dirty = subject.trim().length > 0 || !!time;
+  const dirty = subject.trim().length > 0 || !!time || !!selectedDate;
   useBookingDirty(dirty);
 
   useEffect(() => {
@@ -125,31 +141,62 @@ export const ConsultationRequestView = ({ navigation, route }) => {
     return map;
   }, [calendar]);
 
-  // Hors calendrier : toutes les demi-heures de 7 h à 21 h, fin calculée avec la durée.
-  const otherTimes = useMemo(() => {
-    if (!info || !duration) return [];
-    const list: { start_local: string; end_local: string }[] = [];
+  // Hors calendrier : toutes les demi-heures de 7 h à 21 h.
+  const otherStarts = useMemo(() => {
+    if (!info) return [] as string[];
+    const list: string[] = [];
     for (let m = toMinutes(info.off_calendar.first_start); m <= toMinutes(info.off_calendar.last_start); m += 30) {
-      list.push({ start_local: fromMinutes(m), end_local: fromMinutes(m + duration) });
+      list.push(fromMinutes(m));
     }
     return list;
-  }, [info, duration]);
+  }, [info]);
 
+  // Heures de début possibles : hors calendrier toutes ; dans l'agenda, celles du jour choisi,
+  // ou à défaut celles d'au moins un jour du mois affiché.
+  const allowedStarts = useMemo(() => {
+    if (where === 'other') return new Set(otherStarts);
+    const days = selectedDate ? [timesByDate[selectedDate] ?? []] : Object.values(timesByDate);
+    return new Set(days.flat().map((t) => t.start_local));
+  }, [where, otherStarts, timesByDate, selectedDate]);
+
+  // Heures affichées (24 h) : plage hors calendrier, élargie aux heures libres de l'agenda.
+  const hours = useMemo(() => {
+    const set = new Set(otherStarts.map((t) => Number(t.slice(0, 2))));
+    Object.values(timesByDate).forEach((times) => times.forEach((t) => set.add(Number(t.start_local.slice(0, 2)))));
+    return [...set].sort((a, b) => a - b);
+  }, [otherStarts, timesByDate]);
+
+  const hourEnabled = (h: number) => MINUTES.some((m) => allowedStarts.has(`${pad2(h)}:${pad2(m)}`));
+  const minuteEnabled = (m: number) => hour !== null && allowedStarts.has(`${pad2(hour)}:${pad2(m)}`);
+
+  const pickHour = (h: number) => {
+    setHour(h);
+    // Minutes gardées si elles restent possibles, sinon les premières possibles.
+    const keep = minute !== null && allowedStarts.has(`${pad2(h)}:${pad2(minute)}`);
+    if (!keep) setMinute(MINUTES.find((m) => allowedStarts.has(`${pad2(h)}:${pad2(m)}`)) ?? null);
+  };
+
+  const inRange = (date: string) => !!firstDate && !!lastDate && date >= firstDate && date <= lastDate;
+  // Agenda : un jour est possible s'il a une heure libre, et l'heure choisie s'il y en a une.
   const dayEnabled = (date: string) =>
-    where === 'calendar' ? !!timesByDate[date]?.length : !!firstDate && !!lastDate && date >= firstDate && date <= lastDate;
+    where === 'calendar'
+      ? !!timesByDate[date]?.length && (!start || timesByDate[date].some((t) => t.start_local === start))
+      : inRange(date);
 
-  const timesFor = (date: string) => (where === 'calendar' ? timesByDate[date] ?? [] : otherTimes);
+  // Durée changée : l'heure ou le jour choisis peuvent ne plus être libres.
+  useEffect(() => {
+    if (where !== 'calendar' || !calendar || !start) return;
+    if (selectedDate && !timesByDate[selectedDate]?.some((t) => t.start_local === start)) setSelectedDate(null);
+  }, [calendar]);
 
   const resetTime = () => {
     setSelectedDate(null);
-    setTime(null);
+    clearTime();
   };
 
   const changeDuration = (next: number) => {
     if (next === duration) return;
     setDuration(next);
-    // L'heure choisie peut ne plus tenir dans la demi-journée.
-    setTime(null);
   };
 
   const changeWhere = (next: Where) => {
@@ -175,10 +222,10 @@ export const ConsultationRequestView = ({ navigation, route }) => {
 
   /* ---- Envoi ---- */
 
-  const subjectMax = info?.subject_max ?? 2000;
+  const subjectMax = Math.min(info?.subject_max ?? SUBJECT_MAX, SUBJECT_MAX);
   const total = info && duration ? info.price_30 * (duration / 30) : null;
   const subjectError = submitted && !subject.trim() ? 'Décrivez le sujet de votre consultation.' : null;
-  const timeError = submitted && !time ? 'Choisissez un jour et une heure.' : null;
+  const timeError = submitted && (!time || !selectedDate) ? 'Choisissez une heure et un jour.' : null;
 
   const submit = () => {
     setSubmitted(true);
@@ -234,12 +281,21 @@ export const ConsultationRequestView = ({ navigation, route }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={[styles.inner, IS_WEB && styles.innerWeb]}>
-            {/* ---- En-tête ---- */}
-            <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()} hitSlop={8} accessibilityLabel="Retour">
-              <Ionicons name="chevron-back" size={20} color={Colors.text} />
-              <Text style={styles.backText}>Experts</Text>
-            </TouchableOpacity>
+            {/* ---- En-tête : titre, fermeture à droite ---- */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Consultation sur mesure</Text>
+              <TouchableOpacity
+                style={[styles.close, { borderColor: withAlpha(CONSULT_COLOR, 0.45), backgroundColor: withAlpha(CONSULT_COLOR, 0.1) }]}
+                onPress={() => navigation.goBack()}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Fermer"
+              >
+                <Ionicons name="close" size={26} color={CONSULT_COLOR} />
+              </TouchableOpacity>
+            </View>
 
+            {/* ---- Expert : titre, nom, références ---- */}
             <View style={styles.hero}>
               <View style={[styles.avatar, { backgroundColor: expert?.palette_color ?? CONSULT_COLOR }]}>
                 {expert?.avatar_url ? (
@@ -249,13 +305,17 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                 )}
               </View>
               <View style={styles.flex}>
-                <Text style={styles.kicker}>Consultation sur mesure</Text>
+                {expert?.honorific ? (
+                  <Text style={[styles.kicker, { color: expert?.palette_color ?? CONSULT_COLOR }]} numberOfLines={1}>
+                    {expert.honorific}
+                  </Text>
+                ) : null}
                 <Text style={styles.expertName} numberOfLines={2}>
-                  {[expert?.honorific, expert?.name].filter(Boolean).join(' ')}
+                  {expert?.name ?? ''}
                 </Text>
-                {info ? (
-                  <Text style={styles.priceLine}>
-                    {formatPrice(info.price_30, info.currency.toUpperCase())} les 30 minutes · en visio
+                {expert?.credentials ? (
+                  <Text style={styles.credentials} numberOfLines={2}>
+                    {expert.credentials}
                   </Text>
                 ) : null}
               </View>
@@ -269,9 +329,9 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                 <Text style={styles.sectionTitle}>
                   Votre sujet <Text style={styles.required}>*</Text>
                 </Text>
-                <View style={styles.card}>
+                <View>
                   <TextInput
-                    style={[styles.input, !!subjectError && styles.inputError]}
+                    style={[styles.input, !!subjectError && styles.inputError, IS_WEB && ({ outlineStyle: 'none' } as any)]}
                     value={subject}
                     onChangeText={setSubject}
                     placeholder="Décrivez votre question, le cas, ce que vous attendez de l'échange…"
@@ -289,7 +349,7 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                 </View>
 
                 {/* ---- Durée ---- */}
-                <Text style={styles.sectionTitle}>Durée</Text>
+                <Text style={styles.sectionTitle}>Durée estimée</Text>
                 <View style={styles.chips}>
                   {info.durations.map((minutes) => {
                     const on = minutes === duration;
@@ -344,6 +404,58 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                   </View>
                 ) : null}
 
+                {/* ---- Heure de début (24 h) : heure, puis minutes ---- */}
+                <View style={[styles.card, styles.timeCard]}>
+                  <Text style={styles.pickerLabel}>Heure de début</Text>
+                  <View style={styles.hours}>
+                    {hours.map((h) => {
+                      const enabled = hourEnabled(h);
+                      const on = h === hour;
+                      return (
+                        <TouchableOpacity
+                          key={h}
+                          style={[styles.hourChip, on && styles.timeOn, !enabled && !on && styles.chipDisabled]}
+                          onPress={() => (on ? clearTime() : pickHour(h))}
+                          disabled={!enabled && !on}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: on, disabled: !enabled }}
+                          accessibilityLabel={`${h} heures`}
+                        >
+                          <Text style={[styles.timeText, on && styles.chipTextOn, !enabled && !on && styles.textDisabled]}>
+                            {pad2(h)}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  <Text style={styles.pickerLabel}>Minutes</Text>
+                  <View style={styles.hours}>
+                    {MINUTES.map((m) => {
+                      const enabled = minuteEnabled(m);
+                      const on = hour !== null && m === minute;
+                      return (
+                        <TouchableOpacity
+                          key={m}
+                          style={[styles.minuteChip, on && styles.timeOn, !enabled && styles.chipDisabled]}
+                          onPress={() => setMinute(m)}
+                          disabled={!enabled}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: on, disabled: !enabled }}
+                        >
+                          <Text style={[styles.timeText, on && styles.chipTextOn, !enabled && styles.textDisabled]}>
+                            {hour !== null ? `${pad2(hour)}:${pad2(m)}` : `--:${pad2(m)}`}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {time ? (
+                    <Text style={styles.timeSummary}>
+                      {time.start_local} – {time.end_local} · {durationText(duration)}
+                    </Text>
+                  ) : null}
+                </View>
+
                 <View style={[styles.card, !!timeError && styles.cardError]}>
                   <View style={styles.monthNav}>
                     <TouchableOpacity
@@ -380,7 +492,6 @@ export const ConsultationRequestView = ({ navigation, route }) => {
 
                   {month &&
                     monthMatrix(month.year, month.month).map((week, w) => {
-                      const open = selectedDate ? week.indexOf(selectedDate) : -1;
                       return (
                         <Fragment key={w}>
                           <View style={styles.week}>
@@ -388,16 +499,13 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                               if (!date) return <View key={d} style={styles.day} />;
                               const enabled = dayEnabled(date);
                               const active = date === selectedDate;
-                              const chosen = !!time && date === selectedDate;
+                              const chosen = active;
                               return (
                                 <TouchableOpacity
                                   key={d}
                                   style={styles.day}
                                   disabled={!enabled}
-                                  onPress={() => {
-                                    setSelectedDate(active ? null : date);
-                                    if (!active) setTime(null);
-                                  }}
+                                  onPress={() => setSelectedDate(active ? null : date)}
                                   accessibilityLabel={formatLongDate(date)}
                                 >
                                   <View
@@ -422,27 +530,6 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                             })}
                           </View>
 
-                          {open >= 0 && (
-                            <View style={styles.timesPanel}>
-                              <Text style={styles.timesTitle}>{capitalize(formatLongDate(selectedDate!, year))}</Text>
-                              <View style={styles.times}>
-                                {timesFor(selectedDate!).map((t) => {
-                                  const on = time?.start_local === t.start_local;
-                                  return (
-                                    <TouchableOpacity
-                                      key={t.start_local}
-                                      style={[styles.time, on && styles.timeOn]}
-                                      onPress={() => setTime({ start_local: t.start_local, end_local: t.end_local })}
-                                      accessibilityRole="radio"
-                                      accessibilityState={{ selected: on }}
-                                    >
-                                      <Text style={[styles.timeText, on && styles.chipTextOn]}>{t.start_local}</Text>
-                                    </TouchableOpacity>
-                                  );
-                                })}
-                              </View>
-                            </View>
-                          )}
                         </Fragment>
                       );
                     })}
@@ -464,13 +551,20 @@ export const ConsultationRequestView = ({ navigation, route }) => {
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacings.sm) + Spacings.sm }]}>
             <View style={[styles.footerInner, IS_WEB && styles.innerWeb]}>
               <View style={styles.flex}>
-                <Text style={styles.footerLabel} numberOfLines={1}>
-                  {time && selectedDate
-                    ? `${capitalize(formatLongDate(selectedDate, year))} · ${time.start_local} – ${time.end_local}`
-                    : duration
-                      ? durationText(duration)
-                      : ' '}
-                </Text>
+                {/* Jour, puis début et fin choisis, au-dessus du prix. */}
+                <View style={styles.footerLine}>
+                  <Ionicons name="calendar-outline" size={14} color={selectedDate ? CONSULT_COLOR_DARK : Colors.subtext} />
+                  <Text style={[styles.footerLabel, !!selectedDate && styles.footerLabelOn]} numberOfLines={1}>
+                    {selectedDate ? capitalize(formatLongDate(selectedDate, year)) : 'Jour à choisir'}
+                  </Text>
+                </View>
+                <View style={styles.footerLine}>
+                  <Ionicons name="time-outline" size={14} color={time ? CONSULT_COLOR_DARK : Colors.subtext} />
+                  <Text style={[styles.footerLabel, !!time && styles.footerLabelOn]} numberOfLines={1}>
+                    {time ? `${time.start_local} – ${time.end_local}` : 'Heure à choisir'}
+                    {duration ? ` · ${durationText(duration)}` : ''}
+                  </Text>
+                </View>
                 <Text style={styles.footerTotal}>
                   {total !== null ? formatPrice(total, info.currency.toUpperCase()) : ' '}
                 </Text>
@@ -533,17 +627,28 @@ const styles = StyleSheet.create({
   },
 
   /* ---- En-tête ---- */
-  back: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 2,
-    marginLeft: -4,
+    justifyContent: 'space-between',
+    gap: Spacings.md,
+    marginBottom: Spacings.xs,
   },
-  backText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 14,
+  headerTitle: {
+    flex: 1,
+    fontFamily: 'Poppins-Bold',
+    fontSize: 24,
+    lineHeight: 32,
     color: Colors.text,
+  },
+  // Même gabarit que le bouton de fermeture du profil expert.
+  close: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   hero: {
     flexDirection: 'row',
@@ -551,7 +656,7 @@ const styles = StyleSheet.create({
     gap: Spacings.md,
     padding: Spacings.md,
     borderRadius: 20,
-    backgroundColor: CONSULT_SOFT,
+    backgroundColor: Colors.white,
   },
   avatar: {
     width: 64,
@@ -579,10 +684,11 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     color: Colors.text,
   },
-  priceLine: {
-    fontFamily: 'Poppins-Medium',
+  credentials: {
+    fontFamily: 'Poppins-Regular',
     fontSize: 13,
-    color: CONSULT_COLOR_DARK,
+    lineHeight: 18,
+    color: Colors.subtext2,
   },
 
   /* ---- Sections ---- */
@@ -605,12 +711,14 @@ const styles = StyleSheet.create({
   cardError: {
     borderColor: Colors.danger,
   },
+  // Un seul champ, posé directement sur le fond (pas de carte autour).
   input: {
-    minHeight: 120,
-    padding: Spacings.sm,
-    borderRadius: 12,
+    minHeight: 110,
+    padding: Spacings.md,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
+    backgroundColor: Colors.white,
     fontFamily: 'Roboto',
     fontSize: 15,
     lineHeight: 21,
@@ -623,6 +731,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: Spacings.xxs,
+    paddingHorizontal: Spacings.xxs,
   },
   counter: {
     fontFamily: 'Roboto',
@@ -781,22 +890,51 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     fontSize: 14,
   },
-  timesPanel: {
-    padding: Spacings.sm,
-    marginVertical: Spacings.xs,
-    borderRadius: 14,
-    backgroundColor: CONSULT_SOFT,
+  /* ---- Heure de début ---- */
+  timeCard: {
     gap: Spacings.xs,
   },
-  timesTitle: {
+  pickerLabel: {
     fontFamily: 'Poppins-Medium',
     fontSize: 13,
-    color: CONSULT_COLOR_DARK,
+    color: Colors.subtext2,
   },
-  times: {
+  hours: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  hourChip: {
+    width: 48,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: CONSULT_COLOR,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+  },
+  minuteChip: {
+    minWidth: 76,
+    paddingHorizontal: Spacings.sm,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: CONSULT_COLOR,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+  },
+  chipDisabled: {
+    borderColor: Colors.border,
+    backgroundColor: Colors.grayLight,
+  },
+  textDisabled: {
+    color: Colors.border,
+  },
+  timeSummary: {
+    marginTop: Spacings.xxs,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    color: CONSULT_COLOR_DARK,
   },
   time: {
     minWidth: 64,
@@ -825,6 +963,7 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Pied ---- */
+  // Semi-transparent : le contenu se devine dessous en défilant (flouté sur le web).
   footer: {
     position: 'absolute',
     left: 0,
@@ -832,9 +971,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingTop: Spacings.sm,
     paddingHorizontal: INSET,
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.86)',
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+    ...(IS_WEB ? ({ backdropFilter: 'blur(12px)' } as any) : null),
+  },
+  footerLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  footerLabelOn: {
+    fontFamily: 'Poppins-Medium',
+    color: Colors.text,
   },
   footerInner: {
     flexDirection: 'row',

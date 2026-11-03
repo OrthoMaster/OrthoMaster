@@ -27,7 +27,7 @@ interface ConsultationExpertCardProps {
   onPress: () => void;
   /** Bouton rond : écrire à l'expert. */
   onMessage: () => void;
-  /** Bouton « Réserver » : demander une consultation. */
+  /** Bouton « Envoyer une demande » : demander une consultation. */
   onBook: () => void;
   /** Ouverture du fil en cours (bouton message en attente). */
   messaging?: boolean;
@@ -166,10 +166,10 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
             onPress={onBook}
             hitSlop={4}
             accessibilityRole="button"
-            accessibilityLabel={`Réserver une consultation avec ${expert.name}`}
+            accessibilityLabel={`Envoyer une demande de consultation à ${expert.name}`}
           >
             <Ionicons name="calendar-outline" size={18} color={Colors.white} />
-            <Text style={styles.bookText}>Réserver</Text>
+            <Text style={styles.bookText}>Envoyer une demande</Text>
           </Pressable>
         </View>
       </View>
