@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useState } from 'react';
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -250,9 +250,27 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   const subjectError = submitted && !subject.trim() ? 'Décrivez le sujet de votre consultation.' : null;
   const timeError = submitted && (!time || !selectedDate) ? 'Choisissez une heure et un jour.' : null;
 
+  // Continuer avec un champ manquant : on remonte jusqu'à lui (sujet d'abord, puis horaire).
+  const scrollRef = useRef<ScrollView>(null);
+  const subjectRef = useRef<TextInput>(null);
+  const innerY = useRef(0);
+  const sectionY = useRef<{ subject: number; time: number }>({ subject: 0, time: 0 });
+  const scrollToSection = (key: 'subject' | 'time') =>
+    scrollRef.current?.scrollTo({ y: Math.max(0, innerY.current + sectionY.current[key] - Spacings.md), animated: true });
+
   const submit = () => {
     setSubmitted(true);
-    if (!subject.trim() || !time || !selectedDate || !duration) return;
+    if (!subject.trim()) {
+      scrollToSection('subject');
+      // Après le défilement : le clavier ne doit pas l'interrompre.
+      setTimeout(() => subjectRef.current?.focus(), 350);
+      return;
+    }
+    if (!time || !selectedDate) {
+      scrollToSection('time');
+      return;
+    }
+    if (!duration) return;
 
     const draft: ConsultationDraft = {
       duration_minutes: duration,
@@ -333,11 +351,15 @@ export const ConsultationRequestView = ({ navigation, route }) => {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={[styles.content, { paddingBottom: 120 + insets.bottom }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.inner, IS_WEB && styles.innerWeb]}>
+          <View
+            style={[styles.inner, IS_WEB && styles.innerWeb]}
+            onLayout={(e) => (innerY.current = e.nativeEvent.layout.y)}
+          >
             {/* ---- En-tête : titre, fermeture à droite ---- */}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Consultation sur mesure</Text>
@@ -383,11 +405,15 @@ export const ConsultationRequestView = ({ navigation, route }) => {
             ) : (
               <>
                 {/* ---- Sujet ---- */}
-                <Text style={styles.sectionTitle}>
+                <Text
+                  style={styles.sectionTitle}
+                  onLayout={(e) => (sectionY.current.subject = e.nativeEvent.layout.y)}
+                >
                   Votre sujet <Text style={styles.required}>*</Text>
                 </Text>
                 <View>
                   <TextInput
+                    ref={subjectRef}
                     style={[styles.input, !!subjectError && styles.inputError, IS_WEB && ({ outlineStyle: 'none' } as any)]}
                     value={subject}
                     onChangeText={setSubject}
@@ -428,7 +454,9 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                 </View>
 
                 {/* ---- Horaire ---- */}
-                <Text style={styles.sectionTitle}>Horaire</Text>
+                <Text style={styles.sectionTitle} onLayout={(e) => (sectionY.current.time = e.nativeEvent.layout.y)}>
+                  Horaire
+                </Text>
                 <View style={styles.segment}>
                   {(['calendar', 'other'] as Where[]).map((key) => {
                     const on = key === where;
@@ -462,7 +490,8 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                 ) : null}
 
                 {/* ---- Heure de début (24 h) : une ligne heure : minutes, réglée avec − / + ---- */}
-                <View style={[styles.card, styles.timeCard]}>
+                {timeError ? <Text style={styles.error}>{timeError}</Text> : null}
+                <View style={[styles.card, styles.timeCard, submitted && !time && styles.cardError]}>
                   <Text style={styles.pickerLabel}>Heure de début</Text>
                   <View style={styles.stepperRow}>
                     {stepper(
@@ -494,7 +523,7 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                   ) : null}
                 </View>
 
-                <View style={[styles.card, !!timeError && styles.cardError]}>
+                <View style={[styles.card, submitted && !selectedDate && styles.cardError]}>
                   <View style={styles.monthNav}>
                     <TouchableOpacity
                       style={[styles.navButton, canMonth(-1) && styles.navButtonOn]}
@@ -578,7 +607,6 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                     </Text>
                   )}
                 </View>
-                {timeError ? <Text style={styles.error}>{timeError}</Text> : null}
               </>
             )}
           </View>
