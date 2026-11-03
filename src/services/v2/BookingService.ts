@@ -67,8 +67,9 @@ export interface BookingOfferFormat {
   places: { postal_code: string | null; city: string | null }[];
 }
 
-/** Sans domaines : la liste ne les affiche pas. */
+/** Ligne de la liste des experts (domaines : pastilles de la carte Consultation). */
 export interface BookingExpertListItem extends BookingExpertBase {
+  domains?: BookingDomain[];
   /** Accepte des demandes : réservation activée, offre active et créneau ouvert. */
   online: boolean;
   /** Offres actives, seulement pour un expert qui accepte des demandes. */
@@ -1719,6 +1720,17 @@ export const startConversation = async (
 ): Promise<BookingResult<ChatConversationDetail>> => {
   return axiosInstance
     .post(`${baseUrl}/booking/conversations/start`, { offer_id: offerId, mode: mode ?? null, draft })
+    .then((response) => toResult<ChatConversationDetail>(response))
+    .catch(toFailure);
+};
+
+/**
+ * « Écrire à l'expert » depuis la liste Consultation : fil sans thème, ouvert par l'expert.
+ * POST /booking/conversations/start  { expert_id }
+ */
+export const startConversationWithExpert = async (expertId: number): Promise<BookingResult<ChatConversationDetail>> => {
+  return axiosInstance
+    .post(`${baseUrl}/booking/conversations/start`, { expert_id: expertId })
     .then((response) => toResult<ChatConversationDetail>(response))
     .catch(toFailure);
 };

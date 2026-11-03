@@ -149,6 +149,7 @@ export const BookingTabs = ({ navigation }) => {
   // Rétrécissement explicite : TypeScript ne le garde pas à travers la constante isExpert.
   const expert = setup.is_expert ? setup.expert : null;
 
+  // Onglet Experts : bleu (Thèmes) ; sa pile le passe en violet pendant le parcours Consultation.
   const expertsTab = (
     <BookingTab.Screen
       name="booking-experts"

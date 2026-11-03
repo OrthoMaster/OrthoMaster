@@ -30,10 +30,14 @@ import {
   getBookingThemes,
   smartSearchExperts,
   smartSearchThemes,
+  startConversationWithExpert,
 } from '../../../services/v2/BookingService';
 import { notify } from '../bookingActions';
 import { CONSULT_COLOR } from '../bookingKinds';
+import { withAlpha } from '../bookingPalette';
+import { openConversation } from '../messages/openConversation';
 import { ExpertCard } from './components/ExpertCard';
+import { ConsultationExpertCard } from './components/ConsultationExpertCard';
 import { ThemeCard } from './components/ThemeCard';
 
 /** Même valeur que BookingExpertController::PER_PAGE : sert au rang d'entrée en cascade. */
@@ -212,25 +216,45 @@ export const ExpertsListView = ({ navigation, route }) => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   };
 
-  const renderExpert = ({ item, index }: { item: BookingExpertListItem; index: number }) => (
+  // Consultation : « écrire » ouvre (ou reprend) le fil avec l'expert, saisie pré-remplie.
+  const [messagingId, setMessagingId] = useState<number | null>(null);
+  const messageExpert = async (expert: BookingExpertListItem) => {
+    if (messagingId) return;
+    setMessagingId(expert.id);
+    const result = await startConversationWithExpert(expert.id);
+    setMessagingId(null);
+    if (result.ok === false) {
+      notify('Conversation indisponible', result.message ?? 'Vérifiez votre connexion puis réessayez.');
+      return;
+    }
+    openConversation(navigation, result.data, 'Bonjour, je souhaiterais vous consulter au sujet de ');
+  };
+
+  const renderExpert = ({ item, index }: { item: BookingExpertListItem; index: number }) =>
+    consultationMode ? (
+      <ConsultationExpertCard
+        expert={item}
+        width={cardWidth}
+        indexInPage={index % PER_PAGE}
+        onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
+        onMessage={() => messageExpert(item)}
+        onBook={() => navigation.navigate('consultation-request', { expertId: item.id, preview: item })}
+        messaging={messagingId === item.id}
+      />
+    ) : (
     <ExpertCard
       expert={item}
       width={cardWidth}
       indexInPage={index % PER_PAGE}
-      defaultOpen={IS_WEB && !consultationMode}
+      defaultOpen={IS_WEB}
       // L'aperçu affiche l'en-tête du profil tout de suite, sans attendre la requête.
-      // Consultation : la demande s'ouvre directement.
-      onPress={() =>
-        consultationMode
-          ? navigation.navigate('consultation-request', { expertId: item.id, preview: item })
-          : navigation.navigate('expert-profile', { expertId: item.id, preview: item })
-      }
+      onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
       // Toucher un thème : le profil s'ouvre puis fait défiler les thèmes jusqu'à celui-ci.
       onOfferPress={(offerId) =>
         navigation.navigate('expert-profile', { expertId: item.id, preview: item, focusOfferId: offerId })
       }
     />
-  );
+    );
 
   const renderTheme = ({ item, index }: { item: BookingTheme; index: number }) => (
     <ThemeCard
@@ -271,6 +295,7 @@ export const ExpertsListView = ({ navigation, route }) => {
 
   // En-tête d'écran d'accueil : titre et recherche défilent avec la liste.
   // Passé en élément (pas en composant) : le champ garde le focus pendant la frappe.
+  const accent = consultationMode ? CONSULT_COLOR : Colors.lblueDark;
   const listHeader = (
     // Web, grand écran : comme l'Agenda, titre à gauche et recherche à droite sur une ligne.
     <View
@@ -281,18 +306,21 @@ export const ExpertsListView = ({ navigation, route }) => {
       ]}
     >
       <View style={[styles.titleBlock, twoColumns && styles.titleWeb]}>
-        {navigation.canGoBack() ? (
-          <TouchableOpacity
-            style={styles.back}
-            onPress={() => navigation.goBack()}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-          >
-            <Ionicons name="chevron-back" size={20} color={Colors.text} />
-            <Text style={styles.backText}>{consultationMode ? 'Consultation' : 'Thèmes'}</Text>
-          </TouchableOpacity>
-        ) : null}
+        {/* Bouton rond (même gabarit que la fermeture du profil) et parcours en cours. */}
+        <View style={styles.backRow}>
+          {navigation.canGoBack() ? (
+            <TouchableOpacity
+              style={[styles.back, { borderColor: withAlpha(accent, 0.45), backgroundColor: withAlpha(accent, 0.1) }]}
+              onPress={() => navigation.goBack()}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Retour"
+            >
+              <Ionicons name="chevron-back" size={24} color={accent} style={styles.backIcon} />
+            </TouchableOpacity>
+          ) : null}
+          <Text style={[styles.backText, { color: accent }]}>{consultationMode ? 'Consultation' : 'Thèmes'}</Text>
+        </View>
         <Text style={[styles.title, twoColumns && styles.titleInline]}>
           {consultationMode
             ? 'Choisissez votre expert'
@@ -389,7 +417,7 @@ export const ExpertsListView = ({ navigation, route }) => {
     const estimate = (item: any) =>
       showThemes
         ? (item.image ? cardWidth * 0.42 : 64) + 190 + (item.formats?.length ?? 1) * 26
-        : 140 + (!consultationMode && item.online && item.offers?.length ? 40 + item.offers.length * 56 : 0);
+        : (consultationMode ? 200 : 140) + (!consultationMode && item.online && item.offers?.length ? 40 + item.offers.length * 56 : 0);
     const items: any[] = showThemes ? themes : experts;
     const gridColumns: { item: any; index: number }[][] = [[], []];
     const heights = [0, 0];
@@ -522,17 +550,29 @@ const styles = StyleSheet.create({
   titleBlock: {
     gap: Spacings.sm,
   },
-  back: {
+  backRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 2,
-    marginLeft: -4,
+    gap: Spacings.sm,
+  },
+  // Même gabarit que le bouton de fermeture du profil expert.
+  back: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Le chevron paraît décentré vers la droite : léger recalage.
+  backIcon: {
+    marginLeft: -2,
   },
   backText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 14,
-    color: Colors.text,
+    fontFamily: 'Poppins-Bold',
+    fontSize: 13,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   titleInline: {
     maxWidth: undefined,
@@ -585,8 +625,9 @@ const styles = StyleSheet.create({
   title: {
     maxWidth: '90%',
     fontFamily: 'Poppins-Bold',
-    fontSize: 30,
-    lineHeight: 38,
+    fontSize: 26,
+    lineHeight: 34,
+    letterSpacing: -0.3,
     color: Colors.text,
   },
 
