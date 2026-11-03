@@ -176,6 +176,29 @@ export const ConsultationRequestView = ({ navigation, route }) => {
     if (!keep) setMinute(MINUTES.find((m) => allowedStarts.has(`${pad2(h)}:${pad2(m)}`)) ?? null);
   };
 
+  // Boutons − / + : on passe à l'heure (ou aux minutes) possible suivante ; sans choix,
+  // + part de la première et − de la dernière.
+  const openHours = hours.filter(hourEnabled);
+  const nextHour = (dir: 1 | -1): number | null => {
+    if (hour === null) return dir > 0 ? openHours[0] ?? null : openHours[openHours.length - 1] ?? null;
+    const list = dir > 0 ? openHours : [...openHours].reverse();
+    return list.find((h) => (dir > 0 ? h > hour : h < hour)) ?? null;
+  };
+  const openMinutes = MINUTES.filter(minuteEnabled);
+  const nextMinute = (dir: 1 | -1): number | null => {
+    if (hour === null || minute === null) return null;
+    const list = dir > 0 ? openMinutes : [...openMinutes].reverse();
+    return list.find((m) => (dir > 0 ? m > minute : m < minute)) ?? null;
+  };
+  const stepHour = (dir: 1 | -1) => {
+    const next = nextHour(dir);
+    if (next !== null) pickHour(next);
+  };
+  const stepMinute = (dir: 1 | -1) => {
+    const next = nextMinute(dir);
+    if (next !== null) setMinute(next);
+  };
+
   const inRange = (date: string) => !!firstDate && !!lastDate && date >= firstDate && date <= lastDate;
   // Agenda : un jour est possible s'il a une heure libre, et l'heure choisie s'il y en a une.
   const dayEnabled = (date: string) =>
@@ -270,6 +293,40 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   }
 
   const year = new Date().getFullYear();
+
+  // Réglage − valeur + (heure ou minutes).
+  const stepper = (
+    value: string,
+    onMinus: () => void,
+    onPlus: () => void,
+    canMinus: boolean,
+    canPlus: boolean,
+    label: string
+  ) => (
+    <View style={styles.stepper}>
+      <TouchableOpacity
+        style={[styles.stepButton, !canMinus && styles.stepButtonOff]}
+        onPress={onMinus}
+        disabled={!canMinus}
+        hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} précédente`}
+      >
+        <Ionicons name="remove" size={20} color={canMinus ? CONSULT_COLOR_DARK : Colors.border} />
+      </TouchableOpacity>
+      <Text style={[styles.stepValue, value === '--' && styles.stepValueEmpty]}>{value}</Text>
+      <TouchableOpacity
+        style={[styles.stepButton, !canPlus && styles.stepButtonOff]}
+        onPress={onPlus}
+        disabled={!canPlus}
+        hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} suivante`}
+      >
+        <Ionicons name="add" size={20} color={canPlus ? CONSULT_COLOR_DARK : Colors.border} />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -404,55 +461,36 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                   </View>
                 ) : null}
 
-                {/* ---- Heure de début (24 h) : heure, puis minutes ---- */}
+                {/* ---- Heure de début (24 h) : une ligne heure : minutes, réglée avec − / + ---- */}
                 <View style={[styles.card, styles.timeCard]}>
                   <Text style={styles.pickerLabel}>Heure de début</Text>
-                  <View style={styles.hours}>
-                    {hours.map((h) => {
-                      const enabled = hourEnabled(h);
-                      const on = h === hour;
-                      return (
-                        <TouchableOpacity
-                          key={h}
-                          style={[styles.hourChip, on && styles.timeOn, !enabled && !on && styles.chipDisabled]}
-                          onPress={() => (on ? clearTime() : pickHour(h))}
-                          disabled={!enabled && !on}
-                          accessibilityRole="radio"
-                          accessibilityState={{ selected: on, disabled: !enabled }}
-                          accessibilityLabel={`${h} heures`}
-                        >
-                          <Text style={[styles.timeText, on && styles.chipTextOn, !enabled && !on && styles.textDisabled]}>
-                            {pad2(h)}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
+                  <View style={styles.stepperRow}>
+                    {stepper(
+                      hour !== null ? pad2(hour) : '--',
+                      () => stepHour(-1),
+                      () => stepHour(1),
+                      nextHour(-1) !== null,
+                      nextHour(1) !== null,
+                      'heure'
+                    )}
+                    <Text style={styles.stepperColon}>:</Text>
+                    {stepper(
+                      minute !== null && hour !== null ? pad2(minute) : '--',
+                      () => stepMinute(-1),
+                      () => stepMinute(1),
+                      nextMinute(-1) !== null,
+                      nextMinute(1) !== null,
+                      'minutes'
+                    )}
+                    {time ? (
+                      <View style={styles.stepperEnd}>
+                        <Ionicons name="arrow-forward" size={14} color={Colors.subtext2} />
+                        <Text style={styles.stepperEndText}>{time.end_local}</Text>
+                      </View>
+                    ) : null}
                   </View>
-                  <Text style={styles.pickerLabel}>Minutes</Text>
-                  <View style={styles.hours}>
-                    {MINUTES.map((m) => {
-                      const enabled = minuteEnabled(m);
-                      const on = hour !== null && m === minute;
-                      return (
-                        <TouchableOpacity
-                          key={m}
-                          style={[styles.minuteChip, on && styles.timeOn, !enabled && styles.chipDisabled]}
-                          onPress={() => setMinute(m)}
-                          disabled={!enabled}
-                          accessibilityRole="radio"
-                          accessibilityState={{ selected: on, disabled: !enabled }}
-                        >
-                          <Text style={[styles.timeText, on && styles.chipTextOn, !enabled && styles.textDisabled]}>
-                            {hour !== null ? `${pad2(hour)}:${pad2(m)}` : `--:${pad2(m)}`}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                  {time ? (
-                    <Text style={styles.timeSummary}>
-                      {time.start_local} – {time.end_local} · {durationText(duration)}
-                    </Text>
+                  {where === 'calendar' && openHours.length === 0 && calendar ? (
+                    <Text style={styles.pickerHint}>Aucune heure libre ce mois-ci pour cette durée.</Text>
                   ) : null}
                 </View>
 
@@ -899,42 +937,62 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.subtext2,
   },
-  hours: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  hourChip: {
-    width: 48,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: CONSULT_COLOR,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-  },
-  minuteChip: {
-    minWidth: 76,
-    paddingHorizontal: Spacings.sm,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: CONSULT_COLOR,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-  },
-  chipDisabled: {
-    borderColor: Colors.border,
-    backgroundColor: Colors.grayLight,
-  },
-  textDisabled: {
-    color: Colors.border,
-  },
-  timeSummary: {
-    marginTop: Spacings.xxs,
-    fontFamily: 'Poppins-Medium',
+  pickerHint: {
+    fontFamily: 'Roboto',
     fontSize: 13,
-    color: CONSULT_COLOR_DARK,
+    color: Colors.subtext,
+  },
+  stepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacings.xs,
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    padding: 4,
+    borderRadius: 14,
+    backgroundColor: CONSULT_SOFT,
+  },
+  stepButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+  },
+  // Grisé mais visible : la ligne garde sa forme aux bornes.
+  stepButtonOff: {
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  stepValue: {
+    minWidth: 40,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    color: Colors.text,
+  },
+  stepValueEmpty: {
+    color: Colors.subtext,
+  },
+  stepperColon: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    color: Colors.text,
+  },
+  stepperEnd: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: Spacings.xs,
+  },
+  stepperEndText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 15,
+    color: Colors.subtext2,
   },
   time: {
     minWidth: 64,
