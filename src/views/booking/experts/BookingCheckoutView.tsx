@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Keyboard,
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
@@ -170,6 +171,20 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   const scrollRef = useRef<ScrollView>(null);
   const addressInputRef = useRef<TextInput>(null);
   const identityY = useRef(0);
+
+  // iOS : la feuille est décalée (translateY) ; le calcul automatique des marges du clavier
+  // s'y trompait et laissait un grand vide en bas de la liste. On remonte la feuille nous-mêmes
+  // de la hauteur du clavier (Android redimensionne déjà la fenêtre).
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    const show = Keyboard.addListener('keyboardWillShow', (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardWillHide', () => setKeyboardHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const revealAddress = () => {
     scrollRef.current?.scrollTo({ y: Math.max(0, identityY.current - Spacings.sm), animated: true });
@@ -627,6 +642,7 @@ export const BookingCheckoutView = ({ navigation, route }) => {
         style={[
           styles.sheet,
           { height: sheetHeight, transform: [{ translateY }] },
+          keyboardHeight > 0 && { paddingBottom: keyboardHeight },
           // Web : fenêtre centrée, arrondie partout, qui apparaît en fondu.
           IS_WEB && [styles.sheetWeb, { width: dialogWidth, opacity: backdropOpacity }],
         ]}
@@ -678,8 +694,10 @@ export const BookingCheckoutView = ({ navigation, route }) => {
               style={styles.flex}
               contentContainerStyle={styles.content}
               keyboardShouldPersistTaps="handled"
-              automaticallyAdjustKeyboardInsets
               showsVerticalScrollIndicator={false}
+              // Pas de rebond ni d'élan au-delà du contenu : la liste s'arrête net à ses bords.
+              bounces={false}
+              overScrollMode="never"
             >
               {twoColumns ? (
                 <View style={styles.webColumns}>
