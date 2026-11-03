@@ -41,6 +41,7 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 
 const IS_WEB = Platform.OS === 'web';
 const WEB_MAX_WIDTH = 720;
+const WEB_HEADER_MAX_WIDTH = 880;
 const INSET = Spacings.lg;
 
 type Where = 'calendar' | 'other';
@@ -350,6 +351,22 @@ export const ConsultationRequestView = ({ navigation, route }) => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* ---- En-tête fixe (ne défile pas) : titre, fermeture à droite ; plus large sur le web ---- */}
+        <View style={styles.headerBar}>
+          <View style={[styles.header, IS_WEB && styles.headerWeb]}>
+            <Text style={styles.headerTitle}>Consultation sur mesure</Text>
+            <TouchableOpacity
+              style={[styles.close, { borderColor: withAlpha(CONSULT_COLOR, 0.45), backgroundColor: withAlpha(CONSULT_COLOR, 0.1) }]}
+              onPress={() => navigation.goBack()}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Fermer"
+            >
+              <Ionicons name="close" size={26} color={CONSULT_COLOR} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <ScrollView
           ref={scrollRef}
           contentContainerStyle={[styles.content, { paddingBottom: 120 + insets.bottom }]}
@@ -360,20 +377,6 @@ export const ConsultationRequestView = ({ navigation, route }) => {
             style={[styles.inner, IS_WEB && styles.innerWeb]}
             onLayout={(e) => (innerY.current = e.nativeEvent.layout.y)}
           >
-            {/* ---- En-tête : titre, fermeture à droite ---- */}
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Consultation sur mesure</Text>
-              <TouchableOpacity
-                style={[styles.close, { borderColor: withAlpha(CONSULT_COLOR, 0.45), backgroundColor: withAlpha(CONSULT_COLOR, 0.1) }]}
-                onPress={() => navigation.goBack()}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Fermer"
-              >
-                <Ionicons name="close" size={26} color={CONSULT_COLOR} />
-              </TouchableOpacity>
-            </View>
-
             {/* ---- Expert : titre, nom, références ---- */}
             <View style={styles.hero}>
               <View style={[styles.avatar, { backgroundColor: expert?.palette_color ?? CONSULT_COLOR }]}>
@@ -693,12 +696,26 @@ const styles = StyleSheet.create({
   },
 
   /* ---- En-tête ---- */
+  // Bandeau fixe au-dessus de la liste qui défile, sur le fond de l'écran.
+  headerBar: {
+    paddingHorizontal: INSET,
+    paddingTop: Spacings.sm,
+    paddingBottom: Spacings.sm,
+    backgroundColor: Colors.grayLight,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacings.md,
-    marginBottom: Spacings.xs,
+  },
+  // Web : un peu plus large que le contenu, toujours centré.
+  headerWeb: {
+    width: '100%',
+    maxWidth: WEB_HEADER_MAX_WIDTH,
+    alignSelf: 'center',
   },
   headerTitle: {
     flex: 1,
