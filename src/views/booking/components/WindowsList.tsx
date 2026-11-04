@@ -6,7 +6,8 @@ import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
 import { BookingWindow } from '../../../services/v2/BookingService';
-import { windowLabel } from '../bookingWindows';
+import { PERIOD_TEXT, windowLabel } from '../bookingWindows';
+import { formatCardDay } from '../bookingDates';
 
 interface WindowsListProps {
   windows: BookingWindow[];
@@ -34,17 +35,43 @@ export const WindowsList: React.FC<WindowsListProps> = ({ windows, color = Color
       {windows.map((w) => (
         <View key={w.position} style={[styles.row, w.past && styles.rowPast]}>
           <Ionicons name="calendar-outline" size={compact ? 14 : 16} color={w.past ? Colors.subtext : color} />
-          <Text style={[styles.text, compact && styles.textCompact, w.past && styles.textPast]}>
-            {windowLabel(w, year)}
-            {w.past ? ' · passé' : ''}
-          </Text>
+          {compact ? (
+            // Cartes : « Jeu 12 Nov 09:00 → Ven 13 Nov 12:00 », heures en gris.
+            <Text style={[styles.text, styles.textCompact, w.past && styles.textPast]}>
+              {formatCardDay(w.start_date)} <Text style={styles.time}>{timeOf(w, 'start')}</Text>
+              {w.start_date === w.end_date ? (
+                <Text style={styles.time}> – {timeOf(w, 'end')}</Text>
+              ) : (
+                <>
+                  {' → '}
+                  {formatCardDay(w.end_date)} <Text style={styles.time}>{timeOf(w, 'end')}</Text>
+                </>
+              )}
+              {w.past ? ' · passé' : ''}
+            </Text>
+          ) : (
+            <Text style={[styles.text, w.past && styles.textPast]}>
+              {windowLabel(w, year)}
+              {w.past ? ' · passé' : ''}
+            </Text>
+          )}
         </View>
       ))}
     </View>
   );
 };
 
+/** Heure (consultation) ou demi-journée (thème) d'un bout du créneau. */
+const timeOf = (w: BookingWindow, side: 'start' | 'end') =>
+  side === 'start'
+    ? w.start_time ?? (w.start_period ? PERIOD_TEXT[w.start_period] : '')
+    : w.end_time ?? (w.end_period ? PERIOD_TEXT[w.end_period] : '');
+
 const styles = StyleSheet.create({
+  time: {
+    color: Colors.subtext2,
+    fontFamily: 'Poppins-Regular',
+  },
   container: {
     gap: 4,
   },

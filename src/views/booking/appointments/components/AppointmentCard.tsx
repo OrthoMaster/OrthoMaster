@@ -10,10 +10,11 @@ import { initials } from '../../bookingFormat';
 import { accentOf, withAlpha } from '../../bookingPalette';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker';
 import { JoinVisioButton } from '../../components/JoinVisioButton';
-import { STATUS_META, featuredBlock, formatShortDay, relativeDay } from '../appointmentFormat';
+import { STATUS_META, featuredBlock, relativeDay } from '../appointmentFormat';
+import { formatCardDay } from '../../bookingDates';
 import { WindowsList } from '../../components/WindowsList';
 import { ModeLine } from '../../components/ModePill';
-import { KindTags, blockHours } from '../../components/KindTags';
+import { KindTags, blockHours, kindColor } from '../../components/KindTags';
 
 const CARD_RADIUS = 20;
 const MOTIF_SIZE = 112;
@@ -78,6 +79,8 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
     >
       {/* Ombre à l'extérieur, rognage à l'intérieur : sinon iOS perd l'ombre. */}
       <View style={styles.card}>
+        {/* Filet à gauche : violet (Consultation) ou bleu (Thème). */}
+        <View style={[styles.kindBar, { backgroundColor: kindColor(booking.kind) }]} />
         <Animated.View style={[styles.motif, motifStyle]} pointerEvents="none">
           <MaterialCommunityIcons name={MOTIF[booking.status]} size={MOTIF_SIZE} color={withAlpha(accent, 0.12)} />
         </Animated.View>
@@ -110,10 +113,22 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
           </View>
         </View>
 
+        {/* Pastilles au-dessus du titre ; consultation : votre sujet sur 2 lignes. */}
+        <KindTags
+          kind={booking.kind}
+          durationMinutes={booking.duration_minutes}
+          blocksCount={booking.blocks_count}
+          offCalendar={booking.off_calendar}
+          style={styles.tags}
+        />
         <Text style={styles.title} numberOfLines={2}>
           {booking.offer_title}
         </Text>
-        <KindTags kind={booking.kind} durationMinutes={booking.duration_minutes} offCalendar={booking.off_calendar} />
+        {booking.kind === 'consultation' && booking.subject ? (
+          <Text style={styles.subject} numberOfLines={2}>
+            {booking.subject}
+          </Text>
+        ) : null}
         {/* Format : En visio, ou En présentiel avec le lieu de la demi-journée mise en avant. */}
         <ModeLine mode={booking.mode ?? 'online'} location={block?.location} style={styles.modeLine} />
 
@@ -129,7 +144,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
 
             <View style={styles.block}>
               <MaterialCommunityIcons name={PERIOD_ICONS[block.period]} size={16} color={Colors.lblueDark} />
-              <Text style={styles.blockDate}>{formatShortDay(block.date)}</Text>
+              <Text style={styles.blockDate}>{formatCardDay(block.date)}</Text>
               <Text style={styles.blockHours}>
                 {blockHours(block, booking.kind)}
               </Text>
@@ -173,8 +188,26 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: Spacings.md,
+    paddingLeft: Spacings.md + 4,
     borderRadius: CARD_RADIUS,
     overflow: 'hidden',
+  },
+  kindBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+  },
+  tags: {
+    marginTop: Spacings.sm,
+  },
+  subject: {
+    fontFamily: 'Roboto',
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.subtext2,
+    marginTop: 2,
   },
   motif: {
     position: 'absolute',
@@ -234,7 +267,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 23,
     color: Colors.text,
-    marginTop: Spacings.md,
+    marginTop: Spacings.xs,
   },
 
   modeLine: {

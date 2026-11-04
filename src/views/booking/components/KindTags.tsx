@@ -9,20 +9,34 @@ import { BookingKind, BookingPeriod } from '../../../services/v2/BookingService'
 import { CONSULT_COLOR, CONSULT_SOFT, durationText } from '../bookingKinds';
 import { PERIOD_LABELS } from '../experts/components/SlotPicker';
 
+/** Couleur du type de rendez-vous : violet (Consultation), bleu (Thème). */
+export const kindColor = (kind?: BookingKind) => (kind === 'consultation' ? CONSULT_COLOR : Colors.lblueDark);
+
 /**
- * Pastilles v3 (mobile et web) : « Consultation · 1 h » et « Hors calendrier »,
- * affichées sur les cartes et fiches des demandes et rendez-vous.
+ * Pastilles v3 (mobile et web) : « Consultation · 1 h » ou « Thème · 2 demi-journées »
+ * (quand blocksCount est donné), et « Hors calendrier », sur les cartes et fiches.
  */
 export const KindTags: React.FC<{
   kind?: BookingKind;
   durationMinutes?: number | null;
+  /** Thème : nombre de demi-journées ; affiche la pastille « Thème ». */
+  blocksCount?: number | null;
   offCalendar?: boolean;
   style?: StyleProp<ViewStyle>;
-}> = ({ kind, durationMinutes, offCalendar, style }) => {
-  if (kind !== 'consultation' && !offCalendar) return null;
+}> = ({ kind, durationMinutes, blocksCount, offCalendar, style }) => {
+  const theme = kind !== 'consultation' && !!blocksCount;
+  if (kind !== 'consultation' && !offCalendar && !theme) return null;
 
   return (
     <View style={[styles.row, style]}>
+      {theme ? (
+        <View style={[styles.tag, { backgroundColor: Colors.lblue3 }]}>
+          <Ionicons name="bulb-outline" size={12} color={Colors.lblueDark} />
+          <Text style={[styles.text, { color: Colors.lblueDark }]}>
+            Thème · {blocksCount} demi-journée{blocksCount! > 1 ? 's' : ''}
+          </Text>
+        </View>
+      ) : null}
       {kind === 'consultation' ? (
         <View style={[styles.tag, { backgroundColor: CONSULT_SOFT }]}>
           <Ionicons name="chatbubbles-outline" size={12} color={CONSULT_COLOR} />

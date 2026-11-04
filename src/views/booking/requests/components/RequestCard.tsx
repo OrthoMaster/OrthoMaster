@@ -9,10 +9,11 @@ import { ExpertRequest } from '../../../../services/v2/BookingService';
 import { initials } from '../../bookingFormat';
 import { withAlpha } from '../../bookingPalette';
 import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker';
-import { featuredBlock, formatDeadline, formatShortDay } from '../../appointments/appointmentFormat';
+import { featuredBlock, formatDeadline } from '../../appointments/appointmentFormat';
+import { formatCardDay } from '../../bookingDates';
 import { REQUEST_STATUS_META, REQUESTS_ACCENT, timeLeft } from '../requestFormat';
 import { ModeLine } from '../../components/ModePill';
-import { KindTags, blockHours } from '../../components/KindTags';
+import { KindTags, blockHours, kindColor } from '../../components/KindTags';
 import { WindowsList } from '../../components/WindowsList';
 
 const CARD_RADIUS = 20;
@@ -54,6 +55,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
       accessibilityLabel={`${pill.label}, ${request.offer_title}, ${request.requester.name}`}
     >
       <View style={styles.card}>
+        {/* Filet à gauche : violet (Consultation) ou bleu (Thème). */}
+        <View style={[styles.kindBar, { backgroundColor: kindColor(request.kind) }]} />
         {/* ---- Demandeur et état ---- */}
         <View style={styles.top}>
           <View style={styles.avatar}>
@@ -74,10 +77,22 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
           </View>
         </View>
 
+        {/* Pastilles au-dessus du titre ; consultation : le sujet sur 2 lignes. */}
+        <KindTags
+          kind={request.kind}
+          durationMinutes={request.duration_minutes}
+          blocksCount={request.blocks_count}
+          offCalendar={request.off_calendar}
+          style={styles.tags}
+        />
         <Text style={styles.title} numberOfLines={2}>
           {request.offer_title}
         </Text>
-        <KindTags kind={request.kind} durationMinutes={request.duration_minutes} offCalendar={request.off_calendar} />
+        {request.kind === 'consultation' && request.subject ? (
+          <Text style={styles.subject} numberOfLines={2}>
+            {request.subject}
+          </Text>
+        ) : null}
         {/* Format : En visio, ou En présentiel avec le lieu de la demi-journée mise en avant. */}
         <ModeLine mode={request.mode ?? 'online'} location={block?.location} style={styles.modeLine} />
 
@@ -87,7 +102,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
             <Text style={styles.sessionLabel}>{request.kind === 'consultation' ? 'Créneau' : upcoming ? 'Prochaine demi-journée' : 'Première demi-journée'}</Text>
             <View style={styles.block}>
               <MaterialCommunityIcons name={PERIOD_ICONS[block.period]} size={16} color={Colors.lblueDark} />
-              <Text style={styles.blockDate}>{formatShortDay(block.date)}</Text>
+              <Text style={styles.blockDate}>{formatCardDay(block.date)}</Text>
               <Text style={styles.blockHours}>{blockHours(block, request.kind)}</Text>
             </View>
           </View>
@@ -131,8 +146,26 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: Spacings.md,
+    paddingLeft: Spacings.md + 4,
     borderRadius: CARD_RADIUS,
     overflow: 'hidden',
+  },
+  kindBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+  },
+  tags: {
+    marginTop: Spacings.sm,
+  },
+  subject: {
+    fontFamily: 'Roboto',
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.subtext2,
+    marginTop: 2,
   },
 
   /* ---- En-tête ---- */
@@ -186,7 +219,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 23,
     color: Colors.text,
-    marginTop: Spacings.md,
+    marginTop: Spacings.xs,
   },
 
   /* ---- Délai ---- */

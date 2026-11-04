@@ -1384,6 +1384,8 @@ export interface ExpertRequest {
   kind?: BookingKind;
   off_calendar?: boolean;
   duration_minutes?: number | null;
+  /** Consultation : sujet du demandeur. */
+  subject?: string | null;
   mode: BookingMode;
   blocks_count: number;
   requester: { name: string };

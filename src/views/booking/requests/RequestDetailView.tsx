@@ -306,8 +306,7 @@ export const RequestDetailView = ({ navigation, route }) => {
           style={styles.flex}
           contentContainerStyle={[
             styles.content,
-            // Avec le pied fixe, la marge de sécurité basse est déjà prise par lui.
-            { paddingBottom: canRespond ? Spacings.lg : Math.max(insets.bottom, Spacings.md) + Spacings.lg },
+            { paddingBottom: Math.max(insets.bottom, Spacings.md) + Spacings.lg },
           ]}
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets
@@ -364,7 +363,7 @@ export const RequestDetailView = ({ navigation, route }) => {
             />
 
             {/* Créneaux proposés (horaire à choisir plus bas, ou déjà choisi ci-dessous). */}
-            {request.windows?.length && !request.blocks.length ? (
+            {request.windows?.length && !request.blocks.length && !needsWindowChoice ? (
               <View style={styles.windowsBox}>
                 <WindowsList windows={request.windows} color={accent} />
               </View>
@@ -439,12 +438,12 @@ export const RequestDetailView = ({ navigation, route }) => {
               {needsWindowChoice && full.windows?.length ? (
                 <>
                   <Text style={styles.sectionTitle}>Horaire du rendez-vous</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    {request.kind === 'consultation'
+                      ? 'Choisissez un créneau proposé, puis le jour et l’heure de début : la fin suit la durée estimée.'
+                      : 'Choisissez la première demi-journée : les suivantes s’enchaînent.'}
+                  </Text>
                   <View style={[styles.card, windowMissing && !windowStart && styles.cardError]}>
-                    <Text style={styles.locHint}>
-                      {request.kind === 'consultation'
-                        ? 'Choisissez un créneau, puis l’heure de début : la fin suit la durée estimée.'
-                        : 'Choisissez la première demi-journée : les suivantes s’enchaînent.'}
-                    </Text>
                     <WindowChoicePicker
                       kind={request.kind === 'consultation' ? 'consultation' : 'offer'}
                       windows={full.windows}
@@ -559,104 +558,105 @@ export const RequestDetailView = ({ navigation, route }) => {
           ) : (
             <ActivityIndicator color={REQUESTS_ACCENT} style={styles.loader} />
           )}
-        </ScrollView>
 
-        {/* ---- Pied fixe : réponse ; « Refuser » le déplie pour choisir le motif ---- */}
-        {canRespond ? (
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacings.sm) + Spacings.xs }]}>
-            {declining ? (
-              <>
-                <View style={styles.footerHead}>
-                  <Text style={styles.footerTitle}>Motif du refus</Text>
-                  {submitted && !reasonId ? <Text style={styles.error}>Veuillez choisir un motif.</Text> : null}
-                </View>
+            {/* ---- Réponse, en fin de fiche (tout lire avant de répondre) ; « Refuser » déplie le motif ---- */}
+          {canRespond ? (
+            <View style={styles.footer}>
+              {declining ? (
+                <>
+                  <View style={styles.footerHead}>
+                    <Text style={styles.footerTitle}>Motif du refus</Text>
+                    {submitted && !reasonId ? <Text style={styles.error}>Veuillez choisir un motif.</Text> : null}
+                  </View>
 
-                {!reasons ? (
-                  <ActivityIndicator color={REQUESTS_ACCENT} style={styles.loader} />
-                ) : (
-                  <ScrollView style={styles.reasons} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-                    {reasons.reasons.map((reason) => {
-                      const on = reason.id === reasonId;
-                      return (
-                        <Pressable
-                          key={reason.id}
-                          style={styles.reason}
-                          onPress={() => setReasonId(reason.id)}
-                          accessibilityRole="radio"
-                          accessibilityState={{ checked: on }}
-                        >
-                          <View style={[styles.radio, on && styles.radioOn]}>{on && <View style={styles.radioDot} />}</View>
-                          <Text style={styles.reasonText}>{reason.label}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                )}
+                  {!reasons ? (
+                    <ActivityIndicator color={REQUESTS_ACCENT} style={styles.loader} />
+                  ) : (
+                    <ScrollView style={styles.reasons} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                      {reasons.reasons.map((reason) => {
+                        const on = reason.id === reasonId;
+                        return (
+                          <Pressable
+                            key={reason.id}
+                            style={styles.reason}
+                            onPress={() => setReasonId(reason.id)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ checked: on }}
+                          >
+                            <View style={[styles.radio, on && styles.radioOn]}>{on && <View style={styles.radioDot} />}</View>
+                            <Text style={styles.reasonText}>{reason.label}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  )}
 
-                <TextInput
-                  style={styles.noteInput}
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="Un mot pour le confrère (facultatif)"
-                  placeholderTextColor={Colors.subtext}
-                  multiline
-                  textAlignVertical="top"
-                  maxLength={noteMax}
-                  editable={busy === null}
-                />
-                <Text style={styles.counter}>
-                  {note.length} / {noteMax}
-                </Text>
+                  <TextInput
+                    style={styles.noteInput}
+                    value={note}
+                    onChangeText={setNote}
+                    placeholder="Un mot pour le confrère (facultatif)"
+                    placeholderTextColor={Colors.subtext}
+                    multiline
+                    textAlignVertical="top"
+                    maxLength={noteMax}
+                    editable={busy === null}
+                  />
+                  <Text style={styles.counter}>
+                    {note.length} / {noteMax}
+                  </Text>
 
+                  <View style={styles.footerButtons}>
+                    <TouchableOpacity
+                      style={[styles.footerButton, styles.footerGhost]}
+                      onPress={closeDecline}
+                      disabled={busy !== null}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.footerGhostText}>Retour</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.footerButton, styles.footerDanger]}
+                      onPress={confirmDecline}
+                      disabled={busy !== null}
+                      activeOpacity={0.85}
+                    >
+                      {busy === 'decline' ? (
+                        <ActivityIndicator size="small" color={Colors.white} />
+                      ) : (
+                        <Text style={styles.footerSolidText}>Confirmer le refus</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
                 <View style={styles.footerButtons}>
                   <TouchableOpacity
-                    style={[styles.footerButton, styles.footerGhost]}
-                    onPress={closeDecline}
+                    style={[styles.footerButton, styles.footerDeclineOutline]}
+                    onPress={openDecline}
                     disabled={busy !== null}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.footerGhostText}>Retour</Text>
+                    <Text style={styles.footerDeclineText}>Refuser</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.footerButton, styles.footerDanger]}
-                    onPress={confirmDecline}
+                    style={[styles.footerButton, styles.footerAccept]}
+                    onPress={accept}
                     disabled={busy !== null}
                     activeOpacity={0.85}
                   >
-                    {busy === 'decline' ? (
+                    {busy === 'accept' ? (
                       <ActivityIndicator size="small" color={Colors.white} />
                     ) : (
-                      <Text style={styles.footerSolidText}>Confirmer le refus</Text>
+                      <Text style={[styles.footerSolidText, styles.footerAcceptText]}>Accepter</Text>
                     )}
                   </TouchableOpacity>
                 </View>
-              </>
-            ) : (
-              <View style={styles.footerButtons}>
-                <TouchableOpacity
-                  style={[styles.footerButton, styles.footerDeclineOutline]}
-                  onPress={openDecline}
-                  disabled={busy !== null}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.footerDeclineText}>Refuser</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.footerButton, styles.footerAccept]}
-                  onPress={accept}
-                  disabled={busy !== null}
-                  activeOpacity={0.85}
-                >
-                  {busy === 'accept' ? (
-                    <ActivityIndicator size="small" color={Colors.white} />
-                  ) : (
-                    <Text style={styles.footerSolidText}>Accepter</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        ) : null}
+              )}
+            </View>
+          ) : null}
+        </ScrollView>
+
         </KeyboardAvoidingView>
       </Animated.View>
     </View>
@@ -882,6 +882,14 @@ const styles = StyleSheet.create({
     gap: Spacings.xxs,
     marginTop: Spacings.xxs,
   },
+  sectionSubtitle: {
+    fontFamily: 'Roboto',
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.subtext2,
+    marginTop: -Spacings.xs,
+    marginBottom: Spacings.sm,
+  },
   windowsBox: {
     marginTop: Spacings.sm,
   },
@@ -1039,12 +1047,12 @@ const styles = StyleSheet.create({
     marginTop: Spacings.xxs,
   },
 
-  /* ---- Pied fixe ---- */
+  /* ---- Réponse (en fin de fiche) ---- */
   footer: {
-    paddingHorizontal: INSET,
-    paddingTop: Spacings.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    marginTop: Spacings.lg,
+    padding: Spacings.md,
+    paddingTop: Spacings.sm,
+    borderRadius: 16,
     backgroundColor: Colors.white,
   },
   footerHead: {
@@ -1076,6 +1084,15 @@ const styles = StyleSheet.create({
   },
   footerAccept: {
     backgroundColor: Colors.success,
+    shadowColor: Colors.success,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  footerAcceptText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 16,
   },
   footerDanger: {
     backgroundColor: Colors.danger,

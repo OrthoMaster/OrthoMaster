@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
 
 import { BookingWindow, BookingWindowOption } from '../../../../services/v2/BookingService';
-import { formatLongDate, fromMinutes, toMinutes } from '../../bookingDates';
+import { MONTHS, WEEKDAYS, formatLongDate, fromMinutes, toMinutes, weekdayIso } from '../../bookingDates';
 import { tint } from '../../bookingPalette';
 import { PERIOD_TEXT, consultationStarts, windowLabel } from '../../bookingWindows';
 
@@ -109,28 +109,27 @@ export const WindowChoicePicker: React.FC<WindowChoicePickerProps> = ({
 
         {windowPos !== null && days.length > 0 ? (
           <View style={styles.pick}>
-            {days.length > 1 ? (
-              <View style={styles.chips}>
-                {days.map((d) => {
-                  const on = d === day;
-                  return (
-                    <TouchableOpacity
-                      key={d}
-                      style={[styles.chip, { borderColor: color }, on && { backgroundColor: color }]}
-                      onPress={() => setDay(d)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: on }}
-                    >
-                      <Text style={[styles.chipText, { color: on ? Colors.white : color }]}>
-                        {capitalize(formatLongDate(d, year))}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ) : (
-              <Text style={styles.dayLabel}>{capitalize(formatLongDate(days[0], year))}</Text>
-            )}
+            {/* Jours du créneau, comme le bandeau de l'Agenda : lettre du jour, numéro, mois. */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.days}>
+              {days.map((d) => {
+                const on = d === day;
+                const [, m, n] = d.split('-').map(Number);
+                return (
+                  <TouchableOpacity
+                    key={d}
+                    style={[styles.dayTile, on && { backgroundColor: color, borderColor: color }]}
+                    onPress={() => setDay(d)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={formatLongDate(d, year)}
+                  >
+                    <Text style={[styles.dayWeek, on && styles.dayOn]}>{WEEKDAYS[weekdayIso(d)].slice(0, 3)}</Text>
+                    <Text style={[styles.dayNumber, on && styles.dayOn]}>{n}</Text>
+                    <Text style={[styles.dayMonth, on && styles.dayOn]}>{MONTHS[m - 1].slice(0, 3)}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
             <View style={styles.stepRow}>
               <View style={[styles.stepper, { backgroundColor: soft }]}>
@@ -259,6 +258,37 @@ const styles = StyleSheet.create({
   chipText: {
     fontFamily: 'Poppins-Medium',
     fontSize: 13,
+  },
+  days: {
+    gap: 6,
+  },
+  dayTile: {
+    width: 54,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+  },
+  dayWeek: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 11,
+    color: Colors.subtext2,
+  },
+  dayNumber: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 18,
+    lineHeight: 24,
+    color: Colors.text,
+  },
+  dayMonth: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 11,
+    color: Colors.subtext2,
+  },
+  dayOn: {
+    color: Colors.white,
   },
   dayLabel: {
     fontFamily: 'Poppins-Medium',

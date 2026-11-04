@@ -82,6 +82,14 @@ export const formatLongDate = (iso: string, referenceYear?: number) => {
   return referenceYear && referenceYear !== y ? `${text} ${y}` : text;
 };
 
+const MONTHS_3 = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+/** Cartes : « Jeu 12 Nov » (jour et mois sur 3 lettres, initiale en capitale). */
+export const formatCardDay = (iso: string) => {
+  const [, m, d] = parts(iso);
+  return `${WEEKDAYS[weekdayIso(iso)].slice(0, 3)} ${d} ${MONTHS_3[m - 1]}`;
+};
+
 /** « 03/11 » ou « 03/11/2027 ». */
 export const formatShortDate = (iso: string, withYear = false) => {
   const [y, m, d] = parts(iso);
