@@ -259,8 +259,6 @@ export const ExpertsListView = ({ navigation, route }) => {
         expert={item}
         width={cardWidth}
         indexInPage={index % PER_PAGE}
-        // Profil sans Consultation ni thèmes : la carte de la liste propose déjà d'écrire et de demander.
-        onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item, purpose: 'consultation' })}
         onMessage={() => messageExpert(item)}
         onBook={() => navigation.navigate('consultation-request', { expertId: item.id, preview: item })}
         messaging={messagingId === item.id}
@@ -502,15 +500,19 @@ export const ExpertsListView = ({ navigation, route }) => {
 
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        {/* En-tête et filtres fixes : seule la liste défile. */}
+        <View style={[styles.fixedHead, styles.listWeb]}>
+          {listHeader}
+          {smartHint}
+        </View>
         <ScrollView
-          contentContainerStyle={[styles.list, styles.listWeb, { paddingBottom: bottomInset + Spacings.md }]}
+          style={styles.flex}
+          contentContainerStyle={[styles.list, styles.listWeb, styles.listBody, { paddingBottom: bottomInset + Spacings.md }]}
           onScroll={onScroll}
           scrollEventThrottle={200}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {listHeader}
-          {smartHint}
           {items.length === 0 ? (
             listEmpty
           ) : (
@@ -534,11 +536,18 @@ export const ExpertsListView = ({ navigation, route }) => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.grayLight} />
 
+      {/* En-tête et filtres fixes : seule la liste défile. */}
+      <View style={[styles.fixedHead, IS_WEB && styles.listWeb]}>
+        {listHeader}
+        {smartHint}
+      </View>
+
       <FlatList
+        style={styles.flex}
         data={(showThemes ? themes : experts) as any[]}
         keyExtractor={(item) => `${showThemes ? 't' : 'e'}${item.id}`}
         renderItem={showThemes ? renderTheme : renderExpert}
-        contentContainerStyle={[styles.list, IS_WEB && styles.listWeb, { paddingBottom: bottomInset + Spacings.md }]}
+        contentContainerStyle={[styles.list, IS_WEB && styles.listWeb, styles.listBody, { paddingBottom: bottomInset + Spacings.md }]}
         // L'indicateur de défilement s'arrête au-dessus de la barre flottante.
         scrollIndicatorInsets={{ bottom: bottomInset }}
         onEndReached={loadMore}
@@ -549,12 +558,6 @@ export const ExpertsListView = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={pulling} onRefresh={pullToRefresh} colors={[Colors.lblue]} tintColor={Colors.lblue} />
-        }
-        ListHeaderComponent={
-          <>
-            {listHeader}
-            {smartHint}
-          </>
         }
         // Premier chargement sous l'en-tête : le titre reste en place, seule la grille attend.
         ListEmptyComponent={
@@ -591,6 +594,18 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: LIST_PADDING,
     gap: Spacings.lg,
+  },
+  flex: {
+    flex: 1,
+  },
+  // En-tête fixe au-dessus de la liste ; la marge basse laisse place à l'ombre des cartes.
+  fixedHead: {
+    paddingHorizontal: LIST_PADDING,
+    paddingBottom: Spacings.xs,
+  },
+  // Haut de liste : l'ombre de la première carte n'est pas rognée.
+  listBody: {
+    paddingTop: Spacings.sm,
   },
   // Web : cartes centrées dans la zone de contenu.
   listWeb: {

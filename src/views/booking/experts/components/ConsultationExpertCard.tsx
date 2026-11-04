@@ -23,8 +23,6 @@ interface ConsultationExpertCardProps {
   width: number;
   /** Rang dans sa page (0–9), pour l'entrée en cascade. */
   indexInPage: number;
-  /** Toucher la carte : profil de l'expert. */
-  onPress: () => void;
   /** Bouton rond : écrire à l'expert. */
   onMessage: () => void;
   /** Bouton « Demander » : demander une consultation. */
@@ -43,14 +41,12 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
   expert,
   width,
   indexInPage,
-  onPress,
   onMessage,
   onBook,
   messaging,
 }) => {
   const [photoSize, setPhotoSize] = useState(PHOTO_MIN);
   const enter = useRef(new Animated.Value(0)).current;
-  const press = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.spring(enter, {
@@ -67,15 +63,10 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
     if (Math.abs(next - photoSize) > 4) setPhotoSize(next);
   };
 
-  const animatePress = (toValue: number) => {
-    Animated.spring(press, { toValue, friction: 7, tension: 200, useNativeDriver: true }).start();
-  };
-
   const animated: any = {
     opacity: enter,
     transform: [
       { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
-      { scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] }) },
     ],
   };
 
@@ -87,14 +78,8 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
   return (
     <Animated.View style={[{ width }, animated]}>
       <View style={[styles.card, { shadowColor: accent, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.16, shadowRadius: 14 }]}>
-        <Pressable
-          style={styles.main}
-          onPress={onPress}
-          onPressIn={() => animatePress(1)}
-          onPressOut={() => animatePress(0)}
-          accessibilityRole="button"
-          accessibilityLabel={[expert.honorific, expert.name].filter(Boolean).join(' ')}
-        >
+        {/* Pas d'action sur la carte : écrire ou demander, avec les deux boutons du bas. */}
+        <View style={styles.main} accessibilityLabel={[expert.honorific, expert.name].filter(Boolean).join(' ')}>
           <View style={[styles.photo, { width: photoSize, height: photoSize, backgroundColor: accent }]}>
             {expert.avatar_url ? (
               <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -130,7 +115,7 @@ export const ConsultationExpertCard: React.FC<ConsultationExpertCardProps> = ({
 
             {expert.reason ? <SearchReason text={expert.reason} /> : null}
           </View>
-        </Pressable>
+        </View>
 
         {/* ---- Prix (à gauche, sous le portrait) et actions aux couleurs de l'expert ---- */}
         <View style={[styles.actions, { backgroundColor: tint(accent, 0.08) }]}>
