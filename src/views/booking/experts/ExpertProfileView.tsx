@@ -21,7 +21,13 @@ import { useQuery } from '@tanstack/react-query';
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
-import { BookingExpertListItem, BookingOffer, getBookingExpert } from '../../../services/v2/BookingService';
+import {
+  BookingExpertListItem,
+  BookingExpertMedia,
+  BookingOffer,
+  getBookingExpert,
+  getBookingExpertMedias,
+} from '../../../services/v2/BookingService';
 import { initials, priceLabel } from '../bookingFormat';
 import { CONSULT_COLOR, CONSULT_COLOR_DARK, CONSULT_SOFT } from '../bookingKinds';
 import { withAlpha } from '../bookingPalette';
@@ -39,7 +45,7 @@ const INSET = Spacings.lg;
  * Avatar de la page vitrine : photo, anneau de la couleur du fond (6 px), puis filet
  * de la couleur principale (1,5 px). CSS : box-shadow 0 0 0 6px bg, 0 0 0 7.5px teal.
  */
-const PHOTO_SIZE = 104;
+const PHOTO_SIZE = 84;
 const AVATAR_GAP = 6;
 const AVATAR_RING = 1.5;
 const AVATAR_SIZE = PHOTO_SIZE + (AVATAR_GAP + AVATAR_RING) * 2;
@@ -116,6 +122,17 @@ export const ExpertProfileView = ({ navigation, route }) => {
   const preview: BookingExpertListItem | undefined = route.params?.preview;
   /** Thème touché dans la liste : le carrousel s'y rend et le met en avant. */
   const focusOfferId: number | undefined = route.params?.focusOfferId;
+  /** Ouvert depuis la liste Consultation : ni carte Consultation ni thèmes (la carte de la liste suffit). */
+  const consultationMode = route.params?.purpose === 'consultation';
+
+  // Médias OrthoMaster de l'expert (5 au plus) : centres d'intérêt de l'utilisateur d'abord.
+  const { data: medias } = useQuery({
+    queryKey: ['booking', 'expert-medias', expertId],
+    queryFn: () => getBookingExpertMedias(expertId, 5),
+    staleTime: 5 * 60 * 1000,
+  });
+  const openMedia = (media: BookingExpertMedia) =>
+    navigation.navigate('media', { screen: 'flash-media-preview', params: { media } });
 
   const { data, isLoading } = useQuery({
     queryKey: ['booking', 'expert', expertId],
@@ -216,52 +233,53 @@ export const ExpertProfileView = ({ navigation, route }) => {
           <ThemeBackdrop theme={theme} />
         </View>
 
-        {/* ---- Zone de prise : poignée, avatar, fermeture (web : pas de glissement, avatar dans le panneau) ---- */}
+        {/* ---- En-tête fixe : poignée (mobile), avatar à gauche, identité à droite, fermeture ---- */}
         <View {...(IS_WEB ? {} : pan.panHandlers)} style={IS_WEB ? styles.grabWeb : styles.grab}>
           {!IS_WEB && <View style={[styles.handle, { backgroundColor: theme.line }]} />}
 
-          {expert && (
-            <View style={[styles.avatar, IS_WEB && styles.avatarWeb, { backgroundColor: theme.bg, borderColor: theme.primary }]}>
-              <View style={[styles.photo, { backgroundColor: theme.card }]}>
-                {expert.avatar_url ? (
-                  <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} />
-                ) : (
-                  <Text style={[styles.photoInitials, { color: theme.primary }]}>{initials(expert.name)}</Text>
-                )}
+          <View style={styles.headerRow}>
+            {expert && (
+              <View style={[styles.avatar, { backgroundColor: theme.bg, borderColor: theme.primary }]}>
+                <View style={[styles.photo, { backgroundColor: theme.card }]}>
+                  {expert.avatar_url ? (
+                    <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} />
+                  ) : (
+                    <Text style={[styles.photoInitials, { color: theme.primary }]}>{initials(expert.name)}</Text>
+                  )}
+                </View>
+                {online && <View style={[styles.avatarDot, { borderColor: theme.bg }]} />}
               </View>
-              {online && <View style={[styles.avatarDot, { borderColor: theme.bg }]} />}
-            </View>
-          )}
+            )}
 
-          <TouchableOpacity
-            style={[
-              styles.close,
-              { borderColor: withAlpha(theme.primary, 0.45), backgroundColor: withAlpha(theme.primary, 0.1) },
-            ]}
-            onPress={close}
-            hitSlop={8}
-            accessibilityLabel="Fermer"
-          >
-            <Ionicons name="close" size={26} color={theme.primary} />
-          </TouchableOpacity>
-        </View>
+            {expert && (
+              <View style={styles.identity}>
+                {expert.honorific ? (
+                  <Text style={[styles.honorific, { color: theme.primary }]}>{expert.honorific}</Text>
+                ) : null}
+                {nameLines(expert.name).map((line, i) => (
+                  <Text key={i} style={[styles.name, { color: theme.ink }]}>
+                    {line}
+                  </Text>
+                ))}
+                {expert.credentials ? (
+                  <Text style={[styles.credentials, { color: theme.muted }]}>{expert.credentials}</Text>
+                ) : null}
+              </View>
+            )}
 
-        {/* ---- Identité : fixe, seul le contenu en dessous défile ---- */}
-        {expert && (
-          <View style={styles.identity}>
-            {expert.honorific ? (
-              <Text style={[styles.honorific, { color: theme.primary }]}>{expert.honorific}</Text>
-            ) : null}
-            {nameLines(expert.name).map((line, i) => (
-              <Text key={i} style={[styles.name, { color: theme.ink }]}>
-                {line}
-              </Text>
-            ))}
-            {expert.credentials ? (
-              <Text style={[styles.credentials, { color: theme.ink }]}>{expert.credentials}</Text>
-            ) : null}
+            <TouchableOpacity
+              style={[
+                styles.close,
+                { borderColor: withAlpha(theme.primary, 0.45), backgroundColor: withAlpha(theme.primary, 0.1) },
+              ]}
+              onPress={close}
+              hitSlop={8}
+              accessibilityLabel="Fermer"
+            >
+              <Ionicons name="close" size={26} color={theme.primary} />
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
 
         {/* Simple filet : limite entre l'en-tête fixe et le contenu défilant. */}
         <View style={[styles.rule, { backgroundColor: theme.line }]} />
@@ -294,8 +312,8 @@ export const ExpertProfileView = ({ navigation, route }) => {
             </View>
           ) : null}
 
-          {/* ---- Consultation sur mesure ---- */}
-          {online && consultation ? (
+          {/* ---- Consultation sur mesure (pas depuis la liste Consultation) ---- */}
+          {!consultationMode && online && consultation ? (
             <TouchableOpacity
               style={[styles.consultCard, { borderColor: withAlpha(CONSULT_COLOR, 0.3) }]}
               onPress={() => navigation.navigate('consultation-request', { expertId, preview: expert })}
@@ -316,14 +334,14 @@ export const ExpertProfileView = ({ navigation, route }) => {
             </TouchableOpacity>
           ) : null}
 
-          {/* ---- Thèmes ---- */}
-          {!(online && consultation && offers.length === 0 && !isLoading) ? (
+          {/* ---- Thèmes (pas depuis la liste Consultation) ---- */}
+          {!consultationMode && !(online && consultation && offers.length === 0 && !isLoading) ? (
           <Text style={[styles.sectionTitle, { color: theme.ink }]}>
             {offers.length > 1 ? "Thèmes de l'échange" : "Thème de l'échange"}
           </Text>
           ) : null}
 
-          {online && consultation && offers.length === 0 && !isLoading ? null : isLoading ? (
+          {consultationMode || (online && consultation && offers.length === 0 && !isLoading) ? null : isLoading ? (
             <ActivityIndicator color={theme.primary} style={styles.loading} />
           ) : !online || offers.length === 0 ? (
             <View
@@ -355,6 +373,48 @@ export const ExpertProfileView = ({ navigation, route }) => {
               </Text>
             </>
           )}
+
+          {/* ---- Médias OrthoMaster de l'expert ---- */}
+          {medias && medias.length > 0 ? (
+            <>
+              <Text style={[styles.sectionTitle, { color: theme.ink }]}>Ses médias</Text>
+              {medias.some((m) => m.matches_interests) ? (
+                <Text style={[styles.mediaHint, { color: theme.muted }]}>Selon vos centres d'intérêt, puis les plus récents.</Text>
+              ) : null}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.medias}
+              >
+                {medias.map((m) => (
+                  <TouchableOpacity
+                    key={m.id_content}
+                    style={[styles.media, { backgroundColor: theme.card, borderColor: theme.line }]}
+                    onPress={() => openMedia(m)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={m.title}
+                  >
+                    <View style={[styles.mediaThumb, { backgroundColor: withAlpha(theme.primary, 0.12) }]}>
+                      {m.thumbnail ? (
+                        <Image source={{ uri: m.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      ) : (
+                        <Ionicons name="play-circle-outline" size={34} color={theme.primary} />
+                      )}
+                      {m.duration ? (
+                        <View style={styles.mediaDuration}>
+                          <Text style={styles.mediaDurationText}>{m.duration}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text style={[styles.mediaTitle, { color: theme.ink }]} numberOfLines={2}>
+                      {m.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
+          ) : null}
         </ScrollView>
 
       </Animated.View>
@@ -427,10 +487,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   grabWeb: {
-    height: AVATAR_SIZE + Spacings.lg + Spacings.md,
-  },
-  avatarWeb: {
-    top: Spacings.lg,
+    paddingTop: Spacings.lg,
   },
   sheetBackground: {
     borderTopLeftRadius: SHEET_RADIUS,
@@ -440,7 +497,15 @@ const styles = StyleSheet.create({
 
   /* ---- Zone de prise ---- */
   grab: {
-    height: AVATAR_SIZE / 2 + Spacings.md,
+    paddingBottom: Spacings.xxs,
+  },
+  // Avatar à gauche, identité à droite, fermeture au bout de la ligne.
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.md,
+    paddingHorizontal: INSET,
+    paddingTop: Spacings.sm,
   },
   handle: {
     alignSelf: 'center',
@@ -449,11 +514,7 @@ const styles = StyleSheet.create({
     marginTop: Spacings.xs,
     borderRadius: 2,
   },
-  // Moitié de l'avatar au-dessus du bord de la feuille.
   avatar: {
-    position: 'absolute',
-    top: -AVATAR_SIZE / 2,
-    left: INSET,
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
@@ -471,22 +532,20 @@ const styles = StyleSheet.create({
   },
   photoInitials: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 34,
+    fontSize: 28,
   },
   avatarDot: {
     position: 'absolute',
-    right: 8,
-    bottom: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    right: 4,
+    bottom: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 3,
     backgroundColor: Colors.success,
   },
   close: {
-    position: 'absolute',
-    top: Spacings.md,
-    right: INSET,
+    alignSelf: 'flex-start',
     width: 46,
     height: 46,
     borderRadius: 23,
@@ -497,7 +556,8 @@ const styles = StyleSheet.create({
 
   /* ---- Identité (h1 .dr, h1 .ln, .role, .lede) ---- */
   identity: {
-    paddingHorizontal: INSET,
+    flex: 1,
+    minWidth: 0,
   },
   rule: {
     height: StyleSheet.hairlineWidth * 2,
@@ -509,23 +569,21 @@ const styles = StyleSheet.create({
   },
   honorific: {
     fontFamily: 'Poppins-Regular',
-    fontSize: 17,
-    letterSpacing: -0.2,
-    marginBottom: Spacings.xxs,
+    fontSize: 14,
+    letterSpacing: -0.1,
   },
   // Poppins a de hauts jambages : interligne ≥ 1,2 × la taille, sinon les lettres sont rognées.
   name: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 40,
-    lineHeight: 50,
-    letterSpacing: -1.4,
+    fontSize: 26,
+    lineHeight: 32,
+    letterSpacing: -0.8,
   },
   credentials: {
     fontFamily: 'Poppins-Regular',
-    fontSize: 18,
-    lineHeight: 24,
-    letterSpacing: 0.2,
-    marginTop: Spacings.md,
+    fontSize: 14,
+    lineHeight: 19,
+    marginTop: 2,
   },
   lede: {
     fontFamily: 'Roboto',
@@ -564,6 +622,52 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     fontSize: 14,
     lineHeight: 17,
+  },
+
+  /* ---- Médias ---- */
+  mediaHint: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 13,
+    paddingHorizontal: INSET,
+    marginTop: -Spacings.sm,
+    marginBottom: Spacings.sm,
+  },
+  medias: {
+    gap: Spacings.sm,
+    paddingHorizontal: INSET,
+  },
+  media: {
+    width: 210,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  mediaThumb: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  mediaDuration: {
+    position: 'absolute',
+    right: 6,
+    bottom: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  mediaDurationText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 11,
+    color: Colors.white,
+  },
+  mediaTitle: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    lineHeight: 18,
+    padding: Spacings.sm,
   },
 
   /* ---- Thèmes (h2) ---- */

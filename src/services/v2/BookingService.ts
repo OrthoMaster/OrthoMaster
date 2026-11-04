@@ -1,5 +1,6 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import axiosInstance, { baseUrl } from './axiosInstance';
+import { IContent } from '../../utils/interfaces';
 
 /** Domaine des pages vitrines web des experts. */
 const EXPERT_SHOWCASE_BASE = 'https://expert.orthomaster.fr';
@@ -666,6 +667,20 @@ export const smartSearchExperts = async (
   return axiosInstance
     .get(`${baseUrl}/booking/search`, { params: { type: 'experts', q, ...filters } })
     .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/** Média OrthoMaster d'un expert (même forme que les listes de médias). */
+export type BookingExpertMedia = IContent & { matches_interests?: boolean; published_at?: string | null };
+
+/**
+ * Médias de l'expert pour sa fiche : centres d'intérêt de l'utilisateur d'abord, puis les plus récents.
+ * GET /booking/experts/{id}/medias
+ */
+export const getBookingExpertMedias = async (expertId: number, limit = 5): Promise<BookingExpertMedia[] | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/experts/${expertId}/medias`, { params: { limit } })
+    .then((response) => (response.data?.success == true ? response.data.data.medias : null))
     .catch(() => null);
 };
 

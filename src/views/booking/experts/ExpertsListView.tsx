@@ -259,7 +259,8 @@ export const ExpertsListView = ({ navigation, route }) => {
         expert={item}
         width={cardWidth}
         indexInPage={index % PER_PAGE}
-        onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
+        // Profil sans Consultation ni thèmes : la carte de la liste propose déjà d'écrire et de demander.
+        onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item, purpose: 'consultation' })}
         onMessage={() => messageExpert(item)}
         onBook={() => navigation.navigate('consultation-request', { expertId: item.id, preview: item })}
         messaging={messagingId === item.id}
