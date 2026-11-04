@@ -57,10 +57,9 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 
 /**
  * Demande de consultation sur mesure (mobile et web) : sujet, durée estimée, puis horaire —
- * dans l'agenda de l'expert ou à une autre date (« hors calendrier », 7 h – 21 h, l'expert
- * accepte ou refuse). L'heure de début se choisit au-dessus du calendrier (heure, puis
- * minutes, en 24 h) ; dans l'agenda, heures et jours sans créneau libre sont grisés l'un
- * en fonction de l'autre. Le récapitulatif et le paiement réutilisent l'écran des thèmes.
+ * dans l'agenda de l'expert (le jour d'abord, puis l'heure de début parmi les heures libres
+ * de ce jour, en 24 h) ou « hors calendrier » (1 à 3 créneaux proposés ; l'expert choisit
+ * l'horaire dans l'un d'eux s'il accepte). Le récapitulatif et le paiement réutilisent l'écran des thèmes.
  */
 export const ConsultationRequestView = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
@@ -88,7 +87,7 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   const [hour, setHour] = useState<number | null>(null);
   const [minute, setMinute] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  // Autre date : créneaux proposés (l'expert choisit l'horaire dedans).
+  // Hors calendrier : créneaux proposés (l'expert choisit l'horaire dedans).
   const [windows, setWindows] = useState<BookingWindowInput[]>([]);
   const [editingWindow, setEditingWindow] = useState(false);
   const start = hour !== null && minute !== null ? `${pad2(hour)}:${pad2(minute)}` : null;
@@ -168,8 +167,8 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   // ou à défaut celles d'au moins un jour du mois affiché.
   const allowedStarts = useMemo(() => {
     if (where === 'other') return new Set(otherStarts);
-    const days = selectedDate ? [timesByDate[selectedDate] ?? []] : Object.values(timesByDate);
-    return new Set(days.flat().map((t) => t.start_local));
+    // Agenda : le jour d'abord, puis seulement ses heures libres.
+    return new Set((selectedDate ? timesByDate[selectedDate] ?? [] : []).map((t) => t.start_local));
   }, [where, otherStarts, timesByDate, selectedDate]);
 
   // Heures affichées (24 h) : plage hors calendrier, élargie aux heures libres de l'agenda.
@@ -216,14 +215,28 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   // Agenda : un jour est possible s'il a une heure libre, et l'heure choisie s'il y en a une.
   const dayEnabled = (date: string) =>
     where === 'calendar'
-      ? !!timesByDate[date]?.length && (!start || timesByDate[date].some((t) => t.start_local === start))
+      ? !!timesByDate[date]?.length
       : inRange(date);
 
-  // Durée changée : l'heure ou le jour choisis peuvent ne plus être libres.
+  // Agenda : jour (re)choisi ou durée changée, l'heure doit rester libre ce jour-là ;
+  // sinon la première heure libre du jour est proposée.
   useEffect(() => {
-    if (where !== 'calendar' || !calendar || !start) return;
-    if (selectedDate && !timesByDate[selectedDate]?.some((t) => t.start_local === start)) setSelectedDate(null);
-  }, [calendar]);
+    if (where !== 'calendar') return;
+    if (!selectedDate) {
+      clearTime();
+      return;
+    }
+    const times = timesByDate[selectedDate];
+    if (!times) return;
+    if (start && times.some((t) => t.start_local === start)) return;
+    if (!times.length) {
+      setSelectedDate(null);
+      return;
+    }
+    const [h, m] = times[0].start_local.split(':').map(Number);
+    setHour(h);
+    setMinute(m);
+  }, [selectedDate, calendar]);
 
   const resetTime = () => {
     setSelectedDate(null);
@@ -261,7 +274,7 @@ export const ConsultationRequestView = ({ navigation, route }) => {
   const subjectMax = Math.min(info?.subject_max ?? SUBJECT_MAX, SUBJECT_MAX);
   const total = info && duration ? info.price_30 * (duration / 30) : null;
   const subjectError = submitted && !subject.trim() ? 'Décrivez le sujet de votre consultation.' : null;
-  const timeError = submitted && where === 'calendar' && (!time || !selectedDate) ? 'Choisissez une heure et un jour.' : null;
+  const timeError = submitted && where === 'calendar' && (!time || !selectedDate) ? 'Choisissez un jour, puis une heure.' : null;
   // Créneaux : la durée estimée peut avoir changé depuis leur ajout.
   const shortWindow = duration ? windows.some((w) => consultationWindowError(w, duration) !== null) : false;
   const windowsError =
@@ -540,7 +553,7 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                           color={on ? Colors.white : CONSULT_COLOR_DARK}
                         />
                         <Text style={[styles.segmentText, on && styles.segmentTextOn]}>
-                          {key === 'calendar' ? "Agenda de l'expert" : 'Autre date'}
+                          {key === 'calendar' ? "Agenda de l'expert" : 'Hors calendrier'}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -560,38 +573,6 @@ export const ConsultationRequestView = ({ navigation, route }) => {
                   <>
                   {/* ---- Heure de début (24 h) : une ligne heure : minutes, réglée avec − / + ---- */}
                   {timeError ? <Text style={styles.error}>{timeError}</Text> : null}
-                  <View style={[styles.card, styles.timeCard, submitted && !time && styles.cardError]}>
-                    <Text style={styles.pickerLabel}>Heure de début</Text>
-                    <View style={styles.stepperRow}>
-                      {stepper(
-                        hour !== null ? pad2(hour) : '--',
-                        () => stepHour(-1),
-                        () => stepHour(1),
-                        nextHour(-1) !== null,
-                        nextHour(1) !== null,
-                        'heure'
-                      )}
-                      <Text style={styles.stepperColon}>:</Text>
-                      {stepper(
-                        minute !== null && hour !== null ? pad2(minute) : '--',
-                        () => stepMinute(-1),
-                        () => stepMinute(1),
-                        nextMinute(-1) !== null,
-                        nextMinute(1) !== null,
-                        'minutes'
-                      )}
-                      {time ? (
-                        <View style={styles.stepperEnd}>
-                          <Ionicons name="arrow-forward" size={14} color={Colors.subtext2} />
-                          <Text style={styles.stepperEndText}>{time.end_local}</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    {where === 'calendar' && openHours.length === 0 && calendar ? (
-                      <Text style={styles.pickerHint}>Aucune heure libre ce mois-ci pour cette durée.</Text>
-                    ) : null}
-                  </View>
-
                   <View style={[styles.card, submitted && !selectedDate && styles.cardError]}>
                     <View style={styles.monthNav}>
                       <TouchableOpacity
@@ -671,13 +652,49 @@ export const ConsultationRequestView = ({ navigation, route }) => {
 
                     {where === 'calendar' && !isFetching && calendar && calendar.days.length === 0 && (
                       <Text style={styles.noSlot}>
-                        Aucun horaire libre ce mois-ci pour cette durée. Essayez le mois suivant ou « Autre date ».
+                        Aucun horaire libre ce mois-ci pour cette durée. Essayez le mois suivant ou « Hors calendrier ».
                       </Text>
                     )}
                   </View>
+
+                  <View style={[styles.card, styles.timeCard, submitted && !!selectedDate && !time && styles.cardError]}>
+                    <Text style={styles.pickerLabel}>
+                      {selectedDate
+                        ? `Heure de début · ${capitalize(formatLongDate(selectedDate, year))}`
+                        : "Heure de début · choisissez d'abord un jour"}
+                    </Text>
+                    <View style={styles.stepperRow}>
+                      {stepper(
+                        hour !== null ? pad2(hour) : '--',
+                        () => stepHour(-1),
+                        () => stepHour(1),
+                        nextHour(-1) !== null,
+                        nextHour(1) !== null,
+                        'heure'
+                      )}
+                      <Text style={styles.stepperColon}>:</Text>
+                      {stepper(
+                        minute !== null && hour !== null ? pad2(minute) : '--',
+                        () => stepMinute(-1),
+                        () => stepMinute(1),
+                        nextMinute(-1) !== null,
+                        nextMinute(1) !== null,
+                        'minutes'
+                      )}
+                      {time ? (
+                        <View style={styles.stepperEnd}>
+                          <Ionicons name="arrow-forward" size={14} color={Colors.subtext2} />
+                          <Text style={styles.stepperEndText}>{time.end_local}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    {where === 'calendar' && !!selectedDate && openHours.length === 0 && calendar ? (
+                      <Text style={styles.pickerHint}>Aucune heure libre ce jour-là pour cette durée.</Text>
+                    ) : null}
+                  </View>
                   </>
                 ) : (
-                  // ---- Autre date : 1 à 3 créneaux, l'expert choisit l'horaire dedans ----
+                  // ---- Hors calendrier : 1 à 3 créneaux, l'expert choisit l'horaire dedans ----
                   <>
                     {windowsError ? <Text style={styles.error}>{windowsError}</Text> : null}
                     <WindowsEditor
