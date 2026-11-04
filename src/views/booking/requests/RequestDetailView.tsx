@@ -561,7 +561,7 @@ export const RequestDetailView = ({ navigation, route }) => {
 
             {/* ---- Réponse, en fin de fiche (tout lire avant de répondre) ; « Refuser » déplie le motif ---- */}
           {canRespond ? (
-            <View style={styles.footer}>
+            <View style={[styles.footer, declining && styles.footerDeclining]}>
               {declining ? (
                 <>
                   <View style={styles.footerHead}>
@@ -835,6 +835,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Bold',
     fontSize: 16,
     color: Colors.text,
+    // Titre collé à sa carte (8 px), section précédente un peu plus loin.
+    marginTop: Spacings.xs,
     marginBottom: -Spacings.xs,
   },
   expertRow: {
@@ -887,8 +889,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: Colors.subtext2,
-    marginTop: -Spacings.xs,
-    marginBottom: Spacings.sm,
+    // Juste sous le titre (2 px), puis 8 px jusqu'à la carte (l'écart du contenu est de 16 px).
+    marginTop: -Spacings.xs + 2,
+    marginBottom: -Spacings.xs,
   },
   windowsBox: {
     marginTop: Spacings.sm,
@@ -1048,11 +1051,14 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Réponse (en fin de fiche) ---- */
+  // Boutons posés sur le fond, sans carte ; le motif du refus, lui, s'ouvre dans une carte.
   footer: {
-    marginTop: Spacings.lg,
+    marginTop: Spacings.sm,
+  },
+  footerDeclining: {
     padding: Spacings.md,
     paddingTop: Spacings.sm,
-    borderRadius: 16,
+    borderRadius: 18,
     backgroundColor: Colors.white,
   },
   footerHead: {
