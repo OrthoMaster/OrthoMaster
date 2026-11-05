@@ -627,6 +627,8 @@ export const getBookingExperts = async (params?: {
   consultation?: number;
   /** Filtre Nom (nom, titre). */
   name?: string;
+  /** Filtre Ville : ville (ou début de code postal) d'un lieu de présentiel de l'expert. */
+  city?: string;
 }): Promise<BookingExpertsPage | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/experts`, { params })
@@ -645,7 +647,13 @@ export const getBookingExperts = async (params?: {
  * Thèmes réservables (10 par page), le plus récent d'abord.
  * GET /booking/themes?page=&q=
  */
-export const getBookingThemes = async (params?: { page?: number; q?: string }): Promise<BookingThemesPage | null> => {
+/** name : nom de l'expert ; city : thèmes en présentiel d'un expert qui a un lieu dans cette ville. */
+export const getBookingThemes = async (params?: {
+  page?: number;
+  q?: string;
+  name?: string;
+  city?: string;
+}): Promise<BookingThemesPage | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/themes`, { params })
     .then((response) => (response.data?.success == true ? response.data.data : null))
@@ -662,7 +670,7 @@ export const getBookingThemes = async (params?: { page?: number; q?: string }): 
  */
 export const smartSearchExperts = async (
   q: string,
-  filters?: { consultation?: number; name?: string }
+  filters?: { consultation?: number; name?: string; city?: string }
 ): Promise<SmartSearchResult<BookingExpertListItem> | null> => {
   return axiosInstance
     .get(`${baseUrl}/booking/search`, { params: { type: 'experts', q, ...filters } })
@@ -684,10 +692,24 @@ export const getBookingExpertMedias = async (expertId: number, limit = 5): Promi
     .catch(() => null);
 };
 
-export const smartSearchThemes = async (q: string): Promise<SmartSearchResult<BookingTheme> | null> => {
+export const smartSearchThemes = async (
+  q: string,
+  filters?: { name?: string; city?: string }
+): Promise<SmartSearchResult<BookingTheme> | null> => {
   return axiosInstance
-    .get(`${baseUrl}/booking/search`, { params: { type: 'themes', q } })
+    .get(`${baseUrl}/booking/search`, { params: { type: 'themes', q, ...filters } })
     .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
+/**
+ * Villes des lieux de présentiel des experts, pour l'autocomplétion du filtre Ville (8 au plus).
+ * GET /booking/cities?q=
+ */
+export const getBookingCities = async (q: string): Promise<{ city: string; experts: number }[] | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/cities`, { params: { q } })
+    .then((response) => (response.data?.success == true ? response.data.data.cities : null))
     .catch(() => null);
 };
 

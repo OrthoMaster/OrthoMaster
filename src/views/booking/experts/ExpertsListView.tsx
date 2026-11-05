@@ -12,6 +12,7 @@ import {
   StatusBar,
   Platform,
   useWindowDimensions,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -28,6 +29,7 @@ import {
   getBookingExpert,
   getBookingExperts,
   getBookingThemes,
+  getBookingCities,
   smartSearchExperts,
   smartSearchThemes,
   startConversationWithExpert,
@@ -93,32 +95,49 @@ export const ExpertsListView = ({ navigation, route }) => {
     : screenWidth - LIST_PADDING * 2;
   const cardWidth = twoColumns ? (innerWidth - WEB_GAP) / 2 : innerWidth;
   const [search, setSearch] = useState('');
-  // Web : le contour du navigateur est retiré du champ, le cadre de la recherche le remplace.
-  const [searchFocused, setSearchFocused] = useState(false);
   const [query, setQuery] = useState('');
 
-  // Consultation : filtre Nom, combinable avec la recherche par domaine / besoin (IA).
+  // Filtres combinables avec la recherche par domaine / besoin (IA) : Nom de l'expert,
+  // et pour les thèmes Ville (lieu de présentiel), avec autocomplétion.
   const [nameFilter, setNameFilter] = useState('');
   const [nameQuery, setNameQuery] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [cityQuery, setCityQuery] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [citySuggestOpen, setCitySuggestOpen] = useState(false);
 
   // La recherche part au serveur : on attend la fin de la frappe.
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuery(search.trim());
       setNameQuery(nameFilter.trim());
+      setCityQuery(cityFilter.trim());
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [search, nameFilter]);
+  }, [search, nameFilter, cityFilter]);
   const filters = consultationMode
     ? { name: nameQuery || undefined }
-    : {};
+    : { name: nameQuery || undefined, city: cityQuery || undefined };
+
+  // Ville : propositions pendant la saisie (villes des lieux des experts).
+  const [cityTyping, setCityTyping] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setCityTyping(cityFilter.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [cityFilter]);
+  const { data: citySuggestions } = useQuery({
+    queryKey: ['booking', 'cities', cityTyping],
+    queryFn: () => getBookingCities(cityTyping),
+    enabled: !consultationMode && citySuggestOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+  const suggestions = (citySuggestions ?? []).filter((c) => c.city.toLowerCase() !== cityFilter.trim().toLowerCase());
 
   // Recherche intelligente à partir de 2 caractères ; sinon, les listes paginées.
   const smart = query.length >= SMART_MIN_LENGTH;
 
   const expertsQuery = useInfiniteQuery({
-    queryKey: ['booking', 'experts', consultationMode ? 'consultation' : 'all', nameQuery],
+    queryKey: ['booking', 'experts', consultationMode ? 'consultation' : 'all', nameQuery, cityQuery],
     queryFn: async ({ pageParam }) => {
       const page = await getBookingExperts({
         page: pageParam,
@@ -135,9 +154,9 @@ export const ExpertsListView = ({ navigation, route }) => {
   });
 
   const themesQuery = useInfiniteQuery({
-    queryKey: ['booking', 'themes'],
+    queryKey: ['booking', 'themes', nameQuery, cityQuery],
     queryFn: async ({ pageParam }) => {
-      const page = await getBookingThemes({ page: pageParam });
+      const page = await getBookingThemes({ page: pageParam, ...filters });
       if (!page) throw new Error('themes');
       return page;
     },
@@ -153,11 +172,12 @@ export const ExpertsListView = ({ navigation, route }) => {
       showThemes ? 'themes' : consultationMode ? 'consultation' : 'experts',
       query,
       nameQuery,
+      cityQuery,
     ],
     queryFn: async () => {
       const result = showThemes
-        ? await smartSearchThemes(query)
-        : await smartSearchExperts(query, consultationMode ? { consultation: 1, ...filters } : undefined);
+        ? await smartSearchThemes(query, filters)
+        : await smartSearchExperts(query, consultationMode ? { consultation: 1, ...filters } : filters);
       if (!result) throw new Error('search');
       return result;
     },
@@ -333,16 +353,26 @@ export const ExpertsListView = ({ navigation, route }) => {
         styles.searchWrap,
         styles.filterWrap,
         flex ? { flex } : null,
-        IS_WEB && focusedField === key && { borderColor: CONSULT_COLOR },
+        IS_WEB && focusedField === key && { borderColor: accent },
       ]}
     >
-      <Ionicons name={icon} size={17} color={key === 'domain' ? CONSULT_COLOR : Colors.subtext} />
+      <Ionicons name={icon} size={17} color={key === 'domain' ? accent : Colors.subtext} />
       <TextInput
         style={[styles.searchInput, IS_WEB && styles.searchInputWeb]}
-        onFocus={() => setFocusedField(key)}
-        onBlur={() => setFocusedField((f) => (f === key ? null : f))}
+        onFocus={() => {
+          setFocusedField(key);
+          if (key === 'city') setCitySuggestOpen(true);
+        }}
+        onBlur={() => {
+          setFocusedField((f) => (f === key ? null : f));
+          // Laisse le temps à un toucher sur une proposition d'arriver.
+          if (key === 'city') setTimeout(() => setCitySuggestOpen(false), 200);
+        }}
         value={value}
-        onChangeText={onChange}
+        onChangeText={(text) => {
+          onChange(text);
+          if (key === 'city') setCitySuggestOpen(true);
+        }}
         placeholder={placeholder}
         placeholderTextColor={Colors.subtext}
         returnKeyType="search"
@@ -374,9 +404,8 @@ export const ExpertsListView = ({ navigation, route }) => {
         ) : null}
       </View>
 
-      {/* Web, grand écran (Thèmes) : comme l'Agenda, titre à gauche et recherche à droite sur une ligne. */}
-      <View style={twoColumns && !consultationMode ? styles.headWeb : null}>
-      <View style={[styles.titleBlock, twoColumns && !consultationMode && styles.titleWeb]}>
+      <View>
+      <View style={styles.titleBlock}>
         <Text style={[styles.title, twoColumns && styles.titleInline]}>
           {consultationMode
             ? 'Choisissez votre expert'
@@ -417,34 +446,51 @@ export const ExpertsListView = ({ navigation, route }) => {
         )}
       </View>
 
-      {consultationMode ? (
-        // Deux filtres combinables : domaine / besoin (IA), nom. Côte à côte sur grand écran.
-        <View style={[styles.filters, twoColumns && styles.filtersWeb]}>
-          {filterField('domain', 'sparkles-outline', search, setSearch, 'Domaine, besoin…', twoColumns ? 2 : undefined)}
-          {filterField('name', 'person-outline', nameFilter, setNameFilter, "Nom de l'expert", twoColumns ? 1 : undefined)}
-        </View>
-      ) : (
-      <View style={[styles.searchWrap, twoColumns && styles.searchWrapWeb, IS_WEB && searchFocused && styles.searchWrapFocused]}>
-        <Ionicons name="search" size={18} color={Colors.subtext} />
-        <TextInput
-          style={[styles.searchInput, IS_WEB && styles.searchInputWeb]}
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => setSearchFocused(false)}
-          value={search}
-          onChangeText={setSearch}
-          placeholder={showThemes ? 'Décrivez votre besoin, un sujet…' : 'Un expert, un domaine, un besoin…'}
-          placeholderTextColor={Colors.subtext}
-          returnKeyType="search"
-          autoCorrect={false}
-          maxLength={IS_WEB ? WEB_SEARCH_MAX_LENGTH : undefined}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch('')} hitSlop={8} accessibilityLabel="Effacer la recherche">
-            <Ionicons name="close-circle" size={18} color={Colors.subtext} />
-          </TouchableOpacity>
+      {/* Filtres combinables : domaine / besoin (IA), nom, et ville pour les thèmes. Sur une ligne sur grand écran. */}
+      <View style={[styles.filters, twoColumns && styles.filtersWeb]}>
+        {filterField('domain', 'sparkles-outline', search, setSearch, showThemes ? 'Besoin, sujet…' : 'Domaine, besoin…', twoColumns ? 2 : undefined)}
+        {twoColumns || consultationMode ? (
+          <>
+            {filterField('name', 'person-outline', nameFilter, setNameFilter, "Nom de l'expert", twoColumns ? 1 : undefined)}
+            {!consultationMode ? filterField('city', 'location-outline', cityFilter, setCityFilter, 'Ville', 1) : null}
+          </>
+        ) : (
+          // Écran étroit : Nom et Ville côte à côte, pour garder la liste visible.
+          <View style={styles.filtersPair}>
+            {filterField('name', 'person-outline', nameFilter, setNameFilter, 'Nom', 1)}
+            {filterField('city', 'location-outline', cityFilter, setCityFilter, 'Ville', 1)}
+          </View>
         )}
       </View>
-      )}
+
+      {/* Ville : propositions sous les filtres pendant la saisie. */}
+      {!consultationMode && citySuggestOpen && suggestions.length > 0 ? (
+        // Grand écran : sous le champ Ville (mêmes parts que la ligne des filtres).
+        <View style={twoColumns ? [styles.filtersWeb, { gap: Spacings.sm }] : null}>
+          {twoColumns ? <View style={{ flex: 2 }} /> : null}
+          {twoColumns ? <View style={{ flex: 1 }} /> : null}
+        <View style={[styles.suggestions, twoColumns && { flex: 1 }]}>
+          {suggestions.slice(0, 6).map((c) => (
+            <TouchableOpacity
+              key={c.city}
+              style={styles.suggestion}
+              onPress={() => {
+                setCityFilter(c.city);
+                setCitySuggestOpen(false);
+                Keyboard.dismiss();
+              }}
+              accessibilityRole="button"
+            >
+              <Ionicons name="location-outline" size={16} color={accent} />
+              <Text style={styles.suggestionText}>{c.city}</Text>
+              <Text style={styles.suggestionCount}>
+                {c.experts} expert{c.experts > 1 ? 's' : ''}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        </View>
+      ) : null}
       </View>
     </View>
   );
@@ -714,34 +760,51 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
 
-  headWeb: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacings.lg,
-  },
-  titleWeb: {
-    flex: 1,
-    maxWidth: undefined,
-  },
-  searchWrapWeb: {
-    width: WEB_SEARCH_WIDTH,
-    marginTop: 0,
-  },
-  searchWrapFocused: {
-    borderColor: Colors.lblue,
-  },
   searchInputWeb: {
     outlineStyle: 'none',
   } as any,
 
-  /* ---- Filtres (Consultation) ---- */
+  /* ---- Ville : propositions ---- */
+  suggestions: {
+    marginTop: Spacings.xs,
+    borderRadius: 14,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  suggestion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    paddingHorizontal: Spacings.sm,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+  },
+  suggestionText: {
+    flex: 1,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.text,
+  },
+  suggestionCount: {
+    fontFamily: 'Roboto',
+    fontSize: 12,
+    color: Colors.subtext,
+  },
+
+  /* ---- Filtres ---- */
   filters: {
     gap: Spacings.sm,
     marginTop: Spacings.md,
   },
   filtersWeb: {
     flexDirection: 'row',
+  },
+  filtersPair: {
+    flexDirection: 'row',
+    gap: Spacings.sm,
   },
   filterWrap: {
     marginTop: 0,
