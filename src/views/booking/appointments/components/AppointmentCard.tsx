@@ -12,7 +12,6 @@ import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker
 import { JoinVisioButton } from '../../components/JoinVisioButton';
 import { STATUS_META, featuredBlock, relativeDay } from '../appointmentFormat';
 import { formatCardDay } from '../../bookingDates';
-import { WindowsList } from '../../components/WindowsList';
 import { ModeLine } from '../../components/ModePill';
 import { KindTags, blockHours, kindColor } from '../../components/KindTags';
 
@@ -113,24 +112,31 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
           </View>
         </View>
 
-        {/* Pastilles au-dessus du titre ; consultation : votre sujet sur 2 lignes. */}
+        {/* Pastilles sur une ligne (retour à la ligne si besoin) : type, hors calendrier, format.
+            Consultation : toujours en visio, pas de pastille de format. */}
         <KindTags
           kind={booking.kind}
           durationMinutes={booking.duration_minutes}
-          blocksCount={booking.blocks_count}
+          themeOnly
           offCalendar={booking.off_calendar}
           style={styles.tags}
-        />
-        <Text style={styles.title} numberOfLines={2}>
-          {booking.offer_title}
-        </Text>
-        {booking.kind === 'consultation' && booking.subject ? (
-          <Text style={styles.subject} numberOfLines={2}>
-            {booking.subject}
+        >
+          {booking.kind !== 'consultation' ? <ModeLine mode={booking.mode ?? 'online'} location={block?.location} /> : null}
+        </KindTags>
+        {booking.kind === 'consultation' ? (
+          <>
+            <Text style={styles.title}>Mon sujet</Text>
+            {booking.subject ? (
+              <Text style={styles.subject} numberOfLines={2}>
+                {booking.subject}
+              </Text>
+            ) : null}
+          </>
+        ) : (
+          <Text style={styles.title} numberOfLines={2}>
+            {booking.offer_title}
           </Text>
-        ) : null}
-        {/* Format : En visio, ou En présentiel avec le lieu de la demi-journée mise en avant. */}
-        <ModeLine mode={booking.mode ?? 'online'} location={block?.location} style={styles.modeLine} />
+        )}
 
         {/* ---- Demi-journée mise en avant ---- */}
         {block ? (
@@ -156,11 +162,6 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ booking, onPre
               </View>
             ) : null}
 
-          </View>
-        ) : booking.windows?.length ? (
-          // Créneaux proposés : l'expert n'a pas encore choisi l'horaire.
-          <View style={styles.session}>
-            <WindowsList windows={booking.windows} compact />
           </View>
         ) : null}
       </View>
@@ -202,11 +203,12 @@ const styles = StyleSheet.create({
   tags: {
     marginTop: Spacings.sm,
   },
+  // Sujet de la consultation, en noir.
   subject: {
     fontFamily: 'Roboto',
-    fontSize: 13,
-    lineHeight: 18,
-    color: Colors.subtext2,
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.text,
     marginTop: 2,
   },
   motif: {
@@ -270,9 +272,6 @@ const styles = StyleSheet.create({
     marginTop: Spacings.xs,
   },
 
-  modeLine: {
-    marginTop: Spacings.xs,
-  },
 
   /* ---- Demi-journée ---- */
   session: {

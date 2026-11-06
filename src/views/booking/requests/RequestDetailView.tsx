@@ -135,6 +135,10 @@ export const RequestDetailView = ({ navigation, route }) => {
   const blocksNeeded = Math.max(1, request?.blocks_count ?? 1);
   const themeChoice = needsWindowChoice && request?.kind !== 'consultation';
   const windowChosen = themeChoice ? windowBlocks.length === blocksNeeded : !!windowStart;
+  // Thème par créneaux en présentiel : un lieu par demi-journée, choisi dans le sélecteur.
+  const [blockLocations, setBlockLocations] = useState<Record<string, number>>({});
+  const placePerBlock = themeChoice && needsLocation;
+  const placesMissing = placePerBlock && windowBlocks.some((v) => !blockLocations[v]);
 
   const { data: reasons } = useQuery({
     queryKey: ['booking', 'decline-reasons'],
@@ -217,7 +221,12 @@ export const RequestDetailView = ({ navigation, route }) => {
       );
       return;
     }
-    if (needsLocation && !locationId) {
+    if (placePerBlock && placesMissing) {
+      setWindowMissing(true);
+      notify('Choisissez les lieux', 'Indiquez où se tiendra chaque demi-journée retenue.');
+      return;
+    }
+    if (needsLocation && !placePerBlock && !locationId) {
       notify('Choisissez le lieu', 'Cette demande est hors calendrier : indiquez où se tiendra le rendez-vous.');
       return;
     }
@@ -231,7 +240,11 @@ export const RequestDetailView = ({ navigation, route }) => {
       async () => {
         setBusy('accept');
         const result = await acceptExpertRequest(bookingId, {
-          ...(needsLocation ? { location_id: locationId } : {}),
+          ...(placePerBlock
+            ? { block_locations: Object.fromEntries(windowBlocks.map((v) => [v, blockLocations[v]])) }
+            : needsLocation
+              ? { location_id: locationId }
+              : {}),
           ...(needsWindowChoice ? (themeChoice ? { window_blocks: windowBlocks } : { window_start: windowStart }) : {}),
         });
         setBusy(null);
@@ -452,9 +465,9 @@ export const RequestDetailView = ({ navigation, route }) => {
                   <Text style={styles.sectionSubtitle}>
                     {request.kind === 'consultation'
                       ? 'Choisissez un créneau proposé, puis le jour et l’heure de début : la fin suit la durée estimée.'
-                      : `Choisissez ${blocksNeeded} demi-journée${blocksNeeded > 1 ? 's' : ''} dans les créneaux proposés, consécutives ou non.`}
+                      : `Choisissez ${blocksNeeded} demi-journée${blocksNeeded > 1 ? 's' : ''} dans les créneaux proposés, consécutives ou non${placePerBlock ? ', et le lieu de chacune' : ''}.`}
                   </Text>
-                  <View style={[styles.card, windowMissing && !windowChosen && styles.cardError]}>
+                  <View style={[styles.card, windowMissing && (!windowChosen || placesMissing) && styles.cardError]}>
                     <WindowChoicePicker
                       kind={request.kind === 'consultation' ? 'consultation' : 'offer'}
                       windows={full.windows}
@@ -467,19 +480,22 @@ export const RequestDetailView = ({ navigation, route }) => {
                       }}
                       blocksCount={blocksNeeded}
                       selected={windowBlocks}
+                      locations={placePerBlock ? full.locations : undefined}
+                      blockLocations={blockLocations}
+                      onBlockLocations={setBlockLocations}
                       onSelect={(values) => {
                         setWindowBlocks(values);
                         if (values.length === blocksNeeded) setWindowMissing(false);
                       }}
                       color={accent}
-                      error={windowMissing && !windowChosen}
+                      error={windowMissing && (!windowChosen || placesMissing)}
                     />
                   </View>
                 </>
               ) : null}
 
               {/* ---- Présentiel hors calendrier : lieu à choisir pour accepter ---- */}
-              {needsLocation ? (
+              {needsLocation && !placePerBlock ? (
                 <>
                   <Text style={styles.sectionTitle}>Lieu du rendez-vous</Text>
                   <View style={styles.card}>

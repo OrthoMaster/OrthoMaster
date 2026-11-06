@@ -114,11 +114,16 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
         {/* ---- Délai de réponse : date limite et temps restant, au même endroit ---- */}
         {pending && request.respond_by ? (
           <View style={[styles.deadline, left?.urgent && styles.deadlineUrgent]}>
-            <Ionicons name="hourglass-outline" size={14} color={left?.urgent ? Colors.danger : Colors.subtext2} />
-            <Text style={[styles.deadlineText, { color: left?.urgent ? Colors.danger : Colors.text }]} numberOfLines={2}>
-              Répondre avant <Text style={styles.deadlineDate}>{formatDeadline(request.respond_by)}</Text>
-              {left ? <Text style={styles.deadlineLeft}> · encore {left.label}</Text> : null}
-            </Text>
+            {/* Icône calée sur la première ligne ; « encore … » en dessous, plus petit. */}
+            <Ionicons name="hourglass-outline" size={14} color={left?.urgent ? Colors.danger : Colors.subtext2} style={styles.deadlineIcon} />
+            <View style={styles.flex}>
+              <Text style={[styles.deadlineText, { color: left?.urgent ? Colors.danger : Colors.text }]}>
+                Répondre avant <Text style={styles.deadlineDate}>{formatDeadline(request.respond_by)}</Text>
+              </Text>
+              {left ? (
+                <Text style={[styles.deadlineLeft, { color: left.urgent ? Colors.danger : Colors.subtext2 }]}>encore {left.label}</Text>
+              ) : null}
+            </View>
           </View>
         ) : null}
       </View>
@@ -250,7 +255,7 @@ const styles = StyleSheet.create({
   // Bas de carte : date limite et temps restant sur une ligne, sous un filet.
   deadline: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 6,
     marginTop: Spacings.md,
     paddingTop: Spacings.sm,
@@ -270,8 +275,13 @@ const styles = StyleSheet.create({
   deadlineDate: {
     fontFamily: 'Poppins-Bold',
   },
+  deadlineIcon: {
+    marginTop: 3,
+  },
   deadlineLeft: {
     fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    lineHeight: 16,
   },
 
   /* ---- Demi-journée ---- */

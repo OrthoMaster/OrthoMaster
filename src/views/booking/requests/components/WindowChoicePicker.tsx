@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
 
-import { BookingWindow, BookingWindowOption } from '../../../../services/v2/BookingService';
+import { BookingPeriod, BookingWindow, BookingWindowOption } from '../../../../services/v2/BookingService';
+import { PERIOD_ICONS, PERIOD_LABELS } from '../../experts/components/SlotPicker';
 import { MONTHS, WEEKDAYS, formatLongDate, fromMinutes, toMinutes, weekdayIso } from '../../bookingDates';
 import { tint } from '../../bookingPalette';
 import { PERIOD_TEXT, consultationStarts, windowLabel } from '../../bookingWindows';
@@ -14,6 +15,66 @@ import { PERIOD_TEXT, consultationStarts, windowLabel } from '../../bookingWindo
 const byTime = (a: string, b: string) => a.replace('morning', '0').localeCompare(b.replace('morning', '0'));
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+export interface PickerLocation {
+  id: number;
+  label: string;
+  city: string;
+}
+
+const PERIODS: BookingPeriod[] = ['morning', 'afternoon'];
+const STRIP_STEP = 180;
+
+/**
+ * Bandeau de jours défilant à l'horizontale, avec un chevron à chaque bout : il indique qu'il reste
+ * des jours de ce côté (grisé sinon) et fait défiler d'un cran.
+ */
+const DayStrip: React.FC<{ color: string; children: React.ReactNode }> = ({ color, children }) => {
+  const ref = useRef<ScrollView>(null);
+  const [x, setX] = useState(0);
+  const [content, setContent] = useState(0);
+  const [width, setWidth] = useState(0);
+  const canLeft = x > 2;
+  const canRight = x + width < content - 2;
+  // Tout tient à l'écran : pas de chevrons.
+  const scrollable = width > 0 && content > width + 2;
+
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => setX(e.nativeEvent.contentOffset.x);
+  const go = (dir: 1 | -1) => ref.current?.scrollTo({ x: Math.max(0, x + dir * STRIP_STEP), animated: true });
+
+  const chevron = (dir: 1 | -1, on: boolean) => (
+    <TouchableOpacity
+      style={[styles.chevron, !on && styles.chevronOff]}
+      onPress={() => go(dir)}
+      disabled={!on}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={dir < 0 ? 'Jours précédents' : 'Jours suivants'}
+    >
+      <Ionicons name={dir < 0 ? 'chevron-back' : 'chevron-forward'} size={18} color={on ? color : Colors.border} />
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.strip}>
+      {scrollable ? chevron(-1, canLeft) : null}
+      <ScrollView
+        ref={ref}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.days}
+        style={styles.flex}
+        onScroll={onScroll}
+        scrollEventThrottle={32}
+        onContentSizeChange={(w) => setContent(w)}
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      >
+        {children}
+      </ScrollView>
+      {scrollable ? chevron(1, canRight) : null}
+    </View>
+  );
+};
 
 interface WindowChoicePickerProps {
   kind: 'offer' | 'consultation';
@@ -29,6 +90,10 @@ interface WindowChoicePickerProps {
   blocksCount?: number;
   selected?: string[];
   onSelect?: (values: string[]) => void;
+  /** Thème en présentiel : lieux de l'expert ; un lieu par demi-journée retenue. */
+  locations?: PickerLocation[];
+  blockLocations?: Record<string, number>;
+  onBlockLocations?: (next: Record<string, number>) => void;
   color: string;
   error?: boolean;
 }
@@ -50,6 +115,9 @@ export const WindowChoicePicker: React.FC<WindowChoicePickerProps> = ({
   blocksCount = 1,
   selected = [],
   onSelect = () => {},
+  locations,
+  blockLocations = {},
+  onBlockLocations = () => {},
   color,
   error,
 }) => {
@@ -122,7 +190,7 @@ export const WindowChoicePicker: React.FC<WindowChoicePickerProps> = ({
         {windowPos !== null && days.length > 0 ? (
           <View style={styles.pick}>
             {/* Jours du créneau, comme le bandeau de l'Agenda : lettre du jour, numéro, mois. */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.days}>
+            <DayStrip color={color}>
               {days.map((d) => {
                 const on = d === day;
                 const [, m, n] = d.split('-').map(Number);
@@ -141,7 +209,7 @@ export const WindowChoicePicker: React.FC<WindowChoicePickerProps> = ({
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </DayStrip>
 
             <View style={styles.stepRow}>
               <View style={[styles.stepper, { backgroundColor: soft }]}>
@@ -183,10 +251,25 @@ export const WindowChoicePicker: React.FC<WindowChoicePickerProps> = ({
   const windowOptions = windowPos !== null ? options.filter((o) => o.window === windowPos) : [];
   const themeDays = [...new Set(windowOptions.map((o) => o.date))];
   const dayOptions = windowOptions.filter((o) => o.date === day);
+  const withPlaces = !!locations?.length;
   const toggle = (o: BookingWindowOption) => {
-    if (selected.includes(o.value)) onSelect(selected.filter((v) => v !== o.value));
-    else if (!full) onSelect([...selected, o.value].sort(byTime));
+    if (selected.includes(o.value)) {
+      onSelect(selected.filter((v) => v !== o.value));
+      if (withPlaces) {
+        const { [o.value]: _, ...rest } = blockLocations;
+        onBlockLocations(rest);
+      }
+    } else if (!full) {
+      onSelect([...selected, o.value].sort(byTime));
+      // Lieu proposé d'office : le seul lieu, ou le dernier choisi ; modifiable juste en dessous.
+      if (withPlaces) {
+        const last = selected.length ? blockLocations[selected[selected.length - 1]] : undefined;
+        const preset = locations!.length === 1 ? locations![0].id : last;
+        if (preset) onBlockLocations({ ...blockLocations, [o.value]: preset });
+      }
+    }
   };
+  const placeOf = (v: string) => locations?.find((l) => l.id === blockLocations[v]);
   const pickThemeWindow = (w: BookingWindow) => {
     setWindowPos(w.position);
     const first = options.find((o) => o.window === w.position && o.available);
@@ -225,7 +308,7 @@ export const WindowChoicePicker: React.FC<WindowChoicePickerProps> = ({
 
       {windowPos !== null && themeDays.length > 0 ? (
         <View style={styles.pick}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.days}>
+          <DayStrip color={color}>
             {themeDays.map((d) => {
               const on = d === day;
               const [, m, n] = d.split('-').map(Number);
@@ -253,32 +336,76 @@ export const WindowChoicePicker: React.FC<WindowChoicePickerProps> = ({
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </DayStrip>
 
-          <View style={styles.periods}>
-            {dayOptions.map((o) => {
-              const on = selected.includes(o.value);
-              const off = !o.available || (!on && full);
-              return (
-                <TouchableOpacity
-                  key={o.value}
-                  style={[styles.period, { borderColor: on ? color : Colors.border }, on && { backgroundColor: color }, off && styles.disabled]}
-                  onPress={() => toggle(o)}
-                  disabled={off}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: on, disabled: off }}
-                >
-                  <Ionicons name={on ? 'checkbox' : 'square-outline'} size={18} color={on ? Colors.white : o.available ? color : Colors.subtext} />
-                  <View style={styles.flex}>
-                    <Text style={[styles.periodTitle, { color: on ? Colors.white : o.available ? Colors.text : Colors.subtext }]}>
-                      {capitalize(PERIOD_TEXT[o.period])}
-                    </Text>
-                    <Text style={[styles.periodSub, { color: on ? Colors.white : Colors.subtext2 }]}>
-                      {o.start_local} – {o.end_local}
-                      {!o.available ? ' · indisponible' : ''}
-                    </Text>
+          {/* Matin / après-midi du jour ouvert, comme sur l'écran Réserver ; en présentiel,
+              le lieu de chaque demi-journée retenue se choisit aussitôt, dans sa case. */}
+          {day ? <Text style={styles.panelDay}>{capitalize(formatLongDate(day, year))}</Text> : null}
+          <View style={[styles.panel, { backgroundColor: soft }]}>
+            {PERIODS.map((period) => {
+              const o = dayOptions.find((x) => x.period === period);
+              if (!o || !o.available) {
+                return (
+                  <View key={period} style={[styles.slot, styles.slotOff, { borderColor: Colors.border }]}>
+                    <Text style={[styles.slotLabel, { color: Colors.subtext }]}>{PERIOD_LABELS[period]}</Text>
+                    <Text style={[styles.slotHours, { color: Colors.subtext }]}>{o ? 'Indisponible' : 'Hors créneau'}</Text>
                   </View>
-                </TouchableOpacity>
+                );
+              }
+              const on = selected.includes(o.value);
+              const off = !on && full;
+              const place = placeOf(o.value);
+              const missing = on && withPlaces && !place;
+              return (
+                <View
+                  key={period}
+                  style={[
+                    styles.slot,
+                    on ? { backgroundColor: color, borderColor: color } : { backgroundColor: Colors.white, borderColor: tint(color, 0.35) },
+                    off && styles.disabled,
+                  ]}
+                >
+                  <TouchableOpacity
+                    onPress={() => toggle(o)}
+                    disabled={off}
+                    activeOpacity={0.75}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: on, disabled: off }}
+                    accessibilityLabel={`${PERIOD_LABELS[period]} ${o.start_local} à ${o.end_local}`}
+                  >
+                    <View style={styles.slotHead}>
+                      <MaterialCommunityIcons name={PERIOD_ICONS[period]} size={16} color={on ? Colors.white : color} />
+                      <Text style={[styles.slotLabel, { color: on ? Colors.white : Colors.text }]}>{PERIOD_LABELS[period]}</Text>
+                      {on ? <Ionicons name="checkmark-circle" size={16} color={Colors.white} /> : null}
+                    </View>
+                    <Text style={[styles.slotHours, { color: on ? Colors.white : Colors.subtext2 }]}>
+                      {o.start_local} – {o.end_local}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {on && withPlaces ? (
+                    <View style={styles.places}>
+                      {locations!.map((l) => {
+                        const picked = blockLocations[o.value] === l.id;
+                        return (
+                          <TouchableOpacity
+                            key={l.id}
+                            style={[styles.place, picked ? styles.placeOn : missing && error && styles.placeError]}
+                            onPress={() => onBlockLocations({ ...blockLocations, [o.value]: l.id })}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected: picked }}
+                            accessibilityLabel={`Lieu : ${l.label}, ${l.city}`}
+                          >
+                            <Ionicons name={picked ? 'location' : 'location-outline'} size={12} color={picked ? color : Colors.white} />
+                            <Text style={[styles.placeText, { color: picked ? color : Colors.white }]} numberOfLines={1}>
+                              {l.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </View>
               );
             })}
           </View>
@@ -309,6 +436,9 @@ export const WindowChoicePicker: React.FC<WindowChoicePickerProps> = ({
                 >
                   <Text style={[styles.chipText, { color: Colors.text }]}>
                     {WEEKDAYS[weekdayIso(o.date)].slice(0, 3)} {n} {MONTHS[m - 1].slice(0, 3)} · {PERIOD_TEXT[o.period]}
+                    {withPlaces ? (
+                      <Text style={{ color: placeOf(v) ? Colors.subtext2 : Colors.danger }}> · {placeOf(v)?.label ?? 'lieu ?'}</Text>
+                    ) : null}
                   </Text>
                   <Ionicons name="close" size={14} color={color} />
                 </TouchableOpacity>
@@ -394,27 +524,95 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 3,
   },
-  periods: {
-    flexDirection: 'row',
-    gap: Spacings.xs,
-  },
-  period: {
-    flex: 1,
+  strip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacings.xs,
-    padding: Spacings.sm,
-    borderRadius: 12,
+    gap: 2,
+  },
+  chevron: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
     borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  chevronOff: {
+    opacity: 0.5,
+  },
+  panelDay: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    color: Colors.text,
+    marginBottom: -4,
+  },
+  // Comme l'écran Réserver : fond teinté, deux cases côte à côte.
+  panel: {
+    flexDirection: 'row',
+    gap: Spacings.xs,
+    padding: Spacings.xs,
+    borderRadius: 14,
+  },
+  slot: {
+    flex: 1,
+    minHeight: 54,
+    justifyContent: 'center',
+    paddingHorizontal: Spacings.sm,
+    paddingVertical: Spacings.xs,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  slotOff: {
+    borderStyle: 'dashed',
+    opacity: 0.7,
     backgroundColor: Colors.white,
   },
-  periodTitle: {
+  slotHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xxs,
+  },
+  slotLabel: {
+    flex: 1,
     fontFamily: 'Poppins-Medium',
     fontSize: 14,
   },
-  periodSub: {
+  slotHours: {
     fontFamily: 'Poppins-Regular',
     fontSize: 12,
+    marginTop: 1,
+  },
+  places: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 6,
+  },
+  place: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    maxWidth: '100%',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  placeOn: {
+    backgroundColor: Colors.white,
+    borderColor: Colors.white,
+  },
+  placeError: {
+    borderColor: Colors.danger,
+    borderWidth: 2,
+  },
+  placeText: {
+    flexShrink: 1,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 11,
   },
   summary: {
     gap: 6,

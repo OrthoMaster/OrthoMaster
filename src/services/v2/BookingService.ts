@@ -1509,7 +1509,13 @@ export const acceptExpertRequest = async (
    * Demande par créneaux : window_start « Y-m-d H:i » (consultation) ;
    * window_blocks « Y-m-d|période » × blocks_count, choisies librement (thème).
    */
-  input?: { location_id?: number | null; window_start?: string | null; window_blocks?: string[] }
+  input?: {
+    location_id?: number | null;
+    window_start?: string | null;
+    window_blocks?: string[];
+    /** Présentiel : un lieu par demi-journée (« Y-m-d|période » → id). */
+    block_locations?: Record<string, number>;
+  }
 ): Promise<BookingResult<ExpertRequestDetail>> => {
   return axiosInstance
     .post(`${baseUrl}/booking/me/requests/${bookingId}/accept`, input ?? {})
