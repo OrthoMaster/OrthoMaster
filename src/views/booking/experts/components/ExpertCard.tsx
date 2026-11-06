@@ -15,8 +15,6 @@ const IS_WEB = Platform.OS === 'web';
 const CARD_RADIUS = 20;
 const CARD_PADDING = Spacings.md;
 const AVATAR = 56;
-/** Domaines affichés sur la carte ; les autres se résument en « +n ». */
-const MAX_DOMAINS = 2;
 const STAGGER_MS = 60;
 
 /** Formats d'un thème : ceux du serveur, ou à défaut (ancienne réponse) les modes seuls au prix « dès ». */
@@ -47,8 +45,9 @@ interface ExpertCardProps {
 
 /**
  * Carte d'un expert, liste « Thèmes » (mobile et web), aux couleurs de l'expert :
- * repliée, l'identité, deux domaines et « n thèmes · dès … » ; dépliée, ses thèmes, chacun avec
+ * repliée, l'identité, tous ses domaines et « n thèmes · dès … » ; dépliée, ses thèmes, chacun avec
  * ses formats (prix) qui mènent directement à l'écran Réserver.
+ * Toucher l'identité ouvre le profil ; toucher le pied (chevron) déplie ou replie les thèmes.
  */
 export const ExpertCard: React.FC<ExpertCardProps> = ({
   expert,
@@ -96,14 +95,12 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
   return (
     <Animated.View style={[{ width }, animated]}>
       <View style={[styles.card, { shadowColor: accent }]}>
-        {/* ---- Identité : toucher la carte déplie les thèmes ---- */}
+        {/* ---- Identité : toucher ouvre le profil ---- */}
         <Pressable
-          style={styles.main}
-          onPress={toggle}
-          disabled={!offers.length}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: open }}
-          accessibilityLabel={[expert.honorific, expert.name].filter(Boolean).join(' ')}
+          style={({ pressed }) => [styles.main, pressed && styles.pressed]}
+          onPress={onProfile}
+          accessibilityRole="link"
+          accessibilityLabel={`Profil de ${[expert.honorific, expert.name].filter(Boolean).join(' ')}`}
         >
           <View style={[styles.avatar, { backgroundColor: accent }]}>
             {expert.avatar_url ? (
@@ -128,16 +125,13 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
             ) : null}
             {domains.length > 0 ? (
               <View style={styles.domains}>
-                {domains.slice(0, MAX_DOMAINS).map((d) => (
+                {domains.map((d) => (
                   <View key={d.id} style={[styles.domain, { backgroundColor: soft }]}>
                     <Text style={[styles.domainText, { color: accent }]} numberOfLines={1}>
                       {d.name}
                     </Text>
                   </View>
                 ))}
-                {domains.length > MAX_DOMAINS ? (
-                  <Text style={styles.domainMore}>+{domains.length - MAX_DOMAINS}</Text>
-                ) : null}
               </View>
             ) : null}
             {expert.reason ? <SearchReason text={expert.reason} /> : null}
@@ -195,44 +189,33 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
                 </View>
               );
             })}
-            <Pressable style={styles.profileLink} onPress={onProfile} accessibilityRole="link" hitSlop={6}>
-              <Text style={[styles.profileText, { color: accent }]}>Voir le profil</Text>
-              <Ionicons name="chevron-forward" size={14} color={accent} />
-            </Pressable>
           </View>
         ) : null}
 
-        {/* ---- Pied de carte aux couleurs de l'expert ---- */}
-        <View style={[styles.foot, { backgroundColor: tint(accent, 0.08) }]}>
-          {offers.length > 0 ? (
-            <>
-              <Text style={styles.summary} numberOfLines={1}>
-                <Text style={styles.summaryStrong}>
-                  {offers.length} thème{offers.length > 1 ? 's' : ''}
-                </Text>
-                {from != null ? ` · ${prices.length > 1 || formatsOf(offers[0]).length > 1 ? 'dès ' : ''}${priceLabel(from, currency)}` : ''}
+        {/* ---- Pied de carte aux couleurs de l'expert : le toucher déplie / replie les thèmes ---- */}
+        {offers.length > 0 ? (
+          <Pressable
+            style={({ pressed }) => [styles.foot, { backgroundColor: tint(accent, pressed ? 0.14 : 0.08) }]}
+            onPress={toggle}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: open }}
+            accessibilityLabel={`${offers.length} thème${offers.length > 1 ? 's' : ''}, ${open ? 'replier' : 'déplier'}`}
+          >
+            <Text style={styles.summary} numberOfLines={1}>
+              <Text style={styles.summaryStrong}>
+                {offers.length} thème{offers.length > 1 ? 's' : ''}
               </Text>
-              <Pressable
-                style={({ pressed }) => [styles.toggle, { backgroundColor: open ? Colors.white : accent, borderColor: accent }, pressed && styles.pressed]}
-                onPress={toggle}
-                hitSlop={4}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: open }}
-              >
-                <Text style={[styles.toggleText, { color: open ? accent : Colors.white }]}>Thèmes</Text>
-                <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={open ? accent : Colors.white} />
-              </Pressable>
-            </>
-          ) : (
-            <>
-              <Text style={[styles.summary, styles.flex]}>Pas de rendez-vous pour le moment</Text>
-              <Pressable style={styles.profileLink} onPress={onProfile} accessibilityRole="link" hitSlop={6}>
-                <Text style={[styles.profileText, { color: accent }]}>Profil</Text>
-                <Ionicons name="chevron-forward" size={14} color={accent} />
-              </Pressable>
-            </>
-          )}
-        </View>
+              {from != null ? ` · ${prices.length > 1 || formatsOf(offers[0]).length > 1 ? 'dès ' : ''}${priceLabel(from, currency)}` : ''}
+            </Text>
+            <View style={[styles.chevron, { backgroundColor: open ? accent : Colors.white, borderColor: withAlpha(accent, 0.45) }]}>
+              <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={open ? Colors.white : accent} />
+            </View>
+          </Pressable>
+        ) : (
+          <View style={[styles.foot, { backgroundColor: tint(accent, 0.08) }]}>
+            <Text style={styles.summary}>Pas de rendez-vous pour le moment</Text>
+          </View>
+        )}
       </View>
     </Animated.View>
   );
@@ -315,11 +298,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
   },
-  domainMore: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 11,
-    color: Colors.subtext,
-  },
 
   /* ---- Thèmes dépliés ---- */
   offers: {
@@ -380,17 +358,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.text,
   },
-  profileLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 2,
-    paddingTop: Spacings.xs,
-  },
-  profileText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 13,
-  },
 
   /* ---- Pied ---- */
   foot: {
@@ -408,21 +375,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.subtext2,
   },
+  chevron: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   summaryStrong: {
     fontFamily: 'Poppins-Bold',
     color: Colors.text,
-  },
-  toggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    height: 36,
-    paddingHorizontal: Spacings.md,
-    borderRadius: 18,
-    borderWidth: 1.5,
-  },
-  toggleText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 13,
   },
 });

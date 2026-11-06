@@ -553,7 +553,7 @@ export const ExpertsListView = ({ navigation, route }) => {
     // va dans la colonne la moins remplie, d'après sa hauteur repliée estimée.
     // Thèmes : rangées de cartes à hauteur égale.
     const estimate = (item: any) =>
-      (consultationMode ? 200 : 150) + Math.min(item.domains?.length ?? 0, 1) * 24 + (item.reason ? 40 : 0);
+      (consultationMode ? 200 : 150) + Math.ceil((item.domains?.length ?? 0) / 3) * 24 + (item.reason ? 40 : 0);
     const items: any[] = showThemes ? themes : experts;
     const gridColumns: { item: any; index: number }[][] = Array.from({ length: columns }, () => []);
     const heights = Array(columns).fill(0);
