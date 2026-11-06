@@ -1,60 +1,66 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Image, Pressable, Animated, LayoutAnimation, StyleSheet, LayoutChangeEvent } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Image, Pressable, Animated, LayoutAnimation, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
 
-import { BookingExpertListItem, BookingOfferFormat, BookingOfferSummary } from '../../../../services/v2/BookingService';
+import { BookingExpertListItem, BookingMode, BookingOfferFormat, BookingOfferSummary } from '../../../../services/v2/BookingService';
 import { initials, priceLabel } from '../../bookingFormat';
-import { ModePill, sortModes } from '../../components/ModePill';
+import { accentOf, tint, withAlpha } from '../../bookingPalette';
+import { MODE_META, sortModes } from '../../components/ModePill';
 import { SearchReason } from './SearchReason';
-import { CONSULT_COLOR, CONSULT_SOFT } from '../../bookingKinds';
 
+const IS_WEB = Platform.OS === 'web';
 const CARD_RADIUS = 20;
-const CARD_PADDING = Spacings.sm;
-const PHOTO_RADIUS = 14;
-
-/** Le portrait carré suit la hauteur du texte, dans ces bornes. */
-const PHOTO_MIN = 92;
-const PHOTO_MAX = 132;
-
-/**
- * Formats d'un thème : ceux du serveur, ou à défaut (ancienne réponse) les modes seuls,
- * le prix « dès » restant alors en tête.
- */
-const formatsOf = (offer: BookingOfferSummary): BookingOfferFormat[] =>
-  offer.formats ?? sortModes(offer.modes).map((mode) => ({ mode, price: null as any, places: [] }));
-
-/** Une ligne par lieu : « 69002 Lyon » (un présentiel peut avoir plusieurs adresses). */
-const placeLines = (format: BookingOfferFormat) =>
-  format.places.map((p) => [p.postal_code, p.city].filter(Boolean).join(' ')).filter(Boolean);
-
-/** Décalage d'entrée entre deux cartes d'une même page : la liste se déroule au lieu d'apparaître d'un bloc. */
+const CARD_PADDING = Spacings.md;
+const AVATAR = 56;
+/** Domaines affichés sur la carte ; les autres se résument en « +n ». */
+const MAX_DOMAINS = 2;
 const STAGGER_MS = 60;
+
+/** Formats d'un thème : ceux du serveur, ou à défaut (ancienne réponse) les modes seuls au prix « dès ». */
+const formatsOf = (offer: BookingOfferSummary): BookingOfferFormat[] =>
+  offer.formats ?? sortModes(offer.modes).map((mode) => ({ mode, price: offer.price_from ?? 0, places: [] }));
+
+/** Libellé d'un format : « Visio », ou les villes du présentiel (« Lyon, Paris »). */
+const formatText = (format: BookingOfferFormat) => {
+  if (format.mode === 'online') return 'Visio';
+  const cities = [...new Set(format.places.map((p) => p.city).filter(Boolean))];
+  return cities.length ? cities.join(', ') : 'Présentiel';
+};
 
 interface ExpertCardProps {
   expert: BookingExpertListItem;
   width: number;
   /** Rang dans sa page (0–9), pour l'entrée en cascade. */
   indexInPage: number;
-  /** Thèmes dépliés à l'ouverture (web : la place ne manque pas). */
-  defaultOpen?: boolean;
-  /** Toucher un thème : ouvre le profil sur ce thème (à défaut, comme la carte). */
-  onOfferPress?: (offerId: number) => void;
-  onPress: () => void;
+  /** Thèmes dépliés ; une seule carte ouverte à la fois (la liste décide). */
+  open: boolean;
+  onToggle: () => void;
+  /** Thème choisi : l'écran Réserver s'ouvre, sur ce format s'il est donné (calendrier direct). */
+  onOfferPress: (offerId: number, mode?: BookingMode) => void;
+  /** Thème en cours d'ouverture (fiche de l'expert chargée d'abord). */
+  openingOfferId?: number | null;
+  onProfile: () => void;
 }
 
 /**
- * Carte blanche aux couleurs de l'espace rendez-vous (la palette de l'expert est réservée
- * à son profil). Portrait carré à la hauteur du texte, identité à droite.
- * Expert disponible : ses thèmes se déplient sous la carte, une ligne chacun.
+ * Carte d'un expert, liste « Thèmes » (mobile et web), aux couleurs de l'expert :
+ * repliée, l'identité, deux domaines et « n thèmes · dès … » ; dépliée, ses thèmes, chacun avec
+ * ses formats (prix) qui mènent directement à l'écran Réserver.
  */
-export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPage, onPress, defaultOpen = false, onOfferPress }) => {
-  const [photoSize, setPhotoSize] = useState(PHOTO_MIN);
-
+export const ExpertCard: React.FC<ExpertCardProps> = ({
+  expert,
+  width,
+  indexInPage,
+  open,
+  onToggle,
+  onOfferPress,
+  openingOfferId,
+  onProfile,
+}) => {
   const enter = useRef(new Animated.Value(0)).current;
-  const press = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.spring(enter, {
@@ -62,200 +68,190 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert, width, indexInPa
       delay: indexInPage * STAGGER_MS,
       friction: 8,
       tension: 60,
-      useNativeDriver: true,
+      useNativeDriver: !IS_WEB,
     }).start();
   }, []);
 
-  // Le carré prend la hauteur du bloc texte ; on ignore les écarts de quelques points
-  // pour ne pas boucler (le texte se réagence quand le carré change de largeur).
-  const fitPhoto = (e: LayoutChangeEvent) => {
-    const next = Math.round(Math.min(PHOTO_MAX, Math.max(PHOTO_MIN, e.nativeEvent.layout.height)));
-    if (Math.abs(next - photoSize) > 4) setPhotoSize(next);
-  };
-
+  const accent = accentOf(expert.palette_color);
+  const soft = tint(accent, 0.12);
   const offers = expert.online ? expert.offers ?? [] : [];
-  const [open, setOpen] = useState(defaultOpen);
+  const domains = expert.domains ?? [];
+  const prices = offers.map((o) => o.price_from).filter((p): p is number => p != null);
+  const from = prices.length ? Math.min(...prices) : null;
+  const currency = offers[0]?.currency;
 
-  const toggleOffers = () => {
+  const toggle = () => {
+    if (!offers.length) return;
     try {
       LayoutAnimation.configureNext(LayoutAnimation.create(180, 'easeInEaseOut', 'opacity'));
-    } catch (e) { }
-    setOpen((v) => !v);
+    } catch (e) {}
+    onToggle();
   };
 
-  const animatePress = (toValue: number) => {
-    Animated.spring(press, { toValue, friction: 7, tension: 200, useNativeDriver: true }).start();
-  };
-
-  const animated = {
+  const animated: any = {
     opacity: enter,
-    transform: [
-      { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
-      { scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] }) },
-    ],
+    transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
   };
 
   return (
     <Animated.View style={[{ width }, animated]}>
-      <View style={styles.card}>
-      <Pressable
-        style={styles.main}
-        onPress={onPress}
-        onPressIn={() => animatePress(1)}
-        onPressOut={() => animatePress(0)}
-        accessibilityRole="button"
-        accessibilityLabel={[expert.honorific, expert.name, expert.online ? 'disponible' : 'indisponible']
-          .filter(Boolean)
-          .join(', ')}
-      >
-        <View style={[styles.photo, { width: photoSize, height: photoSize }]}>
-          {expert.avatar_url ? (
-            <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-          ) : (
-            <Text style={[styles.initials, { fontSize: Math.round(photoSize * 0.3) }]}>
-              {initials(expert.name)}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.info} onLayout={fitPhoto}>
-          {expert.honorific ? (
-            <Text style={styles.honorific} numberOfLines={1}>
-              {expert.honorific}
-            </Text>
-          ) : null}
-
-          <Text style={styles.name} numberOfLines={2}>
-            {expert.name}
-          </Text>
-
-          {expert.credentials ? (
-            <Text style={styles.credentials} numberOfLines={2}>
-              {expert.credentials}
-            </Text>
-          ) : null}
-
-          {/* Consultation sur mesure : prix de 30 minutes. */}
-          {expert.consultation ? (
-            <View style={styles.consultChip}>
-              <Ionicons name="chatbubbles-outline" size={12} color={CONSULT_COLOR} />
-              <Text style={styles.consultChipText} numberOfLines={1}>
-                Consultation · {priceLabel(expert.consultation.price_30, expert.consultation.currency)} / 30 min
-              </Text>
-            </View>
-          ) : null}
-
-          {/* Recherche intelligente : pourquoi l'expert correspond. */}
-          {expert.reason ? <SearchReason text={expert.reason} /> : null}
-        </View>
-
-        {/* Badge d'état, accroché au coin supérieur droit de la carte ; même forme pour les deux états. */}
-        <View
-          style={[styles.badge, { backgroundColor: expert.online ? Colors.successBackground : Colors.grayLight }]}
-          pointerEvents="none"
+      <View style={[styles.card, { shadowColor: accent }]}>
+        {/* ---- Identité : toucher la carte déplie les thèmes ---- */}
+        <Pressable
+          style={styles.main}
+          onPress={toggle}
+          disabled={!offers.length}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          accessibilityLabel={[expert.honorific, expert.name].filter(Boolean).join(' ')}
         >
-          <View style={[styles.badgeDot, { backgroundColor: expert.online ? Colors.success : Colors.gray }]} />
-          <Text style={[styles.badgeText, { color: expert.online ? Colors.success : Colors.gray }]}>
-            {expert.online ? 'Disponible' : 'Indisponible'}
-          </Text>
-        </View>
-      </Pressable>
-
-      {/* ---- Thèmes de l'expert : repliés par défaut sur mobile, dépliés sur le web ---- */}
-      {offers.length > 0 ? (
-        <>
-          <Pressable
-            style={styles.toggle}
-            onPress={toggleOffers}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: open }}
-            accessibilityLabel={`${offers.length} ${offers.length > 1 ? 'thèmes' : 'thème'}`}
-          >
-            <Text style={styles.toggleText}>
-              {offers.length} {offers.length > 1 ? 'thèmes proposés' : 'thème proposé'}
+          <View style={[styles.avatar, { backgroundColor: accent }]}>
+            {expert.avatar_url ? (
+              <Image source={{ uri: expert.avatar_url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            ) : (
+              <Text style={styles.initials}>{initials(expert.name)}</Text>
+            )}
+          </View>
+          <View style={styles.info}>
+            {expert.honorific ? (
+              <Text style={[styles.honorific, { color: accent }]} numberOfLines={1}>
+                {expert.honorific}
+              </Text>
+            ) : null}
+            <Text style={styles.name} numberOfLines={2}>
+              {expert.name}
             </Text>
-            <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.lblueDark} />
-          </Pressable>
+            {expert.credentials ? (
+              <Text style={styles.credentials} numberOfLines={2}>
+                {expert.credentials}
+              </Text>
+            ) : null}
+            {domains.length > 0 ? (
+              <View style={styles.domains}>
+                {domains.slice(0, MAX_DOMAINS).map((d) => (
+                  <View key={d.id} style={[styles.domain, { backgroundColor: soft }]}>
+                    <Text style={[styles.domainText, { color: accent }]} numberOfLines={1}>
+                      {d.name}
+                    </Text>
+                  </View>
+                ))}
+                {domains.length > MAX_DOMAINS ? (
+                  <Text style={styles.domainMore}>+{domains.length - MAX_DOMAINS}</Text>
+                ) : null}
+              </View>
+            ) : null}
+            {expert.reason ? <SearchReason text={expert.reason} /> : null}
+          </View>
+        </Pressable>
 
-          {open ? (
-            <View style={styles.offers}>
-              {offers.map((offer) => {
-                const formats = formatsOf(offer);
-                const legacy = !offer.formats;
-                return (
+        {/* ---- Thèmes dépliés : un bloc par thème, un bouton par format ---- */}
+        {open && offers.length > 0 ? (
+          <View style={styles.offers}>
+            {offers.map((offer, i) => {
+              const opening = openingOfferId === offer.id;
+              return (
+                <View key={offer.id} style={[styles.offer, i > 0 && styles.offerRule]}>
                   <Pressable
-                    key={offer.id}
-                    style={({ pressed }) => [styles.offer, pressed && styles.offerPressed]}
-                    onPress={() => (onOfferPress ? onOfferPress(offer.id) : onPress())}
+                    style={({ pressed }) => [styles.offerHead, pressed && styles.pressed]}
+                    onPress={() => onOfferPress(offer.id)}
+                    disabled={!!openingOfferId}
                     accessibilityRole="button"
+                    accessibilityLabel={`Réserver ${offer.title}`}
                   >
-                    {/* Titre et durée, puis une ligne par format : pastille, villes (présentiel), prix. */}
-                    <View style={styles.offerHead}>
+                    <View style={styles.flex}>
                       <Text style={styles.offerTitle} numberOfLines={2}>
                         {offer.title}
                       </Text>
-                      <View style={styles.offerDuration}>
-                        <Ionicons name="time-outline" size={12} color={Colors.subtext} />
-                        <Text style={styles.offerMetaText}>{offer.duration_label}</Text>
-                      </View>
+                      <Text style={styles.offerMeta}>{offer.duration_label}</Text>
                     </View>
-
-                    {formats.map((format) => {
-                      const places = format.mode === 'onsite' ? placeLines(format) : [];
-                      return (
-                        <View key={format.mode} style={styles.formatRow}>
-                          <ModePill mode={format.mode} size="compact" />
-                          {/* Une seule icône, alignée sur la première ligne ; une ville par ligne. */}
-                          <View style={styles.formatPlaces}>
-                            {places.length > 0 ? (
-                              <>
-                                <Ionicons name="location-outline" size={12} color={Colors.subtext} style={styles.formatPlacesIcon} />
-                                <View style={styles.formatPlacesList}>
-                                  {places.map((line, i) => (
-                                    <Text key={i} style={styles.formatPlacesText} numberOfLines={1}>
-                                      {line}
-                                    </Text>
-                                  ))}
-                                </View>
-                              </>
-                            ) : null}
-                          </View>
-                          {!legacy ? (
-                            <Text style={styles.offerPrice}>{priceLabel(format.price, offer.currency)}</Text>
-                          ) : null}
-                        </View>
-                      );
-                    })}
-
-                    {legacy && offer.price_from != null ? (
-                      <Text style={[styles.offerPrice, styles.legacyPrice]}>
-                        {offer.price_from > 0 && offer.modes.length > 1 ? 'dès ' : ''}
-                        {priceLabel(offer.price_from, offer.currency)}
-                      </Text>
-                    ) : null}
+                    {opening ? (
+                      <ActivityIndicator size="small" color={accent} />
+                    ) : (
+                      <Ionicons name="arrow-forward" size={18} color={accent} />
+                    )}
                   </Pressable>
-                );
-              })}
-            </View>
-          ) : null}
-        </>
-      ) : null}
+                  <View style={styles.formats}>
+                    {formatsOf(offer).map((format) => (
+                      <Pressable
+                        key={format.mode}
+                        style={({ pressed }) => [styles.format, { borderColor: withAlpha(accent, 0.4) }, pressed && { backgroundColor: soft }]}
+                        onPress={() => onOfferPress(offer.id, format.mode)}
+                        disabled={!!openingOfferId}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Réserver ${offer.title}, ${MODE_META[format.mode].label}`}
+                      >
+                        <MaterialCommunityIcons
+                          name={format.mode === 'online' ? 'video-outline' : 'map-marker-outline'}
+                          size={14}
+                          color={accent}
+                        />
+                        <Text style={styles.formatText} numberOfLines={1}>
+                          {formatText(format)}
+                        </Text>
+                        <Text style={styles.formatPrice}>{priceLabel(format.price, offer.currency)}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
+            <Pressable style={styles.profileLink} onPress={onProfile} accessibilityRole="link" hitSlop={6}>
+              <Text style={[styles.profileText, { color: accent }]}>Voir le profil</Text>
+              <Ionicons name="chevron-forward" size={14} color={accent} />
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* ---- Pied de carte aux couleurs de l'expert ---- */}
+        <View style={[styles.foot, { backgroundColor: tint(accent, 0.08) }]}>
+          {offers.length > 0 ? (
+            <>
+              <Text style={styles.summary} numberOfLines={1}>
+                <Text style={styles.summaryStrong}>
+                  {offers.length} thème{offers.length > 1 ? 's' : ''}
+                </Text>
+                {from != null ? ` · ${prices.length > 1 || formatsOf(offers[0]).length > 1 ? 'dès ' : ''}${priceLabel(from, currency)}` : ''}
+              </Text>
+              <Pressable
+                style={({ pressed }) => [styles.toggle, { backgroundColor: open ? Colors.white : accent, borderColor: accent }, pressed && styles.pressed]}
+                onPress={toggle}
+                hitSlop={4}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: open }}
+              >
+                <Text style={[styles.toggleText, { color: open ? accent : Colors.white }]}>Thèmes</Text>
+                <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={open ? accent : Colors.white} />
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.summary, styles.flex]}>Pas de rendez-vous pour le moment</Text>
+              <Pressable style={styles.profileLink} onPress={onProfile} accessibilityRole="link" hitSlop={6}>
+                <Text style={[styles.profileText, { color: accent }]}>Profil</Text>
+                <Ionicons name="chevron-forward" size={14} color={accent} />
+              </Pressable>
+            </>
+          )}
+        </View>
       </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  /* ---- Carte ---- */
-  // Texte aligné en haut, sur le haut du portrait.
+  flex: {
+    flex: 1,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
   card: {
     borderRadius: CARD_RADIUS,
     backgroundColor: Colors.white,
-    shadowColor: Colors.lblueDark,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.12,
     shadowRadius: 14,
-    elevation: 5,
+    elevation: 4,
   },
   main: {
     flexDirection: 'row',
@@ -263,162 +259,35 @@ const styles = StyleSheet.create({
     gap: Spacings.md,
     padding: CARD_PADDING,
   },
-
-  /* ---- Thèmes ---- */
-  toggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: CARD_PADDING,
-    paddingVertical: Spacings.xs,
-    paddingHorizontal: Spacings.xxs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-  },
-  toggleText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 13,
-    color: Colors.lblueDark,
-  },
-  offers: {
-    paddingHorizontal: CARD_PADDING,
-    paddingBottom: CARD_PADDING,
-    gap: Spacings.xxs,
-  },
-  offer: {
-    gap: 6,
-    paddingVertical: Spacings.xs,
-    paddingHorizontal: Spacings.sm,
-    borderRadius: 12,
-    backgroundColor: Colors.grayLight,
-  },
-  offerHead: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacings.sm,
-  },
-  offerDuration: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 2,
-  },
-  // Haut aligné : pastille, première ville et prix sur la même ligne, les autres villes dessous.
-  formatRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacings.xs,
-  },
-  formatPlaces: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 3,
-    minWidth: 0,
-    paddingTop: 2,
-  },
-  formatPlacesIcon: {
-    marginTop: 2,
-  },
-  formatPlacesList: {
-    flex: 1,
-    minWidth: 0,
-  },
-  formatPlacesText: {
-    lineHeight: 17,
-    fontFamily: 'Poppins-Regular',
-    fontSize: 12,
-    color: Colors.subtext2,
-  },
-  legacyPrice: {
-    alignSelf: 'flex-end',
-  },
-  offerPressed: {
-    opacity: 0.7,
-  },
-  offerBody: {
-    flex: 1,
-  },
-  offerTitle: {
-    flex: 1,
-    fontFamily: 'Poppins-Medium',
-    fontSize: 14,
-    color: Colors.text,
-  },
-  offerMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: Spacings.xxs,
-    marginTop: 3,
-  },
-  offerMetaText: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 12,
-    color: Colors.subtext,
-    marginRight: 2,
-  },
-  offerPrice: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 14,
-    color: Colors.text,
-  },
-
-  /* ---- Portrait ---- */
-  // Sans photo : fond bleu de l'espace, initiales blanches.
-  photo: {
-    backgroundColor: Colors.lblue,
-    borderRadius: PHOTO_RADIUS,
+  avatar: {
+    width: AVATAR,
+    height: AVATAR,
+    borderRadius: AVATAR / 2,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
   initials: {
     fontFamily: 'Poppins-Bold',
-    letterSpacing: 1,
+    fontSize: 18,
+    letterSpacing: 0.5,
     color: Colors.white,
   },
-
-  /* ---- Identité ---- */
-  // Marge haute : la première ligne passe sous le badge sans le toucher.
   info: {
     flex: 1,
+    minWidth: 0,
     alignItems: 'flex-start',
-    paddingTop: Spacings.lg,
-  },
-  // Coin supérieur droit, épousant l'arrondi de la carte.
-  badge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.xxs,
-    paddingHorizontal: Spacings.sm,
-    paddingVertical: Spacings.xxs,
-    borderTopRightRadius: CARD_RADIUS,
-    borderBottomLeftRadius: 12,
-  },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  badgeText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 11,
   },
   honorific: {
     fontFamily: 'Poppins-Medium',
-    fontSize: 12,
+    fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: Colors.lblueDark,
   },
   name: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 18,
-    lineHeight: 23,
+    fontSize: 17,
+    lineHeight: 22,
     letterSpacing: -0.3,
     color: Colors.text,
   },
@@ -428,20 +297,132 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: Colors.subtext2,
   },
-  consultChip: {
+  domains: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: Spacings.xs,
+  },
+  domain: {
+    maxWidth: '100%',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  domainText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  domainMore: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 11,
+    color: Colors.subtext,
+  },
+
+  /* ---- Thèmes dépliés ---- */
+  offers: {
+    marginHorizontal: CARD_PADDING,
+    paddingTop: Spacings.xs,
+    paddingBottom: Spacings.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+  },
+  offer: {
+    paddingVertical: Spacings.sm,
+    gap: Spacings.xs,
+  },
+  offerRule: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+  },
+  offerHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+  },
+  offerTitle: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    lineHeight: 19,
+    color: Colors.text,
+  },
+  offerMeta: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: Colors.subtext,
+  },
+  formats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  format: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    maxWidth: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    backgroundColor: Colors.white,
+  },
+  formatText: {
+    flexShrink: 1,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: Colors.subtext2,
+  },
+  formatPrice: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 13,
+    color: Colors.text,
+  },
+  profileLink: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 4,
-    marginTop: Spacings.xxs,
-    paddingHorizontal: Spacings.xs,
-    paddingVertical: 2,
-    borderRadius: 8,
-    backgroundColor: CONSULT_SOFT,
+    gap: 2,
+    paddingTop: Spacings.xs,
   },
-  consultChipText: {
+  profileText: {
     fontFamily: 'Poppins-Medium',
-    fontSize: 11,
-    color: CONSULT_COLOR,
+    fontSize: 13,
+  },
+
+  /* ---- Pied ---- */
+  foot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    paddingHorizontal: CARD_PADDING,
+    paddingVertical: Spacings.sm,
+    borderBottomLeftRadius: CARD_RADIUS,
+    borderBottomRightRadius: CARD_RADIUS,
+  },
+  summary: {
+    flex: 1,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 13,
+    color: Colors.subtext2,
+  },
+  summaryStrong: {
+    fontFamily: 'Poppins-Bold',
+    color: Colors.text,
+  },
+  toggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 36,
+    paddingHorizontal: Spacings.md,
+    borderRadius: 18,
+    borderWidth: 1.5,
+  },
+  toggleText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
   },
 });

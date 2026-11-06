@@ -25,6 +25,7 @@ import { BouncingDots } from '../../../component/LoadingDots';
 import { useFloatingTabBarInset } from '../../../component/booking/FloatingTabBar';
 import {
   BookingExpertListItem,
+  BookingMode,
   BookingTheme,
   getBookingExpert,
   getBookingExperts,
@@ -56,9 +57,10 @@ const LIST_PADDING = Spacings.lg;
 const IS_WEB = Platform.OS === 'web';
 /** Web : barre latérale commune (AppTab.web) ; la zone de contenu est le reste. */
 const WEB_SIDEBAR_WIDTH = 200;
-const WEB_TWO_COLUMNS_FROM = 900;
-const WEB_MAX_WIDTH = 1180;
-const WEB_SINGLE_MAX_WIDTH = 640;
+/** Web : nombre de colonnes selon la largeur du contenu (une carte fait au moins ~340 px). */
+const WEB_TWO_COLUMNS_FROM = 760;
+const WEB_THREE_COLUMNS_FROM = 1200;
+const WEB_MAX_WIDTHS = [640, 1000, 1320];
 const WEB_GAP = Spacings.lg;
 /** Web : recherche à droite du titre, largeur bornée ; saisie limitée. */
 const WEB_SEARCH_WIDTH = 380;
@@ -89,11 +91,14 @@ export const ExpertsListView = ({ navigation, route }) => {
   const { width: screenWidth } = useWindowDimensions();
   // Web : la largeur de la fenêtre comprend la barre latérale ; le contenu est borné et centré.
   const contentWidth = IS_WEB ? screenWidth - WEB_SIDEBAR_WIDTH : screenWidth;
-  const twoColumns = IS_WEB && contentWidth >= WEB_TWO_COLUMNS_FROM;
+  const columns = !IS_WEB ? 1 : contentWidth >= WEB_THREE_COLUMNS_FROM ? 3 : contentWidth >= WEB_TWO_COLUMNS_FROM ? 2 : 1;
+  const twoColumns = columns > 1;
   const innerWidth = IS_WEB
-    ? Math.min(contentWidth - LIST_PADDING * 2, twoColumns ? WEB_MAX_WIDTH : WEB_SINGLE_MAX_WIDTH)
+    ? Math.min(contentWidth - LIST_PADDING * 2, WEB_MAX_WIDTHS[columns - 1])
     : screenWidth - LIST_PADDING * 2;
-  const cardWidth = twoColumns ? (innerWidth - WEB_GAP) / 2 : innerWidth;
+  const cardWidth = (innerWidth - WEB_GAP * (columns - 1)) / columns;
+  // Liste Experts : une seule carte dépliée à la fois.
+  const [openExpertId, setOpenExpertId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
 
@@ -220,23 +225,27 @@ export const ExpertsListView = ({ navigation, route }) => {
     [smart, smartQuery.data, themesQuery.data]
   );
 
-  // Thème touché : la fiche de l'expert (offres complètes, lieux) est chargée puis le thème s'ouvre.
-  const openTheme = async (theme: BookingTheme) => {
+  /**
+   * Thème choisi (liste Thèmes, ou thème d'une carte Experts) : la fiche de l'expert (offres complètes,
+   * lieux) est chargée puis l'écran Réserver s'ouvre ; avec un format, sur ce format et son calendrier.
+   */
+  const openOffer = async (expertId: number, offerId: number, mode?: BookingMode) => {
     if (openingThemeId) return;
-    setOpeningThemeId(theme.id);
+    setOpeningThemeId(offerId);
     try {
       const detail = await queryClient.fetchQuery({
-        queryKey: ['booking', 'expert', theme.expert.id],
-        queryFn: () => getBookingExpert(theme.expert.id),
+        queryKey: ['booking', 'expert', expertId],
+        queryFn: () => getBookingExpert(expertId),
       });
-      const offer = detail?.offers.find((o) => o.id === theme.id);
+      const offer = detail?.offers.find((o) => o.id === offerId);
       if (!detail || !offer) {
         notify('Thème indisponible', "Ce thème n'est plus proposé. Tirez la liste pour la rafraîchir.");
         return;
       }
       navigation.navigate('expert-offer', {
-        expertId: theme.expert.id,
+        expertId,
         offer,
+        ...(mode ? { mode, initialTab: 'calendar' } : {}),
         expert: {
           name: detail.expert.name,
           honorific: detail.expert.honorific,
@@ -249,6 +258,21 @@ export const ExpertsListView = ({ navigation, route }) => {
       setOpeningThemeId(null);
     }
   };
+  const openTheme = (theme: BookingTheme) => openOffer(theme.expert.id, theme.id);
+
+  // Profil depuis une carte Thème : l'aperçu donne l'en-tête tout de suite.
+  const openThemeExpert = (theme: BookingTheme) =>
+    navigation.navigate('expert-profile', {
+      expertId: theme.expert.id,
+      preview: {
+        ...theme.expert,
+        honorific: null,
+        lede: null,
+        slug: null,
+        palette: null,
+        online: true,
+      },
+    });
 
   const changeSegment = (next: Segment) => {
     if (next === segment) return;
@@ -288,23 +312,25 @@ export const ExpertsListView = ({ navigation, route }) => {
       expert={item}
       width={cardWidth}
       indexInPage={index % PER_PAGE}
-      defaultOpen={IS_WEB}
+      open={openExpertId === item.id}
+      onToggle={() => setOpenExpertId((current) => (current === item.id ? null : item.id))}
+      // Thème ou format touché : directement l'écran Réserver.
+      onOfferPress={(offerId, mode) => openOffer(item.id, offerId, mode)}
+      openingOfferId={openingThemeId}
       // L'aperçu affiche l'en-tête du profil tout de suite, sans attendre la requête.
-      onPress={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
-      // Toucher un thème : le profil s'ouvre puis fait défiler les thèmes jusqu'à celui-ci.
-      onOfferPress={(offerId) =>
-        navigation.navigate('expert-profile', { expertId: item.id, preview: item, focusOfferId: offerId })
-      }
+      onProfile={() => navigation.navigate('expert-profile', { expertId: item.id, preview: item })}
     />
     );
 
-  const renderTheme = ({ item, index }: { item: BookingTheme; index: number }) => (
+  const renderTheme = ({ item, index }: { item: BookingTheme; index: number }, stretch?: boolean) => (
     <ThemeCard
       theme={item}
       width={cardWidth}
       indexInPage={index % PER_PAGE}
       opening={openingThemeId === item.id}
+      stretch={stretch}
       onPress={() => openTheme(item)}
+      onExpertPress={() => openThemeExpert(item)}
     />
   );
 
@@ -521,19 +547,24 @@ export const ExpertsListView = ({ navigation, route }) => {
     </View>
   ) : null;
 
-  /* ---- Web, grand écran : deux colonnes indépendantes (hauteurs de cartes différentes) ---- */
+  /* ---- Web, grand écran : 2 ou 3 colonnes ---- */
   if (twoColumns) {
-    // Chaque carte va dans la colonne la moins remplie, d'après une hauteur estimée
-    // (en-tête + une ligne par thème déplié) : les colonnes restent équilibrées.
+    // Experts : colonnes indépendantes (une carte dépliée ne pousse que sa colonne) ; chaque carte
+    // va dans la colonne la moins remplie, d'après sa hauteur repliée estimée.
+    // Thèmes : rangées de cartes à hauteur égale.
     const estimate = (item: any) =>
-      showThemes
-        ? (item.image ? cardWidth * 0.42 : 64) + 190 + (item.formats?.length ?? 1) * 26
-        : (consultationMode ? 200 : 140) + (!consultationMode && item.online && item.offers?.length ? 40 + item.offers.length * 56 : 0);
+      (consultationMode ? 200 : 150) + Math.min(item.domains?.length ?? 0, 1) * 24 + (item.reason ? 40 : 0);
     const items: any[] = showThemes ? themes : experts;
-    const gridColumns: { item: any; index: number }[][] = [[], []];
-    const heights = [0, 0];
+    const gridColumns: { item: any; index: number }[][] = Array.from({ length: columns }, () => []);
+    const heights = Array(columns).fill(0);
+    const rows: { item: any; index: number }[][] = [];
     items.forEach((item, index) => {
-      const target = heights[0] <= heights[1] ? 0 : 1;
+      if (showThemes) {
+        if (index % columns === 0) rows.push([]);
+        rows[rows.length - 1].push({ item, index });
+        return;
+      }
+      const target = heights.indexOf(Math.min(...heights));
       gridColumns[target].push({ item, index });
       heights[target] += estimate(item) + WEB_GAP;
     });
@@ -562,15 +593,29 @@ export const ExpertsListView = ({ navigation, route }) => {
           {items.length === 0 ? (
             listEmpty
           ) : (
-            <View style={[styles.webGrid, { width: innerWidth }]}>
-              {gridColumns.map((column, c) => (
-                <View key={c} style={styles.webColumn}>
-                  {column.map(({ item, index }) => (
-                    <View key={item.id}>{showThemes ? renderTheme({ item, index }) : renderExpert({ item, index })}</View>
-                  ))}
-                </View>
-              ))}
-            </View>
+            showThemes ? (
+              <View style={[styles.webRows, { width: innerWidth }]}>
+                {rows.map((row, r) => (
+                  <View key={r} style={styles.webRow}>
+                    {row.map(({ item, index }) => (
+                      <View key={item.id} style={{ width: cardWidth }}>
+                        {renderTheme({ item, index }, true)}
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={[styles.webGrid, { width: innerWidth }]}>
+                {gridColumns.map((column, c) => (
+                  <View key={c} style={styles.webColumn}>
+                    {column.map(({ item, index }) => (
+                      <View key={item.id}>{renderExpert({ item, index })}</View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            )
           )}
           {listFooter}
         </ScrollView>
@@ -592,7 +637,7 @@ export const ExpertsListView = ({ navigation, route }) => {
         style={styles.flex}
         data={(showThemes ? themes : experts) as any[]}
         keyExtractor={(item) => `${showThemes ? 't' : 'e'}${item.id}`}
-        renderItem={showThemes ? renderTheme : renderExpert}
+        renderItem={showThemes ? (info) => renderTheme(info) : renderExpert}
         contentContainerStyle={[styles.list, IS_WEB && styles.listWeb, styles.listBody, { paddingBottom: bottomInset + Spacings.md }]}
         // L'indicateur de défilement s'arrête au-dessus de la barre flottante.
         scrollIndicatorInsets={{ bottom: bottomInset }}
@@ -665,6 +710,15 @@ const styles = StyleSheet.create({
   webColumn: {
     flex: 1,
     gap: Spacings.lg,
+  },
+  webRows: {
+    gap: WEB_GAP,
+  },
+  // Rangée de thèmes : chaque carte prend la hauteur de la plus haute.
+  webRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: WEB_GAP,
   },
   footer: {
     paddingVertical: Spacings.md,

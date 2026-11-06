@@ -15,7 +15,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 
 import Colors from '../../../../constants/Colors';
@@ -29,12 +29,10 @@ import {
   getBookingExpertMedias,
 } from '../../../services/v2/BookingService';
 import { initials, priceLabel } from '../bookingFormat';
-import { CONSULT_COLOR, CONSULT_COLOR_DARK, CONSULT_SOFT } from '../bookingKinds';
 import { withAlpha } from '../bookingPalette';
 import { ExpertTheme, expertTheme } from '../expertTheme';
 import { ThemeBackdrop } from '../components/ThemeBackdrop';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
-import { OfferCarousel } from './components/OfferCarousel';
 
 /** La feuille occupe 90 % de l'écran ; l'avatar dépasse de moitié au-dessus. */
 const SHEET_RATIO = 0.8;
@@ -61,8 +59,17 @@ const WEB_PANEL_RADIUS = 24;
 const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 1;
 
-/** Au-delà de deux lignes, la présentation se replie derrière « Lire la suite ». */
-const LEDE_LINES = 2;
+/** Au-delà de quatre lignes, la présentation se replie derrière « Lire la suite ». */
+const LEDE_LINES = 4;
+/** Médias : 4, en grille de 2 × 2. */
+const MEDIA_COUNT = 4;
+
+/** Villes du présentiel d'une offre (ou de toutes les offres). */
+const citiesOf = (offers: BookingOffer[]) => [
+  ...new Set(
+    offers.flatMap((o) => o.modes.filter((m) => m.mode === 'onsite').flatMap((m) => (m.locations ?? []).map((l) => l.city)))
+  ),
+].filter(Boolean) as string[];
 
 /** Nom sur deux lignes comme le h1 de la page vitrine : prénom, puis le reste. */
 const nameLines = (name: string) => {
@@ -103,7 +110,8 @@ const Lede = ({ text, theme }: { text: string; theme: ExpertTheme }) => {
  * Web : panneau qui glisse depuis la droite sur toute la hauteur, la liste reste visible
  * derrière le voile (clic à côté ou croix pour fermer).
  * Habillage repris de sa page vitrine web : fond à halo radial, couleurs et typographie
- * du thème de sa palette. Thèmes en carrousel : la carte affichée est celle réservée.
+ * du thème de sa palette. Tout défile à la verticale : thèmes en liste (toucher un thème ouvre
+ * l'écran Réserver), médias en grille de 2 × 2. Ni Écrire ni Consultation ici.
  */
 export const ExpertProfileView = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
@@ -117,18 +125,18 @@ export const ExpertProfileView = ({ navigation, route }) => {
   // Distance hors écran : vers le bas sur mobile, vers la droite sur le web.
   const offscreen = IS_WEB ? panelWidth : sheetHeight;
   const contentWidth = IS_WEB ? panelWidth : width;
+  // Deux médias par rangée, dans les marges de la feuille.
+  const mediaWidth = Math.floor((contentWidth - INSET * 2 - Spacings.sm) / 2);
 
   const expertId: number = route.params?.expertId;
   const preview: BookingExpertListItem | undefined = route.params?.preview;
-  /** Thème touché dans la liste : le carrousel s'y rend et le met en avant. */
-  const focusOfferId: number | undefined = route.params?.focusOfferId;
   /** Ouvert depuis la liste Consultation : ni carte Consultation ni thèmes (la carte de la liste suffit). */
   const consultationMode = route.params?.purpose === 'consultation';
 
-  // Médias OrthoMaster de l'expert (5 au plus) : centres d'intérêt de l'utilisateur d'abord.
+  // Médias OrthoMaster de l'expert (4 au plus) : centres d'intérêt de l'utilisateur d'abord.
   const { data: medias } = useQuery({
-    queryKey: ['booking', 'expert-medias', expertId],
-    queryFn: () => getBookingExpertMedias(expertId, 5),
+    queryKey: ['booking', 'expert-medias', expertId, MEDIA_COUNT],
+    queryFn: () => getBookingExpertMedias(expertId, MEDIA_COUNT),
     staleTime: 5 * 60 * 1000,
   });
   const openMedia = (media: BookingExpertMedia) =>
@@ -143,8 +151,7 @@ export const ExpertProfileView = ({ navigation, route }) => {
   const expert = data?.expert ?? preview;
   const offers = data?.offers ?? [];
   const online = (data ? data.expert.online !== false : preview?.online) ?? false;
-  // Consultation sur mesure (v3) : proposée en plus (ou à la place) des thèmes.
-  const consultation = data ? data.consultation ?? null : preview?.consultation ?? null;
+  const cities = citiesOf(offers);
   const theme = expertTheme(expert?.palette, expert?.palette_color);
 
   /* ---- Ouverture / fermeture ---- */
@@ -264,6 +271,14 @@ export const ExpertProfileView = ({ navigation, route }) => {
                 {expert.credentials ? (
                   <Text style={[styles.credentials, { color: theme.muted }]}>{expert.credentials}</Text>
                 ) : null}
+                {cities.length ? (
+                  <View style={styles.cityRow}>
+                    <Ionicons name="location-outline" size={14} color={theme.primary} />
+                    <Text style={[styles.city, { color: theme.muted }]} numberOfLines={1}>
+                      {cities.join(', ')}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             )}
 
@@ -312,84 +327,83 @@ export const ExpertProfileView = ({ navigation, route }) => {
             </View>
           ) : null}
 
-          {/* ---- Consultation sur mesure (pas depuis la liste Consultation) ---- */}
-          {!consultationMode && online && consultation ? (
-            <TouchableOpacity
-              style={[styles.consultCard, { borderColor: withAlpha(CONSULT_COLOR, 0.3) }]}
-              onPress={() => navigation.navigate('consultation-request', { expertId, preview: expert })}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Demander une consultation sur mesure"
-            >
-              <View style={styles.consultIcon}>
-                <Ionicons name="chatbubbles-outline" size={22} color={CONSULT_COLOR} />
-              </View>
-              <View style={styles.flex}>
-                <Text style={styles.consultTitle}>Consultation sur mesure</Text>
-                <Text style={styles.consultText}>
-                  Votre sujet, en visio · {priceLabel(consultation.price_30, consultation.currency)} les 30 minutes
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={CONSULT_COLOR} />
-            </TouchableOpacity>
-          ) : null}
-
-          {/* ---- Thèmes (pas depuis la liste Consultation) ---- */}
-          {!consultationMode && !(online && consultation && offers.length === 0 && !isLoading) ? (
-          <Text style={[styles.sectionTitle, { color: theme.ink }]}>
-            {offers.length > 1 ? "Thèmes de l'échange" : "Thème de l'échange"}
-          </Text>
-          ) : null}
-
-          {consultationMode || (online && consultation && offers.length === 0 && !isLoading) ? null : isLoading ? (
-            <ActivityIndicator color={theme.primary} style={styles.loading} />
-          ) : !online || offers.length === 0 ? (
-            <View
-              style={[
-                styles.offline,
-                { backgroundColor: withAlpha(theme.primary, 0.08), borderColor: withAlpha(theme.primary, 0.24) },
-              ]}
-            >
-              <Ionicons name="moon-outline" size={20} color={theme.muted} />
-              <Text style={[styles.offlineText, { color: theme.muted }]}>
-                Cet expert ne prend pas de rendez-vous pour le moment.
-              </Text>
-            </View>
-          ) : (
+          {/* ---- Thèmes (pas depuis la liste Consultation) : liste verticale légère ---- */}
+          {consultationMode || (!isLoading && online && offers.length === 0) ? null : (
             <>
-              <OfferCarousel
-                offers={offers}
-                accent={theme.primary}
-                width={contentWidth}
-                inset={INSET}
-                notchColor={theme.bg}
-                focusOfferId={focusOfferId}
-                // Après l'ouverture de la feuille / du panneau (340 ms) : le défilement se voit.
-                focusDelay={420}
-                onSelect={openOffer}
-              />
-              <Text style={[styles.tapHint, { color: theme.muted }]}>
-                Touchez un thème pour le découvrir et choisir vos demi-journées.
+              <Text style={[styles.sectionTitle, { color: theme.ink }]}>
+                {offers.length > 1 ? `Thèmes (${offers.length})` : 'Thème'}
               </Text>
+              {isLoading ? (
+                <ActivityIndicator color={theme.primary} style={styles.loading} />
+              ) : !online ? (
+                <View
+                  style={[
+                    styles.offline,
+                    { backgroundColor: withAlpha(theme.primary, 0.08), borderColor: withAlpha(theme.primary, 0.24) },
+                  ]}
+                >
+                  <Ionicons name="moon-outline" size={20} color={theme.muted} />
+                  <Text style={[styles.offlineText, { color: theme.muted }]}>
+                    Cet expert ne prend pas de rendez-vous pour le moment.
+                  </Text>
+                </View>
+              ) : (
+                <View style={[styles.offers, { backgroundColor: theme.card, borderColor: theme.line }]}>
+                  {offers.map((offer, i) => {
+                    const prices = offer.modes.map((m) => m.price);
+                    const offerCities = citiesOf([offer]);
+                    const meta = [
+                      offer.duration_label,
+                      offer.modes.some((m) => m.mode === 'online') ? 'Visio' : null,
+                      offer.modes.some((m) => m.mode === 'onsite') ? offerCities.join(', ') || 'Présentiel' : null,
+                    ].filter(Boolean);
+                    return (
+                      <Pressable
+                        key={offer.id}
+                        style={({ pressed }) => [
+                          styles.offer,
+                          i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.line },
+                          pressed && { backgroundColor: withAlpha(theme.primary, 0.06) },
+                        ]}
+                        onPress={() => openOffer(offer)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${offer.title}, réserver`}
+                      >
+                        <View style={styles.flex}>
+                          <View style={styles.offerHead}>
+                            <Text style={[styles.offerTitle, { color: theme.ink }]} numberOfLines={2}>
+                              {offer.title}
+                            </Text>
+                            <Text style={[styles.offerPrice, { color: theme.ink }]}>
+                              {new Set(prices).size > 1 ? <Text style={[styles.offerFrom, { color: theme.muted }]}>dès </Text> : null}
+                              {priceLabel(offer.price, offer.currency)}
+                            </Text>
+                          </View>
+                          <Text style={[styles.offerMeta, { color: theme.muted }]} numberOfLines={1}>
+                            {meta.join(' · ')}
+                          </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color={theme.primary} />
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
             </>
           )}
 
-          {/* ---- Médias OrthoMaster de l'expert ---- */}
+          {/* ---- Médias OrthoMaster de l'expert : grille de 2 × 2 ---- */}
           {medias && medias.length > 0 ? (
             <>
               <Text style={[styles.sectionTitle, { color: theme.ink }]}>Ses médias</Text>
               {medias.some((m) => m.matches_interests) ? (
                 <Text style={[styles.mediaHint, { color: theme.muted }]}>Selon vos centres d'intérêt, puis les plus récents.</Text>
               ) : null}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.medias}
-              >
-                {medias.map((m) => (
+              <View style={styles.medias}>
+                {medias.slice(0, MEDIA_COUNT).map((m) => (
                   <TouchableOpacity
                     key={m.id_content}
-                    style={[styles.media, { backgroundColor: theme.card, borderColor: theme.line }]}
+                    style={[styles.media, { width: mediaWidth, backgroundColor: theme.card, borderColor: theme.line }]}
                     onPress={() => openMedia(m)}
                     activeOpacity={0.8}
                     accessibilityRole="button"
@@ -399,7 +413,7 @@ export const ExpertProfileView = ({ navigation, route }) => {
                       {m.thumbnail ? (
                         <Image source={{ uri: m.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                       ) : (
-                        <Ionicons name="play-circle-outline" size={34} color={theme.primary} />
+                        <MaterialCommunityIcons name="play-circle-outline" size={30} color={theme.primary} />
                       )}
                       {m.duration ? (
                         <View style={styles.mediaDuration}>
@@ -412,7 +426,7 @@ export const ExpertProfileView = ({ navigation, route }) => {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </>
           ) : null}
         </ScrollView>
@@ -425,36 +439,6 @@ export const ExpertProfileView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-  },
-  consultCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.sm,
-    marginHorizontal: INSET,
-    marginTop: Spacings.lg,
-    padding: Spacings.md,
-    borderRadius: 18,
-    borderWidth: 1,
-    backgroundColor: CONSULT_SOFT,
-  },
-  consultIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  consultTitle: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 16,
-    color: CONSULT_COLOR_DARK,
-  },
-  consultText: {
-    fontFamily: 'Roboto',
-    fontSize: 13,
-    lineHeight: 18,
-    color: CONSULT_COLOR_DARK,
   },
   /* ---- Structure ---- */
   root: {
@@ -633,11 +617,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.sm,
   },
   medias: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacings.sm,
     paddingHorizontal: INSET,
   },
   media: {
-    width: 210,
     borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
@@ -673,22 +658,65 @@ const styles = StyleSheet.create({
   /* ---- Thèmes (h2) ---- */
   sectionTitle: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 24,
-    lineHeight: 30,
-    letterSpacing: -0.6,
+    fontSize: 20,
+    lineHeight: 26,
+    letterSpacing: -0.4,
     paddingHorizontal: INSET,
-    marginTop: Spacings.xxl,
-    marginBottom: Spacings.md,
+    marginTop: Spacings.xl,
+    marginBottom: Spacings.sm,
   },
   loading: {
     marginVertical: Spacings.xl,
   },
-  tapHint: {
+  cityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 4,
+  },
+  city: {
+    flexShrink: 1,
     fontFamily: 'Poppins-Regular',
     fontSize: 13,
-    textAlign: 'center',
-    marginTop: Spacings.sm,
-    paddingHorizontal: INSET,
+  },
+  // Thèmes : un bloc, une ligne par thème, séparées d'un filet.
+  offers: {
+    marginHorizontal: INSET,
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  offer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    paddingVertical: Spacings.sm + 2,
+  },
+  offerHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacings.sm,
+  },
+  offerTitle: {
+    flex: 1,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  offerPrice: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  offerFrom: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+  },
+  offerMeta: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    marginTop: 2,
   },
   // Repris de .joinbox : teinte de la couleur principale, liseré à 24 %.
   offline: {
