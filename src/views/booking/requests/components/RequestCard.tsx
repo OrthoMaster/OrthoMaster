@@ -14,7 +14,6 @@ import { formatCardDay } from '../../bookingDates';
 import { REQUEST_STATUS_META, REQUESTS_ACCENT, timeLeft } from '../requestFormat';
 import { ModeLine } from '../../components/ModePill';
 import { KindTags, blockHours, kindColor } from '../../components/KindTags';
-import { WindowsList } from '../../components/WindowsList';
 
 const CARD_RADIUS = 20;
 
@@ -37,15 +36,10 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
   const pending = request.status === 'pending';
   const left = pending ? timeLeft(request.respond_by) : null;
 
-  // En attente : la pastille affiche le temps restant (rouge sous 24 h) à la place de « À traiter ».
-  const pill = left
-    ? {
-        label: `Encore ${left.label}`,
-        icon: 'hourglass-outline' as const,
-        color: left.urgent ? Colors.danger : meta.color,
-        background: left.urgent ? Colors.dangerBackground : meta.background,
-      }
-    : meta;
+  // État en pastille ; le délai (date limite et temps restant) est réuni en bas de la carte.
+  const pill = meta;
+  const consultation = request.kind === 'consultation';
+  const offCalendar = !request.blocks.length && !!request.windows?.length;
 
   return (
     <Pressable
@@ -77,24 +71,24 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
           </View>
         </View>
 
-        {/* Pastilles au-dessus du titre ; consultation : le sujet sur 2 lignes. */}
-        <KindTags
-          kind={request.kind}
-          durationMinutes={request.duration_minutes}
-          blocksCount={request.blocks_count}
-          offCalendar={request.off_calendar}
-          style={styles.tags}
-        />
-        <Text style={styles.title} numberOfLines={2}>
-          {request.offer_title}
-        </Text>
-        {request.kind === 'consultation' && request.subject ? (
-          <Text style={styles.subject} numberOfLines={2}>
-            {request.subject}
+        {/* Pastilles sur une ligne (retour à la ligne si besoin) : Consultation · durée, ou Thème et son format. */}
+        <KindTags kind={request.kind} durationMinutes={request.duration_minutes} themeOnly style={styles.tags}>
+          {!consultation ? <ModeLine mode={request.mode ?? 'online'} location={block?.location} /> : null}
+        </KindTags>
+        {consultation ? (
+          <>
+            <Text style={styles.title}>Son sujet</Text>
+            {request.subject ? (
+              <Text style={styles.subject} numberOfLines={2}>
+                {request.subject}
+              </Text>
+            ) : null}
+          </>
+        ) : (
+          <Text style={styles.title} numberOfLines={2}>
+            {request.offer_title}
           </Text>
-        ) : null}
-        {/* Format : En visio, ou En présentiel avec le lieu de la demi-journée mise en avant. */}
-        <ModeLine mode={request.mode ?? 'online'} location={block?.location} style={styles.modeLine} />
+        )}
 
         {/* ---- Demi-journée mise en avant ---- */}
         {block ? (
@@ -106,18 +100,24 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onPress }) =>
               <Text style={styles.blockHours}>{blockHours(block, request.kind)}</Text>
             </View>
           </View>
-        ) : request.windows?.length ? (
-          // Créneaux proposés : horaire à choisir en acceptant.
-          <View style={styles.session}>
-            <WindowsList windows={request.windows} compact title="Créneaux proposés · horaire à choisir" />
+        ) : offCalendar ? (
+          // Hors calendrier : les créneaux proposés se voient sur la fiche.
+          <View style={styles.offCal}>
+            <View style={styles.offCalHead}>
+              <Ionicons name="calendar-clear-outline" size={15} color={Colors.warning} />
+              <Text style={styles.offCalTitle}>Hors calendrier</Text>
+            </View>
+            <Text style={styles.offCalText}>Choisissez l'horaire parmi les créneaux proposés.</Text>
           </View>
         ) : null}
 
-        {/* ---- Délai de réponse ---- */}
+        {/* ---- Délai de réponse : date limite et temps restant, au même endroit ---- */}
         {pending && request.respond_by ? (
           <View style={[styles.deadline, left?.urgent && styles.deadlineUrgent]}>
+            <Ionicons name="hourglass-outline" size={14} color={left?.urgent ? Colors.danger : Colors.subtext2} />
             <Text style={[styles.deadlineText, { color: left?.urgent ? Colors.danger : Colors.text }]} numberOfLines={2}>
               Répondre avant <Text style={styles.deadlineDate}>{formatDeadline(request.respond_by)}</Text>
+              {left ? <Text style={styles.deadlineLeft}> · encore {left.label}</Text> : null}
             </Text>
           </View>
         ) : null}
@@ -160,12 +160,36 @@ const styles = StyleSheet.create({
   tags: {
     marginTop: Spacings.sm,
   },
+  // Sujet de la consultation, en noir : c'est ce que l'expert lit en premier.
   subject: {
+    fontFamily: 'Roboto',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.text,
+    marginTop: 2,
+  },
+  offCal: {
+    marginTop: Spacings.sm,
+    padding: Spacings.sm,
+    borderRadius: 12,
+    backgroundColor: Colors.warningBackground,
+    gap: 2,
+  },
+  offCalHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  offCalTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 13,
+    color: '#B26A00',
+  },
+  offCalText: {
     fontFamily: 'Roboto',
     fontSize: 13,
     lineHeight: 18,
-    color: Colors.subtext2,
-    marginTop: 2,
+    color: Colors.text,
   },
 
   /* ---- En-tête ---- */
@@ -223,16 +247,18 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Délai ---- */
+  // Bas de carte : date limite et temps restant sur une ligne, sous un filet.
   deadline: {
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginTop: Spacings.md,
-    paddingHorizontal: Spacings.sm,
-    paddingVertical: Spacings.xxs,
-    borderRadius: 10,
-    backgroundColor: Colors.warningBackground,
+    paddingTop: Spacings.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
   },
   deadlineUrgent: {
-    backgroundColor: Colors.dangerBackground,
+    borderTopColor: Colors.danger,
   },
   deadlineText: {
     flexShrink: 1,
@@ -243,6 +269,9 @@ const styles = StyleSheet.create({
   // Seule l'échéance est en gras : c'est elle qu'on lit.
   deadlineDate: {
     fontFamily: 'Poppins-Bold',
+  },
+  deadlineLeft: {
+    fontFamily: 'Poppins-Regular',
   },
 
   /* ---- Demi-journée ---- */

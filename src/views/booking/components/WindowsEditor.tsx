@@ -13,6 +13,7 @@ import {
   MAX_WINDOWS,
   STEP_MINUTES,
   consultationWindowError,
+  themeHalfDaysTotal,
   themeWindowError,
   windowLabel,
   windowsOverlap,
@@ -87,7 +88,7 @@ export const WindowsEditor: React.FC<WindowsEditorProps> = ({
   };
 
   const draftError = draft
-    ? (consultation ? consultationWindowError(draft, minutes) : themeWindowError(draft, blocksCount)) ??
+    ? (consultation ? consultationWindowError(draft, minutes) : themeWindowError(draft)) ??
       (windows.some((w) => windowsOverlap(w, draft)) ? 'Ce créneau chevauche un créneau déjà proposé.' : null)
     : null;
 
@@ -188,6 +189,13 @@ export const WindowsEditor: React.FC<WindowsEditorProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Thème : le total compte, pas chaque créneau ; l'expert y choisit ses demi-journées. */}
+      {!consultation && blocksCount > 1 ? (
+        <Text style={styles.hint}>
+          Au total, au moins {blocksCount} demi-journées ({themeHalfDaysTotal(windows)} couverte
+          {themeHalfDaysTotal(windows) > 1 ? 's' : ''}) : l'expert y choisit les siennes, consécutives ou non.
+        </Text>
+      ) : null}
       {/* ---- Créneaux proposés ---- */}
       {windows.map((w, i) => (
         <View key={i} style={[styles.item, { borderColor: withAlpha(color, 0.35), backgroundColor: soft }]}>

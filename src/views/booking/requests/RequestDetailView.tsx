@@ -130,6 +130,11 @@ export const RequestDetailView = ({ navigation, route }) => {
   const [windowStart, setWindowStart] = useState<string | null>(null);
   const [windowMissing, setWindowMissing] = useState(false);
   const needsWindowChoice = !!full?.needs_window_choice;
+  // Thème : demi-journées retenues librement dans les créneaux (autant que le thème en compte).
+  const [windowBlocks, setWindowBlocks] = useState<string[]>([]);
+  const blocksNeeded = Math.max(1, request?.blocks_count ?? 1);
+  const themeChoice = needsWindowChoice && request?.kind !== 'consultation';
+  const windowChosen = themeChoice ? windowBlocks.length === blocksNeeded : !!windowStart;
 
   const { data: reasons } = useQuery({
     queryKey: ['booking', 'decline-reasons'],
@@ -202,9 +207,14 @@ export const RequestDetailView = ({ navigation, route }) => {
   };
 
   const accept = () => {
-    if (needsWindowChoice && !windowStart) {
+    if (needsWindowChoice && !windowChosen) {
       setWindowMissing(true);
-      notify("Choisissez l'horaire", 'Le confrère a proposé des créneaux : choisissez l’horaire du rendez-vous dans l’un d’eux.');
+      notify(
+        "Choisissez l'horaire",
+        themeChoice
+          ? `Le confrère a proposé des créneaux : choisissez-y ${blocksNeeded} demi-journée${blocksNeeded > 1 ? 's' : ''}.`
+          : 'Le confrère a proposé des créneaux : choisissez l’horaire du rendez-vous dans l’un d’eux.'
+      );
       return;
     }
     if (needsLocation && !locationId) {
@@ -222,7 +232,7 @@ export const RequestDetailView = ({ navigation, route }) => {
         setBusy('accept');
         const result = await acceptExpertRequest(bookingId, {
           ...(needsLocation ? { location_id: locationId } : {}),
-          ...(needsWindowChoice ? { window_start: windowStart } : {}),
+          ...(needsWindowChoice ? (themeChoice ? { window_blocks: windowBlocks } : { window_start: windowStart }) : {}),
         });
         setBusy(null);
 
@@ -352,15 +362,16 @@ export const RequestDetailView = ({ navigation, route }) => {
             </View>
 
             <Text style={styles.offerTitle}>{request.offer_title}</Text>
-            <View style={styles.modeRow}>
-              <ModePill mode={request.mode ?? 'online'} />
-            </View>
+            {/* Pastilles sur une ligne (retour à la ligne si besoin) ; consultation : pas de « En visio ». */}
             <KindTags
               kind={request.kind}
               durationMinutes={request.duration_minutes}
+              blocksCount={request.blocks_count}
               offCalendar={request.off_calendar}
               style={styles.kindTags}
-            />
+            >
+              {request.kind !== 'consultation' ? <ModePill mode={request.mode ?? 'online'} size="compact" /> : null}
+            </KindTags>
 
             {/* Créneaux proposés (horaire à choisir plus bas, ou déjà choisi ci-dessous). */}
             {request.windows?.length && !request.blocks.length && !needsWindowChoice ? (
@@ -441,9 +452,9 @@ export const RequestDetailView = ({ navigation, route }) => {
                   <Text style={styles.sectionSubtitle}>
                     {request.kind === 'consultation'
                       ? 'Choisissez un créneau proposé, puis le jour et l’heure de début : la fin suit la durée estimée.'
-                      : 'Choisissez la première demi-journée : les suivantes s’enchaînent.'}
+                      : `Choisissez ${blocksNeeded} demi-journée${blocksNeeded > 1 ? 's' : ''} dans les créneaux proposés, consécutives ou non.`}
                   </Text>
-                  <View style={[styles.card, windowMissing && !windowStart && styles.cardError]}>
+                  <View style={[styles.card, windowMissing && !windowChosen && styles.cardError]}>
                     <WindowChoicePicker
                       kind={request.kind === 'consultation' ? 'consultation' : 'offer'}
                       windows={full.windows}
@@ -454,8 +465,14 @@ export const RequestDetailView = ({ navigation, route }) => {
                         setWindowStart(v);
                         if (v) setWindowMissing(false);
                       }}
+                      blocksCount={blocksNeeded}
+                      selected={windowBlocks}
+                      onSelect={(values) => {
+                        setWindowBlocks(values);
+                        if (values.length === blocksNeeded) setWindowMissing(false);
+                      }}
                       color={accent}
-                      error={windowMissing && !windowStart}
+                      error={windowMissing && !windowChosen}
                     />
                   </View>
                 </>

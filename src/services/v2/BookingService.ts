@@ -1505,8 +1505,11 @@ export const getDeclineReasons = async (): Promise<DeclineReasons | null> => {
  */
 export const acceptExpertRequest = async (
   bookingId: number,
-  /** window_start : demande par créneaux, « Y-m-d H:i » (consultation) ou « Y-m-d|période » (thème). */
-  input?: { location_id?: number | null; window_start?: string | null }
+  /**
+   * Demande par créneaux : window_start « Y-m-d H:i » (consultation) ;
+   * window_blocks « Y-m-d|période » × blocks_count, choisies librement (thème).
+   */
+  input?: { location_id?: number | null; window_start?: string | null; window_blocks?: string[] }
 ): Promise<BookingResult<ExpertRequestDetail>> => {
   return axiosInstance
     .post(`${baseUrl}/booking/me/requests/${bookingId}/accept`, input ?? {})

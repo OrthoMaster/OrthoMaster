@@ -38,6 +38,7 @@ import { useBookingDirty } from '../BookingExitGuard';
 import { expertTheme } from '../expertTheme';
 import { ThemeBackdrop } from '../components/ThemeBackdrop';
 import { WindowsEditor } from '../components/WindowsEditor';
+import { themeHalfDaysTotal } from '../bookingWindows';
 import { SegmentedTabs } from '../components/SegmentedTabs';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { PERIOD_ICONS, PERIOD_LABELS, SlotPicker, SlotSelection, placeLabel } from './components/SlotPicker';
@@ -295,7 +296,9 @@ export const OfferDetailView = ({ navigation, route }) => {
   const images = offer?.images ?? [];
   const required = offer?.blocks_count ?? 1;
   const selectedCount = Object.keys(selection).length;
-  const complete = offCalendar ? windows.length > 0 && !editingWindow : selectedCount === required;
+  // Hors calendrier : les créneaux doivent couvrir au moins les demi-journées du thème, au total.
+  const covered = themeHalfDaysTotal(windows);
+  const complete = offCalendar ? covered >= required && !editingWindow : selectedCount === required;
   const pendingCount = offCalendar ? windows.length : selectedCount;
 
   /* ---- Sortie avec une sélection en cours ---- */
@@ -776,13 +779,13 @@ export const OfferDetailView = ({ navigation, route }) => {
     <View style={styles.progressRow}>
       <Text style={[styles.progressText, { color: theme.muted }]} numberOfLines={2}>
         <Text style={[styles.progressCount, { color: theme.ink }]}>
-          {offCalendar ? `${windows.length} / 3` : `${selectedCount} / ${required}`}
+          {offCalendar ? `${Math.min(covered, required)} / ${required}` : `${selectedCount} / ${required}`}
         </Text>
         {'\n'}
         {offCalendar
-          ? windows.length > 1
-            ? 'créneaux proposés'
-            : 'créneau proposé'
+          ? required > 1
+            ? 'demi-journées couvertes'
+            : 'demi-journée couverte'
           : required > 1
             ? 'demi-journées choisies'
             : 'demi-journée choisie'}

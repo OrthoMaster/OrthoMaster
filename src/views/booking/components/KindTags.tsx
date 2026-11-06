@@ -21,11 +21,15 @@ export const KindTags: React.FC<{
   durationMinutes?: number | null;
   /** Thème : nombre de demi-journées ; affiche la pastille « Thème ». */
   blocksCount?: number | null;
+  /** Pastille « Thème » sans le nombre de demi-journées. */
+  themeOnly?: boolean;
   offCalendar?: boolean;
+  /** Pastilles placées après celles-ci, sur la même ligne (format : En visio / En présentiel…). */
+  children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-}> = ({ kind, durationMinutes, blocksCount, offCalendar, style }) => {
-  const theme = kind !== 'consultation' && !!blocksCount;
-  if (kind !== 'consultation' && !offCalendar && !theme) return null;
+}> = ({ kind, durationMinutes, blocksCount, themeOnly, offCalendar, children, style }) => {
+  const theme = kind !== 'consultation' && (!!blocksCount || !!themeOnly);
+  if (kind !== 'consultation' && !offCalendar && !theme && !children) return null;
 
   return (
     <View style={[styles.row, style]}>
@@ -33,7 +37,7 @@ export const KindTags: React.FC<{
         <View style={[styles.tag, { backgroundColor: Colors.lblue3 }]}>
           <Ionicons name="bulb-outline" size={12} color={Colors.lblueDark} />
           <Text style={[styles.text, { color: Colors.lblueDark }]}>
-            Thème · {blocksCount} demi-journée{blocksCount! > 1 ? 's' : ''}
+            {themeOnly ? 'Thème' : `Thème · ${blocksCount} demi-journée${blocksCount! > 1 ? 's' : ''}`}
           </Text>
         </View>
       ) : null}
@@ -51,6 +55,7 @@ export const KindTags: React.FC<{
           <Text style={[styles.text, { color: '#B26A00' }]}>Hors calendrier</Text>
         </View>
       ) : null}
+      {children}
     </View>
   );
 };
@@ -68,6 +73,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
     gap: Spacings.xxs,
   },
   tag: {

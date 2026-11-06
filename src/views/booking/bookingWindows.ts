@@ -2,7 +2,8 @@
  * Hors calendrier par créneaux (mobile et web) : le demandeur propose 1 à 3 créneaux,
  * chacun sur un ou plusieurs jours ; l'expert choisit l'horaire exact en acceptant.
  *  - Consultation : de « jour heure » à « jour heure », par pas de 30 minutes, au moins la durée estimée.
- *  - Thème : de « jour demi-journée » à « jour demi-journée » (incluses), au moins les demi-journées du thème.
+ *  - Thème : de « jour demi-journée » à « jour demi-journée » (incluses) ; tous créneaux confondus, au moins
+ *    les demi-journées du thème (l'expert les choisit librement, consécutives ou non).
  */
 import { BookingPeriod, BookingWindow, BookingWindowInput } from '../../services/v2/BookingService';
 import { addDays, formatLongDate, fromMinutes, toMinutes } from './bookingDates';
@@ -79,14 +80,18 @@ export const halfDaysIn = (w: BookingWindowInput): number => {
   return days * 2 + index(w.end_period) - index(w.start_period) + 1;
 };
 
-export const themeWindowError = (w: BookingWindowInput, blocksCount: number): string | null => {
+/** Un créneau de thème couvre au moins une demi-journée ; le total se vérifie sur l'ensemble (themeHalfDaysTotal). */
+export const themeWindowError = (w: BookingWindowInput): string | null => {
   if (!w.start_period || !w.end_period) return 'Choisissez le début et la fin.';
   const count = halfDaysIn(w);
   if (count <= 0) return 'La fin doit suivre le début.';
-  if (count < blocksCount) return `Au moins ${blocksCount} demi-journée${blocksCount > 1 ? 's' : ''}.`;
   if (count > (MAX_SPAN_DAYS + 1) * 2) return `${MAX_SPAN_DAYS} jours au plus.`;
   return null;
 };
+
+/** Demi-journées couvertes par tous les créneaux d'un thème. */
+export const themeHalfDaysTotal = (windows: BookingWindowInput[]): number =>
+  windows.reduce((sum, w) => sum + Math.max(0, halfDaysIn(w)), 0);
 
 /** Deux créneaux qui se chevauchent (même jour et heures croisées, ou demi-journées communes). */
 export const windowsOverlap = (a: BookingWindowInput, b: BookingWindowInput): boolean => {
