@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Image, Pressable, Animated, LayoutAnimation, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Image, Pressable, Animated, Easing, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Colors from '../../../../../constants/Colors';
@@ -80,13 +80,32 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
   const from = prices.length ? Math.min(...prices) : null;
   const currency = offers[0]?.currency;
 
+  /*
+   * Dépli animé (mobile et web) : la hauteur des thèmes passe de 0 à leur hauteur mesurée, le
+   * contenu apparaît en fondu en glissant un peu, le chevron tourne et prend la couleur de l'expert.
+   * Les thèmes restent montés jusqu'à la fin de la fermeture.
+   */
+  const progress = useRef(new Animated.Value(open ? 1 : 0)).current;
+  const [mounted, setMounted] = useState(open);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  useEffect(() => {
+    if (open) setMounted(true);
+    Animated.timing(progress, {
+      toValue: open ? 1 : 0,
+      duration: open ? 300 : 240,
+      easing: open ? Easing.out(Easing.cubic) : Easing.inOut(Easing.cubic),
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (finished && !open) setMounted(false);
+    });
+  }, [open]);
+
   const toggle = () => {
-    if (!offers.length) return;
-    try {
-      LayoutAnimation.configureNext(LayoutAnimation.create(180, 'easeInEaseOut', 'opacity'));
-    } catch (e) {}
-    onToggle();
+    if (offers.length) onToggle();
   };
+
+  const rotate = progress.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
 
   const animated: any = {
     opacity: enter,
@@ -142,7 +161,7 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
         {/* ---- Bandeau aux couleurs de l'expert, entre l'identité et les thèmes : le toucher les déplie / replie ---- */}
         {offers.length > 0 ? (
           <Pressable
-            style={({ pressed }) => [styles.foot, open && styles.footOpen, { backgroundColor: tint(accent, pressed ? 0.14 : 0.08) }]}
+            style={({ pressed }) => [styles.foot, mounted && styles.footOpen, { backgroundColor: tint(accent, pressed ? 0.14 : 0.08) }]}
             onPress={toggle}
             accessibilityRole="button"
             accessibilityState={{ expanded: open }}
@@ -154,8 +173,17 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
               </Text>
               {from != null ? ` · ${prices.length > 1 || formatsOf(offers[0]).length > 1 ? 'dès ' : ''}${priceLabel(from, currency)}` : ''}
             </Text>
-            <View style={[styles.chevron, { backgroundColor: open ? accent : Colors.white, borderColor: withAlpha(accent, 0.45) }]}>
-              <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={open ? Colors.white : accent} />
+            {/* Chevron : tourne d'un demi-tour ; fond et flèche passent en fondu aux couleurs de l'expert. */}
+            <View style={[styles.chevron, { borderColor: withAlpha(accent, 0.45) }]}>
+              <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: accent, opacity: progress }]} />
+              <Animated.View style={{ transform: [{ rotate }] }}>
+                <Animated.View style={{ opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
+                  <Ionicons name="chevron-down" size={18} color={accent} />
+                </Animated.View>
+                <Animated.View style={[StyleSheet.absoluteFill, { opacity: progress }]}>
+                  <Ionicons name="chevron-down" size={18} color={Colors.white} />
+                </Animated.View>
+              </Animated.View>
             </View>
           </Pressable>
         ) : (
@@ -164,8 +192,26 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
           </View>
         )}
         {/* ---- Thèmes dépliés : un bloc par thème, un bouton par format ---- */}
-        {open && offers.length > 0 ? (
-          <View style={styles.offers}>
+        {mounted && offers.length > 0 ? (
+          <Animated.View
+            style={[
+              styles.reveal,
+              { height: progress.interpolate({ inputRange: [0, 1], outputRange: [0, contentHeight] }) },
+            ]}
+          >
+          <Animated.View
+            style={[
+              styles.offers,
+              {
+                opacity: progress.interpolate({ inputRange: [0, 0.35, 1], outputRange: [0, 0.4, 1] }),
+                transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+              },
+            ]}
+            onLayout={(e) => {
+              const h = Math.ceil(e.nativeEvent.layout.height);
+              if (Math.abs(h - contentHeight) > 1) setContentHeight(h);
+            }}
+          >
             {offers.map((offer, i) => {
               const opening = openingOfferId === offer.id;
               return (
@@ -214,7 +260,8 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
                 </View>
               );
             })}
-          </View>
+          </Animated.View>
+          </Animated.View>
         ) : null}
 
       </View>
@@ -301,8 +348,16 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Thèmes dépliés ---- */
+  // Cadre du dépli : sa hauteur s'anime, le contenu (mesuré à part) est posé dedans.
+  reveal: {
+    overflow: 'hidden',
+  },
   offers: {
-    marginHorizontal: CARD_PADDING,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: CARD_PADDING,
     paddingTop: Spacings.xxs,
     paddingBottom: Spacings.xs,
   },
@@ -383,6 +438,8 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
+    overflow: 'hidden',
+    backgroundColor: Colors.white,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
