@@ -47,7 +47,8 @@ interface ExpertCardProps {
  * Carte d'un expert, liste « Thèmes » (mobile et web), aux couleurs de l'expert :
  * repliée, l'identité, tous ses domaines et « n thèmes · dès … » ; dépliée, ses thèmes, chacun avec
  * ses formats (prix) qui mènent directement à l'écran Réserver.
- * Toucher l'identité ouvre le profil ; toucher le pied (chevron) déplie ou replie les thèmes.
+ * Toucher l'identité ouvre le profil ; toucher le bandeau (chevron) déplie ou replie les thèmes, qui
+ * s'ouvrent sous le bandeau.
  */
 export const ExpertCard: React.FC<ExpertCardProps> = ({
   expert,
@@ -138,6 +139,30 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
           </View>
         </Pressable>
 
+        {/* ---- Bandeau aux couleurs de l'expert, entre l'identité et les thèmes : le toucher les déplie / replie ---- */}
+        {offers.length > 0 ? (
+          <Pressable
+            style={({ pressed }) => [styles.foot, open && styles.footOpen, { backgroundColor: tint(accent, pressed ? 0.14 : 0.08) }]}
+            onPress={toggle}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: open }}
+            accessibilityLabel={`${offers.length} thème${offers.length > 1 ? 's' : ''}, ${open ? 'replier' : 'déplier'}`}
+          >
+            <Text style={styles.summary} numberOfLines={1}>
+              <Text style={styles.summaryStrong}>
+                {offers.length} thème{offers.length > 1 ? 's' : ''}
+              </Text>
+              {from != null ? ` · ${prices.length > 1 || formatsOf(offers[0]).length > 1 ? 'dès ' : ''}${priceLabel(from, currency)}` : ''}
+            </Text>
+            <View style={[styles.chevron, { backgroundColor: open ? accent : Colors.white, borderColor: withAlpha(accent, 0.45) }]}>
+              <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={open ? Colors.white : accent} />
+            </View>
+          </Pressable>
+        ) : (
+          <View style={[styles.foot, { backgroundColor: tint(accent, 0.08) }]}>
+            <Text style={styles.summary}>Pas de rendez-vous pour le moment</Text>
+          </View>
+        )}
         {/* ---- Thèmes dépliés : un bloc par thème, un bouton par format ---- */}
         {open && offers.length > 0 ? (
           <View style={styles.offers}>
@@ -192,30 +217,6 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({
           </View>
         ) : null}
 
-        {/* ---- Pied de carte aux couleurs de l'expert : le toucher déplie / replie les thèmes ---- */}
-        {offers.length > 0 ? (
-          <Pressable
-            style={({ pressed }) => [styles.foot, { backgroundColor: tint(accent, pressed ? 0.14 : 0.08) }]}
-            onPress={toggle}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: open }}
-            accessibilityLabel={`${offers.length} thème${offers.length > 1 ? 's' : ''}, ${open ? 'replier' : 'déplier'}`}
-          >
-            <Text style={styles.summary} numberOfLines={1}>
-              <Text style={styles.summaryStrong}>
-                {offers.length} thème{offers.length > 1 ? 's' : ''}
-              </Text>
-              {from != null ? ` · ${prices.length > 1 || formatsOf(offers[0]).length > 1 ? 'dès ' : ''}${priceLabel(from, currency)}` : ''}
-            </Text>
-            <View style={[styles.chevron, { backgroundColor: open ? accent : Colors.white, borderColor: withAlpha(accent, 0.45) }]}>
-              <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={open ? Colors.white : accent} />
-            </View>
-          </Pressable>
-        ) : (
-          <View style={[styles.foot, { backgroundColor: tint(accent, 0.08) }]}>
-            <Text style={styles.summary}>Pas de rendez-vous pour le moment</Text>
-          </View>
-        )}
       </View>
     </Animated.View>
   );
@@ -302,10 +303,8 @@ const styles = StyleSheet.create({
   /* ---- Thèmes dépliés ---- */
   offers: {
     marginHorizontal: CARD_PADDING,
-    paddingTop: Spacings.xs,
-    paddingBottom: Spacings.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
+    paddingTop: Spacings.xxs,
+    paddingBottom: Spacings.xs,
   },
   offer: {
     paddingVertical: Spacings.sm,
@@ -368,6 +367,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacings.sm,
     borderBottomLeftRadius: CARD_RADIUS,
     borderBottomRightRadius: CARD_RADIUS,
+  },
+  // Thèmes dépliés sous le bandeau : il n'est plus le bas de la carte.
+  footOpen: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   summary: {
     flex: 1,
