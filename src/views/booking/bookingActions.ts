@@ -1,7 +1,13 @@
 import { Alert, Platform, Share } from 'react-native';
 
-/** Alert.alert est sans effet sur le web : alert natif du navigateur à la place. */
+import { showBookingDialog } from './components/BookingDialog';
+
+/**
+ * Message à l'utilisateur : boîte de dialogue de l'espace rendez-vous (mobile et web) ;
+ * hors de l'espace, alerte du système (navigateur sur le web).
+ */
 export const notify = (title: string, message?: string | null) => {
+  if (showBookingDialog({ title, message })) return;
   if (Platform.OS === 'web') {
     window.alert(message ? `${title}\n\n${message}` : title);
     return;
@@ -10,7 +16,8 @@ export const notify = (title: string, message?: string | null) => {
 };
 
 /**
- * Confirmation avant une action. Alert.alert est sans effet sur le web : confirm du navigateur.
+ * Confirmation avant une action : boîte de dialogue de l'espace rendez-vous (mobile et web),
+ * à défaut confirm du navigateur / Alert.alert.
  * `destructive` : bouton rouge et « Annuler » libellé selon le contexte (cancelText).
  */
 export const confirmAction = (
@@ -20,6 +27,15 @@ export const confirmAction = (
   onConfirm: () => void,
   options: { destructive?: boolean; cancelText?: string } = {}
 ) => {
+  const shown = showBookingDialog({
+    title,
+    message,
+    buttons: [
+      { text: options.cancelText ?? 'Annuler', style: 'cancel' },
+      { text: confirmText, style: options.destructive ? 'destructive' : 'default', onPress: onConfirm },
+    ],
+  });
+  if (shown) return;
   if (Platform.OS === 'web') {
     if (window.confirm(`${title}\n\n${message}`)) onConfirm();
     return;

@@ -178,6 +178,13 @@ export default function App({ navigation }) {
       return;
     }
 
+    // Tutorat : l'espace, une demande, un rendez-vous
+    const tutoratMatch = path.match(/open\/tutorat(\/(demande|rendez-vous)\/[^/?#]+)?/);
+    if (tutoratMatch) {
+      window.location.href = `orthomaster://${tutoratMatch[0]}`;
+      return;
+    }
+
     // Media preview
     const mediaMatch = path.match(/open\/media-preview\/([^/]+)/);
     if (mediaMatch) {
@@ -243,7 +250,15 @@ export default function App({ navigation }) {
             'training-home': '',
             'training-list': { path: 'e-learning', alias: [{ path: 'open/training-list', exact: true }] },
             'training-diploma': 'diplome',
-            booking: 'tutorat',
+            // Liens directs open/tutorat/… (e-mails) : mêmes chemins que l'application.
+            booking: {
+              path: 'tutorat',
+              alias: [
+                { path: 'open/tutorat', exact: true },
+                { path: 'open/tutorat/demande/:requestId', exact: true },
+                { path: 'open/tutorat/rendez-vous/:appointmentId', exact: true },
+              ],
+            },
           }
         },
         media: {

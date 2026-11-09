@@ -1267,10 +1267,34 @@ export interface MyBookingBlock {
   /** ISO 8601 UTC. */
   start_at: string | null;
   end_at: string | null;
-  /** Lien Google Meet de la demi-journée ; null tant que l'intégration n'est pas en place. */
+  /** Lien Google Meet de la demi-journée (créé 1 h avant le début) ; null sinon ou salle fermée. */
   meet_url: string | null;
+  /** Rendez-vous en ligne accepté : état de la salle Meet et présences relevées. */
+  meet?: BookingMeetRoom | null;
   /** Présentiel : lieu copié à la réservation ; null en ligne. */
   location?: BookedLocation | null;
+}
+
+/** Salle Google Meet d'une demi-journée (vue par les deux parties). */
+export interface BookingMeetRoom {
+  /** pending : lien pas encore créé (il l'est 1 h avant) ; open : lien actif ; closed : salle fermée. */
+  status: 'pending' | 'open' | 'closed';
+  created_at: string | null;
+  closed_at: string | null;
+  /** Dernier relevé des présences chez Google ; null : pas encore relevé. */
+  synced_at: string | null;
+  presences: BookingMeetPresence[];
+}
+
+/** Un participant de la salle (nom affiché dans Meet) et ses passages. */
+export interface BookingMeetPresence {
+  name: string;
+  kind: 'google' | 'anonymous' | 'phone' | string;
+  /** Temps passé dans la salle, en secondes. */
+  seconds: number;
+  /** Encore dans la salle au dernier relevé. */
+  active: boolean;
+  sessions: { joined_at: string | null; left_at: string | null }[];
 }
 
 /**

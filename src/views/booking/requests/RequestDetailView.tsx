@@ -38,6 +38,7 @@ import { formatPrice, initials } from '../bookingFormat';
 import { accentOf, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
 import { JoinVisioButton } from '../components/JoinVisioButton';
+import { MeetRoomStatus } from '../components/MeetRoomStatus';
 import { BlockPlace } from '../components/BlockPlace';
 import { NoShowSection } from '../components/NoShowSection';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
@@ -423,6 +424,7 @@ export const RequestDetailView = ({ navigation, route }) => {
                           color={accent}
                           compact
                         />
+                        <MeetRoomStatus meet={block.meet} startAt={block.start_at} color={accent} />
                       </View>
                     ) : null}
                   </View>

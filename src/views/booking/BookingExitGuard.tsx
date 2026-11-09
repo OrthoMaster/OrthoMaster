@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useId } from 'react';
 import { Alert, Platform } from 'react-native';
 
+import { showBookingDialog } from './components/BookingDialog';
+
 /**
  * Chaque écran de l'espace rendez-vous signale s'il a une saisie en cours.
  * BookingTabs ne demande confirmation avant de sortir que si au moins un écran
@@ -26,10 +28,24 @@ export const useBookingDirty = (dirty: boolean) => {
   }, [guard, key, dirty]);
 };
 
-/** Alert.alert n'affiche pas de boutons sur le web : confirm natif du navigateur à la place. */
+/** Boîte de dialogue de l'espace rendez-vous (mobile et web) ; à défaut, confirm / Alert.alert. */
 export const confirmLeaveBooking = (): Promise<boolean> => {
   const title = 'Quitter les rendez-vous ?';
   const message = 'Votre saisie en cours sera perdue.';
+
+  let answered: ((leave: boolean) => void) | null = null;
+  const promise = new Promise<boolean>((resolve) => {
+    answered = resolve;
+  });
+  const shown = showBookingDialog({
+    title,
+    message,
+    buttons: [
+      { text: 'Rester', style: 'cancel', onPress: () => answered?.(false) },
+      { text: 'Quitter', style: 'destructive', onPress: () => answered?.(true) },
+    ],
+  });
+  if (shown) return promise;
 
   if (Platform.OS === 'web') {
     return Promise.resolve(window.confirm(`${title}\n\n${message}`));

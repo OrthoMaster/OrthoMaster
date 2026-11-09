@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   StyleSheet,
   StatusBar,
 } from 'react-native';
@@ -24,7 +23,7 @@ import {
 } from '../../../services/v2/BookingService';
 import { BookingScreenHeader } from '../components/BookingScreenHeader';
 import { useBookingDirty } from '../BookingExitGuard';
-import { notify } from '../bookingActions';
+import { confirmAction, notify } from '../bookingActions';
 import { blocksLabel, formatPrice } from '../bookingFormat';
 import { MONTHS, WEEKDAYS_SHORT, formatLongDate, formatShortDate, isoDate, monthMatrix } from '../bookingDates';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
@@ -81,10 +80,13 @@ export const ExpertCalendarView = ({ navigation, route }) => {
       if (selectedCount === 0) return;
 
       e.preventDefault();
-      Alert.alert('Abandonner votre sélection ?', 'Les demi-journées choisies ne seront pas conservées.', [
-        { text: 'Continuer', style: 'cancel' },
-        { text: 'Abandonner', style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
-      ]);
+      confirmAction(
+        'Abandonner votre sélection ?',
+        'Les demi-journées choisies ne seront pas conservées.',
+        'Abandonner',
+        () => navigation.dispatch(e.data.action),
+        { destructive: true, cancelText: 'Continuer' }
+      );
     });
   }, [navigation, selectedCount]);
 

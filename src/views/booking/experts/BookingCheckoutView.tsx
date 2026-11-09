@@ -47,6 +47,7 @@ import { ShowcaseWebViewModal } from '../components/ShowcaseWebViewModal';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { useBookingSetup } from '../useBookingSetup';
 import { notify } from '../bookingActions';
+import { showBookingDialog } from '../components/BookingDialog';
 // Stripe : PaymentSheet sur mobile (bookingPayment.tsx), Stripe Elements sur le web (bookingPayment.web.tsx).
 import { useBookingPayment } from './bookingPayment';
 import { PERIOD_ICONS, PERIOD_LABELS, SelectedBlock, placeLabel } from './components/SlotPicker';
@@ -284,7 +285,13 @@ export const BookingCheckoutView = ({ navigation, route }) => {
   const backToCalendar = (text?: string | null) => {
     queryClient.invalidateQueries({ queryKey: ['booking', 'availability', expertId] });
     const message = text ?? "Une des demi-journées choisies n'est plus disponible. Merci d'en choisir une autre.";
-    // Web : Alert.alert est sans effet ; alerte du navigateur, puis retour au calendrier.
+    const shown = showBookingDialog({
+      title: 'Demi-journée indisponible',
+      message,
+      buttons: [{ text: 'Modifier ma sélection', onPress: close }],
+      onDismiss: close,
+    });
+    if (shown) return;
     if (Platform.OS === 'web') {
       notify('Demi-journée indisponible', message);
       close();

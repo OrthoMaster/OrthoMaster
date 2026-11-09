@@ -22,6 +22,7 @@ import { AgendaStack } from './AgendaStack';
 import { MessagesStack } from './MessagesStack';
 import { CHAT_BLUE, CHAT_UNREAD_KEY } from '../../views/booking/messages/chatFormat';
 import { EXPERT_REQUESTS_KEY } from '../../views/booking/requests/RequestsView';
+import { BookingDialogHost } from '../../views/booking/components/BookingDialog';
 
 const BookingTab = createBottomTabNavigator();
 
@@ -33,7 +34,7 @@ const BookingTab = createBottomTabNavigator();
  * Un expert, qui peut lui aussi réserver auprès d'un confrère, gère ses demandes et son
  * expertise ; ses rendez-vous, des deux côtés, sont réunis dans l'Agenda.
  */
-export const BookingTabs = ({ navigation }) => {
+export const BookingTabs = ({ navigation, route }: { navigation: any; route?: any }) => {
   const { data: setup, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['booking', 'me'],
     queryFn: () => getMyBookingSetup(),
@@ -71,6 +72,41 @@ export const BookingTabs = ({ navigation }) => {
       });
     }, [navigation])
   );
+
+  /*
+   * Liens directs (e-mails, go.orthomaster.fr/open/…) : open/tutorat/demande/:requestId (côté expert)
+   * et open/tutorat/rendez-vous/:appointmentId (côté demandeur). Le rôle n'est connu qu'une fois
+   * /booking/me chargé : on ouvre alors la fiche dans le bon onglet, puis on oublie le lien.
+   */
+  const requestId = Number(route?.params?.requestId) || null;
+  const appointmentId = Number(route?.params?.appointmentId) || null;
+  const handledLink = useRef<string | null>(null);
+  useEffect(() => {
+    if (!setup || (!requestId && !appointmentId)) return;
+    const key = `${requestId}-${appointmentId}`;
+    if (handledLink.current === key) return;
+    handledLink.current = key;
+
+    const bookingId = (requestId ?? appointmentId) as number;
+    const target =
+      requestId && setup.is_expert
+        ? { tab: 'booking-requests', screen: 'request-detail' }
+        : appointmentId
+          ? setup.is_expert
+            ? { tab: 'booking-agenda', screen: 'appointment-detail' }
+            : { tab: 'booking-appointments', screen: 'appointment-detail' }
+          : null;
+    // Laisse les onglets se monter avant d'y ouvrir la fiche ; le lien est ensuite oublié.
+    setTimeout(() => {
+      if (target) {
+        navigation.navigate('booking', {
+          screen: target.tab,
+          params: { screen: target.screen, params: { bookingId }, initial: false },
+        });
+      }
+      navigation.setParams({ requestId: undefined, appointmentId: undefined });
+    }, 0);
+  }, [setup, requestId, appointmentId]);
 
   /* ---- Garde de sortie ---- */
   const dirtyKeys = useRef(new Set<string>());
@@ -241,6 +277,8 @@ export const BookingTabs = ({ navigation }) => {
           </>
         )}
       </BookingTab.Navigator>
+      {/* Boîtes de dialogue de l'espace (notify, confirmAction…), même rendu sur mobile et web. */}
+      <BookingDialogHost />
     </BookingExitGuardContext.Provider>
   );
 };

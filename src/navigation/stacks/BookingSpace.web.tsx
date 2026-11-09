@@ -9,9 +9,9 @@ import { ChatDock } from '../../views/booking/messages/ChatDock.web';
  *
  * Porte aussi la messagerie web (ChatDock) : elle flotte au-dessus des écrans de l'espace.
  */
-export const BookingSpace = ({ navigation }) => (
+export const BookingSpace = ({ navigation, route }) => (
   <View style={styles.flex}>
-    <BookingTabs navigation={navigation} />
+    <BookingTabs navigation={navigation} route={route} />
     {/* Messagerie à la Facebook : panneau à droite et fenêtres en bas à droite, par-dessus la page. */}
     <ChatDock />
   </View>

@@ -41,7 +41,7 @@ export const JoinVisioButton: React.FC<JoinVisioButtonProps> = ({ startAt, endAt
   if (state === 'ended') return null;
 
   const open = state === 'open';
-  const hint = state === 'no-link' ? 'Lien de la visio bientôt disponible' : null;
+  const hint = state === 'no-link' ? 'Lien de la visio disponible 1 h avant le début' : null;
 
   return (
     <View style={compact ? styles.wrapCompact : styles.wrap}>

@@ -573,6 +573,11 @@ function AppContent() {
           initialRouteName: 'training-home',
           screens: {
             'training-list': { path: 'open/training-list' },
+            // Tutorat (rendez-vous experts) : l'espace, une demande (expert), un rendez-vous (demandeur).
+            'booking': {
+              path: 'open/tutorat',
+              alias: ['open/tutorat/demande/:requestId', 'open/tutorat/rendez-vous/:appointmentId'],
+            },
           },
         },
         'company': {
