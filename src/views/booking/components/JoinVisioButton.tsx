@@ -5,33 +5,29 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 
-/** La salle s'ouvre un peu avant l'heure : le temps de régler micro et caméra. */
-export const JOIN_BEFORE_MINUTES = 15;
-
 interface JoinVisioButtonProps {
   startAt: string | null;
   endAt: string | null;
-  /** Lien Meet ; null tant que l'intégration Google Meet n'est pas en place. */
+  /** Lien Meet créé dans le CMS ; null tant qu'il n'existe pas (ou salle fermée). */
   url: string | null;
   color?: string;
   /** Version réduite, pour une ligne de liste. */
   compact?: boolean;
 }
 
-type JoinState = 'ended' | 'no-link' | 'early' | 'open';
+type JoinState = 'ended' | 'no-link' | 'open';
 
+/** Un lien donné par le serveur suffit, quelle que soit l'heure (il ne le donne plus une fois la salle fermée). */
 const stateAt = (startAt: string | null, endAt: string | null, url: string | null): JoinState => {
-  const now = Date.now();
-  if (endAt && new Date(endAt).getTime() <= now) return 'ended';
-  if (!url) return 'no-link';
-  if (startAt && new Date(startAt).getTime() - JOIN_BEFORE_MINUTES * 60000 > now) return 'early';
-  return 'open';
+  if (url) return 'open';
+  if (endAt && new Date(endAt).getTime() <= Date.now()) return 'ended';
+  return 'no-link';
 };
 
 /**
- * Bouton « Rejoindre la visio » d'une demi-journée.
- * Actif de 15 min avant le début jusqu'à la fin ; avant, il annonce quand il le sera.
- * Réévalué toutes les 30 s : il s'active de lui-même pendant que l'écran est ouvert.
+ * Bouton « Rejoindre la visio » d'une demi-journée (mobile et web).
+ * Actif dès que le lien Meet existe (créé dans le CMS), sans attendre l'heure ; sans lien, grisé
+ * avec « bientôt disponible », puis masqué une fois la demi-journée passée.
  */
 export const JoinVisioButton: React.FC<JoinVisioButtonProps> = ({ startAt, endAt, url, color = Colors.lblue, compact }) => {
   const [state, setState] = useState<JoinState>(() => stateAt(startAt, endAt, url));
@@ -45,12 +41,7 @@ export const JoinVisioButton: React.FC<JoinVisioButtonProps> = ({ startAt, endAt
   if (state === 'ended') return null;
 
   const open = state === 'open';
-  const hint =
-    state === 'no-link'
-      ? 'Lien de la visio bientôt disponible'
-      : state === 'early'
-        ? `Accessible ${JOIN_BEFORE_MINUTES} min avant le début`
-        : null;
+  const hint = state === 'no-link' ? 'Lien de la visio bientôt disponible' : null;
 
   return (
     <View style={compact ? styles.wrapCompact : styles.wrap}>
