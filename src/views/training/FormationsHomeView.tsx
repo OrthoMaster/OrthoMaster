@@ -50,8 +50,13 @@ const ILLUSTRATIONS = {
 const POP_RATIO = 0.4;
 const FACE_PADDING = Spacings.md;
 
-/** Web : une seule colonne, cartes centrées et limitées en largeur (comme sur mobile). */
+/** Web : cartes centrées et limitées en largeur (comme sur mobile). */
 const WEB_CARD_MAX_WIDTH = 640;
+/**
+ * Web, grand écran : deux cartes par ligne, la troisième centrée sur la ligne suivante ;
+ * les trois ont la même largeur. En dessous de cette largeur utile : une colonne.
+ */
+const WEB_TWO_UP_CARD_MIN = 440;
 
 /**
  * Animation de l'illustration, différente pour chaque carte : lente et discrète.
@@ -208,7 +213,15 @@ export const FormationsHomeView = ({ navigation }) => {
   });
   const pendingRequests = expertRequests?.pending.length ?? 0;
 
-  const cardStyle = IS_WEB ? styles.cardWeb : null;
+  // Web : largeur utile mesurée ; deux cartes par ligne quand deux cartes assez larges y tiennent.
+  const [bodyWidth, setBodyWidth] = useState(0);
+  const usable = bodyWidth - Spacings.lg * 2;
+  const twoUp = IS_WEB && usable >= WEB_TWO_UP_CARD_MIN * 2 + Spacings.lg;
+  const cardStyle = !IS_WEB
+    ? null
+    : twoUp
+      ? { width: Math.min(WEB_CARD_MAX_WIDTH, Math.floor((usable - Spacings.lg) / 2)) }
+      : styles.cardWeb;
   // Mobile et web : côte à côte, E-learning et Diplôme inversées (texte à gauche).
 
   return (
@@ -221,7 +234,8 @@ export const FormationsHomeView = ({ navigation }) => {
 
       <ScrollView
         style={styles.body}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, twoUp && styles.contentTwoUp]}
+        onLayout={(e) => setBodyWidth(e.nativeEvent.layout.width)}
         showsVerticalScrollIndicator={false}
       >
         <EntryCard
@@ -294,6 +308,14 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacings.lg,
     gap: Spacings.lg,
+  },
+
+  // Web, grand écran : 2 + 1, la dernière centrée.
+  contentTwoUp: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
 
   /* ---- Carte 3D ---- */
