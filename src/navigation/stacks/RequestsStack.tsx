@@ -1,5 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { ConversationView } from '../../views/booking/messages/ConversationView';
 
 import { RequestsView } from '../../views/booking/requests/RequestsView';
 import { RequestsHistoryView } from '../../views/booking/requests/RequestsHistoryView';
@@ -31,6 +32,8 @@ export const RequestsStack = () => {
           gestureEnabled: false,
         }}
       />
+      {/* « Écrire » depuis une fiche (mobile ; le web ouvre une fenêtre flottante). */}
+      <RequestsStackNav.Screen name="conversation" component={ConversationView} />
     </RequestsStackNav.Navigator>
   );
 };

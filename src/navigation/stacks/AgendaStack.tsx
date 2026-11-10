@@ -1,5 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { ConversationView } from '../../views/booking/messages/ConversationView';
 
 import { AgendaView } from '../../views/booking/agenda/AgendaView';
 import { AgendaHistoryView } from '../../views/booking/agenda/AgendaHistoryView';
@@ -34,6 +35,8 @@ export const AgendaStack = () => {
       <AgendaStackNav.Screen name="agenda-history" component={AgendaHistoryView} />
       <AgendaStackNav.Screen name="request-detail" component={RequestDetailView} options={SHEET_OPTIONS} />
       <AgendaStackNav.Screen name="appointment-detail" component={AppointmentDetailView} options={SHEET_OPTIONS} />
+      {/* « Écrire » depuis une fiche (mobile ; le web ouvre une fenêtre flottante). */}
+      <AgendaStackNav.Screen name="conversation" component={ConversationView} />
     </AgendaStackNav.Navigator>
   );
 };

@@ -39,6 +39,7 @@ import { accentOf, withAlpha } from '../bookingPalette';
 import { useBookingSetup } from '../useBookingSetup';
 import { JoinVisioButton } from '../components/JoinVisioButton';
 import { MeetRoomStatus } from '../components/MeetRoomStatus';
+import { BookingMessageButton } from '../components/BookingMessageButton';
 import { BlockPlace } from '../components/BlockPlace';
 import { NoShowSection } from '../components/NoShowSection';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
@@ -373,6 +374,8 @@ export const RequestDetailView = ({ navigation, route }) => {
                   {request.requester.name}
                 </Text>
               </View>
+              {/* Écrire au demandeur : le fil du couple. */}
+              <BookingMessageButton bookingId={request.id} navigation={navigation} color={REQUESTS_ACCENT} name={request.requester.name} />
             </View>
 
             <Text style={styles.offerTitle}>{request.offer_title}</Text>

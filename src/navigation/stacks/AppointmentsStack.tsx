@@ -1,5 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { ConversationView } from '../../views/booking/messages/ConversationView';
 
 import { AppointmentsView } from '../../views/booking/appointments/AppointmentsView';
 import { AppointmentsHistoryView } from '../../views/booking/appointments/AppointmentsHistoryView';
@@ -31,6 +32,8 @@ export const AppointmentsStack = () => {
           gestureEnabled: false,
         }}
       />
+      {/* « Écrire » depuis une fiche (mobile ; le web ouvre une fenêtre flottante). */}
+      <AppointmentsStackNav.Screen name="conversation" component={ConversationView} />
     </AppointmentsStackNav.Navigator>
   );
 };

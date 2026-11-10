@@ -13,6 +13,7 @@ import {
   StatusBar,
   Platform,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -253,7 +254,51 @@ const ImageViewer = ({
  * Web, grand écran : plus d'onglets ; détails à gauche, réservation à droite (calendrier,
  * demi-journées choisies, « Continuer »). Écran étroit : comme le mobile.
  */
+/**
+ * Web : après un rechargement, l'URL (…/theme/:expertId/:offerId) ne porte que les identifiants ;
+ * le thème et l'expert sont alors relus depuis la fiche de l'expert avant d'afficher l'écran.
+ */
 export const OfferDetailView = ({ navigation, route }) => {
+  const params = route.params ?? {};
+  const complete = !!params.offer && typeof params.offer === 'object';
+  const expertId = Number(params.expertId) || null;
+  const offerId = Number(params.offerId) || null;
+
+  const { data: detail, isError } = useQuery({
+    queryKey: ['booking', 'expert', expertId],
+    queryFn: () => getBookingExpert(expertId as number),
+    enabled: !complete && !!expertId,
+  });
+
+  if (complete) return <OfferDetailContent navigation={navigation} route={route} />;
+
+  const offer = detail?.offers.find((o) => o.id === offerId);
+  if (offer && detail) {
+    const e = detail.expert;
+    const full = {
+      ...route,
+      params: {
+        ...params,
+        expertId,
+        offer,
+        expert: { name: e.name, honorific: e.honorific, avatar_url: e.avatar_url, palette: e.palette, palette_color: e.palette_color },
+      },
+    };
+    return <OfferDetailContent navigation={navigation} route={full} />;
+  }
+
+  return (
+    <View style={styles.reloading}>
+      {isError || (detail && !offer) || !expertId ? (
+        <Text style={styles.reloadingText}>Ce thème n'est plus disponible.</Text>
+      ) : (
+        <ActivityIndicator color={Colors.lblue} />
+      )}
+    </View>
+  );
+};
+
+const OfferDetailContent = ({ navigation, route }) => {
   useHideFloatingTabBar(navigation);
 
   const { width } = useWindowDimensions();
@@ -881,6 +926,19 @@ export const OfferDetailView = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  // Web, après rechargement : le thème est relu.
+  reloading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacings.lg,
+    backgroundColor: Colors.white,
+  },
+  reloadingText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 15,
+    color: Colors.subtext2,
+  },
   offToggle: {
     flexDirection: 'row',
     alignItems: 'flex-start',

@@ -244,6 +244,7 @@ export const ExpertsListView = ({ navigation, route }) => {
       }
       navigation.navigate('expert-offer', {
         expertId,
+        offerId: offer.id,
         offer,
         ...(mode ? { mode, initialTab: 'calendar' } : {}),
         expert: {

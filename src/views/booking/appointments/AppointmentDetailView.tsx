@@ -28,6 +28,7 @@ import { accentOf, withAlpha } from '../bookingPalette';
 import { WindowsList } from '../components/WindowsList';
 import { JoinVisioButton } from '../components/JoinVisioButton';
 import { MeetRoomStatus } from '../components/MeetRoomStatus';
+import { BookingMessageButton } from '../components/BookingMessageButton';
 import { BlockPlace } from '../components/BlockPlace';
 import { NoShowSection } from '../components/NoShowSection';
 import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
@@ -277,6 +278,8 @@ export const AppointmentDetailView = ({ navigation, route }) => {
                   {expert?.name ?? 'Expert'}
                 </Text>
               </View>
+              {/* Écrire à l'expert : le fil du couple. */}
+              <BookingMessageButton bookingId={booking.id} navigation={navigation} color={accentOf(expert?.palette_color)} name={expert?.name ?? "l'expert"} />
             </View>
 
             <Text style={styles.offerTitle}>{booking.offer_title}</Text>

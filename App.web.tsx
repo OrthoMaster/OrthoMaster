@@ -258,6 +258,19 @@ export default function App({ navigation }) {
                 { path: 'open/tutorat/demande/:requestId', exact: true },
                 { path: 'open/tutorat/rendez-vous/:appointmentId', exact: true },
               ],
+              screens: {
+                'booking-experts': {
+                  screens: {
+                    // Thème : seuls les identifiants dans l'URL (rechargement : thème relu) ;
+                    // l'offre et l'expert passés en paramètres n'y figurent pas.
+                    'expert-offer': {
+                      path: 'theme/:expertId/:offerId',
+                      parse: { expertId: Number, offerId: Number },
+                      stringify: { offer: () => 'undefined', expert: () => 'undefined' },
+                    },
+                  },
+                },
+              },
             },
           }
         },

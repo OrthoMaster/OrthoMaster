@@ -1878,6 +1878,17 @@ export const startConversationWithExpert = async (expertId: number): Promise<Boo
 };
 
 /**
+ * Fil avec l'autre partie d'une demande / d'un rendez-vous (créé au besoin).
+ * GET /booking/conversations/by-booking/{bookingId}
+ */
+export const getConversationByBooking = async (bookingId: number): Promise<BookingResult<ChatConversationDetail>> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/conversations/by-booking/${bookingId}`)
+    .then((response) => toResult<ChatConversationDetail>(response))
+    .catch(toFailure);
+};
+
+/**
  * Messages : les derniers, la suite (after_id, relève) ou plus anciens (before_id).
  * GET /booking/conversations/{id}/messages
  */

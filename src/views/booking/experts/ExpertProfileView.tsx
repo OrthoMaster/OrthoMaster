@@ -212,6 +212,7 @@ export const ExpertProfileView = ({ navigation, route }) => {
   const openOffer = (offer: BookingOffer) =>
     navigation.navigate('expert-offer', {
       expertId,
+      offerId: offer.id,
       offer,
       expert: {
         name: expert?.name,
