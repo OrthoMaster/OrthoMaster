@@ -192,7 +192,7 @@ export const HomeView = ({ navigation, route }) => {
   const hasUnreadNotification = Array.isArray(notificationList) && notificationList.some((n: any) => !n.read_flg);
 
   /** Web : largeur et marges suivent md / lg / xl */
-  const { padding: webPadding, innerWidth: webInnerWidth } = useHomeLayout();
+  const { padding: webPadding, innerWidth: webInnerWidth, sectionGap } = useHomeLayout();
   const webContentStyle = isWeb ? { maxWidth: webInnerWidth + webPadding * 2, paddingHorizontal: webPadding } : null;
 
   /** Actions du jour : regroupées par type, la plus récente en tête */
@@ -381,14 +381,14 @@ export const HomeView = ({ navigation, route }) => {
 
         <View style={[styles.content, webContentStyle]}>
           {dailyGroups.length > 0 && (
-            <View style={styles.section}>
+            <View style={[styles.section, isWeb && { marginTop: sectionGap.actions }]}>
               {/* Web : cartes centrées sous l'en-tête, sans titre */}
               {!isWeb && <Text style={styles.sectionTitle}>Actions du jour</Text>}
               <DailyActionCards groups={dailyGroups} onOpenGroup={openDailyGroup} />
             </View>
           )}
 
-          <View style={[styles.section, isWeb && styles.sectionWebLatest]}>
+          <View style={[styles.section, isWeb && { marginTop: dailyGroups.length > 0 ? sectionGap.latest : sectionGap.actions }]}>
             <LatestContents
               entries={videoData}
               isLoading={isVideoLoading}
@@ -450,10 +450,6 @@ const styles = StyleSheet.create({
   /* ---- Sections ---- */
   section: {
     marginTop: isWeb ? 28 : Spacings.lg,
-  },
-  // Les cartes d'action n'ont pas de titre sur le web : plus d'air pour les séparer des vidéos.
-  sectionWebLatest: {
-    marginTop: Spacings.xxl,
   },
   sectionTitle: {
     marginBottom: Spacings.sm,

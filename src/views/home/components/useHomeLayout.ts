@@ -10,6 +10,13 @@ const MAX_INNER = 1760;
 
 const PADDING: Record<HomeBreakpoint, number> = { md: 32, lg: 40, xl: 56 };
 
+// Espaces verticaux du web : en-tête → cartes du jour, cartes du jour → vidéos. Plus d'air sur grand écran.
+const SECTION_GAP: Record<HomeBreakpoint, { actions: number; latest: number }> = {
+  md: { actions: 40, latest: 64 },
+  lg: { actions: 48, latest: 72 },
+  xl: { actions: 56, latest: 88 },
+};
+
 // Titres de section et libellés des trois raccourcis : même taille, même graisse.
 const HEADING_SIZE: Record<HomeBreakpoint, number> = { md: 17, lg: 19, xl: 21 };
 
@@ -28,5 +35,5 @@ export const useHomeLayout = () => {
   const headingSize = HEADING_SIZE[breakpoint];
   const headingStyle = { fontSize: headingSize, lineHeight: headingSize + 8, fontFamily: 'Poppins-Medium' };
 
-  return { breakpoint, pageWidth, padding, innerWidth, headingStyle };
+  return { breakpoint, pageWidth, padding, innerWidth, headingStyle, sectionGap: SECTION_GAP[breakpoint] };
 };
