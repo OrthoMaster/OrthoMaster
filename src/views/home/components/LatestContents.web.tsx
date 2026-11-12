@@ -7,14 +7,31 @@ import Spacings from '../../../../constants/Spacings';
 import MediaSkeleton from '../../media/components/MediaSkeleton';
 import type { LatestContentsProps } from './LatestContents';
 import { IContent } from '../../../utils/interfaces';
+import { HomeBreakpoint, useHomeLayout } from './useHomeLayout';
 
-// La colonne de droite garde la hauteur de la vidéo à la une.
-const LIST_COUNT = 3;
+/*
+ * md : vidéo à la une en bandeau (image à gauche, texte à droite), puis 4 vidéos sur 2 colonnes.
+ * lg : vidéo à la une à gauche, 4 vidéos en liste à droite.
+ * xl : vidéo à la une à gauche, 8 vidéos sur 2 colonnes à droite.
+ * Le nombre de lignes suit la hauteur de la vidéo à la une pour que les deux côtés finissent ensemble.
+ */
+const LAYOUTS: Record<HomeBreakpoint, { listCount: number; listColumns: number; thumbWidth: number }> = {
+  md: { listCount: 4, listColumns: 2, thumbWidth: 120 },
+  lg: { listCount: 4, listColumns: 1, thumbWidth: 160 },
+  xl: { listCount: 8, listColumns: 2, thumbWidth: 136 },
+};
 
 const authorOf = (item: IContent) => item.expert_names || 'OrthoMaster';
 
 export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect, onSeeAll }: LatestContentsProps) => {
   const [featured, ...rest] = entries ?? [];
+  const { breakpoint } = useHomeLayout();
+  const layout = LAYOUTS[breakpoint];
+  const isBanner = breakpoint === 'md';
+  const listItems = rest.slice(0, layout.listCount);
+  const columns = Array.from({ length: layout.listColumns }, (_, col) =>
+    listItems.filter((_, index) => index % layout.listColumns === col)
+  );
 
   return (
     <View>
@@ -36,14 +53,19 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
       {isLoading && <MediaSkeleton numberOfObjects={4} horizontal />}
 
       {!isLoading && !isError && featured && (
-        <View style={styles.layout}>
+        <View style={[styles.layout, isBanner && styles.layoutStacked]}>
           {/* ---- Vidéo à la une ---- */}
           <Pressable
             onPress={() => onSelect(featured)}
             accessibilityRole="button"
-            style={(state: any) => [styles.featured, state.hovered && styles.lifted]}
+            style={(state: any) => [
+              styles.featured,
+              breakpoint === 'xl' && styles.featuredXl,
+              isBanner && styles.featuredBanner,
+              state.hovered && styles.lifted,
+            ]}
           >
-            <View style={styles.featuredMedia}>
+            <View style={[styles.featuredMedia, isBanner && styles.featuredMediaBanner]}>
               {featured.thumbnail ? (
                 <Image source={{ uri: featured.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
               ) : null}
@@ -56,33 +78,42 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
                 </View>
               )}
             </View>
-            <View style={styles.featuredBody}>
+            <View style={[styles.featuredBody, isBanner && styles.featuredBodyBanner]}>
               <Text style={styles.featuredAuthor} numberOfLines={1}>{authorOf(featured)}</Text>
-              <Text style={styles.featuredTitle} numberOfLines={2}>{featured.title}</Text>
+              <Text
+                style={[styles.featuredTitle, isBanner && styles.featuredTitleBanner]}
+                numberOfLines={isBanner ? 3 : 2}
+              >
+                {featured.title}
+              </Text>
             </View>
           </Pressable>
 
           {/* ---- Liste ---- */}
-          <View style={styles.list}>
-            {rest.slice(0, LIST_COUNT).map((item) => (
-              <Pressable
-                key={item.id_content}
-                onPress={() => onSelect(item)}
-                accessibilityRole="button"
-                style={(state: any) => [styles.row, state.hovered && styles.rowHovered]}
-              >
-                <View style={styles.rowThumb}>
-                  {item.thumbnail ? (
-                    <Image source={{ uri: item.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                  ) : null}
-                </View>
-                <View style={styles.rowTexts}>
-                  <Text style={styles.rowTitle} numberOfLines={2}>{item.title}</Text>
-                  <Text style={styles.rowMeta} numberOfLines={1}>
-                    {[authorOf(item), item.duration].filter(Boolean).join(' · ')}
-                  </Text>
-                </View>
-              </Pressable>
+          <View style={[styles.list, isBanner && styles.listBanner, breakpoint === 'xl' && styles.listXl]}>
+            {columns.map((column, col) => (
+              <View key={col} style={styles.listColumn}>
+                {column.map((item) => (
+                  <Pressable
+                    key={item.id_content}
+                    onPress={() => onSelect(item)}
+                    accessibilityRole="button"
+                    style={(state: any) => [styles.row, state.hovered && styles.rowHovered]}
+                  >
+                    <View style={[styles.rowThumb, { width: layout.thumbWidth, height: layout.thumbWidth * 9 / 16 }]}>
+                      {item.thumbnail ? (
+                        <Image source={{ uri: item.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      ) : null}
+                    </View>
+                    <View style={styles.rowTexts}>
+                      <Text style={styles.rowTitle} numberOfLines={2}>{item.title}</Text>
+                      <Text style={styles.rowMeta} numberOfLines={1}>
+                        {[authorOf(item), item.duration].filter(Boolean).join(' · ')}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
             ))}
           </View>
         </View>
@@ -117,13 +148,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 20,
   },
+  layoutStacked: {
+    flexDirection: 'column',
+  },
   lifted: {
     transform: [{ translateY: -3 }],
   },
 
   /* ---- Vidéo à la une ---- */
   featured: {
-    flexGrow: 1.3,
+    flexGrow: 1,
     flexShrink: 1,
     flexBasis: 380,
     minWidth: 0,
@@ -135,12 +169,22 @@ const styles = StyleSheet.create({
     transitionProperty: 'transform',
     transitionDuration: '150ms',
   } as any,
+  featuredXl: {
+    flexBasis: 520,
+  },
+  featuredBanner: {
+    flexDirection: 'row',
+    flexBasis: 'auto',
+  } as any,
   featuredMedia: {
     width: '100%',
     aspectRatio: 16 / 9,
     backgroundColor: Colors.orange3,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  featuredMediaBanner: {
+    width: '55%',
   },
   play: {
     width: 56,
@@ -172,6 +216,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacings.sm,
     paddingHorizontal: 14,
   },
+  featuredBodyBanner: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: Spacings.lg,
+  },
   featuredAuthor: {
     fontSize: 12,
     lineHeight: 16,
@@ -186,12 +235,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
   },
 
+  featuredTitleBanner: {
+    fontSize: 18,
+    lineHeight: 26,
+  },
+
   /* ---- Liste ---- */
   list: {
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 300,
     minWidth: 0,
+    flexDirection: 'row',
+    gap: Spacings.md,
+  },
+  listBanner: {
+    flexBasis: 'auto',
+  } as any,
+  listXl: {
+    flexGrow: 1.4,
+    flexBasis: 640,
+  },
+  listColumn: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'space-between',
     gap: Spacings.xxs,
   },
   row: {
@@ -206,8 +274,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.warmBackground,
   },
   rowThumb: {
-    width: 136,
-    height: 77,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: Colors.grayLight,

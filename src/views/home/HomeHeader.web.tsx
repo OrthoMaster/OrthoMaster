@@ -6,6 +6,7 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import SendQuestionInfoModal from './components/SendQuestionInfoModal';
+import { HomeBreakpoint, useHomeLayout } from './components/useHomeLayout';
 
 const S3_HOME = 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/settings/home';
 export const HOME_SHORTCUT_IMAGES = {
@@ -22,6 +23,23 @@ export interface HomeHeaderProps {
   onToolPress?: () => void;
 }
 
+/* ---- Tailles par largeur d'écran ---- */
+// curve = flèche de l'arrondi du bas : plus l'écran est large, plus elle est profonde pour rester visible.
+const SIZES: Record<HomeBreakpoint, {
+  name: number;
+  greeting: number;
+  image: number;
+  label: number;
+  itemWidth: number;
+  columnGap: number;
+  paddingTop: number;
+  curve: number;
+}> = {
+  md: { name: 30, greeting: 15, image: 116, label: 16, itemWidth: 176, columnGap: 28, paddingTop: 24, curve: 56 },
+  lg: { name: 36, greeting: 16, image: 150, label: 19, itemWidth: 220, columnGap: 64, paddingTop: 28, curve: 88 },
+  xl: { name: 42, greeting: 18, image: 184, label: 21, itemWidth: 260, columnGap: 104, paddingTop: 36, curve: 120 },
+};
+
 /** Accueil web « sans cadre » : les trois illustrations posées sur le fond, sans carte autour. */
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   userName,
@@ -31,6 +49,12 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onToolPress,
 }) => {
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const { breakpoint, pageWidth, padding } = useHomeLayout();
+  const size = SIZES[breakpoint];
+
+  // Le fond est un très grand cercle dont seul le bas dépasse : l'arrondi suit toute la largeur,
+  // ce qu'un borderRadius de coin ne donne pas sur un écran large.
+  const radius = (pageWidth * pageWidth / 4 + size.curve * size.curve) / (2 * size.curve);
 
   const shortcuts = [
     { key: 'question', label: 'Poser une question', image: HOME_SHORTCUT_IMAGES.question, onPress: () => setShowInfoModal(true) },
@@ -40,9 +64,22 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
   return (
     <>
-      <View style={styles.hero}>
+      <View
+        style={[
+          styles.hero,
+          { paddingTop: size.paddingTop, paddingBottom: Spacings.lg + size.curve * 0.5, paddingHorizontal: padding },
+        ]}
+      >
+        <View
+          pointerEvents="none"
+          style={[
+            styles.heroBackground,
+            { width: radius * 2, height: radius * 2, borderRadius: radius, left: pageWidth / 2 - radius },
+          ]}
+        />
+
         <Pressable
-          style={styles.profileButton}
+          style={[styles.profileButton, { right: padding }]}
           onPress={onProfilePress}
           accessibilityRole="button"
           accessibilityLabel={hasUnreadNotification ? 'Profil, notifications non lues' : 'Profil'}
@@ -51,23 +88,33 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           {hasUnreadNotification && <View style={styles.profileDot} />}
         </Pressable>
 
-        <Text style={styles.greeting}>Bonjour</Text>
-        <Text style={styles.name} numberOfLines={1}>
+        <Text style={[styles.greeting, { fontSize: size.greeting, lineHeight: size.greeting + 6 }]}>Bonjour</Text>
+        <Text style={[styles.name, { fontSize: size.name, lineHeight: size.name + 10 }]} numberOfLines={1}>
           {userName}
         </Text>
 
-        <View style={styles.shortcuts}>
+        <View style={[styles.shortcuts, { columnGap: size.columnGap }]}>
           {shortcuts.map((item) => (
-            <Pressable key={item.key} onPress={item.onPress} accessibilityRole="button" style={styles.shortcut}>
+            <Pressable
+              key={item.key}
+              onPress={item.onPress}
+              accessibilityRole="button"
+              style={[styles.shortcut, { width: size.itemWidth }]}
+            >
               {(state: any) => (
                 <>
                   <Image
                     source={{ uri: item.image }}
                     resizeMode="contain"
-                    style={[styles.shortcutImage, state.hovered && styles.shortcutImageHovered]}
+                    style={[
+                      styles.shortcutImage,
+                      { width: size.image, height: size.image },
+                      state.hovered && styles.shortcutImageHovered,
+                    ]}
                   />
-                  <View style={[styles.shortcutShadow, state.hovered && styles.shortcutShadowHovered]} />
-                  <Text style={styles.shortcutLabel}>{item.label}</Text>
+                  <Text style={[styles.shortcutLabel, { fontSize: size.label, lineHeight: size.label + 7 }]}>
+                    {item.label}
+                  </Text>
                 </>
               )}
             </Pressable>
@@ -83,18 +130,17 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 const styles = StyleSheet.create({
   /* ---- Bloc ---- */
   hero: {
-    backgroundColor: Colors.primaryLightBackground,
-    borderBottomLeftRadius: 56,
-    borderBottomRightRadius: 56,
-    paddingTop: 28,
-    paddingBottom: Spacings.xxl,
-    paddingHorizontal: 40,
+    overflow: 'hidden',
     alignItems: 'center',
+  },
+  heroBackground: {
+    position: 'absolute',
+    bottom: 0,
+    backgroundColor: Colors.primaryLightBackground,
   },
   profileButton: {
     position: 'absolute',
     top: Spacings.lg,
-    right: Spacings.xl,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -117,14 +163,10 @@ const styles = StyleSheet.create({
 
   /* ---- Salutation ---- */
   greeting: {
-    fontSize: 16,
-    lineHeight: 22,
     color: Colors.warmMuted,
     fontFamily: 'Poppins-Regular',
   },
   name: {
-    fontSize: 34,
-    lineHeight: 44,
     color: Colors.text,
     fontFamily: 'Poppins-Bold',
     textAlign: 'center',
@@ -135,41 +177,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    columnGap: Spacings.xxxl,
     rowGap: Spacings.md,
     marginTop: 22,
   },
   shortcut: {
-    width: 220,
     alignItems: 'center',
   },
   shortcutImage: {
-    width: 150,
-    height: 150,
     transitionProperty: 'transform',
     transitionDuration: '200ms',
   } as any,
   shortcutImageHovered: {
     transform: [{ translateY: -8 }],
   },
-  // Ombre au sol : l'illustration paraît flotter, et l'ombre se resserre quand elle monte.
-  shortcutShadow: {
-    width: 110,
-    height: 12,
-    borderRadius: 55,
-    marginTop: Spacings.xxs,
-    backgroundColor: 'rgba(170, 100, 0, 0.14)',
-    transitionProperty: 'transform, opacity',
-    transitionDuration: '200ms',
-  } as any,
-  shortcutShadowHovered: {
-    transform: [{ scaleX: 0.8 }],
-    opacity: 0.7,
-  },
   shortcutLabel: {
-    marginTop: 10,
-    fontSize: 19,
-    lineHeight: 26,
+    marginTop: Spacings.sm,
     color: Colors.warmDeep,
     textAlign: 'center',
     fontFamily: 'Poppins-Bold',

@@ -5,32 +5,39 @@ import Colors from '../../../../constants/Colors';
 import Spacings from '../../../../constants/Spacings';
 import { DailyActionGroup, ACTION_THEMES } from './dailyActions';
 import { ActionCardShell, CountBadge, StatusMark } from './DailyActionParts';
+import { HomeBreakpoint, useHomeLayout } from './useHomeLayout';
 
-// Largeur fixe et rangée centrée : avec une ou deux actions, les cartes ne s'étirent pas sur tout l'écran.
-const CARD_WIDTH = 340;
-const CARD_HEIGHT = 95;
+// Largeur plafonnée et rangée centrée : avec une ou deux actions, les cartes ne s'étirent pas sur tout l'écran.
+// En md, les trois cartes se partagent la largeur pour rester sur une seule ligne.
+const SIZES: Record<HomeBreakpoint, { maxWidth: number; height: number; image: number; title: number; gap: number }> = {
+  md: { maxWidth: 320, height: 95, image: 56, title: 13, gap: 12 },
+  lg: { maxWidth: 340, height: 95, image: 68, title: 13, gap: 14 },
+  xl: { maxWidth: 400, height: 107, image: 80, title: 14, gap: 18 },
+};
 
-const ActionCard = ({ group, onPress }: { group: DailyActionGroup; onPress: () => void }) => {
+type CardSize = typeof SIZES[HomeBreakpoint] & { width: number };
+
+const ActionCard = ({ group, size, onPress }: { group: DailyActionGroup; size: CardSize; onPress: () => void }) => {
   const theme = ACTION_THEMES[group.type];
   const latest = group.items[0];
 
   return (
     <ActionCardShell
       group={group}
-      height={CARD_HEIGHT}
+      height={size.height}
       onPress={onPress}
-      style={styles.card}
+      style={{ width: size.width }}
       innerStyle={styles.face}
       accessibilityLabel={`${theme.label} : ${latest.title}`}
     >
       <View>
-        <Image source={{ uri: theme.image }} resizeMode="contain" style={styles.image} />
+        <Image source={{ uri: theme.image }} resizeMode="contain" style={{ width: size.image, height: size.image }} />
         <StatusMark group={group} style={group.allDone ? styles.checkMark : styles.dotMark} />
       </View>
 
       <View style={styles.texts}>
         <Text style={[styles.label, { color: theme.ink }]}>{theme.label}</Text>
-        <Text style={[styles.title, group.allDone && styles.titleDone]} numberOfLines={2} ellipsizeMode="tail">
+        <Text style={[styles.title, { fontSize: size.title, lineHeight: size.title + 5 }, group.allDone && styles.titleDone]} numberOfLines={2} ellipsizeMode="tail">
           {latest.title}
         </Text>
       </View>
@@ -47,12 +54,17 @@ export const DailyActionCards = ({
   groups: DailyActionGroup[];
   onOpenGroup: (group: DailyActionGroup) => void;
 }) => {
+  const { breakpoint, innerWidth } = useHomeLayout();
   if (groups.length === 0) return null;
 
+  const base = SIZES[breakpoint];
+  const shared = (innerWidth - base.gap * (groups.length - 1)) / groups.length;
+  const size = { ...base, width: Math.max(0, Math.min(base.maxWidth, shared)) };
+
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { gap: base.gap }]}>
       {groups.map((group) => (
-        <ActionCard key={group.type} group={group} onPress={() => onOpenGroup(group)} />
+        <ActionCard key={group.type} group={group} size={size} onPress={() => onOpenGroup(group)} />
       ))}
     </View>
   );
@@ -64,11 +76,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 14,
-  },
-  card: {
-    width: CARD_WIDTH,
-    maxWidth: '100%',
   },
   face: {
     flexDirection: 'row',
@@ -79,10 +86,6 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Contenu ---- */
-  image: {
-    width: 68,
-    height: 68,
-  },
   dotMark: {
     position: 'absolute',
     top: 0,
@@ -103,8 +106,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
   },
   title: {
-    fontSize: 13,
-    lineHeight: 18,
     color: Colors.text,
     fontFamily: 'Poppins-Medium',
   },

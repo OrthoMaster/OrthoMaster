@@ -41,6 +41,7 @@ import {
   saveSeen,
   seenKey,
 } from './components/dailyActions';
+import { useHomeLayout } from './components/useHomeLayout';
 
 interface Topic {
   id: string;
@@ -189,6 +190,10 @@ export const HomeView = ({ navigation, route }) => {
   });
   const notificationList = Array.isArray(notificationData) ? notificationData : (notificationData?.data?.data || []);
   const hasUnreadNotification = Array.isArray(notificationList) && notificationList.some((n: any) => !n.read_flg);
+
+  /** Web : largeur et marges suivent md / lg / xl */
+  const { padding: webPadding, innerWidth: webInnerWidth } = useHomeLayout();
+  const webContentStyle = isWeb ? { maxWidth: webInnerWidth + webPadding * 2, paddingHorizontal: webPadding } : null;
 
   /** Actions du jour : regroupées par type, la plus récente en tête */
   const [seen, setSeen] = useState<string[]>([]);
@@ -374,7 +379,7 @@ export const HomeView = ({ navigation, route }) => {
           onToolPress={() => navigation.navigate('tools')}
         />
 
-        <View style={styles.content}>
+        <View style={[styles.content, webContentStyle]}>
           {dailyGroups.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Actions du jour</Text>
@@ -432,12 +437,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
   },
-  // Sur tablette et sur le web, le contenu ne s'étire pas sur toute la largeur.
+  // Sur tablette, le contenu ne s'étire pas sur toute la largeur ; sur le web, voir useHomeLayout.
   content: {
     width: '100%',
-    maxWidth: isWeb ? 1120 : 640,
+    maxWidth: 640,
     alignSelf: 'center',
-    paddingHorizontal: isWeb ? 40 : Spacings.md,
+    paddingHorizontal: Spacings.md,
     paddingBottom: Spacings.xl,
   },
 
