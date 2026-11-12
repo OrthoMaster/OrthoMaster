@@ -12,21 +12,63 @@ import { HomeBreakpoint, useHomeLayout } from './useHomeLayout';
 /*
  * md : vidéo à la une en bandeau (image à gauche, texte à droite), puis 4 vidéos sur 2 colonnes.
  * lg : vidéo à la une à gauche, 4 vidéos en liste à droite.
- * xl : vidéo à la une à gauche, 8 vidéos sur 2 colonnes à droite.
- * Le nombre de lignes suit la hauteur de la vidéo à la une pour que les deux côtés finissent ensemble.
+ * xl : vidéo à la une à gauche, 4 vidéos du même style en grille 2 × 2 à droite (voir XlGrid).
  */
-const LAYOUTS: Record<HomeBreakpoint, { listCount: number; listColumns: number; thumbWidth: number }> = {
+const LAYOUTS: Record<Exclude<HomeBreakpoint, 'xl'>, { listCount: number; listColumns: number; thumbWidth: number }> = {
   md: { listCount: 4, listColumns: 2, thumbWidth: 120 },
   lg: { listCount: 4, listColumns: 1, thumbWidth: 160 },
-  xl: { listCount: 8, listColumns: 2, thumbWidth: 136 },
 };
+
+/* ---- xl : grille ---- */
+const XL_GAP = 20;
+const BIG_BODY = 96;
+const SMALL_BODY = 86;
+const RATIO = 9 / 16;
+
+/**
+ * Largeurs calculées pour que la vidéo à la une et les deux rangées de petites vidéos finissent à la même hauteur :
+ * F·r + BIG_BODY = 2·(s·r + SMALL_BODY) + gap, avec s = (R − gap) / 2 et F + gap + R = largeur.
+ * L'écart entre les vignettes reste fixe quelle que soit la taille de l'écran.
+ */
+const xlWidths = (innerWidth: number) => {
+  const delta = (2 * SMALL_BODY + XL_GAP - BIG_BODY) / RATIO - XL_GAP;
+  const right = (innerWidth - XL_GAP - delta) / 2;
+  return { featured: innerWidth - XL_GAP - right, right, small: (right - XL_GAP) / 2 };
+};
+
+const VideoCard = ({ item, width, big, onPress }: { item: IContent; width: number; big?: boolean; onPress: () => void }) => (
+  <Pressable
+    onPress={onPress}
+    accessibilityRole="button"
+    style={(state: any) => [styles.card, { width }, state.hovered && styles.lifted]}
+  >
+    <View style={[styles.featuredMedia, { height: width * RATIO }]}>
+      {item.thumbnail ? (
+        <Image source={{ uri: item.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : null}
+      <View style={[styles.play, !big && styles.playSmall]}>
+        <Ionicons name="play" size={big ? 22 : 16} color={Colors.primary} style={styles.playIcon} />
+      </View>
+      {!!item.duration && (
+        <View style={styles.duration}>
+          <Text style={styles.durationText}>{item.duration}</Text>
+        </View>
+      )}
+    </View>
+    <View style={[styles.featuredBody, { height: big ? BIG_BODY : SMALL_BODY }]}>
+      <Text style={styles.featuredAuthor} numberOfLines={1}>{authorOf(item)}</Text>
+      <Text style={big ? styles.featuredTitle : styles.cardTitleSmall} numberOfLines={2}>{item.title}</Text>
+    </View>
+  </Pressable>
+);
 
 const authorOf = (item: IContent) => item.expert_names || 'OrthoMaster';
 
 export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect, onSeeAll }: LatestContentsProps) => {
   const [featured, ...rest] = entries ?? [];
-  const { breakpoint } = useHomeLayout();
-  const layout = LAYOUTS[breakpoint];
+  const { breakpoint, innerWidth, headingStyle } = useHomeLayout();
+  const isXl = breakpoint === 'xl';
+  const layout = LAYOUTS[isXl ? 'lg' : breakpoint];
   const isBanner = breakpoint === 'md';
   const listItems = rest.slice(0, layout.listCount);
   const columns = Array.from({ length: layout.listColumns }, (_, col) =>
@@ -36,7 +78,7 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
   return (
     <View>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Nos derniers contenus</Text>
+        <Text style={[styles.headerTitle, headingStyle]}>Nos derniers contenus</Text>
         {isLoading ? (
           <ActivityIndicator size="small" color={Colors.gray} />
         ) : isError ? (
@@ -52,7 +94,21 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
 
       {isLoading && <MediaSkeleton numberOfObjects={4} horizontal />}
 
-      {!isLoading && !isError && featured && (
+      {!isLoading && !isError && featured && isXl && (() => {
+        const widths = xlWidths(innerWidth);
+        return (
+          <View style={styles.xlRow}>
+            <VideoCard item={featured} width={widths.featured} big onPress={() => onSelect(featured)} />
+            <View style={[styles.xlGrid, { width: widths.right }]}>
+              {rest.slice(0, 4).map((item) => (
+                <VideoCard key={item.id_content} item={item} width={widths.small} onPress={() => onSelect(item)} />
+              ))}
+            </View>
+          </View>
+        );
+      })()}
+
+      {!isLoading && !isError && featured && !isXl && (
         <View style={[styles.layout, isBanner && styles.layoutStacked]}>
           {/* ---- Vidéo à la une ---- */}
           <Pressable
@@ -60,7 +116,6 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
             accessibilityRole="button"
             style={(state: any) => [
               styles.featured,
-              breakpoint === 'xl' && styles.featuredXl,
               isBanner && styles.featuredBanner,
               state.hovered && styles.lifted,
             ]}
@@ -90,7 +145,7 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
           </Pressable>
 
           {/* ---- Liste ---- */}
-          <View style={[styles.list, isBanner && styles.listBanner, breakpoint === 'xl' && styles.listXl]}>
+          <View style={[styles.list, isBanner && styles.listBanner]}>
             {columns.map((column, col) => (
               <View key={col} style={styles.listColumn}>
                 {column.map((item) => (
@@ -169,8 +224,29 @@ const styles = StyleSheet.create({
     transitionProperty: 'transform',
     transitionDuration: '150ms',
   } as any,
-  featuredXl: {
-    flexBasis: 520,
+  xlRow: {
+    flexDirection: 'row',
+    gap: XL_GAP,
+  },
+  xlGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: XL_GAP,
+  },
+  card: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.warmBorder,
+    backgroundColor: Colors.white,
+    transitionProperty: 'transform',
+    transitionDuration: '150ms',
+  } as any,
+  cardTitleSmall: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.text,
+    fontFamily: 'Poppins-Medium',
   },
   featuredBanner: {
     flexDirection: 'row',
@@ -193,6 +269,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  playSmall: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
   },
   playIcon: {
     marginLeft: 3,
@@ -252,10 +333,6 @@ const styles = StyleSheet.create({
   listBanner: {
     flexBasis: 'auto',
   } as any,
-  listXl: {
-    flexGrow: 1.4,
-    flexBasis: 640,
-  },
   listColumn: {
     flex: 1,
     minWidth: 0,

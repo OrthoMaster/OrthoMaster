@@ -192,7 +192,7 @@ export const HomeView = ({ navigation, route }) => {
   const hasUnreadNotification = Array.isArray(notificationList) && notificationList.some((n: any) => !n.read_flg);
 
   /** Web : largeur et marges suivent md / lg / xl */
-  const { padding: webPadding, innerWidth: webInnerWidth } = useHomeLayout();
+  const { padding: webPadding, innerWidth: webInnerWidth, headingStyle } = useHomeLayout();
   const webContentStyle = isWeb ? { maxWidth: webInnerWidth + webPadding * 2, paddingHorizontal: webPadding } : null;
 
   /** Actions du jour : regroupées par type, la plus récente en tête */
@@ -382,7 +382,7 @@ export const HomeView = ({ navigation, route }) => {
         <View style={[styles.content, webContentStyle]}>
           {dailyGroups.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Actions du jour</Text>
+              <Text style={[styles.sectionTitle, isWeb && headingStyle]}>Actions du jour</Text>
               <DailyActionCards groups={dailyGroups} onOpenGroup={openDailyGroup} />
             </View>
           )}
@@ -456,6 +456,5 @@ const styles = StyleSheet.create({
     lineHeight: isWeb ? 26 : 24,
     color: Colors.text,
     fontFamily: 'Poppins-Medium',
-    textAlign: isWeb ? 'center' : 'left',
   },
 })

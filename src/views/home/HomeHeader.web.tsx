@@ -29,15 +29,14 @@ const SIZES: Record<HomeBreakpoint, {
   name: number;
   greeting: number;
   image: number;
-  label: number;
   itemWidth: number;
   columnGap: number;
   paddingTop: number;
   curve: number;
 }> = {
-  md: { name: 30, greeting: 15, image: 116, label: 16, itemWidth: 176, columnGap: 28, paddingTop: 24, curve: 56 },
-  lg: { name: 36, greeting: 16, image: 150, label: 19, itemWidth: 220, columnGap: 64, paddingTop: 28, curve: 88 },
-  xl: { name: 42, greeting: 18, image: 184, label: 21, itemWidth: 260, columnGap: 104, paddingTop: 36, curve: 120 },
+  md: { name: 30, greeting: 15, image: 116, itemWidth: 176, columnGap: 28, paddingTop: 24, curve: 56 },
+  lg: { name: 36, greeting: 16, image: 150, itemWidth: 220, columnGap: 64, paddingTop: 28, curve: 88 },
+  xl: { name: 42, greeting: 18, image: 184, itemWidth: 260, columnGap: 104, paddingTop: 36, curve: 120 },
 };
 
 /** Accueil web « sans cadre » : les trois illustrations posées sur le fond, sans carte autour. */
@@ -49,7 +48,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onToolPress,
 }) => {
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const { breakpoint, pageWidth, padding } = useHomeLayout();
+  const { breakpoint, pageWidth, padding, headingStyle } = useHomeLayout();
   const size = SIZES[breakpoint];
 
   // Le fond est un très grand cercle dont seul le bas dépasse : l'arrondi suit toute la largeur,
@@ -112,7 +111,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                       state.hovered && styles.shortcutImageHovered,
                     ]}
                   />
-                  <Text style={[styles.shortcutLabel, { fontSize: size.label, lineHeight: size.label + 7 }]}>
+                  <Text style={[styles.shortcutLabel, headingStyle]}>
                     {item.label}
                   </Text>
                 </>
@@ -192,8 +191,7 @@ const styles = StyleSheet.create({
   },
   shortcutLabel: {
     marginTop: Spacings.sm,
-    color: Colors.warmDeep,
+    color: Colors.text,
     textAlign: 'center',
-    fontFamily: 'Poppins-Bold',
   },
 });

@@ -10,6 +10,9 @@ const MAX_INNER = 1760;
 
 const PADDING: Record<HomeBreakpoint, number> = { md: 32, lg: 40, xl: 56 };
 
+// Titres de section et libellés des trois raccourcis : même taille, même graisse.
+const HEADING_SIZE: Record<HomeBreakpoint, number> = { md: 17, lg: 19, xl: 21 };
+
 /**
  * Mise en page de l'accueil web selon la largeur de fenêtre.
  * md < 1280 ≤ lg < 1600 ≤ xl. Pas de sm : les petits écrans tactiles basculent vers l'app.
@@ -22,5 +25,8 @@ export const useHomeLayout = () => {
   const padding = PADDING[breakpoint];
   const innerWidth = Math.min(pageWidth - padding * 2, MAX_INNER);
 
-  return { breakpoint, pageWidth, padding, innerWidth };
+  const headingSize = HEADING_SIZE[breakpoint];
+  const headingStyle = { fontSize: headingSize, lineHeight: headingSize + 8, fontFamily: 'Poppins-Medium' };
+
+  return { breakpoint, pageWidth, padding, innerWidth, headingStyle };
 };

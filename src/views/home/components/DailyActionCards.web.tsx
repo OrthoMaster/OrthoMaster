@@ -7,7 +7,7 @@ import { DailyActionGroup, ACTION_THEMES } from './dailyActions';
 import { ActionCardShell, CountBadge, StatusMark } from './DailyActionParts';
 import { HomeBreakpoint, useHomeLayout } from './useHomeLayout';
 
-// Largeur plafonnée et rangée centrée : avec une ou deux actions, les cartes ne s'étirent pas sur tout l'écran.
+// Largeur plafonnée, alignée à gauche comme le titre : avec une ou deux actions, les cartes ne s'étirent pas sur tout l'écran.
 // En md, les trois cartes se partagent la largeur pour rester sur une seule ligne.
 const SIZES: Record<HomeBreakpoint, { maxWidth: number; height: number; image: number; title: number; gap: number }> = {
   md: { maxWidth: 320, height: 95, image: 56, title: 13, gap: 12 },
@@ -75,7 +75,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
   },
   face: {
     flexDirection: 'row',
