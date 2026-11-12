@@ -128,8 +128,8 @@ const styles = StyleSheet.create({
     paddingRight: 122,
   },
   label: {
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
     fontFamily: 'Poppins-Medium',
   },
   title: {

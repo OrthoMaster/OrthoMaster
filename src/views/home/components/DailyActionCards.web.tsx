@@ -9,10 +9,10 @@ import { HomeBreakpoint, useHomeLayout } from './useHomeLayout';
 
 // Largeur plafonnée et rangée centrée : avec une ou deux actions, les cartes ne s'étirent pas sur tout l'écran.
 // En md, les trois cartes se partagent la largeur pour rester sur une seule ligne.
-const SIZES: Record<HomeBreakpoint, { maxWidth: number; height: number; image: number; title: number; gap: number }> = {
-  md: { maxWidth: 320, height: 95, image: 56, title: 13, gap: 12 },
-  lg: { maxWidth: 340, height: 95, image: 68, title: 13, gap: 14 },
-  xl: { maxWidth: 400, height: 107, image: 80, title: 14, gap: 18 },
+const SIZES: Record<HomeBreakpoint, { maxWidth: number; height: number; image: number; title: number; label: number; gap: number }> = {
+  md: { maxWidth: 320, height: 99, image: 56, title: 13, label: 13, gap: 12 },
+  lg: { maxWidth: 340, height: 99, image: 68, title: 13, label: 14, gap: 14 },
+  xl: { maxWidth: 400, height: 111, image: 80, title: 14, label: 15, gap: 18 },
 };
 
 type CardSize = typeof SIZES[HomeBreakpoint] & { width: number };
@@ -36,7 +36,7 @@ const ActionCard = ({ group, size, onPress }: { group: DailyActionGroup; size: C
       </View>
 
       <View style={styles.texts}>
-        <Text style={[styles.label, { color: theme.ink }]}>{theme.label}</Text>
+        <Text style={[styles.label, { color: theme.ink, fontSize: size.label, lineHeight: size.label + 6 }]}>{theme.label}</Text>
         <Text style={[styles.title, { fontSize: size.title, lineHeight: size.title + 5 }, group.allDone && styles.titleDone]} numberOfLines={2} ellipsizeMode="tail">
           {latest.title}
         </Text>
@@ -101,8 +101,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   label: {
-    fontSize: 11,
-    lineHeight: 16,
     fontFamily: 'Poppins-Medium',
   },
   title: {
