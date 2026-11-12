@@ -1,323 +1,180 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Platform, Animated } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import SendQuestionInfoModal from './components/SendQuestionInfoModal';
 
-const { width, height } = Dimensions.get('window');
-const isTablet = Platform.OS !== 'web' && width >= 768;
-const CARD_SIZE = (width > 500 ? 500 : width - (Spacings.xl * 2) - (Spacings.md * 2)) / 3;
+const S3_HOME = 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/settings/home';
+export const HOME_SHORTCUT_IMAGES = {
+  question: `${S3_HOME}/question.gif`,
+  tool: `${S3_HOME}/tool.gif`,
+  search: `${S3_HOME}/search.gif`,
+};
 
-interface HomeHeaderProps {
+export interface HomeHeaderProps {
   userName?: string;
-  onNotificationPress?: () => void;
+  hasUnreadNotification?: boolean;
+  onProfilePress?: () => void;
   onSearchPress?: () => void;
   onToolPress?: () => void;
-  hasNotification?: boolean;
 }
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   userName,
-  onNotificationPress,
+  hasUnreadNotification = false,
+  onProfilePress,
   onSearchPress,
   onToolPress,
-  hasNotification = false,
 }) => {
-  // Animation cho notification icon
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (hasNotification) {
-      const animation = Animated.loop(
-        Animated.sequence([
-          Animated.parallel([
-            Animated.timing(scaleAnim, {
-              toValue: 1.2,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.sequence([
-              Animated.timing(shakeAnim, {
-                toValue: 1,
-                duration: 100,
-                useNativeDriver: true,
-              }),
-              Animated.timing(shakeAnim, {
-                toValue: -1,
-                duration: 100,
-                useNativeDriver: true,
-              }),
-              Animated.timing(shakeAnim, {
-                toValue: 1,
-                duration: 100,
-                useNativeDriver: true,
-              }),
-              Animated.timing(shakeAnim, {
-                toValue: -1,
-                duration: 100,
-                useNativeDriver: true,
-              }),
-              Animated.timing(shakeAnim, {
-                toValue: 0,
-                duration: 100,
-                useNativeDriver: true,
-              }),
-            ]),
-          ]),
-          Animated.delay(1500),
-          Animated.parallel([
-            Animated.timing(scaleAnim, {
-              toValue: 1,
-              duration: 2000,
-              useNativeDriver: true,
-            }),
-          ]),
-        ])
-      );
-
-      animation.start();
-
-      return () => {
-        animation.stop();
-      };
-    } else {
-      scaleAnim.setValue(1);
-      shakeAnim.setValue(0);
-    }
-  }, [hasNotification]);
-
-  const rotateInterpolate = shakeAnim.interpolate({
-    inputRange: [-1, 1],
-    outputRange: ['-15deg', '15deg'],
-  });
-
+  const insets = useSafeAreaInsets();
   const [showInfoModal, setShowInfoModal] = useState(false);
+
+  const shortcuts = [
+    { key: 'question', label: 'Poser une question', image: HOME_SHORTCUT_IMAGES.question, onPress: () => setShowInfoModal(true) },
+    { key: 'tool', label: 'Prise en charge', image: HOME_SHORTCUT_IMAGES.tool, onPress: onToolPress },
+    { key: 'search', label: 'Chercher un contenu', image: HOME_SHORTCUT_IMAGES.search, onPress: onSearchPress },
+  ];
 
   return (
     <>
-      <View style={[styles.container, isTablet && { paddingTop: Spacings.xl }]}>
-        {/* Top Row: Logo and Notifications */}
+      {/* Le fond crème passe sous la barre d'état : la marge du haut vient des insets. */}
+      <View style={[styles.hero, { paddingTop: insets.top + Spacings.sm }]}>
         <View style={styles.topRow}>
-          <View style={styles.logoContainer}>
-            <Image
-              style={styles.logo}
-              source={require('../../../assets/v2_images/logo/logo_primary_1024.png')}
-            />
-            <Text style={styles.logoText}>OrthoMaster</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={onNotificationPress}
+          <Image style={styles.logo} source={require('../../../assets/v2_images/logo/logo_primary_1024.png')} />
+          <Text style={styles.brand}>OrthoMaster</Text>
+          <Pressable
+            style={styles.profileButton}
+            onPress={onProfilePress}
+            accessibilityRole="button"
+            accessibilityLabel={hasUnreadNotification ? 'Profil, notifications non lues' : 'Profil'}
           >
-            {hasNotification ? (
-              <Animated.View
-                style={{
-                  transform: [
-                    { scale: scaleAnim },
-                    { rotate: rotateInterpolate },
-                  ],
-                }}
-              >
-                <Ionicons name="notifications" size={28} color={Colors.primary} />
-              </Animated.View>
-            ) : (
-              <Ionicons name="notifications" size={28} color={Colors.gray} />
-            )}
-          </TouchableOpacity>
+            <Ionicons name="person-outline" size={22} color={Colors.primaryInk} />
+            {hasUnreadNotification && <View style={styles.profileDot} />}
+          </Pressable>
         </View>
 
-        {/* Greeting Section */}
-        <View style={styles.greetingSection}>
-          <Text style={styles.greetingText}>Bonjour</Text>
-          <Text style={styles.userNameText}>{userName}</Text>
+        <View>
+          <Text style={styles.greeting}>Bonjour</Text>
+          <Text style={styles.name} numberOfLines={1}>
+            {userName}
+          </Text>
         </View>
 
-        {/* Square Cards in V Formation */}
-        <View style={styles.cardsContainer}>
-          {/* Left Card - Question */}
-          <View style={styles.cardWrapper}>
-            <View style={[styles.card3DWrapper]}>
-              <TouchableOpacity
-                style={[styles.squareCard]}
-                onPress={() => setShowInfoModal(true)}
-                activeOpacity={0.8}
-              >
-                <Image
-                  style={[styles.icons]}
-                  source={require('../../../assets/v2_images/icon/home/question.gif')}
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={[styles.cardText]}>Poser une{'\n'}Question</Text>
-          </View>
-
-          {/* Center Card (Bottom) - Outils */}
-          <View style={[styles.cardWrapper]}>
-            <View style={[styles.card3DWrapper]}>
-              <TouchableOpacity
-                style={[styles.squareCard]}
-                onPress={onToolPress}
-                activeOpacity={0.8}
-              >
-                <Image
-                  style={[styles.icons, { width: CARD_SIZE - 5, height: CARD_SIZE - 5, borderRadius: 16 }]}
-                  source={require('../../../assets/v2_images/icon/home/tool.gif')}
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={[styles.cardText]}>Prise en{'\n'}Charge</Text>
-          </View>
-
-          {/* Right Card - Search */}
-          <View style={styles.cardWrapper}>
-            <View style={[styles.card3DWrapper]}>
-              <TouchableOpacity
-                style={[styles.squareCard]}
-                onPress={onSearchPress}
-                activeOpacity={0.8}
-              >
-                <Image
-                  style={styles.icons}
-                  source={require('../../../assets/v2_images/icon/home/search.gif')}
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={[styles.cardText]}>Chercher un{'\n'}Contenu</Text>
-          </View>
+        <View style={styles.shortcuts}>
+          {shortcuts.map((item) => (
+            <Pressable
+              key={item.key}
+              onPress={item.onPress}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.shortcut, pressed && styles.shortcutPressed]}
+            >
+              <Image source={{ uri: item.image }} style={styles.shortcutImage} resizeMode="contain" />
+              <Text style={styles.shortcutLabel}>{item.label}</Text>
+            </Pressable>
+          ))}
         </View>
       </View>
 
-      {/* Contract Description Modal */}
-      <SendQuestionInfoModal
-        visible={showInfoModal}
-        onClose={() => {
-          setShowInfoModal(false);
-        }}
-      />
+      <SendQuestionInfoModal visible={showInfoModal} onClose={() => setShowInfoModal(false)} />
     </>
   );
 };
 
-
-
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.md,
-    paddingBottom: Spacings.lg,
-    backgroundColor: Colors.white,
+  /* ---- Bloc ---- */
+  hero: {
+    backgroundColor: Colors.primaryLightBackground,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    paddingHorizontal: Spacings.md,
+    paddingBottom: 20,
+    gap: Spacings.sm,
   },
+
+  /* ---- Ligne du haut ---- */
   topRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacings.md,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    gap: Spacings.xs,
   },
   logo: {
+    width: 26,
+    height: 26,
     resizeMode: 'contain',
-    width: 25,
-    height: 25,
-    marginRight: Spacings.xs
   },
-  logoText: {
-    fontSize: 20,
+  brand: {
+    flex: 1,
+    fontSize: 17,
+    color: Colors.primaryInk,
     fontFamily: 'Poppins-Medium',
-    color: Colors.primary,
   },
-
-  notificationButton: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  greetingSection: {
-    marginBottom: Spacings.sm,
-    alignItems: 'center',
-    position: 'relative',
-  },
-  greetingText: {
-    fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.gray,
-    marginBottom: -4,
-  },
-  userNameText: {
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.primary,
-  },
-  cardsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginTop: Spacings.xxs,
-    gap: Spacings.md,
-  },
-  cardWrapper: {
-    alignItems: 'center',
-  },
-  centerCardWrapper: {
-    marginTop: Spacings.xl,
-  },
-
-  // 3D Wrapper for cards
-  card3DWrapper: {
-    borderRadius: 20,
-    paddingBottom: 4,
-    backgroundColor: Colors.grayLight,
-  },
-  question3DWrapper: {
-    backgroundColor: Colors.greenDark,
-  },
-  outil3DWrapper: {
-    backgroundColor: Colors.lblueDark,
-  },
-  search3DWrapper: {
-    backgroundColor: Colors.primary,
-  },
-
-  squareCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE + Spacings.xs,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: Colors.gray,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 4,
+  profileButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  searchCard: {
-    backgroundColor: Colors.primaryLight,
+  profileDot: {
+    position: 'absolute',
+    top: 9,
+    right: 9,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: Colors.danger,
+    borderWidth: 2,
+    borderColor: Colors.white,
   },
-  outilCard: {
-    backgroundColor: Colors.lblue,
+
+  /* ---- Salutation ---- */
+  greeting: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.warmMuted,
+    fontFamily: 'Poppins-Regular',
   },
-  questionCard: {
-    backgroundColor: Colors.green,
-  },
-  cardText: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Medium',
+  name: {
+    fontSize: 24,
+    lineHeight: 32,
     color: Colors.text,
-    marginTop: Spacings.sm,
-    textAlign: 'center',
+    fontFamily: 'Poppins-Bold',
   },
-  icons: {
-    resizeMode: 'contain',
-    width: CARD_SIZE * 0.7,
-    height: CARD_SIZE * 0.7,
-  }
+
+  /* ---- Raccourcis ---- */
+  shortcuts: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 2,
+  },
+  shortcut: {
+    flex: 1,
+    height: 104,
+    borderRadius: 18,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacings.xxs,
+    paddingHorizontal: Spacings.xxs,
+  },
+  shortcutPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.97 }],
+  },
+  shortcutImage: {
+    width: 46,
+    height: 46,
+  },
+  shortcutLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: Colors.text,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Medium',
+  },
 });

@@ -1,29 +1,21 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   ScrollView,
   StyleSheet,
   View,
   Text,
-  Pressable,
   StatusBar,
-  ActivityIndicator,
-  Animated,
-  Easing,
   Platform,
   RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 import { useQuery } from "@tanstack/react-query"
-import { OrthoCarousel } from '../../component/OrthoCarousel'
 import { HomeHeader } from './HomeHeader';
 
 import { IContent } from '../../utils/interfaces';
-
-import MediaSkeleton from '../../views/media/components/MediaSkeleton';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -31,12 +23,24 @@ import Spacings from '../../../constants/Spacings';
 import { useGetUser } from '../../hooks/auth.hook';
 
 import { getDailyAction, getNewests } from '../../services/v2/ContentService';
-import { getPreFormData, updateSettings, sendError } from '../../services/v2/AuthService';
+import { getPreFormData, updateSettings, sendError, getNotifications } from '../../services/v2/AuthService';
 
 import { TopicsOnboardingModal } from './components/TopicsOnboardingModal';
 
 import RemindCreateCompanyModal from './components/RemindCreateCompanyModal';
 import RemindAddPackageCompanyModal from './components/RemindAddPackageCompanyModal';
+
+import { DailyActionCards } from './components/DailyActionCards';
+import { DailyActionPicker } from './components/DailyActionPicker';
+import { LatestContents } from './components/LatestContents';
+import {
+  DailyActionGroup,
+  DailyActionItem,
+  buildDailyGroups,
+  loadSeen,
+  saveSeen,
+  seenKey,
+} from './components/dailyActions';
 
 interface Topic {
   id: string;
@@ -45,124 +49,7 @@ interface Topic {
   description?: string;
 }
 
-/** Actions du jour - card theme & component */
-const PRESS_DEPTH = 7;
-const CARD_HEIGHT = 104;
-const ICON_SIZE = 104;
-const PIVOT = ICON_SIZE / 2;
-const BASE_TILT = -10;
-
-const ACTION_THEMES = {
-  quiz: { base: Colors.blue, edge: '#2F6CB5', motion: 'swingBottom' },
-  podcast: { base: Colors.purple, edge: '#6F528F', motion: 'pulse' },
-  infographic: { base: Colors.primaryLight, edge: '#D97A00', motion: 'swingRight' },
-};
-
-const ActionCard = ({ theme, renderIcon, title, meta, metaIcon, showCheck, onPress, index = 0 }) => {
-  const pressAnim = useRef(new Animated.Value(0)).current;
-  const shineAnim = useRef(new Animated.Value(0)).current;
-  const iconAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const shine = Animated.loop(
-      Animated.sequence([
-        Animated.delay(1500 + index * 500),
-        Animated.timing(shineAnim, { toValue: 1, duration: 850, useNativeDriver: true }),
-        Animated.timing(shineAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
-        Animated.delay(3500),
-      ])
-    );
-    shine.start();
-    return () => shine.stop();
-  }, []);
-
-  useEffect(() => {
-    const motion = Animated.loop(
-      Animated.sequence([
-        Animated.delay(800 + index * 400),
-        Animated.timing(iconAnim, {
-          toValue: 1,
-          duration: theme.motion === 'pulse' ? 2200 : 2600,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(iconAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
-        Animated.delay(5000),
-      ])
-    );
-    motion.start();
-    return () => motion.stop();
-  }, []);
-
-  const pressIn = () =>
-    Animated.spring(pressAnim, { toValue: 1, speed: 50, bounciness: 0, useNativeDriver: true }).start();
-  const pressOut = () =>
-    Animated.spring(pressAnim, { toValue: 0, speed: 20, bounciness: 10, useNativeDriver: true }).start();
-
-  const pushY = pressAnim.interpolate({ inputRange: [0, 1], outputRange: [0, PRESS_DEPTH] });
-  const shineX = shineAnim.interpolate({ inputRange: [0, 1], outputRange: [-90, 280] });
-  const swing = iconAnim.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [
-      `${BASE_TILT}deg`,
-      `${BASE_TILT - 30}deg`,
-      `${BASE_TILT}deg`,
-      `${BASE_TILT + 30}deg`,
-      `${BASE_TILT}deg`,
-    ],
-  });
-  const pulse = iconAnim.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [1, 1.18, 1, 1.18, 1],
-  });
-
-  const iconTransform =
-    theme.motion === 'pulse'
-      ? [{ rotate: `${BASE_TILT}deg` }, { scale: pulse }]
-      : theme.motion === 'swingBottom'
-        ? [{ translateY: PIVOT }, { rotate: swing }, { translateY: -PIVOT }]
-        : [{ translateX: PIVOT }, { rotate: swing }, { translateX: -PIVOT }];
-
-  return (
-    <Pressable onPress={onPress} onPressIn={pressIn} onPressOut={pressOut}>
-      <View style={[styles.cardOuter, { backgroundColor: theme.edge, shadowColor: theme.edge }]}>
-        <Animated.View
-          style={[styles.cardInner, { backgroundColor: theme.base, transform: [{ translateY: pushY }] }]}
-        >
-          {/* Icon watermark - bottom right */}
-          <Animated.View style={[styles.iconMark, { transform: iconTransform }]} pointerEvents="none">
-            {renderIcon('rgba(255,255,255,0.18)', ICON_SIZE)}
-          </Animated.View>
-
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.shine, { transform: [{ translateX: shineX }, { rotate: '18deg' }] }]}
-          />
-
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle} numberOfLines={2} ellipsizeMode="tail">
-              {title}
-            </Text>
-            {!!meta && (
-              <View style={styles.metaPill}>
-                {!!metaIcon && <Ionicons name={metaIcon} size={11} color={Colors.white} />}
-                <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
-                  {meta}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {showCheck && (
-            <View style={[styles.checkBadge, { backgroundColor: Colors.success }]}>
-              <Ionicons name="checkmark-sharp" size={12} color={Colors.white} />
-            </View>
-          )}
-        </Animated.View>
-      </View>
-    </Pressable>
-  );
-};
+const isWeb = Platform.OS === 'web';
 
 export const HomeView = ({ navigation, route }) => {
   const actionChangeScreen = route.params?.action ?? null;
@@ -268,10 +155,6 @@ export const HomeView = ({ navigation, route }) => {
     retryDelay: 2000
   });
 
-  const hasDailyQuestions = dailyContentData?.questions && dailyContentData.questions.length > 0;
-  const hasDailyPodcasts = dailyContentData?.podcasts && dailyContentData.podcasts.length > 0;
-  const hasInfographics = dailyContentData?.infographics && dailyContentData.infographics.length > 0;
-
   /** Handle reload screen */
   const reload = () => {
     refetchDailyContent();
@@ -296,6 +179,50 @@ export const HomeView = ({ navigation, route }) => {
     navigation.navigate('daily-question', {
       questionId: String(questionData.question.id),
     });
+  };
+
+  /** Profil : pastille si une notification n'est pas lue (même clé que l'écran Notifications) */
+  const { data: notificationData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => getNotifications(),
+    refetchOnWindowFocus: true,
+  });
+  const notificationList = Array.isArray(notificationData) ? notificationData : (notificationData?.data?.data || []);
+  const hasUnreadNotification = Array.isArray(notificationList) && notificationList.some((n: any) => !n.read_flg);
+
+  /** Actions du jour : regroupées par type, la plus récente en tête */
+  const [seen, setSeen] = useState<string[]>([]);
+  const [pickerGroup, setPickerGroup] = useState<DailyActionGroup | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadSeen().then(setSeen);
+    }, [])
+  );
+
+  const dailyGroups = useMemo(() => buildDailyGroups(dailyContentData, seen), [dailyContentData, seen]);
+
+  const openDailyItem = (item: DailyActionItem) => {
+    setPickerGroup(null);
+
+    if (item.type !== 'quiz') {
+      const key = seenKey(item.type, item.id);
+      if (!seen.includes(key)) {
+        const next = [...seen, key];
+        setSeen(next);
+        saveSeen(next);
+      }
+    }
+
+    if (item.type === 'quiz') handleOpenQuestion(item.raw);
+    else if (item.type === 'podcast') handleOpenPodcast(item.raw);
+    else handleOpenInfographic(item.raw);
+  };
+
+  // Un seul élément : on l'ouvre directement, sans passer par la liste.
+  const openDailyGroup = (group: DailyActionGroup) => {
+    if (group.items.length === 1) openDailyItem(group.items[0]);
+    else setPickerGroup(group);
   };
 
   /** Company - Manager modals */
@@ -427,11 +354,10 @@ export const HomeView = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }}
-      edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.primaryLightBackground} />
 
-      <ScrollView style={{ backgroundColor: Colors.white, flex: 1 }}
+      <ScrollView style={styles.screen}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -441,90 +367,35 @@ export const HomeView = ({ navigation, route }) => {
             tintColor={Colors.primary}
           />
         }>
-        <HomeHeader userName={user.name + ' ' + (user.first_name ?? '')}
-          onNotificationPress={() => navigation.navigate('notification-list')}
-          hasNotification={user.settings?.notifications.length > 0 || false}
+        <HomeHeader userName={[user.name, user.first_name].filter(Boolean).join(' ')}
+          hasUnreadNotification={hasUnreadNotification}
+          onProfilePress={() => navigation.navigate('profile')}
           onSearchPress={() => navigation.navigate('home-search')}
           onToolPress={() => navigation.navigate('tools')}
         />
 
-        {(hasDailyQuestions || hasDailyPodcasts || hasInfographics) && (
-          <View style={styles.actionSection}>
-            <View style={styles.actionHeader}>
-              <Text style={styles.actionHeaderTitle}>Actions du jour</Text>
+        <View style={styles.content}>
+          {dailyGroups.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Actions du jour</Text>
+              <DailyActionCards groups={dailyGroups} onOpenGroup={openDailyGroup} />
             </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.bannerScrollContent}
-              style={styles.bannerScrollView}
-            >
-              {/* Quiz */}
-              {hasDailyQuestions && dailyContentData.questions.map((questionData, index) => (
-                <ActionCard
-                  key={`question-${index}`}
-                  index={index}
-                  theme={ACTION_THEMES.quiz}
-                  renderIcon={(color, size) => <MaterialIcons name="quiz" size={size} color={color} />}
-                  title={questionData.question?.title}
-                  meta={questionData.question?.topic?.label}
-                  showCheck={questionData.has_answered}
-                  onPress={() => handleOpenQuestion(questionData)}
-                />
-              ))}
-
-              {/* Podcast */}
-              {hasDailyPodcasts && dailyContentData.podcasts.map((podcastData, index) => (
-                <ActionCard
-                  key={`podcast-${index}`}
-                  index={index + 1}
-                  theme={ACTION_THEMES.podcast}
-                  renderIcon={(color, size) => <Ionicons name="mic" size={size} color={color} />}
-                  title={podcastData.podcast.title}
-                  meta={podcastData.podcast.duration}
-                  metaIcon="time-outline"
-                  onPress={() => handleOpenPodcast(podcastData)}
-                />
-              ))}
-
-              {/* Infographie */}
-              {hasInfographics && dailyContentData.infographics.map((infographicData, index) => (
-                <ActionCard
-                  key={`infographic-${index}`}
-                  index={index + 2}
-                  theme={ACTION_THEMES.infographic}
-                  renderIcon={(color, size) => <Ionicons name="image" size={size} color={color} />}
-                  title={infographicData.infographic.title}
-                  meta={infographicData.infographic?.topic?.label}
-                  onPress={() => handleOpenInfographic(infographicData)}
-                />
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        <View style={styles.carouselContainer}>
-          <View style={styles.carouselHeader}>
-            <Text style={styles.carouselHeaderTitle}>Nos derniers contenus</Text>
-            {isVideoLoading ? (
-              <View style={[styles.carouselHeaderButton, { marginRight: Spacings.lg }]}>
-                <ActivityIndicator size="small" color={Colors.gray} />
-              </View>
-            ) : isErrorVideo && (
-              <Pressable style={styles.carouselHeaderButton} onPress={reloadVideos}>
-                <Text style={styles.carouselHeaderViewMoreButton}>Recharger</Text>
-              </Pressable>
-            )}
-          </View>
-          {isVideoLoading && (
-            <MediaSkeleton numberOfObjects={Platform.OS === 'web' ? 5 : 3} horizontal={Platform.OS === 'web'} />
           )}
-          {!isVideoLoading && !isErrorVideo && (
-            <OrthoCarousel entries={videoData} onSelect={handleNavigation} />
-          )}
+
+          <View style={styles.section}>
+            <LatestContents
+              entries={videoData}
+              isLoading={isVideoLoading}
+              isError={isErrorVideo}
+              onReload={reloadVideos}
+              onSelect={handleNavigation}
+              onSeeAll={() => navigation.navigate('media')}
+            />
+          </View>
         </View>
       </ScrollView >
+
+      <DailyActionPicker group={pickerGroup} onClose={() => setPickerGroup(null)} onSelect={openDailyItem} />
 
       {/* Topics Onboarding Modal */}
       {user.settings?.topics?.length == 0 && topics.length > 0 &&
@@ -556,142 +427,30 @@ export const HomeView = ({ navigation, route }) => {
 }
 
 const styles = StyleSheet.create({
-  carouselContainer: {
-    marginVertical: Spacings.lg
-  },
-  carouselHeader: {
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'row',
-    marginBottom: Spacings.md,
-    alignItems: 'center'
-  },
-  carouselHeaderTitle: {
-    flex: 2,
-    alignSelf: 'flex-start',
-    marginLeft: Spacings.lg,
-    fontSize: 18,
-    color: Colors.primary,
-    fontFamily: 'Poppins-Medium',
-  },
-  carouselHeaderButton: {
+  /* ---- Écran ---- */
+  screen: {
     flex: 1,
-    alignItems: 'flex-end',
-  },
-  carouselHeaderViewMoreButton: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Regular',
-    color: Colors.gray,
-    marginRight: Spacings.lg,
-  },
-  notificationIndicator: {
-    backgroundColor: Colors.danger,
-    width: 10,
-    height: 10,
-    borderRadius: 100,
-    position: 'absolute',
-    alignSelf: 'flex-end'
-  },
-
-  // ACTIONS DU JOUR
-  actionHeader: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacings.md,
-  },
-  actionHeaderTitle: {
-    flex: 2,
-    alignSelf: 'flex-start',
-    marginLeft: Spacings.lg,
-    fontSize: 18,
-    color: Colors.primary,
-    fontFamily: 'Poppins-Medium',
-  },
-  actionSection: {
-    marginTop: Spacings.xs,
-  },
-  bannerScrollView: {
     backgroundColor: Colors.white,
   },
-  bannerScrollContent: {
-    paddingHorizontal: Spacings.lg,
-    paddingTop: Spacings.xxs,
-    paddingBottom: Spacings.md,
-    gap: Spacings.sm,
-    backgroundColor: Colors.white,
+  // Sur tablette et sur le web, le contenu ne s'étire pas sur toute la largeur.
+  content: {
+    width: '100%',
+    maxWidth: isWeb ? 1120 : 640,
+    alignSelf: 'center',
+    paddingHorizontal: isWeb ? 40 : Spacings.md,
+    paddingBottom: Spacings.xl,
   },
 
-  // ACTION CARD
-  cardOuter: {
-    width: 236,
-    borderRadius: 22,
-    paddingBottom: PRESS_DEPTH,
+  /* ---- Sections ---- */
+  section: {
+    marginTop: isWeb ? 28 : Spacings.lg,
   },
-  cardInner: {
-    justifyContent: 'center',
-    height: CARD_HEIGHT,
-    paddingVertical: Spacings.sm,
-    paddingLeft: Spacings.md,
-    paddingRight: Spacings.xl,
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  iconMark: {
-    position: 'absolute',
-    right: -18,
-    bottom: -20,
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  shine: {
-    position: 'absolute',
-    top: -80,
-    bottom: -80,
-    left: 0,
-    width: 34,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-  },
-  cardTitle: {
-    fontSize: 15,
-    lineHeight: 20,
-    color: Colors.white,
+  sectionTitle: {
+    marginBottom: Spacings.sm,
+    fontSize: isWeb ? 18 : 17,
+    lineHeight: isWeb ? 26 : 24,
+    color: Colors.text,
     fontFamily: 'Poppins-Medium',
-  },
-  metaPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
-    marginTop: Spacings.xs,
-    paddingHorizontal: Spacings.xs,
-    paddingVertical: 2,
-    borderRadius: 999,
-    gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-  },
-  metaText: {
-    fontSize: 11,
-    color: Colors.white,
-    fontFamily: 'Poppins-Regular',
-    letterSpacing: 0.3,
-  },
-  checkBadge: {
-    position: 'absolute',
-    top: Spacings.xs,
-    right: Spacings.xs,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.white,
+    textAlign: isWeb ? 'center' : 'left',
   },
 })

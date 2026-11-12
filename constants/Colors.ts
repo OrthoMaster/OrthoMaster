@@ -81,6 +81,15 @@ export default {
 
   line: '#EBEBEB',
 
+  /* Accueil : tons chauds autour du primary. Le orange #FF9600 ne passe pas 4.5:1 sur blanc,
+     d'où un orange foncé pour le texte. */
+  primaryInk: '#A85A00',
+  warmBackground: '#FFFBF6',
+  warmBorder: '#F1E8DC',
+  warmMuted: '#6B5F50',
+  warmDeep: '#3A2408',
+  overlayWarm: 'rgba(50, 42, 30, 0.48)',
+
   light: {
     text: '#000',
     background: '#fff',
