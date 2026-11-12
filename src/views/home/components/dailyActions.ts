@@ -10,7 +10,7 @@ export interface DailyActionItem {
   title: string;
   meta: string[];
   publishedAt: number;
-  /** Quiz : pas encore répondu. Podcast / infographie : jamais ouvert sur cet appareil. */
+  /** Carte jamais ouverte sur cet appareil (tous types). */
   isNew: boolean;
   /** Quiz uniquement. */
   isDone: boolean;
@@ -70,9 +70,10 @@ export const ACTION_THEMES: Record<DailyActionType, {
 // Ordre par défaut quand aucun groupe n'a de nouveauté : la carte principale reste stable.
 const TYPE_ORDER: DailyActionType[] = ['quiz', 'podcast', 'infographic'];
 
-/* ---- Contenus vus (podcast / infographie) ---- */
+/* ---- Contenus vus ---- */
 
-// L'API ne dit pas si un podcast ou une infographie a déjà été ouvert : on le retient sur l'appareil.
+// L'API ne dit pas si un élément a déjà été ouvert : on le retient sur l'appareil.
+// La pastille disparaît dès que l'utilisateur a ouvert la carte, même sans avoir écouté ou répondu.
 const SEEN_KEY = '@daily-action-seen';
 const SEEN_LIMIT = 300;
 
@@ -111,16 +112,19 @@ const byNewest = (a: DailyActionItem, b: DailyActionItem) => b.publishedAt - a.p
 export const buildDailyGroups = (data: any, seen: string[]): DailyActionGroup[] => {
   const seenSet = new Set(seen);
 
-  const quiz: DailyActionItem[] = (data?.questions ?? []).map((entry: any) => ({
-    type: 'quiz',
-    id: String(entry.question?.id),
-    title: entry.question?.title ?? '',
-    meta: compact([entry.question?.topic?.label]),
-    publishedAt: toTime(entry.question?.published_at),
-    isNew: !entry.has_answered,
-    isDone: !!entry.has_answered,
-    raw: entry,
-  }));
+  const quiz: DailyActionItem[] = (data?.questions ?? []).map((entry: any) => {
+    const id = String(entry.question?.id);
+    return {
+      type: 'quiz',
+      id,
+      title: entry.question?.title ?? '',
+      meta: compact([entry.question?.topic?.label]),
+      publishedAt: toTime(entry.question?.published_at),
+      isNew: !entry.has_answered && !seenSet.has(seenKey('quiz', id)),
+      isDone: !!entry.has_answered,
+      raw: entry,
+    };
+  });
 
   const podcast: DailyActionItem[] = (data?.podcasts ?? []).map((entry: any) => {
     const id = String(entry.podcast?.id);
@@ -177,7 +181,8 @@ export const groupSummary = (group: DailyActionGroup) => {
 
   if (group.type === 'quiz') {
     const label = `${total} question${total > 1 ? 's' : ''}`;
-    return fresh > 0 ? `${label} · ${fresh} à faire` : `${label} · toutes répondues`;
+    const todo = group.items.filter((item) => !item.isDone).length;
+    return todo > 0 ? `${label} · ${todo} à faire` : `${label} · toutes répondues`;
   }
   if (group.type === 'podcast') {
     const label = `${total} épisode${total > 1 ? 's' : ''}`;

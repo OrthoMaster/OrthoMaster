@@ -104,7 +104,8 @@ const RowAction = ({ item }: { item: DailyActionItem }) => {
     );
   }
 
-  const active = item.isNew;
+  // Un quiz pas encore répondu reste une action à faire, même déjà vu.
+  const active = item.isNew || (item.type === 'quiz' && !item.isDone);
   return (
     <View style={[styles.actionCircle, { backgroundColor: active ? Colors.primaryLightBackground : Colors.grayLight }]}>
       <Ionicons

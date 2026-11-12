@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
@@ -15,6 +14,7 @@ export const HOME_SHORTCUT_IMAGES = {
   search: `${S3_HOME}/search.gif`,
 };
 
+// Sur le web, le Profil est déjà dans la barre latérale : pas de bouton dans l'en-tête.
 export interface HomeHeaderProps {
   userName?: string;
   hasUnreadNotification?: boolean;
@@ -42,8 +42,6 @@ const SIZES: Record<HomeBreakpoint, {
 /** Accueil web « sans cadre » : les trois illustrations posées sur le fond, sans carte autour. */
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   userName,
-  hasUnreadNotification = false,
-  onProfilePress,
   onSearchPress,
   onToolPress,
 }) => {
@@ -76,16 +74,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             { width: radius * 2, height: radius * 2, borderRadius: radius, left: pageWidth / 2 - radius },
           ]}
         />
-
-        <Pressable
-          style={[styles.profileButton, { right: padding }]}
-          onPress={onProfilePress}
-          accessibilityRole="button"
-          accessibilityLabel={hasUnreadNotification ? 'Profil, notifications non lues' : 'Profil'}
-        >
-          <Ionicons name="person-outline" size={22} color={Colors.primaryInk} />
-          {hasUnreadNotification && <View style={styles.profileDot} />}
-        </Pressable>
 
         <Text style={[styles.greeting, { fontSize: size.greeting, lineHeight: size.greeting + 6 }]}>Bonjour</Text>
         <Text style={[styles.name, { fontSize: size.name, lineHeight: size.name + 10 }]} numberOfLines={1}>
@@ -136,28 +124,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     backgroundColor: Colors.primaryLightBackground,
-  },
-  profileButton: {
-    position: 'absolute',
-    top: Spacings.lg,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-  },
-  profileDot: {
-    position: 'absolute',
-    top: 9,
-    right: 9,
-    width: 11,
-    height: 11,
-    borderRadius: 6,
-    backgroundColor: Colors.danger,
-    borderWidth: 2,
-    borderColor: Colors.white,
   },
 
   /* ---- Salutation ---- */

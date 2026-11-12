@@ -192,7 +192,7 @@ export const HomeView = ({ navigation, route }) => {
   const hasUnreadNotification = Array.isArray(notificationList) && notificationList.some((n: any) => !n.read_flg);
 
   /** Web : largeur et marges suivent md / lg / xl */
-  const { padding: webPadding, innerWidth: webInnerWidth, headingStyle } = useHomeLayout();
+  const { padding: webPadding, innerWidth: webInnerWidth } = useHomeLayout();
   const webContentStyle = isWeb ? { maxWidth: webInnerWidth + webPadding * 2, paddingHorizontal: webPadding } : null;
 
   /** Actions du jour : regroupées par type, la plus récente en tête */
@@ -207,18 +207,17 @@ export const HomeView = ({ navigation, route }) => {
 
   const dailyGroups = useMemo(() => buildDailyGroups(dailyContentData, seen), [dailyContentData, seen]);
 
+  // Ouvrir une carte vaut lecture de tout son groupe : la pastille rouge disparaît aussitôt.
+  const markSeen = (items: DailyActionItem[]) => {
+    const keys = items.map((item) => seenKey(item.type, item.id)).filter((key) => !seen.includes(key));
+    if (keys.length === 0) return;
+    const next = [...seen, ...keys];
+    setSeen(next);
+    saveSeen(next);
+  };
+
   const openDailyItem = (item: DailyActionItem) => {
     setPickerGroup(null);
-
-    if (item.type !== 'quiz') {
-      const key = seenKey(item.type, item.id);
-      if (!seen.includes(key)) {
-        const next = [...seen, key];
-        setSeen(next);
-        saveSeen(next);
-      }
-    }
-
     if (item.type === 'quiz') handleOpenQuestion(item.raw);
     else if (item.type === 'podcast') handleOpenPodcast(item.raw);
     else handleOpenInfographic(item.raw);
@@ -226,6 +225,7 @@ export const HomeView = ({ navigation, route }) => {
 
   // Un seul élément : on l'ouvre directement, sans passer par la liste.
   const openDailyGroup = (group: DailyActionGroup) => {
+    markSeen(group.items);
     if (group.items.length === 1) openDailyItem(group.items[0]);
     else setPickerGroup(group);
   };
@@ -375,19 +375,20 @@ export const HomeView = ({ navigation, route }) => {
         <HomeHeader userName={[user.name, user.first_name].filter(Boolean).join(' ')}
           hasUnreadNotification={hasUnreadNotification}
           onProfilePress={() => navigation.navigate('profile')}
-          onSearchPress={() => navigation.navigate('home-search')}
+          onSearchPress={() => navigation.navigate('media', { screen: 'flash-search', initial: false, params: { openFrom: 'home' } })}
           onToolPress={() => navigation.navigate('tools')}
         />
 
         <View style={[styles.content, webContentStyle]}>
           {dailyGroups.length > 0 && (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, isWeb && headingStyle]}>Actions du jour</Text>
+              {/* Web : cartes centrées sous l'en-tête, sans titre */}
+              {!isWeb && <Text style={styles.sectionTitle}>Actions du jour</Text>}
               <DailyActionCards groups={dailyGroups} onOpenGroup={openDailyGroup} />
             </View>
           )}
 
-          <View style={styles.section}>
+          <View style={[styles.section, isWeb && styles.sectionWebLatest]}>
             <LatestContents
               entries={videoData}
               isLoading={isVideoLoading}
@@ -449,6 +450,10 @@ const styles = StyleSheet.create({
   /* ---- Sections ---- */
   section: {
     marginTop: isWeb ? 28 : Spacings.lg,
+  },
+  // Les cartes d'action n'ont pas de titre sur le web : plus d'air pour les séparer des vidéos.
+  sectionWebLatest: {
+    marginTop: Spacings.xxl,
   },
   sectionTitle: {
     marginBottom: Spacings.sm,

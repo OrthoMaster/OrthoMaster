@@ -14,7 +14,7 @@ export const CountBadge = ({ group, size = 26 }: { group: DailyActionGroup; size
 
   if (others <= 0) {
     return (
-      <View style={[styles.badge, { height: size, minWidth: size, borderRadius: size / 2 }]}>
+      <View style={[styles.badge, styles.badgeSoft, { height: size, minWidth: size, borderRadius: size / 2 }]}>
         <Ionicons name="chevron-forward" size={size * 0.58} color={theme.ink} />
       </View>
     );
@@ -91,6 +91,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // La flèche est secondaire : fond blanc voilé pour qu'elle se fonde dans la carte.
+  badgeSoft: {
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
   },
   badgeText: {
     fontSize: 12,
