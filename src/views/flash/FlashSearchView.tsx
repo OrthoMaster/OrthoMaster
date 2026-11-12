@@ -48,12 +48,7 @@ interface SearchSuggestion {
   keyword: string;
 }
 
-export const FlashSearchView = ({ navigation, route }) => {
-  // Ouverte depuis l'accueil (« Chercher un contenu ») : la fermeture ramène à l'accueil, pas à l'accueil Médias.
-  const closeSearch = () => {
-    navigation.goBack();
-    if (route?.params?.openFrom === 'home') navigation.navigate('home');
-  };
+export const FlashSearchView = ({ navigation }) => {
   // Hide bottom nav
   useEffect(() => {
     navigation.getParent()?.setOptions({
@@ -369,7 +364,7 @@ export const FlashSearchView = ({ navigation, route }) => {
         <View style={styles.headerTop}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={closeSearch}>
+            onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={Colors.white} />
           </TouchableOpacity>
 

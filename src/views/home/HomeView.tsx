@@ -375,7 +375,7 @@ export const HomeView = ({ navigation, route }) => {
         <HomeHeader userName={[user.name, user.first_name].filter(Boolean).join(' ')}
           hasUnreadNotification={hasUnreadNotification}
           onProfilePress={() => navigation.navigate('profile')}
-          onSearchPress={() => navigation.navigate('media', { screen: 'flash-search', initial: false, params: { openFrom: 'home' } })}
+          onSearchPress={() => navigation.navigate('home-search')}
           onToolPress={() => navigation.navigate('tools')}
         />
 

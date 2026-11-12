@@ -44,7 +44,7 @@ interface SearchSuggestion {
   keyword: string;
 }
 
-export const FlashSearchView = ({ navigation, route }) => {
+export const FlashSearchView = ({ navigation }) => {
   const { data: preData, isLoading: isLoadingPreData, isFetching, isError: isErrorPreData, refetch: refetchPreData } = useQuery({
     queryKey: ['pre-search'],
     queryFn: () => getPreSearch(),
@@ -228,10 +228,8 @@ export const FlashSearchView = ({ navigation, route }) => {
   };
 
   // Handle close
-  // Ouverte depuis l'accueil (« Chercher un contenu ») : la fermeture ramène à l'accueil, pas à l'accueil Médias.
   const handleClose = () => {
     navigation.goBack();
-    if (route?.params?.openFrom === 'home') navigation.navigate('home');
   };
 
   // Render video item
