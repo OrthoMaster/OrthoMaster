@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,6 +7,9 @@ import Colors from '../../../constants/Colors';
 import Spacings from '../../../constants/Spacings';
 
 import SendQuestionInfoModal from './components/SendQuestionInfoModal';
+
+// Flèche de l'arrondi du bas : le fond suit une courbe sur toute la largeur, comme sur le web.
+const HERO_CURVE = 40;
 
 const S3_HOME = 'https://content-orthomaster-prod.s3.eu-west-1.amazonaws.com/application-data/settings/home';
 export const HOME_SHORTCUT_IMAGES = {
@@ -31,6 +34,8 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onToolPress,
 }) => {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const radius = (width * width / 4 + HERO_CURVE * HERO_CURVE) / (2 * HERO_CURVE);
   const [showInfoModal, setShowInfoModal] = useState(false);
 
   // Libellés coupés à la main : toujours deux lignes, pour que les trois raccourcis restent alignés.
@@ -44,6 +49,10 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
     <>
       {/* Le fond crème passe sous la barre d'état : la marge du haut vient des insets. */}
       <View style={[styles.hero, { paddingTop: insets.top + Spacings.sm }]}>
+        <View
+          pointerEvents="none"
+          style={[styles.heroBackground, { width: radius * 2, height: radius * 2, borderRadius: radius, left: width / 2 - radius }]}
+        />
         <View style={styles.topRow}>
           <Image style={styles.logo} source={require('../../../assets/v2_images/logo/logo_primary_1024.png')} />
           <Text style={styles.brand}>OrthoMaster</Text>
@@ -58,7 +67,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           </Pressable>
         </View>
 
-        <View>
+        <View style={styles.greetingBlock}>
           <Text style={styles.greeting}>Bonjour</Text>
           <Text style={styles.name} numberOfLines={1}>
             {userName}
@@ -88,12 +97,19 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 const styles = StyleSheet.create({
   /* ---- Bloc ---- */
   hero: {
-    backgroundColor: Colors.primaryLightBackground,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    overflow: 'hidden',
     paddingHorizontal: Spacings.md,
-    paddingBottom: 20,
+    paddingBottom: 20 + HERO_CURVE / 2,
     gap: Spacings.sm,
+  },
+  // Très grand cercle dont seul le bas dépasse : arrondi continu au lieu de deux coins.
+  heroBackground: {
+    position: 'absolute',
+    bottom: 0,
+    backgroundColor: Colors.primaryLightBackground,
+  },
+  greetingBlock: {
+    alignItems: 'center',
   },
 
   /* ---- Ligne du haut ---- */
@@ -143,6 +159,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     lineHeight: 32,
+    textAlign: 'center',
     color: Colors.text,
     fontFamily: 'Poppins-Bold',
   },
