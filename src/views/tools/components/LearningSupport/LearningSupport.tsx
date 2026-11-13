@@ -32,14 +32,18 @@ const COLOR_DARK = '#35A5DA';
 const TILE_BACKGROUND = '#F2F8FC';
 const TILE_BORDER = '#E3EEF6';
 
-// Web : la boîte fait 700 px, quatre planches par ligne ; mobile : trois.
-const COLUMNS = IS_WEB ? 4 : 3;
+// Web : la boîte fait 700 px, quatre planches par ligne ; mobile : deux, pour des planches lisibles.
+const COLUMNS = IS_WEB ? 4 : 2;
 const SKELETON_COUNT = COLUMNS * 2;
 
 const ACCESS_ICON = require('../../../../../assets/tools/learning-support/access-icon.png');
 // Bandeau d'origine de la popup (texte « Support pédagogique » inclus dans l'image).
 const HEADER_IMAGE = require('../../../../../assets/tools/learning-support/learning-support.png');
-const HEADER_HEIGHT = IS_WEB ? 220 : 170;
+// Bandeau sur toute la largeur : un ratio plus large que l'image (3:2) rogne un peu le haut et le bas,
+// le titre au centre reste entier.
+const HEADER_RATIO = IS_WEB ? 2.3 : 1.9;
+// Le corps remonte sur le bandeau : coins arrondis qui font le lien entre les deux.
+const SHEET_OVERLAP = 24;
 
 type Category = 'anatomie' | 'pathologie';
 const CATEGORIES: { key: Category; label: string }[] = [
@@ -118,13 +122,53 @@ const SupportTile: React.FC<{ content: IContent; onPress: (content: IContent) =>
         ) : hasImage ? (
           <Image source={{ uri: imageUrl }} style={styles.tileImage} resizeMode="cover" />
         ) : (
-          // Pas de vignette : l'icône de l'outil sur fond bleu plutôt qu'une case vide.
+          // Pas de vignette : l'icône de l'outil teintée en bleu plutôt qu'une case vide.
           <View style={styles.tileFallback}>
-            <Image source={ACCESS_ICON} style={styles.tileFallbackIcon} resizeMode="contain" />
+            <Image source={ACCESS_ICON} style={[styles.tileFallbackIcon, { tintColor: COLOR }]} resizeMode="contain" />
           </View>
         )}
       </View>
       <Text style={styles.tileTitle} numberOfLines={2}>{content.title}</Text>
+    </Pressable>
+  );
+};
+
+/* ---- Planche seule dans sa catégorie ---- */
+
+/** Une catégorie d'une seule planche : carte en largeur plutôt qu'une case isolée dans la grille. */
+const SupportRow: React.FC<{ content: IContent; onPress: (content: IContent) => void }> = ({ content, onPress }) => {
+  const { data: imageUrl, isLoading, isError } = useQuery({
+    queryKey: ['contentThumbnail', content.id_content, content.title],
+    queryFn: () => getS3Image(`${content.s3_path}/${content.title}/logo.png`),
+    enabled: !!(content.s3_path && content.title),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+  const opacity = usePulse();
+  const hasImage = !!imageUrl && !isError;
+
+  return (
+    <Pressable
+      style={(state: any) => [styles.row, (state.pressed || state.hovered) && styles.cardActive]}
+      onPress={() => onPress(content)}
+      accessibilityRole="button"
+      accessibilityLabel={content.title}
+    >
+      <View style={styles.rowImageBox}>
+        {isLoading ? (
+          <Animated.View style={[StyleSheet.absoluteFill, styles.skeletonBlock, { opacity }]} />
+        ) : hasImage ? (
+          <Image source={{ uri: imageUrl }} style={styles.tileImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.tileFallback}>
+            <Image source={ACCESS_ICON} style={[styles.tileFallbackIcon, { tintColor: COLOR }]} resizeMode="contain" />
+          </View>
+        )}
+      </View>
+      <Text style={styles.rowTitle} numberOfLines={2}>{content.title}</Text>
+      <View style={styles.rowChevron}>
+        <Ionicons name="chevron-forward" size={18} color={COLOR_DARK} />
+      </View>
     </Pressable>
   );
 };
@@ -166,9 +210,9 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
     <View style={styles.dialog}>
       {/* ---- En-tête : bandeau d'origine ---- */}
       <View style={styles.header}>
-        <Image source={HEADER_IMAGE} style={styles.headerImage} resizeMode="contain" accessibilityLabel="Supports pédagogiques" />
+        <Image source={HEADER_IMAGE} style={styles.headerImage} resizeMode="cover" accessibilityLabel="Supports pédagogiques" />
         <Pressable style={styles.close} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer">
-          <Ionicons name="close" size={22} color={Colors.white} />
+          <Ionicons name="close" size={22} color={COLOR_DARK} />
         </Pressable>
       </View>
 
@@ -198,11 +242,15 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
         {!loading && !isError && sections.map((section) => (
           <View key={section.key} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.label}</Text>
-            <View style={styles.grid}>
-              {byCategory[section.key].map((content) => (
-                <SupportTile key={content.id_content} content={content} onPress={select} />
-              ))}
-            </View>
+            {byCategory[section.key].length === 1 ? (
+              <SupportRow content={byCategory[section.key][0]} onPress={select} />
+            ) : (
+              <View style={styles.grid}>
+                {byCategory[section.key].map((content) => (
+                  <SupportTile key={content.id_content} content={content} onPress={select} />
+                ))}
+              </View>
+            )}
           </View>
         ))}
       </ScrollView>
@@ -223,12 +271,11 @@ const styles = StyleSheet.create({
 
   /* ---- En-tête ---- */
   header: {
-    height: HEADER_HEIGHT,
+    width: '100%',
+    aspectRatio: HEADER_RATIO,
     backgroundColor: COLOR,
-    borderBottomWidth: 4,
-    borderBottomColor: COLOR_DARK,
-    paddingVertical: Spacings.sm,
   },
+  // Les dessins continuent derrière l'arrondi de la feuille du corps.
   headerImage: {
     width: '100%',
     height: '100%',
@@ -240,17 +287,24 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.22)',
+    // Pastille blanche : reste lisible au-dessus des dessins du bandeau.
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   /* ---- Contenu ---- */
+  // Feuille blanche qui chevauche le bandeau : même arrondi que la boîte.
   body: {
     flexGrow: 0,
+    marginTop: -SHEET_OVERLAP,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   bodyContent: {
-    padding: Spacings.md - 6,
+    paddingHorizontal: Spacings.md - 6,
+    paddingTop: Spacings.sm,
     paddingBottom: Spacings.lg,
   },
   section: {
@@ -259,8 +313,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginHorizontal: 6,
     marginTop: Spacings.xs,
-    marginBottom: Spacings.xs,
-    fontSize: 16,
+    marginBottom: Spacings.xxs,
+    fontSize: 17,
     color: Colors.text,
     fontFamily: 'Poppins-Bold',
   },
@@ -278,6 +332,9 @@ const styles = StyleSheet.create({
   tileActive: {
     backgroundColor: TILE_BACKGROUND,
   },
+  cardActive: {
+    backgroundColor: TILE_BACKGROUND,
+  },
   tileImageBox: {
     width: '100%',
     aspectRatio: 1,
@@ -293,7 +350,7 @@ const styles = StyleSheet.create({
   },
   tileFallback: {
     flex: 1,
-    backgroundColor: COLOR,
+    backgroundColor: TILE_BACKGROUND,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -308,6 +365,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Colors.text,
     fontFamily: 'Poppins-Medium',
+  },
+
+  /* ---- Planche seule ---- */
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    margin: 6,
+    padding: Spacings.xs,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: TILE_BORDER,
+    backgroundColor: Colors.white,
+  },
+  rowImageBox: {
+    width: IS_WEB ? 96 : 76,
+    height: IS_WEB ? 96 : 76,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: TILE_BACKGROUND,
+  },
+  rowTitle: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 21,
+    color: Colors.text,
+    fontFamily: 'Poppins-Medium',
+  },
+  rowChevron: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: Spacings.xxs,
+    backgroundColor: TILE_BACKGROUND,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   /* ---- Squelette ---- */
