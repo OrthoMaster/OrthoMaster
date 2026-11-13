@@ -16,6 +16,7 @@ export const HOME_SHORTCUT_IMAGES = {
   tool: `${S3_HOME}/tool.gif`,
   search: `${S3_HOME}/search.gif`,
 };
+const PROFILE_IMAGE = `${S3_HOME}/profile.png`;
 
 export interface HomeHeaderProps {
   userName?: string;
@@ -61,7 +62,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel={hasUnreadNotification ? 'Profil, notifications non lues' : 'Profil'}
           >
-            <Image source={require('../../../assets/v2_images/icon/home/profile.png')} style={styles.profileIcon} />
+            <Image source={{ uri: PROFILE_IMAGE }} style={styles.profileIcon} />
             {hasUnreadNotification && <View style={styles.profileDot} />}
           </Pressable>
         </View>
@@ -128,13 +129,21 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontFamily: 'Poppins-Medium',
   },
+  // Pas de fond blanc : un orange pâle cerclé, plus foncé que la crème, avec une ombre chaude pour qu'il ressorte.
   profileButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.white,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#FFE1B5',
+    borderWidth: 1.5,
+    borderColor: '#FFC370',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
   },
   // Même silhouette que l'onglet Profil, en dégradés de primary pour rester dans les tons de l'en-tête.
   profileIcon: {
@@ -151,7 +160,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: Colors.danger,
     borderWidth: 2,
-    borderColor: Colors.white,
+    borderColor: '#FFE1B5',
   },
 
   /* ---- Salutation ---- */
