@@ -206,7 +206,7 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
 
       {/* Fermer en haut à droite, comme les autres popups (RGPD, Espace Formation). */}
       <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer">
-        <Ionicons name="close" size={24} color="#fff" />
+        <Ionicons name="close" size={30} color="#fff" />
       </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -214,13 +214,13 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
 }
 
 const styles = StyleSheet.create({
-  // Même pastille que les popups RGPD / Espace Formation, en bleu foncé pour ressortir sur le fond bleu.
+  // Même pastille ronde que les popups RGPD / Espace Formation, voile blanc translucide sur le bleu.
   closeButton: {
     position: 'absolute',
     top: Spacings.md,
     right: Spacings.md,
-    backgroundColor: '#143A71',
-    padding: Spacings.xs,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    padding: Spacings.sm,
     borderRadius: 40,
     zIndex: 99999,
   },
