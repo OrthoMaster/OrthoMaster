@@ -51,12 +51,12 @@ const POP_RATIO = 0.4;
 const FACE_PADDING = Spacings.md;
 
 /** Web : cartes centrées et limitées en largeur (comme sur mobile). */
-const WEB_CARD_MAX_WIDTH = 640;
+export const WEB_CARD_MAX_WIDTH = 640;
 /**
  * Web, grand écran : deux cartes par ligne, la troisième centrée sur la ligne suivante ;
  * les trois ont la même largeur. En dessous de cette largeur utile : une colonne.
  */
-const WEB_TWO_UP_CARD_MIN = 440;
+export const WEB_TWO_UP_CARD_MIN = 440;
 
 /**
  * Animation de l'illustration, différente pour chaque carte : lente et discrète.
@@ -64,7 +64,7 @@ const WEB_TWO_UP_CARD_MIN = 440;
  *  - sway   : se balance légèrement
  *  - breathe: grossit et rétrécit doucement
  */
-type Motion = 'float' | 'sway' | 'breathe';
+export type Motion = 'float' | 'sway' | 'breathe';
 
 const useIllustrationMotion = (motion: Motion) => {
   const progress = useRef(new Animated.Value(0)).current;
@@ -108,11 +108,14 @@ interface EntryCardProps {
   motion: Motion;
   /** Part de la hauteur de l'illustration au-dessus de la carte (POP_RATIO par défaut). */
   popRatio?: number;
+  /** Lignes du titre (1 par défaut) : un titre long passe à la ligne au lieu d'être coupé. */
+  titleLines?: number;
   onPress: () => void;
   style?: any;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration, face, edge, badge, layout, motion, popRatio = POP_RATIO, onPress, style }) => {
+/** Exportée pour l'onglet Outils, qui reprend la même présentation. */
+export const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration, face, edge, badge, layout, motion, popRatio = POP_RATIO, titleLines = 1, onPress, style }) => {
   const motionTransform = useIllustrationMotion(motion);
 
   const press = useRef(new Animated.Value(0)).current;
@@ -164,7 +167,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
 
           <View style={styles.texts}>
             <View style={styles.titleRow}>
-              <Text style={styles.title} numberOfLines={1}>{title}</Text>
+              <Text style={styles.title} numberOfLines={titleLines}>{title}</Text>
               {!!badge && badge > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
