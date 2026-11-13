@@ -1,5 +1,5 @@
 import React from "react";
-import { FlatList, Text, TouchableOpacity, View, StyleSheet, Image } from "react-native";
+import { FlatList, Text, TouchableOpacity, View, StyleSheet, Image, StyleProp, ViewStyle } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { getQCcategories } from "../../../../../../../services/tools/QueChoisirService";
 import { getCdnContentAccessUrl } from "../../../../../../../services/ContentService";
@@ -46,15 +46,16 @@ const Icon: React.FC<IconProps> = ({ logo, name, onPress }) => {
 
 type CategoriesSelectionProps = {
     onSelect?: (category: string) => void;
+    style?: StyleProp<ViewStyle>;
 }
-const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect }) => {
+const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect, style }) => {
     const qcCategories = useQuery({queryKey: ['Tools', 'GET', 'QC categories'], queryFn: () => getQCcategories()})
 
-    return (<View style={{
+    return (<View style={[{
         width: "100%",
         paddingVertical: 30,
         alignItems: 'center',
-    }}>
+    }, style]}>
         <FlatList
             data={qcCategories.data}
             keyExtractor={(item) => item.id}
@@ -73,7 +74,7 @@ const CategoriesSelection: React.FC<CategoriesSelectionProps> = ({ onSelect }) =
                 justifyContent: 'space-evenly',
                 paddingVertical: 10
             }}
-            style={{ width: '70%' }}
+            style={{ width: '70%', flexGrow: 0 }}
         />
     </View>);
 }

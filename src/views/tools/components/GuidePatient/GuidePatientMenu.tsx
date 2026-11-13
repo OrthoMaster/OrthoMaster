@@ -9,11 +9,14 @@ import {
   Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView } from 'react-native-gesture-handler';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import PurchaseStickerView from './PurchaseStickerView';
 import Guides from './Guides';
+
+import Spacings from '../../../../../constants/Spacings';
 
 const { width: screenWidth } = Dimensions.get('screen');
 const isWeb = Platform.OS == 'web';
@@ -59,11 +62,12 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
                 source={require('../../../../../assets/tools/guide-patient/guide-patient.png')}
                 style={styles.headerImage}
               />
-              <View style={styles.guidesWrapper}>
+              {/* En-tête fixe ; seule la liste défile si elle dépasse (ex. section Imprimer ouverte). */}
+              <ScrollView style={styles.guidesScroll} contentContainerStyle={styles.guidesWrapper}>
                 <Guides onSelect={(guideUrl) => {
                   setGuideToDisplay(guideUrl)
                 }} />
-              </View>
+              </ScrollView>
 
               <TouchableOpacity
                 style={[styles.floatingButton, styles.cartButton]}
@@ -101,23 +105,28 @@ export const GuidePatientMenu: React.FC<{ onClose: () => any }> = ({ onClose }) 
 
 const styles = StyleSheet.create({
   // SafeArea & containers
+  // Plus de hauteur fixe : la popup prend la hauteur de son contenu, centrée, sans dépasser l'écran.
   safeArea: {
     flex: 1,
-    paddingTop: 30
+    justifyContent: 'center',
+    paddingVertical: Spacings.xl,
   },
   containerTool: {
-    flex: 1,
+    maxHeight: '100%',
+    width: '100%',
     alignItems: 'center',
     borderRadius: 15,
+    overflow: 'hidden',
   },
   innerContainer: {
     width: '100%',
-    height: '100%',
+    maxHeight: '100%',
     alignItems: 'center',
+    paddingBottom: Spacings.md,
   },
   mainContent: {
     width: '100%',
-    height: '100%',
+    flexShrink: 1,
     alignItems: 'center',
   },
 
@@ -161,9 +170,13 @@ const styles = StyleSheet.create({
   },
 
   // Guides list wrapper
+  guidesScroll: {
+    width: '100%',
+    flexGrow: 0,
+    flexShrink: 1,
+  },
   guidesWrapper: {
     width: '100%',
-    flex: 1,
     alignItems: 'center',
     paddingLeft: 16,
     paddingRight: 16,

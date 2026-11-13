@@ -127,15 +127,19 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#fff" />
+      <SafeAreaView style={styles.wrapper}>
+        <View style={[styles.box, styles.loadingBox]}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
       </SafeAreaView>
     )
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={{ width: '100%', height: '95%', alignItems: 'center' }}>
+    <SafeAreaView style={styles.wrapper}>
+      {/* La boîte prend la hauteur de son contenu (sans dépasser l'écran) ; l'en-tête reste fixe,
+          seule la liste des catégories défile. */}
+      <View style={styles.box}>
         <TouchableOpacity
           style={{
             position: 'absolute',
@@ -174,7 +178,9 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
             width: "95%", resizeMode: 'contain', height: 250,
           }}
         />
+        {/* Place pour le bouton info posé en bas à gauche. */}
         <CategoriesSelection
+          style={styles.categories}
           onSelect={(category) => {
             onStart(category, filters.queChoisir)
           }}
@@ -227,11 +233,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 5, height: 5 },
     zIndex: 99999,
   },
-  container: {
-    width: '100%', height: '95%',
+  // Marge verticale autour de la popup : plus de hauteur fixe à 95 %.
+  wrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
+  box: {
+    width: '100%',
+    maxHeight: '100%',
     alignItems: 'center',
     borderRadius: 15,
     backgroundColor: "#33C0B7",
+    overflow: 'hidden',
+    paddingBottom: 40,
+  },
+  loadingBox: {
+    paddingVertical: 80,
+  },
+  categories: {
+    flexShrink: 1,
   },
   toolTitle: {
     color: '#ffffff',
