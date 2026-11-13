@@ -132,113 +132,125 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
   )
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {/* Conteneur de la boîte : le bouton Fermer se place par rapport à elle, pas aux marges de sécurité. */}
-      <View style={{ flex: 1 }}>
-      <ScrollView
-        style={{
-          backgroundColor: "#5AC4F6",
-          borderRadius: 15,
-          flex: 1,
-        }}
-        contentContainerStyle={{
-          paddingBottom: 20,
-        }}
-      >
+    <SafeAreaView style={styles.wrapper}>
+      {/* La boîte prend la hauteur de son contenu (sans dépasser l'écran) ; seul le contenu défile. */}
+      <View style={styles.box}>
+        {/* En-tête fixe : reste visible quand la liste défile. */}
         <Image
           source={require('../../../../../assets/tools/learning-support/learning-support.png')}
-          style={{
-            width: "95%",
-            height: 250,
-            borderRadius: 10,
-            resizeMode: 'contain',
-            alignSelf: 'center',
-            marginVertical: 20,
-          }}
+          style={styles.headerImage}
         />
 
-        {/* Loading State */}
-        {isLoading && (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.statusText}>Chargement...</Text>
-          </View>
-        )}
-
-        {/* Error State */}
-        {isError && (
-          <View style={styles.centerContainer}>
-            <Text style={styles.statusText}>Erreur de chargement</Text>
-            <Text style={[styles.statusText, { fontSize: 14, marginTop: 10 }]}>
-              Veuillez réessayer plus tard
-            </Text>
-          </View>
-        )}
-
-        {/* Anatomie Section */}
-        {!isLoading && !isError && anatomieContents.length > 0 && (
-          <>
-            <Text style={styles.contentsSectionTitle}>Anatomie</Text>
-            <View style={[styles.contentsContainer, anatomieContents.length === 4 && styles.contentsTwoByTwo]}>
-              {anatomieContents.map((content: IContent) => (
-                <LearningSupportIcons
-                  key={content.id_content}
-                  content={content}
-                  onPress={(content) => {
-                    onStart(content)
-                    onClose()
-                  }}
-                />
-              ))}
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+          {/* Loading State */}
+          {isLoading && (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={styles.statusText}>Chargement...</Text>
             </View>
-          </>
-        )}
+          )}
 
-        {/* Pathologie Section */}
-        {!isLoading && !isError && pathologieContents.length > 0 && (
-          <>
-            <Text style={styles.contentsSectionTitle}>Pathologie</Text>
-            <View style={[styles.contentsContainer, pathologieContents.length === 4 && styles.contentsTwoByTwo]}>
-              {pathologieContents.map((content: IContent) => (
-                <LearningSupportIcons
-                  key={content.id_content}
-                  content={content}
-                  onPress={(content) => {
-                    onStart(content)
-                    onClose()
-                  }}
-                />
-              ))}
+          {/* Error State */}
+          {isError && (
+            <View style={styles.centerContainer}>
+              <Text style={styles.statusText}>Erreur de chargement</Text>
+              <Text style={[styles.statusText, { fontSize: 14, marginTop: 10 }]}>
+                Veuillez réessayer plus tard
+              </Text>
             </View>
-          </>
-        )}
+          )}
 
-        {/* Empty State */}
-        {!isLoading && !isError && anatomieContents.length === 0 && pathologieContents.length === 0 && (
-          <View style={styles.centerContainer}>
-            <Text style={styles.statusText}>Aucun contenu disponible</Text>
-          </View>
-        )}
-      </ScrollView>
+          {!isLoading && !isError && anatomieContents.length > 0 && (
+            <View>
+              <Text style={styles.contentsSectionTitle}>Anatomie</Text>
+              <View style={[styles.contentsContainer, anatomieContents.length === 4 && styles.contentsTwoByTwo]}>
+                {anatomieContents.map((content: IContent) => (
+                  <LearningSupportIcons
+                    key={content.id_content}
+                    content={content}
+                    onPress={(content) => {
+                      onStart(content)
+                      onClose()
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
 
-      {/* Fermer en haut à droite, comme les autres popups (RGPD, Espace Formation). */}
-      <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer">
-        <Ionicons name="close" size={30} color="#fff" />
-      </TouchableOpacity>
+          {!isLoading && !isError && pathologieContents.length > 0 && (
+            <View>
+              <Text style={styles.contentsSectionTitle}>Pathologie</Text>
+              <View style={[styles.contentsContainer, pathologieContents.length === 4 && styles.contentsTwoByTwo]}>
+                {pathologieContents.map((content: IContent) => (
+                  <LearningSupportIcons
+                    key={content.id_content}
+                    content={content}
+                    onPress={(content) => {
+                      onStart(content)
+                      onClose()
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !isError && anatomieContents.length === 0 && pathologieContents.length === 0 && (
+            <View style={styles.centerContainer}>
+              <Text style={styles.statusText}>Aucun contenu disponible</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Fermer : même bouton que la popup Guide patient, à la couleur de la popup. */}
+        <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer">
+          <Ionicons name="close-sharp" size={30} color={"#5AC4F6"} />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  // Même pastille ronde que les popups RGPD / Espace Formation, voile blanc translucide sur le bleu.
+  // Marge verticale autour de la popup : elle ne colle plus aux bords de l'écran.
+  wrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: Spacings.xl,
+  },
+  box: {
+    maxHeight: '100%',
+    backgroundColor: "#5AC4F6",
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  headerImage: {
+    width: '95%',
+    height: 170,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginVertical: Spacings.sm,
+  },
+  // flexShrink : la liste rétrécit et défile quand la boîte atteint la hauteur maximale.
+  body: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  bodyContent: {
+    paddingBottom: Spacings.lg,
+  },
+  // Bouton Fermer de la popup Guide patient.
   closeButton: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 100,
     position: 'absolute',
-    top: Spacings.md,
-    right: Spacings.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    padding: Spacings.sm,
-    borderRadius: 40,
+    right: 10,
+    top: 10,
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 5, height: 5 },
     zIndex: 99999,
   },
   // Quatre planches : deux en haut, deux en bas (2 cases de 120 + marges de 5).
@@ -288,7 +300,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'center',
     width: '100%',
-    paddingVertical: 20,
+    // Marges resserrées : la popup tient sur l'écran sans défiler dans la plupart des cas.
+    paddingVertical: Spacings.xxs,
     paddingHorizontal: 10,
   },
   contentsSectionTitle: {

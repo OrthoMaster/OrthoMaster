@@ -20,7 +20,6 @@ import FiltersQC from './components/Filters/FiltersQC';
 import FiltersButton from './components/Filters/FiltersButton';
 import CategoriesSelection from './components/Categories/CategoriesSelection';
 
-import Spacings from '../../../../../../constants/Spacings';
 
 import {
   getSelectedProductBrands,
@@ -152,8 +151,8 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
             shadowOpacity: 0.25,
             shadowOffset: { width: 0, height: 0 },
             alignItems: 'center',
-            // Sous le bouton Fermer (haut 16 + 54 de pastille + 10 d'écart), aligné sur son bord droit.
-            top: Spacings.md + 54 + 10, right: Spacings.md,
+            // Sous le bouton Fermer, comme le panier sous Fermer dans Guide patient.
+            top: 70, right: 10,
             alignSelf: 'flex-end',
             zIndex: 1000,
             position: 'absolute'
@@ -195,9 +194,9 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
           </View>
         }
 
-        {/* Fermer en haut à droite, même pastille que Supports pédagogiques. */}
+        {/* Fermer : même bouton que la popup Guide patient, à la couleur de la popup. */}
         <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer">
-          <Ionicons name="close" size={30} color="#fff" />
+          <Ionicons name="close-sharp" size={30} color="#33C0B7" />
         </TouchableOpacity>
       </View>
 
@@ -206,13 +205,16 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
 }
 
 const styles = StyleSheet.create({
+  // Bouton Fermer de la popup Guide patient.
   closeButton: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 100,
     position: 'absolute',
-    top: Spacings.md,
-    right: Spacings.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    padding: Spacings.sm,
-    borderRadius: 40,
+    right: 10,
+    top: 10,
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 5, height: 5 },
     zIndex: 99999,
   },
   container: {
