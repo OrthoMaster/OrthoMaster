@@ -67,10 +67,10 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
           </Pressable>
 
           {/* ---- Liste ---- */}
-          {rest.slice(0, LIST_COUNT).map((item, index, list) => (
+          {rest.slice(0, LIST_COUNT).map((item) => (
             <Pressable
               key={item.id_content}
-              style={[styles.row, index < list.length - 1 && styles.rowDivider]}
+              style={styles.row}
               onPress={() => onSelect(item)}
               accessibilityRole="button"
             >
@@ -80,10 +80,14 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
                 ) : null}
               </View>
               <View style={styles.rowTexts}>
+                <Text style={styles.rowAuthor} numberOfLines={1}>{authorOf(item)}</Text>
                 <Text style={styles.rowTitle} numberOfLines={2}>{item.title}</Text>
-                <Text style={styles.rowMeta} numberOfLines={1}>
-                  {[authorOf(item), item.duration].filter(Boolean).join(' · ')}
-                </Text>
+                {!!item.duration && (
+                  <View style={styles.rowDuration}>
+                    <Ionicons name="time-outline" size={13} color={Colors.warmMuted} />
+                    <Text style={styles.rowMeta}>{item.duration}</Text>
+                  </View>
+                )}
               </View>
             </Pressable>
           ))}
@@ -109,7 +113,7 @@ const styles = StyleSheet.create({
   },
   headerLink: {
     fontSize: 13,
-    color: Colors.primaryInk,
+    color: Colors.primary,
     fontFamily: 'Poppins-Medium',
   },
 
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     marginBottom: Spacings.xxs,
-    color: Colors.primaryInk,
+    color: Colors.primary,
     fontFamily: 'Poppins-Medium',
   },
   featuredTitle: {
@@ -178,13 +182,9 @@ const styles = StyleSheet.create({
     gap: Spacings.sm,
     paddingVertical: Spacings.sm,
   },
-  rowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.warmBorder,
-  },
   rowThumb: {
-    width: 108,
-    height: 61,
+    width: 120,
+    height: 68,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: Colors.grayLight,
@@ -193,16 +193,27 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  rowAuthor: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: Colors.primary,
+    fontFamily: 'Poppins-Medium',
+  },
   rowTitle: {
     fontSize: 13,
     lineHeight: 18,
     color: Colors.text,
     fontFamily: 'Poppins-Medium',
   },
+  rowDuration: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
   rowMeta: {
     fontSize: 11,
     lineHeight: 16,
-    marginTop: 2,
     color: Colors.warmMuted,
     fontFamily: 'Poppins-Regular',
   },

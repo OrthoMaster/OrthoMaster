@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import Colors from '../../../../constants/Colors';
+
 /* ---- Types ---- */
 
 export type DailyActionType = 'quiz' | 'podcast' | 'infographic';
@@ -62,7 +64,7 @@ export const ACTION_THEMES: Record<DailyActionType, {
     background: '#FFF3E0',
     edge: '#FBE7C9',
     tile: '#FFF3E0',
-    ink: '#A85A00',
+    ink: Colors.primary,
     image: `${S3_HOME}/infographic.png`,
   },
 };

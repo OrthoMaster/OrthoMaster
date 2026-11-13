@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   },
   headerLink: {
     fontSize: 13,
-    color: Colors.primaryInk,
+    color: Colors.primary,
     fontFamily: 'Poppins-Medium',
   },
 
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     marginBottom: Spacings.xxs,
-    color: Colors.primaryInk,
+    color: Colors.primary,
     fontFamily: 'Poppins-Medium',
   },
   featuredTitle: {

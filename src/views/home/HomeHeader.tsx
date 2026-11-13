@@ -52,7 +52,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel={hasUnreadNotification ? 'Profil, notifications non lues' : 'Profil'}
           >
-            <Ionicons name="person-outline" size={22} color={Colors.primaryInk} />
+            <Ionicons name="person-outline" size={22} color={Colors.primary} />
             {hasUnreadNotification && <View style={styles.profileDot} />}
           </Pressable>
         </View>
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   brand: {
     flex: 1,
     fontSize: 17,
-    color: Colors.primaryInk,
+    color: Colors.primary,
     fontFamily: 'Poppins-Medium',
   },
   profileButton: {

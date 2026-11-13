@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../../constants/Colors';
 import { DailyActionGroup, ACTION_THEMES } from './dailyActions';
 
-const PRESS_DEPTH = 3;
+// Épaisseur de la tranche sous la carte, et de combien la face s'enfonce au toucher.
+const PRESS_DEPTH = 6;
 
 /** « +N » quand le groupe ouvre une liste, flèche quand on ouvre directement l'unique élément. */
 export const CountBadge = ({ group, size = 26 }: { group: DailyActionGroup; size?: number }) => {

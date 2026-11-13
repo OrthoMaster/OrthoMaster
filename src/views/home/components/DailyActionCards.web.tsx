@@ -10,9 +10,9 @@ import { HomeBreakpoint, useHomeLayout } from './useHomeLayout';
 // Largeur plafonnée et rangée centrée : avec une ou deux actions, les cartes ne s'étirent pas sur tout l'écran.
 // En md, les trois cartes se partagent la largeur pour rester sur une seule ligne.
 const SIZES: Record<HomeBreakpoint, { maxWidth: number; height: number; image: number; title: number; label: number; gap: number }> = {
-  md: { maxWidth: 320, height: 99, image: 56, title: 13, label: 13, gap: 12 },
-  lg: { maxWidth: 340, height: 99, image: 68, title: 13, label: 14, gap: 14 },
-  xl: { maxWidth: 400, height: 111, image: 80, title: 14, label: 15, gap: 18 },
+  md: { maxWidth: 320, height: 102, image: 56, title: 13, label: 13, gap: 12 },
+  lg: { maxWidth: 340, height: 102, image: 68, title: 13, label: 14, gap: 14 },
+  xl: { maxWidth: 400, height: 114, image: 80, title: 14, label: 15, gap: 18 },
 };
 
 type CardSize = typeof SIZES[HomeBreakpoint] & { width: number };
