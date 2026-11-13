@@ -152,9 +152,9 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
             shadowOpacity: 0.25,
             shadowOffset: { width: 0, height: 0 },
             alignItems: 'center',
-            // À gauche : le coin haut droit est réservé au bouton Fermer, comme sur les autres popups.
-            top: 10, left: 10,
-            alignSelf: 'flex-start',
+            // Sous le bouton Fermer (haut 16 + 54 de pastille + 10 d'écart), aligné sur son bord droit.
+            top: Spacings.md + 54 + 10, right: Spacings.md,
+            alignSelf: 'flex-end',
             zIndex: 1000,
             position: 'absolute'
           }}
