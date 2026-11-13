@@ -9,6 +9,8 @@ import { fetchSearchList } from "../../../../services/SearchService";
 import { getS3Image } from "../../../../services/S3Service";
 import { ScrollView } from "react-native-gesture-handler";
 
+import Spacings from '../../../../../constants/Spacings';
+
 const { width: screenWidth } = Dimensions.get('screen');
 const isWeb = Platform.OS === 'web';
 
@@ -131,6 +133,8 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      {/* Conteneur de la boîte : le bouton Fermer se place par rapport à elle, pas aux marges de sécurité. */}
+      <View style={{ flex: 1 }}>
       <ScrollView
         style={{
           backgroundColor: "#5AC4F6",
@@ -138,7 +142,7 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
           flex: 1,
         }}
         contentContainerStyle={{
-          paddingBottom: 80,
+          paddingBottom: 20,
         }}
       >
         <Image
@@ -175,7 +179,7 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
         {!isLoading && !isError && anatomieContents.length > 0 && (
           <>
             <Text style={styles.contentsSectionTitle}>Anatomie</Text>
-            <View style={styles.contentsContainer}>
+            <View style={[styles.contentsContainer, anatomieContents.length === 4 && styles.contentsTwoByTwo]}>
               {anatomieContents.map((content: IContent) => (
                 <LearningSupportIcons
                   key={content.id_content}
@@ -194,7 +198,7 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
         {!isLoading && !isError && pathologieContents.length > 0 && (
           <>
             <Text style={styles.contentsSectionTitle}>Pathologie</Text>
-            <View style={styles.contentsContainer}>
+            <View style={[styles.contentsContainer, pathologieContents.length === 4 && styles.contentsTwoByTwo]}>
               {pathologieContents.map((content: IContent) => (
                 <LearningSupportIcons
                   key={content.id_content}
@@ -217,23 +221,31 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
         )}
       </ScrollView>
 
-      <TouchableOpacity
-        style={{
-          alignSelf: 'center',
-          position: 'absolute',
-          bottom: 10,
-          padding: 10,
-          borderRadius: 20,
-        }}
-        onPress={onClose}
-      >
-        <Ionicons name="close-circle" size={34} color="#fff" />
+      {/* Fermer en haut à droite, comme les autres popups (RGPD, Espace Formation). */}
+      <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer">
+        <Ionicons name="close" size={24} color="#fff" />
       </TouchableOpacity>
+      </View>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  // Même pastille que les popups RGPD / Espace Formation, en bleu foncé pour ressortir sur le fond bleu.
+  closeButton: {
+    position: 'absolute',
+    top: Spacings.md,
+    right: Spacings.md,
+    backgroundColor: '#143A71',
+    padding: Spacings.xs,
+    borderRadius: 40,
+    zIndex: 99999,
+  },
+  // Quatre planches : deux en haut, deux en bas (2 cases de 120 + marges de 5).
+  contentsTwoByTwo: {
+    width: 280,
+    alignSelf: 'center',
+  },
   // Hauteur minimale au lieu d'une hauteur fixe : un titre sur deux lignes ne déborde plus
   // sur la ligne suivante.
   iconContainer: {

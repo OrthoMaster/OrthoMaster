@@ -118,14 +118,15 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      {/* Conteneur de la boîte : le bouton Fermer se place par rapport à elle, pas aux marges de sécurité. */}
+      <View style={{ flex: 1 }}>
       <ScrollView
         style={{
           backgroundColor: COLOR,
           borderRadius: 15,
           flex: 1,
         }}
-        // Place pour le bouton Fermer posé en bas : la dernière ligne n'est plus cachée dessous.
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
         <Image
           source={require('../../../../../assets/tools/learning-support/learning-support.png')}
@@ -161,7 +162,7 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
         {!isLoading && !isError && anatomieContents.length > 0 && (
           <>
             <Text style={styles.contentsSectionTitle}>Anatomie</Text>
-            <View style={styles.contentsContainer}>
+            <View style={[styles.contentsContainer, anatomieContents.length === 4 && styles.contentsTwoByTwo]}>
               {anatomieContents.map((content: IContent) => (
                 <LearningSupportIcons
                   key={content.id_content}
@@ -180,7 +181,7 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
         {!isLoading && !isError && pathologieContents.length > 0 && (
           <>
             <Text style={[styles.contentsSectionTitle, { marginTop: Spacings.xl }]}>Pathologie</Text>
-            <View style={styles.contentsContainer}>
+            <View style={[styles.contentsContainer, pathologieContents.length === 4 && styles.contentsTwoByTwo]}>
               {pathologieContents.map((content: IContent) => (
                 <LearningSupportIcons
                   key={content.id_content}
@@ -203,23 +204,31 @@ export const LearningSupportMenu: React.FC<LearningSupportMenuProps> = ({ onClos
         )}
       </ScrollView>
 
-      <TouchableOpacity
-        style={{
-          alignSelf: 'center',
-          position: 'absolute',
-          bottom: 10,
-          padding: 10,
-          borderRadius: 20,
-        }}
-        onPress={onClose}
-      >
-        <Ionicons name="close-circle" size={34} color="#fff" />
+      {/* Fermer en haut à droite, comme les autres popups (RGPD, Espace Formation). */}
+      <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer">
+        <Ionicons name="close" size={24} color="#fff" />
       </TouchableOpacity>
+      </View>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  // Même pastille que les popups RGPD / Espace Formation, en bleu foncé pour ressortir sur le fond bleu.
+  closeButton: {
+    position: 'absolute',
+    top: Spacings.md,
+    right: Spacings.md,
+    backgroundColor: '#143A71',
+    padding: Spacings.xs,
+    borderRadius: 40,
+    zIndex: 99999,
+  },
+  // Quatre planches : deux en haut, deux en bas (2 cases de 120 + marges de 5).
+  contentsTwoByTwo: {
+    width: 260,
+    alignSelf: 'center',
+  },
   contentsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
