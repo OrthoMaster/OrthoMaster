@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, useWindowDimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors from '../../../constants/Colors';
@@ -62,7 +61,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel={hasUnreadNotification ? 'Profil, notifications non lues' : 'Profil'}
           >
-            <Ionicons name="person-outline" size={22} color={Colors.primary} />
+            <Image source={require('../../../assets/v2_images/icon/home/profile.png')} style={styles.profileIcon} />
             {hasUnreadNotification && <View style={styles.profileDot} />}
           </Pressable>
         </View>
@@ -136,6 +135,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Même silhouette que l'onglet Profil, en dégradés de primary pour rester dans les tons de l'en-tête.
+  profileIcon: {
+    width: 21,
+    height: 25,
+    resizeMode: 'contain',
   },
   profileDot: {
     position: 'absolute',
