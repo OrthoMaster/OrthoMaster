@@ -20,6 +20,8 @@ import FiltersQC from './components/Filters/FiltersQC';
 import FiltersButton from './components/Filters/FiltersButton';
 import CategoriesSelection from './components/Categories/CategoriesSelection';
 
+import Spacings from '../../../../../../constants/Spacings';
+
 import {
   getSelectedProductBrands,
   updateSelectedProductBrands
@@ -150,8 +152,9 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
             shadowOpacity: 0.25,
             shadowOffset: { width: 0, height: 0 },
             alignItems: 'center',
-            top: 10, right: 10,
-            alignSelf: 'flex-end',
+            // À gauche : le coin haut droit est réservé au bouton Fermer, comme sur les autres popups.
+            top: 10, left: 10,
+            alignSelf: 'flex-start',
             zIndex: 1000,
             position: 'absolute'
           }}
@@ -191,23 +194,27 @@ export const QueChoisirMenu: React.FC<QueChoisirMenuProps> = ({ onClose, onStart
             />
           </View>
         }
+
+        {/* Fermer en haut à droite, même pastille que Supports pédagogiques. */}
+        <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer">
+          <Ionicons name="close" size={30} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          bottom: 10,
-          alignSelf: 'center',
-          zIndex: 1
-        }}
-        onPress={onClose}>
-        <Ionicons name="close-circle" size={34} color="#fff" />
-      </TouchableOpacity>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  closeButton: {
+    position: 'absolute',
+    top: Spacings.md,
+    right: Spacings.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    padding: Spacings.sm,
+    borderRadius: 40,
+    zIndex: 99999,
+  },
   container: {
     width: '100%', height: '95%',
     alignItems: 'center',

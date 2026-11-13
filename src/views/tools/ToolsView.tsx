@@ -134,7 +134,7 @@ export const ToolsView = ({ navigation }) => {
 
       <ScrollView
         style={styles.body}
-        contentContainerStyle={[styles.content, IS_WEB && styles.contentWebCentered, twoUp && styles.contentTwoUp]}
+        contentContainerStyle={[styles.content, styles.contentCentered, twoUp && styles.contentTwoUp]}
         onLayout={(e) => setBodyWidth(e.nativeEvent.layout.width)}
         showsVerticalScrollIndicator={false}
       >
@@ -226,8 +226,8 @@ const styles = StyleSheet.create({
     padding: Spacings.lg,
     gap: Spacings.lg,
   },
-  // Web : le bloc de cartes est centré verticalement dans la page (alignContent pour le cas 2 + 1).
-  contentWebCentered: {
+  // Mobile et web : le bloc de cartes est centré verticalement (alignContent pour le cas 2 + 1 sur le web).
+  contentCentered: {
     flexGrow: 1,
     justifyContent: 'center',
     alignContent: 'center',
