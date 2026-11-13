@@ -33,10 +33,11 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   const insets = useSafeAreaInsets();
   const [showInfoModal, setShowInfoModal] = useState(false);
 
+  // Libellés coupés à la main : toujours deux lignes, pour que les trois raccourcis restent alignés.
   const shortcuts = [
-    { key: 'question', label: 'Poser une question', image: HOME_SHORTCUT_IMAGES.question, onPress: () => setShowInfoModal(true) },
-    { key: 'tool', label: 'Prise en charge', image: HOME_SHORTCUT_IMAGES.tool, onPress: onToolPress },
-    { key: 'search', label: 'Chercher un contenu', image: HOME_SHORTCUT_IMAGES.search, onPress: onSearchPress },
+    { key: 'question', label: 'Poser une\nquestion', image: HOME_SHORTCUT_IMAGES.question, onPress: () => setShowInfoModal(true) },
+    { key: 'tool', label: 'Prise en\ncharge', image: HOME_SHORTCUT_IMAGES.tool, onPress: onToolPress },
+    { key: 'search', label: 'Chercher\nun contenu', image: HOME_SHORTCUT_IMAGES.search, onPress: onSearchPress },
   ];
 
   return (
@@ -73,7 +74,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               style={({ pressed }) => [styles.shortcut, pressed && styles.shortcutPressed]}
             >
               <Image source={{ uri: item.image }} style={styles.shortcutImage} resizeMode="contain" />
-              <Text style={styles.shortcutLabel}>{item.label}</Text>
+              <Text style={styles.shortcutLabel} numberOfLines={2}>{item.label}</Text>
             </Pressable>
           ))}
         </View>
@@ -152,27 +153,24 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 2,
   },
+  // Sans fond, comme sur le web : l'illustration est posée directement sur la crème.
   shortcut: {
     flex: 1,
-    height: 104,
-    borderRadius: 18,
-    backgroundColor: Colors.white,
     alignItems: 'center',
-    justifyContent: 'center',
     gap: Spacings.xxs,
-    paddingHorizontal: Spacings.xxs,
+    paddingTop: Spacings.xxs,
   },
   shortcutPressed: {
     opacity: 0.85,
     transform: [{ scale: 0.97 }],
   },
   shortcutImage: {
-    width: 46,
-    height: 46,
+    width: 64,
+    height: 64,
   },
   shortcutLabel: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
     color: Colors.text,
     textAlign: 'center',
     fontFamily: 'Poppins-Medium',

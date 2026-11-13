@@ -161,10 +161,14 @@ export const LatestContents = ({ entries, isLoading, isError, onReload, onSelect
                       ) : null}
                     </View>
                     <View style={styles.rowTexts}>
+                      <Text style={styles.rowAuthor} numberOfLines={1}>{authorOf(item)}</Text>
                       <Text style={styles.rowTitle} numberOfLines={2}>{item.title}</Text>
-                      <Text style={styles.rowMeta} numberOfLines={1}>
-                        {[authorOf(item), item.duration].filter(Boolean).join(' · ')}
-                      </Text>
+                      {!!item.duration && (
+                        <View style={styles.rowDuration}>
+                          <Ionicons name="time-outline" size={14} color={Colors.warmMuted} />
+                          <Text style={styles.rowMeta}>{item.duration}</Text>
+                        </View>
+                      )}
                     </View>
                   </Pressable>
                 ))}
@@ -359,6 +363,18 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  rowAuthor: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: Colors.primary,
+    fontFamily: 'Poppins-Medium',
+  },
+  rowDuration: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
   rowTitle: {
     fontSize: 14,
     lineHeight: 20,
@@ -368,7 +384,6 @@ const styles = StyleSheet.create({
   rowMeta: {
     fontSize: 12,
     lineHeight: 18,
-    marginTop: 2,
     color: Colors.warmMuted,
     fontFamily: 'Poppins-Regular',
   },
