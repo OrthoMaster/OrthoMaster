@@ -1,13 +1,25 @@
 /**
- * Accueil de l'onglet Outils (mobile et web), présenté comme l'onglet Formations :
- * en-tête de couleur, fond sombre, cartes 3D avec l'icône qui dépasse au-dessus.
+ * Accueil de l'onglet Outils (mobile et web), dans le cadre de l'onglet Formations
+ * (en-tête de couleur, fond sombre, cartes 3D à tranche) : icône au centre, titre dessous.
  *  - Supports pédagogiques → menu des supports (tools-content)
  *  - Que Choisir ?          → menu de démarrage (tools-que-choisir)
  *  - Guide patient          → menu des guides
  *  - Assistance IA          → web uniquement, abonnés (chatbot-view)
  */
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, StatusBar, Platform, Dimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  Animated,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  Platform,
+  Dimensions,
+  ImageSourcePropType,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
@@ -15,7 +27,6 @@ import Modal from 'react-native-modal';
 import { QueChoisirMenu } from './components/QueChoisir/StartMenu/QueChoisirMenu';
 import { GuidePatientMenu } from './components/GuidePatient/GuidePatientMenu';
 import { LearningSupportMenu } from './components/LearningSupport/LearningSupport';
-import { EntryCard, WEB_CARD_MAX_WIDTH, WEB_TWO_UP_CARD_MIN } from '../training/FormationsHomeView';
 
 import { me } from '../../services/v2/AuthService';
 
@@ -34,8 +45,52 @@ const CARD_COLORS = {
   chatbot: { face: Colors.purple, edge: '#6F528F' },
 };
 
-// Icônes plates : elles dépassent moins que les illustrations 3D de Formations.
-const POP_RATIO = 0.3;
+/** Hauteur de la tranche : la face s'enfonce d'autant quand on appuie (comme Formations). */
+const PRESS_DEPTH = 5;
+/** Web : mêmes largeurs que Formations (une carte max 640 px, deux par ligne dès 440 px chacune). */
+const WEB_CARD_MAX_WIDTH = 640;
+const WEB_TWO_UP_CARD_MIN = 440;
+const ICON_SIZE = IS_WEB || isTablet ? 96 : 72;
+
+const ToolCard = ({
+  title,
+  icon,
+  face,
+  edge,
+  onPress,
+  style,
+}: {
+  title: string;
+  icon: ImageSourcePropType;
+  face: string;
+  edge: string;
+  onPress: () => void;
+  style?: any;
+}) => {
+  const press = useRef(new Animated.Value(0)).current;
+  const animatePress = (toValue: number) => {
+    Animated.timing(press, { toValue, duration: 90, useNativeDriver: !IS_WEB }).start();
+  };
+  const translateY = press.interpolate({ inputRange: [0, 1], outputRange: [0, PRESS_DEPTH] });
+
+  return (
+    <Pressable
+      style={style}
+      onPress={onPress}
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+    >
+      <View style={[styles.cardEdge, { backgroundColor: edge }]}>
+        <Animated.View style={[styles.cardFace, { backgroundColor: face, transform: [{ translateY }] }]}>
+          <Image source={icon} style={styles.icon} resizeMode="contain" />
+          <Text style={styles.title} numberOfLines={2}>{title}</Text>
+        </Animated.View>
+      </View>
+    </Pressable>
+  );
+};
 
 export const ToolsView = ({ navigation }) => {
   const [showQueChoisirMenu, setShowQueChoisirMenu] = useState(false);
@@ -83,53 +138,36 @@ export const ToolsView = ({ navigation }) => {
         onLayout={(e) => setBodyWidth(e.nativeEvent.layout.width)}
         showsVerticalScrollIndicator={false}
       >
-        <EntryCard
+        <ToolCard
           title="Supports pédagogiques"
-          description="Des images pour expliquer la zone douloureuse au patient."
-          illustration={require('../../../assets/tools/learning-support/access-icon.png')}
+          icon={require('../../../assets/tools/learning-support/access-icon.png')}
           face={CARD_COLORS.learning.face}
           edge={CARD_COLORS.learning.edge}
-          layout="row-reverse"
-          motion="float"
-          popRatio={POP_RATIO}
-          titleLines={2}
           onPress={() => setShowLearningSupportMenu(true)}
           style={cardStyle}
         />
-        <EntryCard
+        <ToolCard
           title="Que Choisir ?"
-          description="Le bon dispositif orthopédique selon la pathologie."
-          illustration={require('../../../assets/tools/que-choisir/access-icon.png')}
+          icon={require('../../../assets/tools/que-choisir/access-icon.png')}
           face={CARD_COLORS.queChoisir.face}
           edge={CARD_COLORS.queChoisir.edge}
-          layout="row"
-          motion="sway"
-          popRatio={POP_RATIO}
           onPress={() => setShowQueChoisirMenu(true)}
           style={cardStyle}
         />
-        <EntryCard
+        <ToolCard
           title="Guide patient"
-          description="Des QR codes pour apprendre à utiliser les dispositifs."
-          illustration={require('../../../assets/tools/guide-patient/access-icon.png')}
+          icon={require('../../../assets/tools/guide-patient/access-icon.png')}
           face={CARD_COLORS.guidePatient.face}
           edge={CARD_COLORS.guidePatient.edge}
-          layout="row-reverse"
-          motion="breathe"
-          popRatio={POP_RATIO}
           onPress={() => setShowGuidePatientMenu(true)}
           style={cardStyle}
         />
         {IS_WEB && hasSubscription && (
-          <EntryCard
+          <ToolCard
             title="Assistance IA"
-            description="Posez vos questions à l'assistant OrthoMaster."
-            illustration={require('../../../assets/tools/guide-patient/access-icon.png')}
+            icon={require('../../../assets/tools/guide-patient/access-icon.png')}
             face={CARD_COLORS.chatbot.face}
             edge={CARD_COLORS.chatbot.edge}
-            layout="row"
-            motion="float"
-            popRatio={POP_RATIO}
             onPress={() => navigation.navigate('chatbot-view')}
             style={cardStyle}
           />
@@ -200,6 +238,27 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: WEB_CARD_MAX_WIDTH,
     alignSelf: 'center',
+  },
+  cardEdge: {
+    borderRadius: 16,
+    paddingBottom: PRESS_DEPTH,
+  },
+  cardFace: {
+    borderRadius: 16,
+    paddingVertical: Spacings.lg,
+    paddingHorizontal: Spacings.md,
+    alignItems: 'center',
+    gap: Spacings.sm,
+  },
+  icon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+  },
+  title: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 20,
+    color: Colors.white,
+    textAlign: 'center',
   },
 
   /* ---- Menus ---- */
