@@ -1667,6 +1667,51 @@ export const getExpertAgendaHistory = async (page = 1): Promise<ExpertAgendaHist
     .catch(() => null);
 };
 
+/* ---- Expert : revenus ---- */
+
+/** Un rendez-vous payé (débité à l'acceptation), vu par l'expert : sa part seulement. */
+export interface ExpertRevenueItem {
+  id: number;
+  /** RDV-MMJJXXX, comme dans les e-mails du demandeur. */
+  reference: string;
+  /** Jour du débit (heure de Paris, ISO avec décalage). */
+  captured_at: string;
+  kind: 'offer' | 'consultation';
+  title: string;
+  mode: BookingMode;
+  requester: string;
+  first_start: string | null;
+  blocks_count: number | null;
+  duration_minutes: number | null;
+  cancelled: boolean;
+  /** Part de l'expert HT, commission déduite, avant remboursement. */
+  payout_gross: number;
+  /** Après remboursement éventuel au demandeur. */
+  payout: number;
+  refunded: 'none' | 'partial' | 'full';
+}
+
+export interface ExpertRevenue {
+  year: number;
+  /** Années disponibles, la plus récente d'abord. */
+  years: number[];
+  currency: string;
+  total: { count: number; payout: number; refunded_count: number };
+  months: { month: number; count: number; payout: number }[];
+  /** Du plus récent au plus ancien. */
+  items: ExpertRevenueItem[];
+}
+
+/**
+ * GET /booking/me/revenue?year=
+ */
+export const getMyRevenue = async (year?: number): Promise<ExpertRevenue | null> => {
+  return axiosInstance
+    .get(`${baseUrl}/booking/me/revenue`, { params: year ? { year } : undefined })
+    .then((response) => (response.data?.success == true ? response.data.data : null))
+    .catch(() => null);
+};
+
 /* ---- Expert : profil public ---- */
 
 export interface ExpertProfileInput {

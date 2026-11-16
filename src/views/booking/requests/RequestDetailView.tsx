@@ -208,6 +208,8 @@ export const RequestDetailView = ({ navigation, route }) => {
     queryClient.setQueryData(detailKey, next);
     queryClient.invalidateQueries({ queryKey: ['booking', 'expert-requests'] });
     queryClient.invalidateQueries({ queryKey: ['booking', 'expert-agenda'] });
+    // Acceptée : débitée, elle compte dans les revenus.
+    queryClient.invalidateQueries({ queryKey: ['booking', 'me', 'revenue'] });
     animateFooter();
     setDeclining(false);
   };

@@ -24,6 +24,7 @@ import {
   ExpertBookingSetup,
   expertShowcaseUrl,
   getMyBookingSetup,
+  getMyRevenue,
   updateMyBookingSettings,
   updateMyConsultation,
 } from '../../../services/v2/BookingService';
@@ -113,7 +114,7 @@ export const ExpertiseHomeView = ({ navigation }) => {
   const pullToRefresh = async () => {
     setPulling(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['booking', 'me', 'revenue'] })]);
     } finally {
       setPulling(false);
     }
@@ -122,6 +123,13 @@ export const ExpertiseHomeView = ({ navigation }) => {
   const { data, refetch } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: () => getMyBookingSetup(),
+  });
+
+  // Résumé de la ligne « Revenus » (même cache que l'écran Revenus, année en cours).
+  const { data: revenue } = useQuery({
+    queryKey: ['booking', 'me', 'revenue', 'current'],
+    queryFn: () => getMyRevenue(),
+    enabled: !!data?.is_expert,
   });
 
   // BookingTabs n'affiche cet onglet qu'à un expert chargé ; garde pour le typage.
@@ -268,6 +276,11 @@ export const ExpertiseHomeView = ({ navigation }) => {
       : themesOn && missingRule
         ? 'Aucune demi-journée ouverte : ouvrez-en dans Disponibilités pour être réservé.'
         : null;
+  const thisMonth = revenue?.months.find((m) => m.month === new Date().getMonth() + 1);
+  const revenueSummary = revenue
+    ? `Ce mois-ci : ${formatPrice(thisMonth?.payout ?? 0, revenue.currency)} · ${plural(thisMonth?.count ?? 0, 'rendez-vous', 'rendez-vous')}`
+    : 'Votre part, mois par mois';
+
   const consultWarning = consultOn && consult?.price == null ? 'Indiquez votre prix pour 30 minutes.' : null;
 
   return (
@@ -392,6 +405,18 @@ export const ExpertiseHomeView = ({ navigation }) => {
             summary={`${availabilitySummary} · thèmes et consultation`}
             warning={themesOn && missingRule}
             onPress={() => navigation.navigate('expertise-availability')}
+          />
+        </View>
+
+        {/* ---- Revenus : la part de l'expert ---- */}
+        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide]}>Mes revenus</Text>
+        <View style={styles.sections}>
+          <ExpertiseSectionCard
+            last
+            icon="cash-multiple"
+            title="Revenus"
+            summary={revenueSummary}
+            onPress={() => navigation.navigate('expertise-revenue')}
           />
         </View>
         </View>
