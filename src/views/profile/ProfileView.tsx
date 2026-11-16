@@ -27,6 +27,7 @@ import { useLogout, useGetUser } from '../../hooks/auth.hook';
 import { orthomasterShare } from "../../futils";
 
 import { BouncingDots } from '../../component/LoadingDots';
+import { Button3D } from './Button3D';
 
 import { getMoreInfo } from '../../services/v2/AuthService';
 import { quitCompany } from '../../services/v2/CompanyService';
@@ -220,13 +221,22 @@ export const ProfileView = ({ navigation, route }) => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
-      {/* Header : retour · titre · notifications, puis l'identité */}
+      {/* Header : retour · « Profil » et le nom (à gauche) · notifications */}
       <View style={styles.header}>
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.roundButton} onPress={goBack} hitSlop={8} accessibilityLabel="Retour">
             <Ionicons name="chevron-back" size={22} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profil</Text>
+          <View style={styles.identity}>
+            <Text style={styles.headerTitle}>Profil</Text>
+            <Text style={styles.userName} numberOfLines={1}>{user.name + ' ' + user.first_name}</Text>
+            {
+              user && user.student_flg == true && user.expires_at !== null &&
+              <Text style={styles.userExpiresAt}>Étudiant · expire le <Text
+                style={{ fontFamily: 'Poppins-Bold', color: Colors.red }}>{user.expires_at}</Text>
+              </Text>
+            }
+          </View>
           <TouchableOpacity style={styles.roundButton} onPress={nofi} hitSlop={8} accessibilityLabel="Notifications">
           {(more && more?.data?.hasNotifications) ?
             <Animated.View
@@ -243,17 +253,6 @@ export const ProfileView = ({ navigation, route }) => {
             <Ionicons name="notifications" size={22} color={Colors.gray} />
           }
           </TouchableOpacity>
-        </View>
-
-        <View style={styles.identity}>
-          <Text style={styles.userName} numberOfLines={1}>{user.name + ' ' + user.first_name}</Text>
-          <Text style={styles.userProf}>{user.student_flg == true ? 'Étudiant' : user.profession}</Text>
-          {
-            user && user.student_flg == true && user.expires_at !== null &&
-            <Text style={styles.userExpiresAt}>Expire le <Text
-              style={{ fontFamily: 'Poppins-Bold', color: Colors.red }}>{user.expires_at}</Text>
-            </Text>
-          }
         </View>
       </View>
 
@@ -299,8 +298,12 @@ export const ProfileView = ({ navigation, route }) => {
           }
 
           <View style={isTablet ? styles.cusButtonsContainerTablet : styles.cusButtonsContainer}>
-            <TouchableOpacity style={styles.shareButton}
-              activeOpacity={0.8}
+            <Button3D
+              style={styles.button3d}
+              color="#FF4B4B"
+              light="#FF7A6E"
+              edge="#C42F35"
+              accessibilityLabel="Inviter à rejoindre OrthoMaster"
               onPress={() => {
                 orthomasterShare({
                   message: "Rejoignez le premier écosystème de l'orthopédie !\n\n" +
@@ -318,41 +321,58 @@ export const ProfileView = ({ navigation, route }) => {
                   url: "https://orthomaster.fr"
                 }, 'app invite', null)
               }}
+              decoration={
+                <Image
+                  source={require('../../../assets/v2_images/icon/des-billets.png')}
+                  style={styles.shareButtonIcon}
+                  resizeMode="contain"
+                />
+              }
             >
-              <Image
-                source={require('../../../assets/v2_images/icon/des-billets.png')}
-                style={styles.shareButtonIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.shareButtonText}>Inviter à rejoindre OrthoMaster</Text>
-            </TouchableOpacity>
+              <Text style={styles.button3dText}>Inviter à rejoindre OrthoMaster</Text>
+            </Button3D>
 
-            <TouchableOpacity style={styles.favoriteButton}
-              activeOpacity={0.8}
+            <Button3D
+              style={styles.button3d}
+              color={Colors.primaryLight}
+              light="#FFC966"
+              edge="#D9860F"
+              accessibilityLabel="Mes centres d'intérêt"
               onPress={() => navigation.navigate('settings-view')}
+              decoration={
+                <Image
+                  source={require('../../../assets/v2_images/icon/coeur.png')}
+                  style={styles.favoriteButtonIcon}
+                  resizeMode="contain"
+                />
+              }
             >
-              <Image
-                source={require('../../../assets/v2_images/icon/coeur.png')}
-                style={styles.favoriteButtonIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.favoriteButtonText}>Mes centres d'intérêt</Text>
-            </TouchableOpacity>
+              <Text style={styles.button3dText}>Mes centres d'intérêt</Text>
+            </Button3D>
           </View>
 
           {/* Espace Pro Card */}
           {!user.has_company && !user.student_flg &&
-            <TouchableOpacity style={styles.proButton} onPress={openCompanyInfo}>
-              <Image
-                source={require('../../../assets/v2_images/icon/equipe.png')}
-                style={styles.proButtonIcon}
-                resizeMode="contain"
-              />
-              <View style={styles.proTextContainer}>
-                <Text style={styles.proCardTitle}>Créer votre Espace Pro</Text>
-                <Text style={styles.proCardText}>pour utiliser OrthoMaster en équipe.</Text>
-              </View>
-            </TouchableOpacity>
+            <Button3D
+              style={styles.button3dPro}
+              radius={20}
+              color={Colors.purple}
+              light="#B9A3D1"
+              edge="#6F5690"
+              accessibilityLabel="Créer votre Espace Pro"
+              onPress={openCompanyInfo}
+              faceStyle={styles.proFace}
+              decoration={
+                <Image
+                  source={require('../../../assets/v2_images/icon/equipe.png')}
+                  style={styles.proButtonIcon}
+                  resizeMode="contain"
+                />
+              }
+            >
+              <Text style={styles.proCardTitle}>Créer votre Espace Pro</Text>
+              <Text style={styles.proCardText}>pour utiliser OrthoMaster en équipe.</Text>
+            </Button3D>
           }
 
           {/* Account Section */}
@@ -490,7 +510,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
-    paddingBottom: Spacings.md,
+    paddingBottom: Spacings.sm,
     paddingTop: isTablet ? Spacings.md : Spacings.xs,
   },
   topBar: {
@@ -507,14 +527,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.grayLight,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 12,
     fontFamily: 'Poppins-Medium',
-    color: Colors.text,
+    color: Colors.subtext2,
+    marginBottom: -2,
   },
+  // Entre le retour et la cloche, aligné à gauche.
   identity: {
-    alignItems: 'center',
-    marginTop: Spacings.sm,
-    paddingHorizontal: Spacings.md,
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'flex-start',
+    marginHorizontal: Spacings.sm,
   },
   content: {
     paddingHorizontal: Spacings.lg,
@@ -539,10 +562,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.xs
   },
   userName: {
-    fontSize: 20,
+    fontSize: 17,
     fontFamily: 'Poppins-Bold',
     color: Colors.primary,
-    marginBottom: -2,
   },
   userProf: {
     fontSize: 13,
@@ -687,12 +709,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacings.md,
   },
-  shareButton: {
+  // Boutons 3D (Inviter, Centres d'intérêt, Espace Pro) : le texte sur la face, l'illustration déborde.
+  button3d: {
     flex: 1,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
     marginBottom: Spacings.xl,
+  },
+  button3dPro: {
+    marginBottom: Spacings.xl,
+  },
+  button3dText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: Colors.white,
+    paddingVertical: Spacings.sm,
+    paddingLeft: 100,
+    paddingRight: Spacings.md,
+    textShadowColor: 'rgba(0, 0, 0, 0.18)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  proFace: {
+    paddingVertical: Spacings.sm,
+    paddingLeft: 100,
+    paddingRight: Spacings.md,
   },
   shareButtonIcon: {
     width: 70,
@@ -702,23 +741,6 @@ const styles = StyleSheet.create({
     top: -14,
     zIndex: 100,
   },
-  shareButtonText: {
-    width: '100%',
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.white,
-    backgroundColor: '#FF4B4B',
-    paddingVertical: Spacings.sm,
-    paddingLeft: 100,
-    borderRadius: 40,
-  },
-  favoriteButton: {
-    flex: 1,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    marginBottom: Spacings.xl,
-  },
   favoriteButtonIcon: {
     width: 60,
     height: 60,
@@ -726,26 +748,6 @@ const styles = StyleSheet.create({
     right: 20,
     top: -10,
     zIndex: 100,
-  },
-  favoriteButtonText: {
-    width: '100%',
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    color: Colors.white,
-    backgroundColor: Colors.primaryLight,
-    paddingVertical: Spacings.sm,
-    paddingLeft: 100,
-    borderRadius: 40,
-  },
-
-  proButton: {
-    flex: 1,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    marginBottom: Spacings.xl,
-    backgroundColor: Colors.purple,
-    paddingVertical: Spacings.sm,
   },
   proButtonIcon: {
     width: 80,
@@ -755,8 +757,4 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 100,
   },
-  proTextContainer: {
-    width: '100%',
-    paddingLeft: 100,
-  }
 });
