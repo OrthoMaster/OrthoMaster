@@ -198,6 +198,14 @@ export default function App({ navigation }) {
       window.location.href = `orthomaster://open/event/${eventMatch[1]}`;
       return;
     }
+
+    // Tout autre lien open/… (open/training, open/training/e-learning, open/training/diplome,
+    // open/training/tutorat/…, open/media-preview, open/profile-view/…) : même chemin dans l'application.
+    const openMatch = path.match(/open\/[^?#]*/);
+    if (openMatch) {
+      window.location.href = `orthomaster://${openMatch[0].replace(/\/+$/, '')}${search}`;
+      return;
+    }
   }, [appIsReady, windowWidth]);
 
   const pendingNavigation = useRef<(() => void) | null>(null);
@@ -247,13 +255,20 @@ export default function App({ navigation }) {
           // Ouvert par un lien direct, un écran garde l'accueil Formations en dessous.
           initialRouteName: 'training-home',
           screens: {
-            'training-home': '',
-            'training-list': { path: 'e-learning', alias: [{ path: 'open/training-list', exact: true }] },
-            'training-diploma': 'diplome',
+            // Liens open/training/… : mêmes chemins que l'application (anciens open/training-list, open/tutorat/… gardés).
+            'training-home': { path: '', alias: [{ path: 'open/training', exact: true }] },
+            'training-list': {
+              path: 'e-learning',
+              alias: [{ path: 'open/training/e-learning', exact: true }, { path: 'open/training-list', exact: true }],
+            },
+            'training-diploma': { path: 'diplome', alias: [{ path: 'open/training/diplome', exact: true }] },
             // Liens directs open/tutorat/… (e-mails) : mêmes chemins que l'application.
             booking: {
               path: 'tutorat',
               alias: [
+                { path: 'open/training/tutorat', exact: true },
+                { path: 'open/training/tutorat/demande/:requestId', exact: true },
+                { path: 'open/training/tutorat/rendez-vous/:appointmentId', exact: true },
                 { path: 'open/tutorat', exact: true },
                 { path: 'open/tutorat/demande/:requestId', exact: true },
                 { path: 'open/tutorat/rendez-vous/:appointmentId', exact: true },

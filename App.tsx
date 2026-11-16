@@ -571,12 +571,22 @@ function AppContent() {
         },
         'training': {
           initialRouteName: 'training-home',
+          // open/training/… : Formations et ses écrans (anciens liens open/training-list, open/tutorat/… gardés).
           screens: {
-            'training-list': { path: 'open/training-list' },
-            // Tutorat (rendez-vous experts) : l'espace, une demande (expert), un rendez-vous (demandeur).
+            'training-home': { path: 'open/training' },
+            'training-list': { path: 'open/training/e-learning', alias: ['open/training-list'] },
+            'training-diploma': { path: 'open/training/diplome' },
+            // Tutorat (rendez-vous experts) : l'espace (onglet de départ selon le rôle : Demandes pour
+            // l'expert, Experts pour le demandeur), une demande (expert), un rendez-vous (demandeur).
             'booking': {
-              path: 'open/tutorat',
-              alias: ['open/tutorat/demande/:requestId', 'open/tutorat/rendez-vous/:appointmentId'],
+              path: 'open/training/tutorat',
+              alias: [
+                'open/training/tutorat/demande/:requestId',
+                'open/training/tutorat/rendez-vous/:appointmentId',
+                'open/tutorat',
+                'open/tutorat/demande/:requestId',
+                'open/tutorat/rendez-vous/:appointmentId',
+              ],
             },
           },
         },
