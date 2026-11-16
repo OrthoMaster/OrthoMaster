@@ -218,14 +218,14 @@ export const ProfileView = ({ navigation, route }) => {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
 
-      {/* Header : retour · « Profil » et le nom (à gauche) · notifications */}
-      <View style={styles.header}>
+      {/* Header orange (jusque sous la barre d'état) : retour · « Profil » et le nom (à gauche) · notifications */}
+      <View style={[styles.header, { paddingTop: insets.top + (isTablet ? Spacings.md : Spacings.xs) }]}>
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.roundButton} onPress={goBack} hitSlop={8} accessibilityLabel="Retour">
-            <Ionicons name="chevron-back" size={22} color={Colors.text} />
+            <Ionicons name="chevron-back" size={22} color={Colors.white} />
           </TouchableOpacity>
           <View style={styles.identity}>
             <Text style={styles.headerTitle}>Profil</Text>
@@ -233,7 +233,7 @@ export const ProfileView = ({ navigation, route }) => {
             {
               user && user.student_flg == true && user.expires_at !== null &&
               <Text style={styles.userExpiresAt}>Étudiant · expire le <Text
-                style={{ fontFamily: 'Poppins-Bold', color: Colors.red }}>{user.expires_at}</Text>
+                style={{ fontFamily: 'Poppins-Bold', color: Colors.white }}>{user.expires_at}</Text>
               </Text>
             }
           </View>
@@ -247,11 +247,12 @@ export const ProfileView = ({ navigation, route }) => {
                 ],
               }}
             >
-              <Ionicons name="notifications" size={22} color={Colors.primary} />
+              <Ionicons name="notifications" size={22} color={Colors.white} />
             </Animated.View>
             :
-            <Ionicons name="notifications" size={22} color={Colors.gray} />
+            <Ionicons name="notifications-outline" size={22} color={Colors.white} />
           }
+          {(more && more?.data?.hasNotifications) ? <View style={styles.notificationDot} /> : null}
           </TouchableOpacity>
         </View>
       </View>
@@ -499,19 +500,25 @@ export const ProfileView = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.grayLight,
   },
   scrollView: {
     flex: 1,
     backgroundColor: Colors.grayLight
   },
+  // Bandeau orange arrondi en bas ; paddingTop = zone de la barre d'état (voir le rendu).
   header: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.primary,
     paddingHorizontal: Spacings.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
-    paddingBottom: Spacings.sm,
-    paddingTop: isTablet ? Spacings.md : Spacings.xs,
+    paddingBottom: Spacings.md,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 1,
   },
   topBar: {
     flexDirection: 'row',
@@ -524,12 +531,24 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.grayLight,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  // Notifications non lues : pastille sur la cloche.
+  notificationDot: {
+    position: 'absolute',
+    top: 9,
+    right: 10,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: Colors.red,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
   },
   headerTitle: {
     fontSize: 12,
     fontFamily: 'Poppins-Medium',
-    color: Colors.subtext2,
+    color: 'rgba(255, 255, 255, 0.85)',
     marginBottom: -2,
   },
   // Entre le retour et la cloche, aligné à gauche.
@@ -564,7 +583,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 17,
     fontFamily: 'Poppins-Bold',
-    color: Colors.primary,
+    color: Colors.white,
   },
   userProf: {
     fontSize: 13,
@@ -587,8 +606,8 @@ const styles = StyleSheet.create({
   },
   userExpiresAt: {
     fontSize: 11,
-    fontFamily: 'Poppins-Light',
-    color: Colors.gray,
+    fontFamily: 'Poppins-Regular',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: Spacings.xxxs
   },
 
