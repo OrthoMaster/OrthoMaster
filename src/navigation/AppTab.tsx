@@ -10,7 +10,7 @@ import {
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { StackActions } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { HomeStack } from './stacks/HomeStack';
 
@@ -97,6 +97,11 @@ export const AppTab = ({ }) => {
     <Tab.Navigator
       id={"main-tabs"}
       initialRouteName='home'
+      // Profil (ouvert depuis l'accueil) : pas de barre du bas, quel que soit l'écran de la pile
+      // (les sous-écrans qui la réaffichent en se fermant n'y changent rien).
+      tabBar={(props) =>
+        props.state.routes[props.state.index]?.name === 'profile' ? null : <BottomTabBar {...props} />
+      }
       screenOptions={() => ({
         tabBarLabelPosition: 'below-icon',
         tabBarStyle: { backgroundColor: 'white', paddingBottom: insets.bottom },
@@ -251,10 +256,13 @@ export const AppTab = ({ }) => {
         />
       }
 
+      {/* Profil : plus d'onglet, on y entre par l'avatar de l'accueil. */}
       <Tab.Screen name="profile"
         component={ProfileStack}
         options={{
           headerShown: false,
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
           tabBarLabel: ({ focused }) => (
             <CustomTabBarLabel
               title="Profil"

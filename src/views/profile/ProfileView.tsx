@@ -15,7 +15,7 @@ import {
   Platform
 } from 'react-native';
 import { Divider, Dialog, Portal, Button } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '../../../constants/Colors';
@@ -83,12 +83,14 @@ export const ProfileView = ({ navigation, route }) => {
     }
   }, [screen, navigation]);
 
-  // View bottom bar
-  useEffect(() => {
-    navigation.getParent()?.setOptions({
-      tabBarStyle: { display: 'flex' }
-    });
-  }, [navigation]);
+  // Pas de barre du bas sur Profil (voir AppTab) : le bas de la liste dégage la zone système.
+  const insets = useSafeAreaInsets();
+
+  // Retour : écran précédent, sinon l'accueil.
+  const goBack = () => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('home');
+  };
 
   // Get data
   const { data: user, isLoading: isLoadingUser, refetch: refetchUser, isFetching: isFetchingUser, error: errorUser } = useGetUser();
@@ -218,21 +220,14 @@ export const ProfileView = ({ navigation, route }) => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
-      {/* Header */}
+      {/* Header : retour · titre · notifications, puis l'identité */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.roundButton} onPress={goBack} hitSlop={8} accessibilityLabel="Retour">
+            <Ionicons name="chevron-back" size={22} color={Colors.text} />
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>Profil</Text>
-          <Text style={styles.userName}>{user.name + ' ' + user.first_name}</Text>
-          <Text style={styles.userProf}>{user.student_flg == true ? 'Étudiant' : user.profession}</Text>
-
-          {
-            user && user.student_flg == true && user.expires_at !== null &&
-            <Text style={styles.userExpiresAt}>Expire le <Text
-              style={{ fontFamily: 'Poppins-Bold', color: Colors.red }}>{user.expires_at}</Text>
-            </Text>
-          }
-        </View>
-        <TouchableOpacity style={styles.notificationButton} onPress={nofi}>
+          <TouchableOpacity style={styles.roundButton} onPress={nofi} hitSlop={8} accessibilityLabel="Notifications">
           {(more && more?.data?.hasNotifications) ?
             <Animated.View
               style={{
@@ -247,11 +242,24 @@ export const ProfileView = ({ navigation, route }) => {
             :
             <Ionicons name="notifications" size={22} color={Colors.gray} />
           }
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.identity}>
+          <Text style={styles.userName} numberOfLines={1}>{user.name + ' ' + user.first_name}</Text>
+          <Text style={styles.userProf}>{user.student_flg == true ? 'Étudiant' : user.profession}</Text>
+          {
+            user && user.student_flg == true && user.expires_at !== null &&
+            <Text style={styles.userExpiresAt}>Expire le <Text
+              style={{ fontFamily: 'Poppins-Bold', color: Colors.red }}>{user.expires_at}</Text>
+            </Text>
+          }
+        </View>
       </View>
 
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: insets.bottom + Spacings.md }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -479,19 +487,34 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.white,
-    paddingHorizontal: Spacings.lg,
+    paddingHorizontal: Spacings.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.line,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingBottom: Spacings.md,
-    paddingTop: isTablet ? Spacings.lg : 0, 
+    paddingTop: isTablet ? Spacings.md : Spacings.xs,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.grayLight,
   },
   headerTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Poppins-Medium',
     color: Colors.text,
+  },
+  identity: {
+    alignItems: 'center',
+    marginTop: Spacings.sm,
+    paddingHorizontal: Spacings.md,
   },
   content: {
     paddingHorizontal: Spacings.lg,
@@ -516,14 +539,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.xs
   },
   userName: {
-    fontSize: 16,
-    fontWeight: '500',
-    fontFamily: 'Roboto',
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
     color: Colors.primary,
     marginBottom: -2,
   },
   userProf: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Poppins-Regular',
     color: Colors.subtext2,
   },
@@ -542,10 +564,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   userExpiresAt: {
-    fontSize: 9,
+    fontSize: 11,
     fontFamily: 'Poppins-Light',
     color: Colors.gray,
-    marginLeft: Spacings.xxxs,
     marginTop: Spacings.xxxs
   },
 
@@ -648,11 +669,6 @@ const styles = StyleSheet.create({
   },
 
   // Noti
-  notificationButton: {
-    paddingTop: Spacings.md,
-    paddingLeft: Spacings.md,
-    position: 'relative',
-  },
   iconContainer: {
     position: 'relative',
   },
