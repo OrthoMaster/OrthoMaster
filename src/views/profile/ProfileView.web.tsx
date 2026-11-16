@@ -26,6 +26,7 @@ import { useLogout, useGetUser } from '../../hooks/auth.hook';
 import { orthomasterShare } from "../../futils";
 
 import { BouncingDots } from '../../component/LoadingDots';
+import { Button3D } from './Button3D';
 
 import { getMoreInfo } from '../../services/v2/AuthService';
 import { quitCompany } from '../../services/v2/CompanyService';
@@ -256,12 +257,13 @@ export const ProfileView = ({ navigation, route }) => {
               styles.cusButtonsContainer,
               shouldStackVertically && styles.cusButtonsContainerVertical
             ]}>
-              <TouchableOpacity
-                style={[
-                  styles.shareButton,
-                  shouldStackVertically && styles.shareButtonVertical
-                ]}
-                activeOpacity={0.8}
+              <Button3D
+                style={shouldStackVertically ? styles.button3dVertical : styles.button3d}
+                faceStyle={[styles.shareFace, shouldStackVertically && styles.faceVertical]}
+                color="#FF4B4B"
+                light="#FF7A6E"
+                edge="#C42F35"
+                accessibilityLabel="Inviter à rejoindre OrthoMaster"
                 onPress={() => {
                   orthomasterShare({
                     message: "Rejoignez le premier écosystème de l'orthopédie !\n\n" +
@@ -279,38 +281,52 @@ export const ProfileView = ({ navigation, route }) => {
                     url: "https://orthomaster.fr"
                   }, 'app invite', null)
                 }}
+                decoration={
+                  <Image
+                    source={require('../../../assets/v2_images/icon/des-billets.png')}
+                    style={styles.shareButtonIcon}
+                    resizeMode="contain"
+                  />
+                }
               >
-                <Image
-                  source={require('../../../assets/v2_images/icon/des-billets.png')}
-                  style={styles.shareButtonIcon}
-                  resizeMode="contain"
-                />
                 <Text style={styles.shareButtonText}>
                   Inviter à rejoindre OrthoMaster
                 </Text>
-              </TouchableOpacity>
+              </Button3D>
 
-              <TouchableOpacity
-                style={[
-                  styles.favoriteButton,
-                  shouldStackVertically && styles.favoriteButtonVertical
-                ]}
-                activeOpacity={0.8}
+              <Button3D
+                style={shouldStackVertically ? styles.button3dVertical : styles.button3d}
+                faceStyle={[styles.favoriteFace, shouldStackVertically && styles.faceVertical]}
+                color={Colors.primaryLight}
+                light="#FFC966"
+                edge="#D9860F"
+                accessibilityLabel="Mes centres d'intérêt"
                 onPress={() => navigation.navigate('settings-view')}
+                decoration={
+                  <Image
+                    source={require('../../../assets/v2_images/icon/coeur.png')}
+                    style={styles.favoriteButtonIcon}
+                    resizeMode="contain"
+                  />
+                }
               >
-                <Image
-                  source={require('../../../assets/v2_images/icon/coeur.png')}
-                  style={styles.favoriteButtonIcon}
-                  resizeMode="contain"
-                />
                 <Text style={styles.favoriteButtonText}>
                   Mes centres d'intérêt
                 </Text>
-              </TouchableOpacity>
+              </Button3D>
             </View>
 
             {!user?.has_company && !user?.student_flg &&
-              <TouchableOpacity style={styles.proButton} onPress={openCompanyInfo}>
+              <Button3D
+                style={styles.proButton}
+                faceStyle={styles.proFace}
+                radius={50}
+                color={Colors.purple}
+                light="#B9A3D1"
+                edge="#6F5690"
+                accessibilityLabel="Créer votre Espace Pro"
+                onPress={openCompanyInfo}
+              >
                 <Image
                   source={require('../../../assets/v2_images/icon/equipe.png')}
                   style={styles.proButtonIcon}
@@ -319,7 +335,7 @@ export const ProfileView = ({ navigation, route }) => {
                   <Text style={styles.proCardTitle}>Créer votre Espace Pro</Text>
                   <Text style={styles.proCardText}>pour utiliser OrthoMaster en équipe</Text>
                 </View>
-              </TouchableOpacity>
+              </Button3D>
             }
           </View>
 
@@ -520,9 +536,10 @@ const styles = StyleSheet.create({
   quitButton: {
     paddingLeft: 10,
   },
+  // Côte à côte : même hauteur pour les deux boutons (le texte d'Inviter peut passer sur deux lignes).
   cusButtonsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'space-between',
     gap: Spacings.md,
     marginVertical: 20,
@@ -531,20 +548,26 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'stretch',
   },
-  shareButton: {
+  // Boutons 3D (voir Button3D) : marges sur le bouton, padding sur la face.
+  button3d: {
     flex: 1,
-    backgroundColor: '#FF4B4B',
-    borderRadius: 40,
+    marginBottom: 20,
+  },
+  button3dVertical: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  faceVertical: {
+    minHeight: 50,
+    justifyContent: 'center',
+  },
+  shareFace: {
     paddingVertical: 12,
     paddingLeft: 100,
-    marginBottom: 20,
-    position: 'relative',
+    justifyContent: 'center',
   },
-  shareButtonVertical: {
-    flex: 0,
-    width: '100%',
-    minHeight: 50,
-    alignSelf: 'center',
+  favoriteFace: {
+    paddingVertical: 12,
     justifyContent: 'center',
   },
   shareButtonIcon: {
@@ -560,21 +583,9 @@ const styles = StyleSheet.create({
     color: Colors.white,
     paddingHorizontal: 10,
     fontFamily: 'Poppins-Medium',
-  },
-  favoriteButton: {
-    flex: 1,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 40,
-    paddingVertical: 12,
-    marginBottom: 20,
-    position: 'relative',
-  },
-  favoriteButtonVertical: {
-    flex: 0,
-    width: '100%',
-    minHeight: 50,
-    alignSelf: 'center',
-    justifyContent: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.18)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   favoriteButtonIcon: {
     width: 60,
@@ -592,11 +603,14 @@ const styles = StyleSheet.create({
     paddingRight: 80,
     paddingLeft: 10,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.18)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   proButton: {
-    backgroundColor: Colors.purple,
-    borderRadius: 50,
     marginBottom: 24,
+  },
+  proFace: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

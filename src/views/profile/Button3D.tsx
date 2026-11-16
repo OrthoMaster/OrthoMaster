@@ -24,8 +24,9 @@ interface Button3DProps {
 }
 
 /**
- * Bouton « 3D » (mobile) : une face en dégradé avec un liseré clair en haut, posée sur une tranche
+ * Bouton « 3D » : une face en dégradé avec un liseré clair en haut, posée sur une tranche
  * plus sombre ; à l'appui, la face s'enfonce sur la tranche. L'illustration peut déborder de la face.
+ * Sert aussi sur le web (Profil), où le survol soulève légèrement la face.
  */
 export const Button3D: React.FC<Button3DProps> = ({
   color,
@@ -40,12 +41,16 @@ export const Button3D: React.FC<Button3DProps> = ({
   style,
 }) => {
   const [pressed, setPressed] = useState(false);
+  // Web : au survol, la face se soulève d'un pixel.
+  const [hovered, setHovered] = useState(false);
 
   return (
     <Pressable
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       style={[styles.container, style]}
@@ -53,7 +58,7 @@ export const Button3D: React.FC<Button3DProps> = ({
       {/* Tranche + ombre portée */}
       <View style={[styles.edge, { backgroundColor: edge, borderRadius: radius }]} />
 
-      <View style={[styles.face, { transform: [{ translateY: pressed ? DEPTH - 1 : 0 }] }]}>
+      <View style={[styles.face, { transform: [{ translateY: pressed ? DEPTH - 1 : hovered ? -1 : 0 }] }]}>
         <LinearGradient
           colors={[light, color]}
           start={{ x: 0, y: 0 }}
@@ -84,12 +89,15 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
+  // La face occupe toute la hauteur donnée au bouton (boutons côte à côte de même hauteur).
   face: {
+    flexGrow: 1,
     // Au-dessus de la tranche (Android : l'élévation de la tranche la ferait passer devant).
     elevation: 5,
     zIndex: 1,
   },
   gradient: {
+    flexGrow: 1,
     borderTopWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.45)',
   },
