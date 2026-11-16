@@ -396,8 +396,8 @@ export const ExpertiseHomeView = ({ navigation }) => {
         ) : null}
 
         {/* ---- Commun aux deux services ---- */}
-        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide]}>Mon agenda</Text>
-        <View style={styles.sections}>
+        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide, isWeb && styles.sectionTitleListWeb]}>Mon agenda</Text>
+        <View style={[styles.sections, isWeb && styles.sectionsWeb]}>
           <ExpertiseSectionCard
             last
             icon="calendar-clock"
@@ -409,8 +409,8 @@ export const ExpertiseHomeView = ({ navigation }) => {
         </View>
 
         {/* ---- Revenus : la part de l'expert ---- */}
-        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide]}>Mes revenus</Text>
-        <View style={styles.sections}>
+        <Text style={[styles.sectionTitle, wide && styles.sectionTitleWide, isWeb && styles.sectionTitleListWeb]}>Mes revenus</Text>
+        <View style={[styles.sections, isWeb && styles.sectionsWeb]}>
           <ExpertiseSectionCard
             last
             icon="cash-multiple"
@@ -609,5 +609,13 @@ const styles = StyleSheet.create({
   // Liste sans fond : les lignes se séparent par un filet.
   sections: {
     paddingHorizontal: Spacings.xxs,
+  },
+  // Web : titre d'une liste sans fond (Mon agenda, Mes revenus) détaché du bloc au-dessus
+  // et rapproché de sa première ligne, dont le padding haut s'ajoute à l'écart du contenu.
+  sectionTitleListWeb: {
+    marginTop: Spacings.lg,
+  },
+  sectionsWeb: {
+    marginTop: -Spacings.sm,
   },
 });
