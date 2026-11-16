@@ -4,6 +4,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Colors from '../../../../../constants/Colors';
 import Spacings from '../../../../../constants/Spacings';
+import { switchColors } from '../../bookingSwitch';
 
 export interface ServiceLink {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -66,9 +67,7 @@ export const ExpertiseServiceCard: React.FC<ExpertiseServiceCardProps> = ({
         value={enabled}
         onValueChange={onToggle}
         disabled={saving}
-        trackColor={{ false: Colors.disabledBackground, true: color }}
-        thumbColor={Colors.white}
-        ios_backgroundColor={enabled ? color : Colors.disabledBackground}
+        {...switchColors(color, enabled)}
         accessibilityLabel={`Accepter les demandes : ${title}`}
       />
     </View>

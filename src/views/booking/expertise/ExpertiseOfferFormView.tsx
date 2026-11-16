@@ -40,6 +40,7 @@ import { useHideFloatingTabBar } from '../useHideFloatingTabBar';
 import { OfferImagesManager } from './components/OfferImagesManager';
 import { WebOnlyImagesNotice } from './components/WebOnlyImagesNotice';
 import { ModeForm, OfferModeCard, usedSlotKeys } from './components/OfferModeCard';
+import { switchColors } from '../bookingSwitch';
 
 const QUERY_KEY = ['booking', 'me'];
 const GRID_DATES_KEY = ['booking', 'me', 'grid-dates'];
@@ -370,9 +371,7 @@ export const ExpertiseOfferFormView = ({ navigation, route }) => {
       <Switch
         value={form.active}
         onValueChange={(value) => update('active', value)}
-        trackColor={{ false: Colors.disabledBackground, true: Colors.lblue }}
-        thumbColor={Colors.white}
-        ios_backgroundColor={form.active ? Colors.lblue : Colors.disabledBackground}
+        {...switchColors(Colors.lblue, form.active)}
       />
     </View>
   );

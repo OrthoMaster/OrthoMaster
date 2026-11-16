@@ -18,6 +18,7 @@ import { WEEKDAYS, WEEKDAYS_SHORT, weekdayIso } from '../../bookingDates';
 import { LocationPickerSheet } from './LocationPickerSheet';
 import { MODE_META as SHARED_MODE_META } from '../../components/ModePill';
 import { OfferDatesPicker } from './OfferDatesPicker';
+import { switchColors } from '../../bookingSwitch';
 
 /** Saisie d'un mode dans le formulaire d'offre. */
 export interface ModeForm {
@@ -152,9 +153,7 @@ export const OfferModeCard: React.FC<OfferModeCardProps> = ({
         <Switch
           value={value.enabled}
           onValueChange={(enabled) => set('enabled', enabled)}
-          trackColor={{ false: Colors.disabledBackground, true: meta.color }}
-          thumbColor={Colors.white}
-          ios_backgroundColor={value.enabled ? meta.color : Colors.disabledBackground}
+          {...switchColors(meta.color, value.enabled)}
         />
       </View>
 
