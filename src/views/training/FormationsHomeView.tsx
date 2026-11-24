@@ -66,10 +66,12 @@ const WEB_TWO_UP_CARD_MIN = 440;
  */
 type Motion = 'float' | 'sway' | 'breathe';
 
-const useIllustrationMotion = (motion: Motion) => {
+const useIllustrationMotion = (motion: Motion, active: boolean) => {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Ne bouge qu'une fois l'illustration affichée.
+    if (!active) return;
     const half = motion === 'float' ? 2400 : motion === 'sway' ? 2800 : 3200;
     const loop = Animated.loop(
       Animated.sequence([
@@ -79,7 +81,7 @@ const useIllustrationMotion = (motion: Motion) => {
     );
     loop.start();
     return () => loop.stop();
-  }, [motion, progress]);
+  }, [motion, progress, active]);
 
   if (motion === 'float') {
     return [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }];
@@ -88,6 +90,41 @@ const useIllustrationMotion = (motion: Motion) => {
     return [{ rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ['-3deg', '3deg'] }) }];
   }
   return [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }];
+};
+
+/**
+ * Chargement des illustrations :
+ *  - pending : squelette qui pulse à la place de l'image (texte et carte déjà utilisables)
+ *  - loaded  : l'image apparaît en fondu + léger zoom, puis son animation démarre
+ *  - error   : squelette fixe (sans pulsation), la carte reste utilisable
+ */
+type IllustrationStatus = 'pending' | 'loaded' | 'error';
+type IllustrationKey = keyof typeof ILLUSTRATIONS;
+
+/**
+ * Les trois illustrations apparaissent ensemble ; passé ce délai, chacune apparaît
+ * dès qu'elle est chargée, pour ne pas attendre la plus lente.
+ */
+const REVEAL_TOGETHER_TIMEOUT = 1500;
+const REVEAL_DURATION = 250;
+
+/** Pulsation du squelette, commune aux trois cartes (elles pulsent en même temps). */
+const useSkeletonPulse = (active: boolean) => {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!active) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: !IS_WEB }),
+        Animated.timing(pulse, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: !IS_WEB }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [active, pulse]);
+
+  return pulse;
 };
 
 /**
@@ -108,12 +145,48 @@ interface EntryCardProps {
   motion: Motion;
   /** Part de la hauteur de l'illustration au-dessus de la carte (POP_RATIO par défaut). */
   popRatio?: number;
+  /** État de chargement de l'illustration. */
+  status: IllustrationStatus;
+  /** true : l'illustration chargée peut apparaître (les trois sont prêtes, ou délai dépassé). */
+  canReveal: boolean;
+  /** Pulsation partagée du squelette. */
+  pulse: Animated.Value;
+  onImageLoad: () => void;
+  onImageError: () => void;
   onPress: () => void;
   style?: any;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration, face, edge, badge, layout, motion, popRatio = POP_RATIO, onPress, style }) => {
-  const motionTransform = useIllustrationMotion(motion);
+const EntryCard: React.FC<EntryCardProps> = ({
+  title, description, illustration, face, edge, badge, layout, motion, popRatio = POP_RATIO,
+  status, canReveal, pulse, onImageLoad, onImageError, onPress, style,
+}) => {
+  const revealed = status === 'loaded' && canReveal;
+  const motionTransform = useIllustrationMotion(motion, revealed);
+
+  // Apparition de l'image : fondu + léger zoom ; le squelette disparaît en même temps.
+  const reveal = useRef(new Animated.Value(0)).current;
+  // Le squelette reste monté pendant le fondu, puis est retiré.
+  const [skeletonGone, setSkeletonGone] = useState(false);
+  useEffect(() => {
+    if (!revealed) return;
+    Animated.timing(reveal, {
+      toValue: 1,
+      duration: REVEAL_DURATION,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: !IS_WEB,
+    }).start(({ finished }) => {
+      if (finished) setSkeletonGone(true);
+    });
+  }, [revealed, reveal]);
+
+  const imageScale = reveal.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
+  const skeletonOpacity = status === 'error'
+    ? 0.5
+    : Animated.multiply(
+      pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] }),
+      reveal.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
+    );
 
   const press = useRef(new Animated.Value(0)).current;
 
@@ -157,9 +230,27 @@ const EntryCard: React.FC<EntryCardProps> = ({ title, description, illustration,
               if (next !== size) setSize(next);
             }}
           >
-            <Animated.View style={[styles.illustration, { transform: motionTransform }]}>
-              <Image source={illustration} style={styles.illustration} resizeMode="contain" />
-            </Animated.View>
+            {/* Squelette à la place de l'image tant qu'elle n'est pas affichée. */}
+            {!skeletonGone && (
+              <Animated.View
+                pointerEvents="none"
+                style={[styles.skeleton, { opacity: skeletonOpacity }]}
+              />
+            )}
+            {status !== 'error' && (
+              // L'image se charge masquée (opacité 0), puis apparaît.
+              <Animated.View style={[styles.illustration, { opacity: reveal, transform: [{ scale: imageScale }] }]}>
+                <Animated.View style={[styles.illustration, { transform: motionTransform }]}>
+                  <Image
+                    source={illustration}
+                    style={styles.illustration}
+                    resizeMode="contain"
+                    onLoad={onImageLoad}
+                    onError={onImageError}
+                  />
+                </Animated.View>
+              </Animated.View>
+            )}
           </View>
 
           <View style={styles.texts}>
@@ -213,6 +304,37 @@ export const FormationsHomeView = ({ navigation }) => {
   });
   const pendingRequests = expertRequests?.pending.length ?? 0;
 
+  /* ---- Illustrations : squelette, puis apparition des trois ensemble ---- */
+  const [imageStatus, setImageStatus] = useState<Record<IllustrationKey, IllustrationStatus>>({
+    elearning: 'pending',
+    tutorat: 'pending',
+    diplome: 'pending',
+  });
+  const setStatus = useCallback((key: IllustrationKey, status: IllustrationStatus) => {
+    // Un onLoad répété (image déjà affichée) ne change rien.
+    setImageStatus((prev) => (prev[key] === status ? prev : { ...prev, [key]: status }));
+  }, []);
+  const allSettled = Object.values(imageStatus).every((s) => s !== 'pending');
+  const anyPending = !allSettled;
+
+  const [revealTimedOut, setRevealTimedOut] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setRevealTimedOut(true), REVEAL_TOGETHER_TIMEOUT);
+    return () => clearTimeout(timer);
+  }, []);
+  const canReveal = allSettled || revealTimedOut;
+
+  const pulse = useSkeletonPulse(anyPending);
+
+  const illustrationProps = (key: IllustrationKey) => ({
+    illustration: ILLUSTRATIONS[key],
+    status: imageStatus[key],
+    canReveal,
+    pulse,
+    onImageLoad: () => setStatus(key, 'loaded'),
+    onImageError: () => setStatus(key, 'error'),
+  });
+
   // Web : largeur utile mesurée ; deux cartes par ligne quand deux cartes assez larges y tiennent.
   const [bodyWidth, setBodyWidth] = useState(0);
   const usable = bodyWidth - Spacings.lg * 2;
@@ -241,7 +363,7 @@ export const FormationsHomeView = ({ navigation }) => {
         <EntryCard
           title="E-learning"
           description="Vos formations en ligne, à suivre à votre rythme."
-          illustration={ILLUSTRATIONS.elearning}
+          {...illustrationProps('elearning')}
           face={Colors.lgreen}
           edge={Colors.lgreenDark}
           layout="row-reverse"
@@ -256,7 +378,7 @@ export const FormationsHomeView = ({ navigation }) => {
               ? 'Vos demandes, votre agenda et vos disponibilités.'
               : 'Échangez avec un expert sur un sujet de votre pratique.'
           }
-          illustration={ILLUSTRATIONS.tutorat}
+          {...illustrationProps('tutorat')}
           face={Colors.lblue}
           edge={Colors.lblueDark}
           layout="row"
@@ -270,7 +392,7 @@ export const FormationsHomeView = ({ navigation }) => {
         <EntryCard
           title="Diplôme"
           description="Pré-inscription au Diplôme Pharmacie."
-          illustration={ILLUSTRATIONS.diplome}
+          {...illustrationProps('diplome')}
           face={DIPLOMA_COLOR}
           edge={DIPLOMA_COLOR_DARK}
           layout="row-reverse"
@@ -363,6 +485,16 @@ const styles = StyleSheet.create({
   illustration: {
     width: '100%',
     height: '100%',
+  },
+  // Squelette : carré arrondi blanc translucide, en retrait comme l'image (contain).
+  skeleton: {
+    position: 'absolute',
+    top: '10%',
+    left: '10%',
+    right: '10%',
+    bottom: '10%',
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.28)',
   },
   texts: {
     flex: 1,
