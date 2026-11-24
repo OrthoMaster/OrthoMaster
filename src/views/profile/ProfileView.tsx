@@ -219,7 +219,7 @@ export const ProfileView = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryLight} />
 
       {/* Header orange (jusque sous la barre d'état) : retour · « Profil » et le nom (à gauche) · notifications */}
       <View style={[styles.header, { paddingTop: insets.top + (isTablet ? Spacings.md : Spacings.xs) }]}>
@@ -508,11 +508,9 @@ const styles = StyleSheet.create({
   },
   // Bandeau orange arrondi en bas ; paddingTop = zone de la barre d'état (voir le rendu).
   header: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.primaryLight,
     paddingHorizontal: Spacings.md,
     paddingBottom: Spacings.md,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -644,12 +642,12 @@ const styles = StyleSheet.create({
 
   proCardTitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'Poppins-Bold',
     color: Colors.white,
   },
   proCardText: {
     fontSize: 11,
-    fontFamily: 'Poppins-Light',
+    fontFamily: 'Poppins-Medium',
     color: Colors.white,
     marginTop: -2
   },
@@ -738,7 +736,7 @@ const styles = StyleSheet.create({
   },
   button3dText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'Poppins-Bold',
     color: Colors.white,
     paddingVertical: Spacings.sm,
     paddingLeft: 100,
