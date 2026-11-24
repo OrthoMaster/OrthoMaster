@@ -48,11 +48,14 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   return (
     <>
       {/* Le fond crème passe sous la barre d'état : la marge du haut vient des insets. */}
-      <View style={[styles.hero, { paddingTop: insets.top + Spacings.sm }]}>
+      <View>
+        {/* Fond crème + ombre : frère du contenu (et non enfant d'un bloc qui coupe), sinon l'ombre
+            sous l'arrondi serait rognée. Le cercle ne dépasse que hors écran (haut et côtés). */}
         <View
           pointerEvents="none"
           style={[styles.heroBackground, { width: radius * 2, height: radius * 2, borderRadius: radius, left: width / 2 - radius }]}
         />
+      <View style={[styles.hero, { paddingTop: insets.top + Spacings.sm }]}>
         <View style={styles.topRow}>
           <Image style={styles.logo} source={require('../../../assets/v2_images/logo/logo_primary_1024.png')} />
           <Text style={styles.brand}>OrthoMaster</Text>
@@ -88,6 +91,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           ))}
         </View>
       </View>
+      </View>
 
       <SendQuestionInfoModal visible={showInfoModal} onClose={() => setShowInfoModal(false)} />
     </>
@@ -96,17 +100,25 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
 const styles = StyleSheet.create({
   /* ---- Bloc ---- */
+  // Android : même élévation que le fond et placé après lui, donc dessiné par-dessus ; sans fond
+  // propre, il ne projette pas d'ombre.
   hero: {
-    overflow: 'hidden',
     paddingHorizontal: Spacings.md,
     paddingBottom: 20 + HERO_CURVE / 2,
     gap: Spacings.sm,
+    elevation: 6,
   },
   // Très grand cercle dont seul le bas dépasse : arrondi continu au lieu de deux coins.
+  // Ombre légère sous l'arrondi : on sent que l'en-tête reste au-dessus quand le contenu défile.
   heroBackground: {
     position: 'absolute',
     bottom: 0,
     backgroundColor: Colors.primaryLightBackground,
+    shadowColor: '#7A4A00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 6,
   },
   greetingBlock: {
     alignItems: 'center',
