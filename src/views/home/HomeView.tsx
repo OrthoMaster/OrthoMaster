@@ -53,6 +53,7 @@ interface Topic {
 }
 
 const isWeb = Platform.OS === 'web';
+const isIOS = Platform.OS === 'ios';
 
 export const HomeView = ({ navigation, route }) => {
   const actionChangeScreen = route.params?.action ?? null;
@@ -370,7 +371,9 @@ export const HomeView = ({ navigation, route }) => {
 
   // Mobile : la section reste visible pendant le chargement ou après une erreur (titre + Recharger).
   // Web : inchangé, la section n'apparaît que s'il y a des cartes.
-  const showDailySection = dailyGroups.length > 0 || (!isWeb && (isDailyLoading || isDailyError));
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  const showDailySection =dailyGroups.length > 0 || (!isWeb && (isDailyLoading || isDailyError));
 
   const header = (
     <HomeHeader userName={[user?.name, user?.first_name].filter(Boolean).join(' ')}
@@ -385,18 +388,27 @@ export const HomeView = ({ navigation, route }) => {
     <SafeAreaView style={styles.screen} edges={['left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.primaryLightBackground} />
 
-      {/* Mobile : en-tête fixe (jusqu'aux trois raccourcis), seul le contenu en dessous défile. */}
-      {!isWeb && header}
-
+      {/* Mobile : on attend la hauteur de l'en-tête avant de poser la liste (décalage initial juste). */}
+      {(isWeb || headerHeight > 0) && (
       <ScrollView style={styles.screen}
         showsVerticalScrollIndicator={false}
         alwaysBounceVertical
+        // Mobile : la liste commence tout en haut, SOUS l'en-tête fixe. Elle démarre décalée de la
+        // hauteur de l'en-tête et, en défilant, passe derrière les deux coins de l'arrondi
+        // (au lieu de laisser deux zones blanches). iOS : contentInset, pour que le spinner du
+        // « tirer pour recharger » apparaisse sous l'en-tête ; Android : padding + progressViewOffset.
+        automaticallyAdjustContentInsets={false}
+        contentInset={isIOS ? { top: headerHeight } : undefined}
+        contentOffset={isIOS ? { x: 0, y: -headerHeight } : undefined}
+        scrollIndicatorInsets={isIOS ? { top: headerHeight } : undefined}
+        contentContainerStyle={!isWeb && !isIOS ? { paddingTop: headerHeight } : undefined}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={reload}
             colors={[Colors.primary]}
             tintColor={Colors.primary}
+            progressViewOffset={!isWeb && !isIOS ? headerHeight : undefined}
           />
         }>
         {/* Web : l'en-tête défile avec la page, comme avant. */}
@@ -437,6 +449,22 @@ export const HomeView = ({ navigation, route }) => {
           </View>
         </View>
       </ScrollView >
+      )}
+
+      {/* Mobile : en-tête fixe (jusqu'aux trois raccourcis) posé PAR-DESSUS la liste : seul le contenu
+          défile, et il reste visible dans les coins transparents de l'arrondi du bas. */}
+      {!isWeb && (
+        <View
+          style={styles.fixedHeader}
+          pointerEvents="box-none"
+          onLayout={(e) => {
+            const height = Math.round(e.nativeEvent.layout.height);
+            if (height !== headerHeight) setHeaderHeight(height);
+          }}
+        >
+          {header}
+        </View>
+      )}
 
       <DailyActionPicker group={pickerGroup} onClose={() => setPickerGroup(null)} onSelect={openDailyItem} />
 
@@ -474,6 +502,13 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.white,
+  },
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   // Sur tablette, le contenu ne s'étire pas sur toute la largeur ; sur le web, voir useHomeLayout.
   content: {
