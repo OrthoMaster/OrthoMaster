@@ -13,10 +13,9 @@ export const getDailyAction = async () => {
         return response.data?.data;
       }
 
-      return false;
-    })
-    .catch((e: AxiosError) => {
-      return false;
+      // Erreur levée (et non `false`) : React Query relance la requête et l'accueil
+      // affiche « Recharger » au lieu de masquer les actions du jour sans rien dire.
+      throw new Error('daily-action: success=false');
     });
 }
 

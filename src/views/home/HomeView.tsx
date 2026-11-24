@@ -8,6 +8,8 @@ import {
   StatusBar,
   Platform,
   RefreshControl,
+  ActivityIndicator,
+  Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -156,10 +158,18 @@ export const HomeView = ({ navigation, route }) => {
     retryDelay: 2000
   });
 
-  /** Handle reload screen */
-  const reload = () => {
-    refetchDailyContent();
-    refetchVideos();
+  const isDailyLoading = isLoadingDailyContent && !dailyContentData;
+  const isDailyError = !!errorDailyContent && !dailyContentData && !isFetchingDailyContent;
+
+  /** Tirer pour recharger : le spinner reste visible jusqu'à la fin de tous les appels. */
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const reload = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchDailyContent(), refetchVideos(), refetchUser(), refetchNotifications()]);
+    } finally {
+      setIsRefreshing(false);
+    }
   }
 
   // Handle open podcast
@@ -183,7 +193,7 @@ export const HomeView = ({ navigation, route }) => {
   };
 
   /** Profil : pastille si une notification n'est pas lue (même clé que l'écran Notifications) */
-  const { data: notificationData } = useQuery({
+  const { data: notificationData, refetch: refetchNotifications } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => getNotifications(),
     refetchOnWindowFocus: true,
@@ -358,33 +368,60 @@ export const HomeView = ({ navigation, route }) => {
     setOnboardingResolved(true);
   };
 
+  // Mobile : la section reste visible pendant le chargement ou après une erreur (titre + Recharger).
+  // Web : inchangé, la section n'apparaît que s'il y a des cartes.
+  const showDailySection = dailyGroups.length > 0 || (!isWeb && (isDailyLoading || isDailyError));
+
+  const header = (
+    <HomeHeader userName={[user?.name, user?.first_name].filter(Boolean).join(' ')}
+      hasUnreadNotification={hasUnreadNotification}
+      onProfilePress={() => navigation.navigate('profile')}
+      onSearchPress={() => navigation.navigate('home-search')}
+      onToolPress={() => navigation.navigate('tools')}
+    />
+  );
+
   return (
     <SafeAreaView style={styles.screen} edges={['left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.primaryLightBackground} />
 
+      {/* Mobile : en-tête fixe (jusqu'aux trois raccourcis), seul le contenu en dessous défile. */}
+      {!isWeb && header}
+
       <ScrollView style={styles.screen}
         showsVerticalScrollIndicator={false}
+        alwaysBounceVertical
         refreshControl={
           <RefreshControl
-            refreshing={(isFetchingDailyContent && !!errorDailyContent)}
+            refreshing={isRefreshing}
             onRefresh={reload}
             colors={[Colors.primary]}
             tintColor={Colors.primary}
           />
         }>
-        <HomeHeader userName={[user.name, user.first_name].filter(Boolean).join(' ')}
-          hasUnreadNotification={hasUnreadNotification}
-          onProfilePress={() => navigation.navigate('profile')}
-          onSearchPress={() => navigation.navigate('home-search')}
-          onToolPress={() => navigation.navigate('tools')}
-        />
+        {/* Web : l'en-tête défile avec la page, comme avant. */}
+        {isWeb && header}
 
         <View style={[styles.content, webContentStyle]}>
-          {dailyGroups.length > 0 && (
+          {showDailySection && (
             <View style={[styles.section, isWeb && { marginTop: sectionGap.actions }]}>
               {/* Web : cartes centrées sous l'en-tête, sans titre */}
-              {!isWeb && <Text style={styles.sectionTitle}>Actions du jour</Text>}
-              <DailyActionCards groups={dailyGroups} onOpenGroup={openDailyGroup} />
+              {!isWeb && (
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Actions du jour</Text>
+                  {isDailyLoading && <ActivityIndicator size="small" color={Colors.gray} />}
+                  {isDailyError && (
+                    <Pressable onPress={() => refetchDailyContent()} hitSlop={10} accessibilityRole="button">
+                      <Text style={styles.sectionLink}>Recharger</Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+              {dailyGroups.length > 0 ? (
+                <DailyActionCards groups={dailyGroups} onOpenGroup={openDailyGroup} />
+              ) : isDailyError ? (
+                <Text style={styles.sectionMessage}>Impossible de charger les actions du jour.</Text>
+              ) : null}
             </View>
           )}
 
@@ -451,8 +488,24 @@ const styles = StyleSheet.create({
   section: {
     marginTop: isWeb ? 28 : Spacings.lg,
   },
-  sectionTitle: {
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: Spacings.sm,
+  },
+  sectionLink: {
+    fontSize: 13,
+    color: Colors.primary,
+    fontFamily: 'Poppins-Medium',
+  },
+  sectionMessage: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.gray,
+    fontFamily: 'Poppins-Regular',
+  },
+  sectionTitle: {
     fontSize: isWeb ? 18 : 17,
     lineHeight: isWeb ? 26 : 24,
     color: Colors.text,
