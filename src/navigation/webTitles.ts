@@ -40,6 +40,16 @@ const ROUTE_TITLES: Record<string, string> = {
   'expertise-availability': 'Disponibilités',
   'expertise-consultation': 'Consultation',
   'expertise-revenue': 'Revenus',
+  // Outils › SCAT6
+  'tools-scat6': 'SCAT6',
+  'scat6-patients-tab': 'SCAT6',
+  'scat6-patients': 'SCAT6 · Patients',
+  'scat6-patient': 'SCAT6 · Patient',
+  'scat6-exam': 'SCAT6 · Examen',
+  'scat6-report': 'SCAT6 · Rapport',
+  'scat6-exams-tab': 'SCAT6 · Examens',
+  'scat6-exams': 'SCAT6 · Examens',
+  'scat6-guide-tab': 'SCAT6 · Protocole',
 };
 
 const APP_NAME = 'OrthoMaster';

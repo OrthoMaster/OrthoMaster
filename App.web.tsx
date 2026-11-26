@@ -297,6 +297,23 @@ export default function App({ navigation }) {
         tools: {
           screens: {
             'tools-home': { path: 'tools', alias: ['open/tools'] },
+            // SCAT6 : les écrans se rechargent depuis les identifiants de l'URL.
+            'tools-scat6': {
+              path: 'tools/scat6',
+              screens: {
+                'scat6-patients-tab': {
+                  path: '',
+                  screens: {
+                    'scat6-patients': '',
+                    'scat6-patient': { path: 'patient/:patientId', parse: { patientId: Number } },
+                    'scat6-exam': { path: 'examen/:uuid?', parse: { patientId: Number } },
+                    'scat6-report': 'rapport/:uuid',
+                  },
+                },
+                'scat6-exams-tab': { path: 'examens', screens: { 'scat6-exams': '' } },
+                'scat6-guide-tab': 'protocole',
+              },
+            },
             'products-view': 'tools/products-view',
           }
         },

@@ -119,6 +119,8 @@ export const useFloatingTabBarInset = () => {
 type FloatingTabBarProps = BottomTabBarProps & {
   /** Premier bouton : ce n'est pas un onglet mais la sortie vers les formations. */
   onExit: () => void;
+  /** Libellé lu du bouton de sortie (espace SCAT6 : « Retour aux outils »). */
+  exitLabel?: string;
 };
 
 /**
@@ -128,7 +130,7 @@ type FloatingTabBarProps = BottomTabBarProps & {
  * Avec beaucoup d'onglets (expert : cinq), le libellé ne tient plus sur un téléphone :
  * les onglets se resserrent et l'actif garde sa pastille de couleur, sans libellé.
  */
-export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation, onExit }) => {
+export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation, onExit, exitLabel = 'Retour aux formations' }) => {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
 
@@ -153,7 +155,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
           onPress={onExit}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Retour aux formations"
+          accessibilityLabel={exitLabel}
         >
           <Ionicons name="arrow-back" size={ICON_SIZE} color={Colors.white} />
         </TouchableOpacity>

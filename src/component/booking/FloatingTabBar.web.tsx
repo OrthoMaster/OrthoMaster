@@ -61,9 +61,11 @@ export const useFloatingTabBarInset = () => FLOATING_TAB_BAR_HEIGHT + BAR_GAP * 
 type FloatingTabBarProps = BottomTabBarProps & {
   /** Premier bouton : ce n'est pas un onglet mais la sortie vers l'accueil Formations. */
   onExit: () => void;
+  /** Libellé lu du bouton de sortie (espace SCAT6 : « Retour aux outils »). */
+  exitLabel?: string;
 };
 
-export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation, onExit }) => {
+export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descriptors, navigation, onExit, exitLabel = 'Retour aux formations' }) => {
   const { width: windowWidth } = useWindowDimensions();
   const { panelOpen } = useChatDock();
 
@@ -90,7 +92,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({ state, descripto
             onExit();
           }}
           accessibilityRole="button"
-          accessibilityLabel="Retour aux formations"
+          accessibilityLabel={exitLabel}
         >
           <Ionicons name="arrow-back" size={ICON_SIZE} color={Colors.white} />
         </Pressable>

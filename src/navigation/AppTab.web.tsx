@@ -84,6 +84,11 @@ const Sidebar = () => {
         setActiveRoute('training');
         return;
       }
+      // Espace SCAT6 (Outils › SCAT6) : ses écrans « scat6-… » restent sous Outils.
+      if (isInside(navigationRef.current?.getRootState(), 'tools-scat6')) {
+        setActiveRoute('tools');
+        return;
+      }
 
       const route = navigationRef.current?.getCurrentRoute();
       if (route) {

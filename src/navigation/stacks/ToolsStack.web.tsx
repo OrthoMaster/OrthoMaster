@@ -9,6 +9,7 @@ import { ContentDisplayer } from '../../views/content/ContentDisplayer';
 import ReturnButtonIcon from '../components/ReturnButton';
 
 import { ChatbotView } from '../../views/chatbot/ChatbotView';
+import { Scat6Space } from './Scat6Space';
 
 const ToolsStackNav = createStackNavigator();
 
@@ -60,6 +61,13 @@ export const ToolsStack = ({ navigation, route }) => {
         name={'tools-que-choisir-final'}
         component={FinalQC}
         options={{ headerShown: false, title: 'Que choisir ?' }}
+      />
+
+      {/* SCAT6 : espace des médecins (comptes non étudiants), avec sa propre barre d'onglets. */}
+      <ToolsStackNav.Screen
+        name="tools-scat6"
+        component={Scat6Space}
+        options={{ headerShown: false, title: 'SCAT6' }}
       />
 
       <ToolsStackNav.Screen

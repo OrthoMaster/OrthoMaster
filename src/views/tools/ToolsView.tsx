@@ -5,6 +5,7 @@
  *  - Que Choisir ?          → menu de démarrage (tools-que-choisir)
  *  - Guide patient          → menu des guides
  *  - Assistance IA          → web uniquement, abonnés (chatbot-view)
+ *  - SCAT6                  → web uniquement, médecins = comptes non étudiants (tools-scat6)
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -23,6 +24,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
+import { Ionicons } from '@expo/vector-icons';
 
 import { QueChoisirMenu } from './components/QueChoisir/StartMenu/QueChoisirMenu';
 import { GuidePatientMenu } from './components/GuidePatient/GuidePatientMenu';
@@ -43,6 +45,8 @@ const CARD_COLORS = {
   queChoisir: { face: '#33C0B7', edge: '#249A92' },
   guidePatient: { face: '#FBB200', edge: '#D69500' },
   chatbot: { face: Colors.purple, edge: '#6F528F' },
+  // Bleu de l'en-tête Outils : même couleur que l'espace SCAT6.
+  scat6: { face: Colors.blue, edge: '#3B72B9' },
 };
 
 /** Hauteur de la tranche : la face s'enfonce d'autant quand on appuie (comme Formations). */
@@ -55,13 +59,16 @@ const ICON_SIZE = IS_WEB || isTablet ? 96 : 72;
 const ToolCard = ({
   title,
   icon,
+  iconElement,
   face,
   edge,
   onPress,
   style,
 }: {
   title: string;
-  icon: ImageSourcePropType;
+  icon?: ImageSourcePropType;
+  /** À la place d'une image (SCAT6 : icône vectorielle). */
+  iconElement?: React.ReactNode;
   face: string;
   edge: string;
   onPress: () => void;
@@ -84,7 +91,7 @@ const ToolCard = ({
     >
       <View style={[styles.cardEdge, { backgroundColor: edge }]}>
         <Animated.View style={[styles.cardFace, { backgroundColor: face, transform: [{ translateY }] }]}>
-          <Image source={icon} style={styles.icon} resizeMode="contain" />
+          {iconElement ?? <Image source={icon} style={styles.icon} resizeMode="contain" />}
           <Text style={styles.title} numberOfLines={2}>{title}</Text>
         </Animated.View>
       </View>
@@ -107,11 +114,20 @@ export const ToolsView = ({ navigation }) => {
     }, [])
   );
 
-  /* ---- Web : Assistance IA réservée aux abonnés ---- */
+  /* ---- Web : Assistance IA réservée aux abonnés, SCAT6 aux médecins (comptes non étudiants) ---- */
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [isDoctor, setIsDoctor] = useState(false);
   useEffect(() => {
     if (!IS_WEB) return;
-    me().then((user) => setHasSubscription(!!user?.has_subscription)).catch(() => setHasSubscription(false));
+    me()
+      .then((user) => {
+        setHasSubscription(!!user?.has_subscription);
+        setIsDoctor(!!user && user.student_flg !== true);
+      })
+      .catch(() => {
+        setHasSubscription(false);
+        setIsDoctor(false);
+      });
   }, []);
 
   /* ---- Web : deux cartes par ligne quand elles tiennent, comme Formations ---- */
@@ -162,6 +178,20 @@ export const ToolsView = ({ navigation }) => {
           onPress={() => setShowGuidePatientMenu(true)}
           style={cardStyle}
         />
+        {IS_WEB && isDoctor && (
+          <ToolCard
+            title="SCAT6"
+            iconElement={
+              <View style={styles.vectorIcon}>
+                <Ionicons name="pulse" size={ICON_SIZE * 0.6} color={Colors.white} />
+              </View>
+            }
+            face={CARD_COLORS.scat6.face}
+            edge={CARD_COLORS.scat6.edge}
+            onPress={() => navigation.navigate('tools-scat6')}
+            style={cardStyle}
+          />
+        )}
         {IS_WEB && hasSubscription && (
           <ToolCard
             title="Assistance IA"
@@ -259,6 +289,14 @@ const styles = StyleSheet.create({
   icon: {
     width: ICON_SIZE,
     height: ICON_SIZE,
+  },
+  vectorIcon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    borderRadius: ICON_SIZE / 2,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontFamily: 'Poppins-Bold',
