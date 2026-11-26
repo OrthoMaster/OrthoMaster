@@ -30,6 +30,7 @@ import { BalanceStep, TandemStep } from './StepsBalance';
 import { SKIPPABLE, applySkip, isStepAvailable, nextStep, previousStep, stepMissing } from './stepRules';
 import type { StepProps } from './stepTypes';
 import { ExamRecord, useScat6Exam } from './useScat6Exam';
+import { Scat6ScrollView } from '../components/Scat6ScrollView';
 
 /** Largeur de la colonne des étapes ; en dessous de STEPPER_FROM, une barre de progression la remplace. */
 const STEPPER_WIDTH = 280;
@@ -388,7 +389,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
               <View style={[styles.progressFill, { width: `${((position + 1) / SCAT6_STEPS.length) * 100}%` }]} />
             </View>
           )}
-          <ScrollView ref={scrollRef} contentContainerStyle={styles.mainContent}>
+          <Scat6ScrollView ref={scrollRef} contentContainerStyle={styles.mainContent}>
             <View style={styles.column}>
               <View style={styles.stepHead}>
                 <View style={styles.stepBadge}>
@@ -412,7 +413,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
                 <Step {...stepProps} />
               ) : null}
             </View>
-          </ScrollView>
+          </Scat6ScrollView>
 
           {/* ---- Barre d'actions ---- */}
           <View style={styles.footer}>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../../constants/Spacings';
@@ -10,6 +10,7 @@ import type { Scat6PatientDetail } from '../../../../services/v2/Scat6Service';
 import { Scat6Button, Scat6Card, Scat6Choice, Scat6Notice, Scat6SectionTitle } from '../components/Scat6UI';
 import { EXAM_ICON } from '../components/scat6Icons';
 import { SCAT, FONTS } from '../scat6Theme';
+import { Scat6ScrollView } from '../components/Scat6ScrollView';
 
 const DAY = 86_400_000;
 const DAYS_AGO = [0, 1, 2, 3, 5, 7];
@@ -53,7 +54,7 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
+    <Scat6ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.column}>
         <Scat6Notice>
           Au calme, après repos : 10 à 15 minutes. Sensibilité maximale dans les 72 h ; utilisable jusqu’à 7 jours après le choc.
@@ -143,7 +144,7 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
           <Scat6Button title="Commencer l’examen" icon="play" loading={starting} onPress={start} />
         </View>
       </View>
-    </ScrollView>
+    </Scat6ScrollView>
   );
 };
 

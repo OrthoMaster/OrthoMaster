@@ -30,6 +30,9 @@ export const SCAT = {
   danger: Colors.danger,
   dangerDark: '#B71C1C',
   dangerSoft: '#FDECEA',
+  /** « Non » des questions Oui / Non : une couleur à part du bleu du « Oui ». */
+  violet: '#7E68B5',
+  violetDark: '#5D4A93',
   /** Brouillon : orange de l'application. */
   draft: Colors.primary,
   draftSoft: Colors.primaryLightBackground,

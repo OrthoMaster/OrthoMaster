@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, StyleSheet } from 'react-native';
+import { View, Text, Pressable, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -12,6 +12,7 @@ import { SPORT_ICON } from './components/scat6Icons';
 import { SCAT6_PATIENTS_KEY, invalidateScat6 } from './scat6Queries';
 import { initials, relativeDay } from './scat6Format';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE } from './scat6Theme';
+import { Scat6ScrollView } from './components/Scat6ScrollView';
 
 /**
  * Accueil SCAT6 (web) : patients du médecin, activité la plus récente en tête.
@@ -51,7 +52,7 @@ export const Scat6PatientsView = ({ navigation }: { navigation: any }) => {
         right={<Scat6Button title="Nouveau patient" icon="person-add-outline" variant="light" small onPress={() => setCreating(true)} />}
       />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <Scat6ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.column}>
           {isLoading ? (
             <Scat6Loading />
@@ -115,7 +116,7 @@ export const Scat6PatientsView = ({ navigation }: { navigation: any }) => {
             </>
           )}
         </View>
-      </ScrollView>
+      </Scat6ScrollView>
 
       <Scat6PatientForm
         visible={creating}
@@ -287,14 +288,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1.5,
     borderColor: SCAT.line,
-    borderBottomWidth: 4,
-    borderBottomColor: SCAT.blueLine,
     padding: Spacings.md,
     gap: Spacings.sm,
   },
   cardHover: {
     borderColor: SCAT.blue,
-    borderBottomColor: SCAT.blueDark,
   },
   cardTop: {
     flexDirection: 'row',

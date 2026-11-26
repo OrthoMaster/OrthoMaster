@@ -164,7 +164,7 @@ interface ChoiceProps {
   selected: boolean;
   onPress: () => void;
   /** Couleur de la pastille choisie (bleu par défaut). */
-  tone?: 'blue' | 'danger' | 'success' | 'warning';
+  tone?: 'blue' | 'danger' | 'success' | 'warning' | 'violet';
   icon?: IconName;
   style?: StyleProp<ViewStyle>;
   /** Case à cocher (choix multiples) plutôt que bouton radio. */
@@ -176,15 +176,25 @@ const TONES = {
   danger: { bg: SCAT.danger, line: SCAT.dangerDark },
   success: { bg: SCAT.success, line: '#1F6B41' },
   warning: { bg: '#E59A12', line: SCAT.warning },
+  violet: { bg: SCAT.violet, line: SCAT.violetDark },
+};
+
+/** Contour et texte d'une pastille libre : teintés de sa couleur (Oui / Non se distinguent avant le choix). */
+const IDLE_TINT: Partial<Record<keyof typeof TONES, { line: string; text: string }>> = {
+  violet: { line: '#D3CBE8', text: SCAT.violetDark },
+  success: { line: '#B9DEC8', text: '#1F6B41' },
+  danger: { line: '#F4C2C0', text: SCAT.dangerDark },
 };
 
 /** Pastille de choix (bo 999) : contour quand libre, pleine quand choisie. */
 export const Scat6Choice: React.FC<ChoiceProps> = ({ label, selected, onPress, tone = 'blue', icon, style, checkbox }) => {
   const t = TONES[tone];
+  const idle = IDLE_TINT[tone];
   return (
     <Pressable
       style={({ hovered }: any) => [
         styles.choice,
+        !selected && idle ? { borderColor: idle.line } : null,
         selected ? { backgroundColor: t.bg, borderColor: t.line } : hovered && styles.choiceHover,
         style,
       ]}
@@ -198,7 +208,7 @@ export const Scat6Choice: React.FC<ChoiceProps> = ({ label, selected, onPress, t
       ) : icon ? (
         <Ionicons name={icon} size={16} color={selected ? SCAT.card : SCAT.blueDark} />
       ) : null}
-      <Text style={[styles.choiceText, selected && styles.choiceTextSelected]} numberOfLines={2}>
+      <Text style={[styles.choiceText, !selected && idle ? { color: idle.text } : null, selected && styles.choiceTextSelected]} numberOfLines={2}>
         {label}
       </Text>
     </Pressable>
@@ -345,7 +355,7 @@ export const Scat6YesNo = forwardRef<View, YesNoProps>(
         <Scat6Choice
           label={noLabel}
           selected={value === false}
-          tone={positive === 'yes' ? 'danger' : 'blue'}
+          tone={positive === 'yes' ? 'danger' : 'violet'}
           onPress={() => onChange(false)}
           style={styles.yesNoChoice}
         />
@@ -424,9 +434,8 @@ const styles = StyleSheet.create({
   },
 
   /* ---- Boutons ---- */
-  buttonWrap: {
-    minWidth: 0,
-  },
+  // Pas de minWidth: 0 : un bouton ne rétrécit jamais sous la largeur de son libellé.
+  buttonWrap: {},
   buttonDisabled: {
     opacity: 0.5,
   },

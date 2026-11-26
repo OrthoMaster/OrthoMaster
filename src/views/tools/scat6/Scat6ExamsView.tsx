@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 
@@ -12,6 +12,7 @@ import { EXAM_ICON } from './components/scat6Icons';
 import { SCAT6_EXAMS_KEY, openInPatients } from './scat6Queries';
 import { formatDate, relativeDay } from './scat6Format';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE } from './scat6Theme';
+import { Scat6ScrollView } from './components/Scat6ScrollView';
 
 type Filter = 'all' | 'post_choc' | 'retest' | 'baseline';
 
@@ -33,7 +34,7 @@ export const Scat6ExamsView = ({ navigation }: { navigation: any }) => {
   return (
     <View style={styles.page}>
       <Scat6Header title="Examens" subtitle="Brouillons à reprendre et examens signés" />
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <Scat6ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.column}>
           {isLoading ? (
             <Scat6Loading />
@@ -89,7 +90,7 @@ export const Scat6ExamsView = ({ navigation }: { navigation: any }) => {
             </>
           )}
         </View>
-      </ScrollView>
+      </Scat6ScrollView>
     </View>
   );
 };

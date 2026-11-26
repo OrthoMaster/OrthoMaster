@@ -179,9 +179,9 @@ export const ConcentrationStep: React.FC<StepProps> = ({ exam, data, showMissing
             </Text>
             <Text style={styles.seriesDigits}>{series}</Text>
             <Text style={styles.seriesExpected}>Réponse attendue : {series?.split('-').reverse().join('-')}</Text>
-            <View style={styles.row}>
-              <Scat6Button title="Réussi" icon="checkmark" onPress={() => mark(true)} style={styles.flex} />
-              <Scat6Button title="Échoué" icon="close" variant="secondary" onPress={() => mark(false)} style={styles.flex} />
+            <View style={styles.markRow}>
+              <Scat6Button title="Réussi" icon="checkmark" onPress={() => mark(true)} style={styles.markButton} />
+              <Scat6Button title="Échoué" icon="close" variant="secondary" onPress={() => mark(false)} style={styles.markButton} />
             </View>
           </View>
         )}
@@ -313,6 +313,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacings.xs,
+  },
+  markRow: {
+    flexDirection: 'row',
+    gap: Spacings.sm,
+  },
+  markButton: {
+    minWidth: 160,
   },
   alignStart: {
     alignSelf: 'flex-start',

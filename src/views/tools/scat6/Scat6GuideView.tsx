@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../constants/Spacings';
 import { DISCLAIMER } from '../../../scat6/core/content';
 import { Scat6Card, Scat6Header, Scat6Notice, Scat6SectionTitle } from './components/Scat6UI';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE } from './scat6Theme';
+import { Scat6ScrollView } from './components/Scat6ScrollView';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -38,7 +39,7 @@ const RULES: { icon: IconName; text: string }[] = [
 export const Scat6GuideView = () => (
   <View style={styles.page}>
     <Scat6Header title="Protocole SCAT6" subtitle="Sport Concussion Assessment Tool, 6e édition (CISG 2023)" />
-    <ScrollView contentContainerStyle={styles.scroll}>
+    <Scat6ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.column}>
         <View style={styles.grid}>
           <Scat6Card style={styles.cell}>
@@ -75,7 +76,7 @@ export const Scat6GuideView = () => (
         <Scat6Notice>{DISCLAIMER}</Scat6Notice>
         <Text style={styles.copyright}>SCAT6 © Concussion in Sport Group 2023 · version française.</Text>
       </View>
-    </ScrollView>
+    </Scat6ScrollView>
   </View>
 );
 
@@ -151,8 +152,6 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: SCAT.blue,
-    borderBottomWidth: 3,
-    borderBottomColor: SCAT.blueDark,
     alignItems: 'center',
     justifyContent: 'center',
   },

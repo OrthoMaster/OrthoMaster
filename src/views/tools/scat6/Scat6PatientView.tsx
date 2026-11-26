@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -26,6 +26,7 @@ import { EXAM_ICON } from './components/scat6Icons';
 import { invalidateScat6, scat6PatientKey } from './scat6Queries';
 import { formatDate, formatDateTime, relativeDay } from './scat6Format';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE } from './scat6Theme';
+import { Scat6ScrollView } from './components/Scat6ScrollView';
 
 /**
  * Fiche patient (web) : commencer un examen, reprendre un brouillon, historique des examens signés.
@@ -97,7 +98,7 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
         right={<Scat6Button title="Modifier" icon="create-outline" variant="light" small onPress={() => setEditing(true)} />}
       />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <Scat6ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.column}>
           {tooYoung && (
             <Scat6Notice tone="danger">
@@ -204,7 +205,7 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
             </View>
           )}
         </View>
-      </ScrollView>
+      </Scat6ScrollView>
 
       <Scat6PatientForm
         visible={editing}

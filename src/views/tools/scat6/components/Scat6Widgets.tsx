@@ -88,7 +88,7 @@ export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, targ
       <View style={styles.watchDisplay}>
         <Ionicons name="stopwatch-outline" size={compact ? 22 : 28} color={running ? SCAT.blue : SCAT.faint} />
         <Text style={[styles.watchTime, compact && styles.watchTimeCompact, counting && { color: SCAT.blue }]}>
-          {counting ? `${countdown}…` : `${elapsed.toFixed(1)} s`}
+          {counting ? String(countdown) : `${elapsed.toFixed(1)} s`}
           {target && !counting ? <Text style={styles.watchTarget}> / {target} s</Text> : null}
         </Text>
       </View>
@@ -194,7 +194,17 @@ export const Scat6SeverityRow = React.forwardRef<
   View,
   { label: string; value: number | null; onChange: (v: number) => void; missing?: boolean; index: number }
 >(({ label, value, onChange, missing, index }, ref) => (
-  <View ref={ref} style={[styles.sevRow, index % 2 === 1 && styles.sevRowAlt, missing && styles.sevRowMissing]}>
+  // Survol : toute la ligne ressort, pour suivre la ligne en cours avec la souris.
+  <Pressable
+    ref={ref as any}
+    focusable={false}
+    style={({ hovered }: any) => [
+      styles.sevRow,
+      index % 2 === 1 && styles.sevRowAlt,
+      missing && styles.sevRowMissing,
+      hovered && styles.sevRowHover,
+    ]}
+  >
     <Text style={styles.sevLabel}>{label}</Text>
     <View style={styles.sevBoxes}>
       {[0, 1, 2, 3, 4, 5, 6].map((n) => {
@@ -217,7 +227,7 @@ export const Scat6SeverityRow = React.forwardRef<
         );
       })}
     </View>
-  </View>
+  </Pressable>
 ));
 
 const styles = StyleSheet.create({
@@ -371,6 +381,16 @@ const styles = StyleSheet.create({
   },
   sevRowAlt: {
     backgroundColor: '#F8FAFD',
+  },
+  sevRowHover: {
+    backgroundColor: SCAT.card,
+    borderColor: SCAT.blueLine,
+    shadowColor: '#12203A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    transform: [{ scale: 1.01 }],
+    zIndex: 1,
   },
   sevRowMissing: {
     borderColor: SCAT.draft,

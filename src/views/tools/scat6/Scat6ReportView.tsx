@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 
@@ -23,7 +23,8 @@ import { Scat6CompareTable, Scat6Consignes } from './components/Scat6Results';
 import { Scat6Button, Scat6Card, Scat6Empty, Scat6Header, Scat6Loading, Scat6Notice, Scat6SectionTitle } from './components/Scat6UI';
 import { scat6ExamKey } from './scat6Queries';
 import { formatDate, formatDateTime, formatTime } from './scat6Format';
-import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE } from './scat6Theme';
+import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE, WEB_SIDEBAR_WIDTH } from './scat6Theme';
+import { Scat6ScrollView } from './components/Scat6ScrollView';
 
 /**
  * Rapport d'un examen signé (web) : décision, comparaison avec la baseline, détail des tests,
@@ -32,6 +33,9 @@ import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE } from './scat6Theme';
 export const Scat6ReportView = ({ navigation, route }: { navigation: any; route: any }) => {
   const uuid: string = route.params?.uuid;
   const [downloading, setDownloading] = useState(false);
+  const { width } = useWindowDimensions();
+  // Deux colonnes dès que chacune garde ~420 px (barre latérale de 200 px et marges déduites).
+  const twoColumns = width - WEB_SIDEBAR_WIDTH - Spacings.lg * 2 >= 420 * 2 + Spacings.md;
 
   const { data: a, isLoading, refetch } = useQuery({
     queryKey: scat6ExamKey(uuid),
@@ -95,6 +99,88 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
         ? { tone: SCAT.warning, soft: SCAT.warningSoft, icon: 'time' as const, title: 'Diagnostic différé', text: 'En cas de doute : re-tester le lendemain ou avant 72 h.' }
         : { tone: SCAT.blue, soft: SCAT.blueSoft, icon: 'checkmark-circle' as const, title: 'Commotion cérébrale : Non', text: 'Selon le jugement clinique du médecin.' };
 
+  // Cartes de détail 1 → 4 (étapes du SCAT6).
+  const details = [
+    <Scat6Card key="background" style={styles.cell}>
+      <Scat6SectionTitle title="1 · Renseignements" />
+      {BACKGROUND.map((i) => (
+        <Line key={i.code} label={i.label} value={yesNo(answer(i.code))} strong={answer(i.code)?.value === true} />
+      ))}
+      {data.background_notes ? <Text style={styles.note}>{data.background_notes}</Text> : null}
+    </Scat6Card>,
+    <Scat6Card key="symptoms" style={styles.cell}>
+      <Scat6SectionTitle
+        title={`2 · Symptômes ${isBaseline ? '(habituellement)' : '(maintenant)'}`}
+        hint={summary.symptom_count === null ? null : `${summary.symptom_count}/22 · sévérité ${summary.symptom_severity}/132`}
+      />
+      {SYMPTOMS.filter((s) => Number(answer(s.code)?.value ?? 0) > 0).map((s) => (
+        <Line key={s.code} label={s.label} value={String(answer(s.code)?.value)} strong />
+      ))}
+      {summary.symptom_count === 0 && <Text style={styles.muted}>Aucun symptôme.</Text>}
+      {!isBaseline && (
+        <>
+          <Line label="Aggravés par l’activité physique" value={yesNo(answer('S.phys'))} />
+          <Line label="Aggravés par l’activité mentale" value={yesNo(answer('S.ment'))} />
+          <Line label="Se sent normal à" value={data.percent_normal === null ? '—' : `${data.percent_normal} %`} />
+        </>
+      )}
+    </Scat6Card>,
+    <Scat6Card key="cognitive" style={styles.cell}>
+      <Scat6SectionTitle title="3 · Cognitif" hint={summary.cognitive_total === null ? null : `Total ${summary.cognitive_total}/50`} />
+      {ORIENTATION.map((i) => (
+        <Line
+          key={i.code}
+          label={i.label}
+          value={answer(i.code)?.value === true ? 'Correct' : answer(i.code)?.value === false ? 'Incorrect' : '—'}
+          strong={answer(i.code)?.value === false}
+        />
+      ))}
+      <Line
+        label={`Mémoire immédiate (liste ${t.memory.list})`}
+        value={t.memory.endedAt ? `${t.memory.trials.map((tr) => tr.length).join(' + ')} = ${summary.immediate}/30` : '—'}
+      />
+      {t.memory.endedAt ? <Text style={styles.muted}>Fin du 3e essai à {formatTime(t.memory.endedAt)}</Text> : null}
+      <Line label={`Chiffres à l’envers (liste ${t.digits.list})`} value={digitsBackward(t.digits.results) === null ? '—' : `${digitsBackward(t.digits.results)}/4`} />
+      <Line
+        label="Mois à l’envers"
+        value={t.months.done ? `${t.months.seconds} s · ${t.months.errors ?? 0} erreur(s) → ${monthsBackward(t.months)}/1` : '—'}
+      />
+      <Line label="Mémoire différée" value={summary.delayed === null ? '—' : `${summary.delayed}/10`} />
+    </Scat6Card>,
+    <Scat6Card key="balance" style={styles.cell}>
+      <Scat6SectionTitle
+        title="4 · Équilibre"
+        hint={t.mbess.foot ? `Pied testé : ${t.mbess.foot === 'gauche' ? 'gauche' : 'droit'}` : null}
+      />
+      {MBESS_STANCES.map((s, i) => (
+        <Line
+          key={s.key}
+          label={s.label}
+          value={`${t.mbess.firm[i] ?? '—'}${t.mbess.foam ? ` · mousse ${t.mbess.foam[i] ?? '—'}` : ''}`}
+        />
+      ))}
+      <Line label="mBESS sol ferme" value={summary.mbess === null ? '—' : `${summary.mbess}/30`} strong />
+      <Line
+        label="Marche en tandem"
+        value={
+          t.tandem.done
+            ? t.tandem.trials.map((v) => (v === null ? '—' : v < 0 ? 'échec' : `${v} s`)).join(' · ')
+            : t.mbess.normal === false
+              ? 'non réalisée (équilibre non normal)'
+              : '—'
+        }
+      />
+      {t.tandem.done && tandemGait(t.tandem.trials) ? (
+        <Text style={styles.muted}>
+          Meilleur {tandemGait(t.tandem.trials)!.best} s · moyenne {tandemGait(t.tandem.trials)!.mean} s
+        </Text>
+      ) : null}
+      {t.tandem.dualBest !== null ? (
+        <Line label="Double tâche" value={`${t.tandem.dualBest} s · ${t.tandem.dualErrors ?? 0} erreur(s)`} />
+      ) : null}
+    </Scat6Card>,
+  ];
+
   return (
     <View style={styles.page}>
       <Scat6Header
@@ -104,7 +190,7 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
         right={<Scat6Button title="Télécharger le PDF" icon="download-outline" variant="light" small loading={downloading} onPress={download} />}
       />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <Scat6ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.column}>
           {/* ---- Décision ---- */}
           <View style={[styles.banner, { backgroundColor: banner.soft, borderColor: banner.tone }]}>
@@ -145,89 +231,24 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
           </Scat6Card>
 
           {/* ---- Détail ---- */}
-          <View style={styles.grid}>
-            <Scat6Card style={styles.cell}>
-              <Scat6SectionTitle title="1 · Renseignements" />
-              {BACKGROUND.map((i) => (
-                <Line key={i.code} label={i.label} value={yesNo(answer(i.code))} strong={answer(i.code)?.value === true} />
-              ))}
-              {data.background_notes ? <Text style={styles.note}>{data.background_notes}</Text> : null}
-            </Scat6Card>
-
-            <Scat6Card style={styles.cell}>
-              <Scat6SectionTitle
-                title={`2 · Symptômes ${isBaseline ? '(habituellement)' : '(maintenant)'}`}
-                hint={summary.symptom_count === null ? null : `${summary.symptom_count}/22 · sévérité ${summary.symptom_severity}/132`}
-              />
-              {SYMPTOMS.filter((s) => Number(answer(s.code)?.value ?? 0) > 0).map((s) => (
-                <Line key={s.code} label={s.label} value={String(answer(s.code)?.value)} strong />
-              ))}
-              {summary.symptom_count === 0 && <Text style={styles.muted}>Aucun symptôme.</Text>}
-              {!isBaseline && (
-                <>
-                  <Line label="Aggravés par l’activité physique" value={yesNo(answer('S.phys'))} />
-                  <Line label="Aggravés par l’activité mentale" value={yesNo(answer('S.ment'))} />
-                  <Line label="Se sent normal à" value={data.percent_normal === null ? '—' : `${data.percent_normal} %`} />
-                </>
-              )}
-            </Scat6Card>
-
-            <Scat6Card style={styles.cell}>
-              <Scat6SectionTitle title="3 · Cognitif" hint={summary.cognitive_total === null ? null : `Total ${summary.cognitive_total}/50`} />
-              {ORIENTATION.map((i) => (
-                <Line
-                  key={i.code}
-                  label={i.label}
-                  value={answer(i.code)?.value === true ? 'Correct' : answer(i.code)?.value === false ? 'Incorrect' : '—'}
-                  strong={answer(i.code)?.value === false}
-                />
-              ))}
-              <Line
-                label={`Mémoire immédiate (liste ${t.memory.list})`}
-                value={t.memory.endedAt ? `${t.memory.trials.map((tr) => tr.length).join(' + ')} = ${summary.immediate}/30` : '—'}
-              />
-              {t.memory.endedAt ? <Text style={styles.muted}>Fin du 3e essai à {formatTime(t.memory.endedAt)}</Text> : null}
-              <Line label={`Chiffres à l’envers (liste ${t.digits.list})`} value={digitsBackward(t.digits.results) === null ? '—' : `${digitsBackward(t.digits.results)}/4`} />
-              <Line
-                label="Mois à l’envers"
-                value={t.months.done ? `${t.months.seconds} s · ${t.months.errors ?? 0} erreur(s) → ${monthsBackward(t.months)}/1` : '—'}
-              />
-              <Line label="Mémoire différée" value={summary.delayed === null ? '—' : `${summary.delayed}/10`} />
-            </Scat6Card>
-
-            <Scat6Card style={styles.cell}>
-              <Scat6SectionTitle
-                title="4 · Équilibre"
-                hint={t.mbess.foot ? `Pied testé : ${t.mbess.foot === 'gauche' ? 'gauche' : 'droit'}` : null}
-              />
-              {MBESS_STANCES.map((s, i) => (
-                <Line
-                  key={s.key}
-                  label={s.label}
-                  value={`${t.mbess.firm[i] ?? '—'}${t.mbess.foam ? ` · mousse ${t.mbess.foam[i] ?? '—'}` : ''}`}
-                />
-              ))}
-              <Line label="mBESS sol ferme" value={summary.mbess === null ? '—' : `${summary.mbess}/30`} strong />
-              <Line
-                label="Marche en tandem"
-                value={
-                  t.tandem.done
-                    ? t.tandem.trials.map((v) => (v === null ? '—' : v < 0 ? 'échec' : `${v} s`)).join(' · ')
-                    : t.mbess.normal === false
-                      ? 'non réalisée (équilibre non normal)'
-                      : '—'
-                }
-              />
-              {t.tandem.done && tandemGait(t.tandem.trials) ? (
-                <Text style={styles.muted}>
-                  Meilleur {tandemGait(t.tandem.trials)!.best} s · moyenne {tandemGait(t.tandem.trials)!.mean} s
-                </Text>
-              ) : null}
-              {t.tandem.dualBest !== null ? (
-                <Line label="Double tâche" value={`${t.tandem.dualBest} s · ${t.tandem.dualErrors ?? 0} erreur(s)`} />
-              ) : null}
-            </Scat6Card>
-          </View>
+          {/*
+            Deux colonnes indépendantes (et non des lignes) : une carte courte ne laisse pas de vide
+            sous elle en attendant la carte voisine, plus longue. Gauche : 1 et 3 ; droite : 2 et 4.
+          */}
+          {twoColumns ? (
+            <View style={styles.grid}>
+              <View style={styles.gridColumn}>
+                {details[0]}
+                {details[2]}
+              </View>
+              <View style={styles.gridColumn}>
+                {details[1]}
+                {details[3]}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.gridColumn}>{details}</View>
+          )}
 
           {showConsignes && (
             <>
@@ -250,7 +271,7 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
             />
           </View>
         </View>
-      </ScrollView>
+      </Scat6ScrollView>
     </View>
   );
 };
@@ -346,13 +367,15 @@ const styles = StyleSheet.create({
   /* ---- Détail ---- */
   grid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: Spacings.md,
     alignItems: 'flex-start',
   },
+  gridColumn: {
+    flex: 1,
+    gap: Spacings.md,
+    minWidth: 0,
+  },
   cell: {
-    flexGrow: 1,
-    flexBasis: 420,
     gap: 6,
   },
   line: {

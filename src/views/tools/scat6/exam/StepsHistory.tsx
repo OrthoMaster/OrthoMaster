@@ -219,30 +219,29 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacings.sm,
   },
+  // Tuile d'information (pas un bouton) : plate.
   tile: {
     flexGrow: 1,
     flexBasis: 180,
-    backgroundColor: SCAT.blue,
+    backgroundColor: SCAT.blueSoft,
     borderRadius: 14,
-    borderBottomWidth: 4,
-    borderBottomColor: SCAT.blueDark,
+    borderWidth: 1,
+    borderColor: SCAT.blueLine,
     paddingVertical: Spacings.sm,
     paddingHorizontal: Spacings.md,
   },
   tileMuted: {
     backgroundColor: SCAT.card,
-    borderWidth: 1,
     borderColor: SCAT.line,
-    borderBottomColor: SCAT.line,
   },
   tileLabel: {
     fontFamily: FONTS.regular,
     fontSize: 13,
-    color: 'rgba(255,255,255,0.9)',
+    color: SCAT.blueDark,
   },
   tileValue: {
     fontFamily: FONTS.title,
     fontSize: 26,
-    color: SCAT.card,
+    color: SCAT.blueInk,
   },
 });
