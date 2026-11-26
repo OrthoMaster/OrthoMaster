@@ -193,42 +193,41 @@ export const Scat6WordGrid: React.FC<{
 export const Scat6SeverityRow = React.forwardRef<
   View,
   { label: string; value: number | null; onChange: (v: number) => void; missing?: boolean; index: number }
->(({ label, value, onChange, missing, index }, ref) => (
-  // Survol : toute la ligne ressort, pour suivre la ligne en cours avec la souris.
-  <Pressable
-    ref={ref as any}
-    focusable={false}
-    style={({ hovered }: any) => [
-      styles.sevRow,
-      index % 2 === 1 && styles.sevRowAlt,
-      missing && styles.sevRowMissing,
-      hovered && styles.sevRowHover,
-    ]}
-  >
-    <Text style={styles.sevLabel}>{label}</Text>
-    <View style={styles.sevBoxes}>
-      {[0, 1, 2, 3, 4, 5, 6].map((n) => {
-        const on = value === n;
-        return (
-          <Pressable
-            key={n}
-            onPress={() => onChange(n)}
-            style={({ hovered }: any) => [
-              styles.sevBox,
-              on && { backgroundColor: SEVERITY_COLORS[n], borderColor: n === 0 ? SCAT.blueDark : SEVERITY_COLORS[n] },
-              !on && hovered && styles.sevBoxHover,
-            ]}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={`${label} : ${n} — ${SEVERITY_WORDS[n]}`}
-          >
-            <Text style={[styles.sevBoxText, on && { color: SEVERITY_TEXT[n], fontFamily: FONTS.title }]}>{n}</Text>
-          </Pressable>
-        );
-      })}
+>(({ label, value, onChange, missing, index }, ref) => {
+  // Survol suivi par pointerenter / pointerleave : contrairement au « hovered » d'un Pressable,
+  // il reste actif quand la souris passe sur les cases (enfants) et pendant le clic.
+  const [hovered, setHovered] = useState(false);
+  return (
+    <View
+      ref={ref}
+      {...({ onPointerEnter: () => setHovered(true), onPointerLeave: () => setHovered(false) } as any)}
+      style={[styles.sevRow, index % 2 === 1 && styles.sevRowAlt, missing && styles.sevRowMissing, hovered && styles.sevRowHover]}
+    >
+      <Text style={styles.sevLabel}>{label}</Text>
+      <View style={styles.sevBoxes}>
+        {[0, 1, 2, 3, 4, 5, 6].map((n) => {
+          const on = value === n;
+          return (
+            <Pressable
+              key={n}
+              onPress={() => onChange(n)}
+              style={({ hovered: boxHovered }: any) => [
+                styles.sevBox,
+                on && { backgroundColor: SEVERITY_COLORS[n], borderColor: n === 0 ? SCAT.blueDark : SEVERITY_COLORS[n] },
+                !on && boxHovered && styles.sevBoxHover,
+              ]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={`${label} : ${n} — ${SEVERITY_WORDS[n]}`}
+            >
+              <Text style={[styles.sevBoxText, on && { color: SEVERITY_TEXT[n], fontFamily: FONTS.title }]}>{n}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
-  </Pressable>
-));
+  );
+});
 
 const styles = StyleSheet.create({
   flex: {
