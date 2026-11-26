@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../../constants/Spacings';
@@ -12,6 +12,10 @@ import { ScoreTile } from './StepsHistory';
 import type { StepProps } from './stepTypes';
 
 /* ===================== 4 · ÉQUILIBRE (mBESS) ===================== */
+
+/** Animation des 3 positions (générée, voir assets/scat6/mbess.gif). Rapport largeur / hauteur 720 × 400. */
+const MBESS_DEMO = require('../../../../../assets/scat6/mbess.gif');
+const DEMO_WIDTH = 460;
 
 /**
  * 3 positions × 20 s, yeux fermés, mains sur les hanches, pieds nus. 1 point par erreur (10 au plus
@@ -67,14 +71,30 @@ export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, targ
           }
         />
         <Text style={styles.help}>Yeux fermés, mains sur les hanches, pieds nus, sans strapping. 20 secondes par position.</Text>
-        <View style={styles.errors}>
-          <Text style={styles.errorsTitle}>Erreurs (1 point chacune) :</Text>
-          {MBESS_ERRORS.map((e) => (
-            <View key={e} style={styles.errorItem}>
-              <Ionicons name="remove-circle-outline" size={14} color={SCAT.blueDark} />
-              <Text style={styles.help}>{e}</Text>
-            </View>
-          ))}
+      </Scat6Card>
+
+      {/* Démonstration animée des 3 positions et erreurs à compter. */}
+      <Scat6Card>
+        <Scat6SectionTitle title="Comment réaliser le test" />
+        <View style={styles.demo}>
+          <View style={styles.demoFrame}>
+            <Image
+              source={MBESS_DEMO}
+              style={styles.demoImage}
+              resizeMode="contain"
+              accessibilityLabel="Animation : deux pieds joints, tandem, un pied ; yeux fermés, mains sur les hanches"
+            />
+          </View>
+          <View style={styles.errors}>
+            <Text style={styles.errorsTitle}>Erreurs (1 point chacune)</Text>
+            {MBESS_ERRORS.map((e) => (
+              <View key={e} style={styles.errorItem}>
+                <Ionicons name="close-circle" size={18} color={SCAT.danger} />
+                <Text style={styles.errorText}>{e}</Text>
+              </View>
+            ))}
+            <Text style={styles.help}>10 erreurs au plus par position ; position non tenue 5 s → 10.</Text>
+          </View>
         </View>
       </Scat6Card>
 
@@ -212,22 +232,43 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: SCAT.muted,
   },
-  errors: {
+  demo: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    columnGap: Spacings.md,
-    rowGap: 4,
+    gap: Spacings.lg,
+  },
+  // Taille fixe au rapport 720 × 400 : une largeur souple laisse des bandes vides sur le web.
+  demoFrame: {
+    width: DEMO_WIDTH,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: SCAT.line,
+    overflow: 'hidden',
+  },
+  demoImage: {
+    width: DEMO_WIDTH,
+    height: (DEMO_WIDTH * 400) / 720,
+  },
+  errors: {
+    flexGrow: 1,
+    flexBasis: 260,
+    gap: Spacings.xs,
   },
   errorsTitle: {
-    fontFamily: FONTS.medium,
-    fontSize: 13,
-    color: SCAT.text,
+    fontFamily: FONTS.title,
+    fontSize: 15,
+    color: SCAT.blueInk,
   },
   errorItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: Spacings.xs,
+  },
+  errorText: {
+    fontFamily: FONTS.body,
+    fontSize: 15,
+    color: SCAT.text,
   },
 
   /* ---- Positions ---- */

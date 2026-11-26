@@ -206,7 +206,7 @@ export const Scat6Choice: React.FC<ChoiceProps> = ({ label, selected, onPress, t
       {checkbox ? (
         <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={18} color={selected ? SCAT.card : SCAT.faint} />
       ) : icon ? (
-        <Ionicons name={icon} size={16} color={selected ? SCAT.card : SCAT.blueDark} />
+        <Ionicons name={icon} size={18} color={selected ? SCAT.card : idle?.text ?? SCAT.blueDark} />
       ) : null}
       <Text style={[styles.choiceText, !selected && idle ? { color: idle.text } : null, selected && styles.choiceTextSelected]} numberOfLines={2}>
         {label}
@@ -348,6 +348,7 @@ export const Scat6YesNo = forwardRef<View, YesNoProps>(
         <Scat6Choice
           label={yesLabel}
           selected={value === true}
+          icon={positive === 'yes' ? 'checkmark-circle' : undefined}
           tone={positive === 'yes' ? 'success' : 'blue'}
           onPress={() => onChange(true)}
           style={styles.yesNoChoice}
@@ -355,6 +356,7 @@ export const Scat6YesNo = forwardRef<View, YesNoProps>(
         <Scat6Choice
           label={noLabel}
           selected={value === false}
+          icon={positive === 'yes' ? 'close-circle' : undefined}
           tone={positive === 'yes' ? 'danger' : 'violet'}
           onPress={() => onChange(false)}
           style={styles.yesNoChoice}
