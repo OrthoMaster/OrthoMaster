@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Spacings from '../../../../../constants/Spacings';
 import { EXAM_KINDS, sportLabel } from '../../../../scat6/core/content';
 import { formatInjury, injuryDay, injuryFromDay, injuryFromDelay, recentInjuries, sinceInjuryLabel, timeKnown } from '../../../../scat6/core/injury';
+import { formatTime } from '../scat6Format';
 import { suggestList, suggestScoat6 } from '../../../../scat6/core/rules';
 import type { ExamKind, ListId } from '../../../../scat6/core/types';
 import type { Scat6PatientDetail } from '../../../../services/v2/Scat6Service';
@@ -62,33 +63,34 @@ interface Props {
  */
 export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, error, onStart }) => {
   const [kind, setKind] = useState<ExamKind>(initialKind ?? (patient.has_baseline ? 'post_choc' : 'baseline'));
-  const [daysAgo, setDaysAgo] = useState<number | null>(0);
-  const [otherDate, setOtherDate] = useState<string>('');
+  const [now] = useState(() => Date.now());
+  // Chocs récents du patient (< 7 jours). Un choc = un jour : choisir son jour rattache l'examen à ce choc.
+  const recent = useMemo(() => recentInjuries(patient.assessments, now), [patient.assessments, now]);
+  // Jour proposé : celui du dernier choc récent (re-test, H+12…), sinon aujourd'hui.
+  const lastDaysAgo = recent[0] ? calendarDaysAgo(new Date(recent[0].injuryAt).getTime(), now) : 0;
+  const [daysAgo, setDaysAgo] = useState<number | null>(DAYS_AGO.includes(lastDaysAgo) ? lastDaysAgo : null);
+  const [otherDate, setOtherDate] = useState<string>(
+    recent[0] && !DAYS_AGO.includes(lastDaysAgo) ? injuryDay(recent[0].injuryAt) : ''
+  );
   // Facultatif : nombre d'heures depuis le choc (0 = à l'instant, 1 à 24 h), en plus du jour.
   const [hours, setHours] = useState<number | null>(null);
   const [tried, setTried] = useState(false);
-  const [now] = useState(() => Date.now());
-
-  // Chocs récents du patient (< 7 jours) : un nouvel examen peut s'y rattacher (H+3, H+12, J+2…).
-  const recent = useMemo(() => recentInjuries(patient.assessments, now), [patient.assessments, now]);
-  const [choc, setChoc] = useState<string | 'new'>(recent[0]?.injuryAt ?? 'new');
 
   // Liste de mots : différente de la dernière utilisée pour ce patient (changeable à l'étape Mémoire).
   const list: ListId = suggestList(patient.assessments[0]?.word_list ?? null);
 
   const needsInjury = kind !== 'baseline';
+  const day = otherDate || (daysAgo === null ? null : localDay(new Date(now - daysAgo * DAY)));
+  // Choc déjà enregistré ce jour-là : l'examen s'y rattache (jamais deux chocs le même jour).
+  const known = day ? recent.find((g) => injuryDay(g.injuryAt) === day) ?? null : null;
+  const knownTime = !!known && timeKnown(known.injuryAt);
   const injuryAt = useMemo(() => {
-    if (!needsInjury) return null;
-    if (choc !== 'new') return choc;
-    // Heures connues : choc = maintenant − heures (le jour suit). Sinon le jour seulement (heure inconnue).
+    if (!needsInjury || !day) return null;
+    // Heure du choc déjà connue : on la garde. Sinon, heures saisies : choc = maintenant − heures.
+    if (known && (knownTime || hours === null)) return known.injuryAt;
     if (hours !== null && !otherDate) return injuryFromDelay(hours, now);
-    const day = otherDate || (daysAgo === null ? null : localDay(new Date(now - daysAgo * DAY)));
-    if (!day) return null;
-    // Un choc est déjà connu ce jour-là : c'est le même (un choc = un jour), on reprend son heure.
-    return recent.find((g) => injuryDay(g.injuryAt) === day)?.injuryAt ?? injuryFromDay(day);
-  }, [needsInjury, choc, hours, otherDate, daysAgo, now, recent]);
-  // « Nouveau choc » sur un jour qui a déjà un choc : rattaché à ce choc (pas de second choc le même jour).
-  const sameDayChoc = choc === 'new' && injuryAt ? recent.find((g) => injuryDay(g.injuryAt) === injuryDay(injuryAt)) ?? null : null;
+    return injuryFromDay(day);
+  }, [needsInjury, day, known, knownTime, hours, otherDate, now]);
   /** Jour choisi : les heures saisies restent si elles tombent sur ce jour, sinon effacées. */
   const pickDay = (d: number) => {
     setDaysAgo(d);
@@ -136,75 +138,53 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
 
         {needsInjury && (
           <Scat6Card highlight={tried && !injuryAt}>
-            <Scat6SectionTitle
-              title="Choc"
-              hint={recent.length ? 'Plusieurs examens peuvent suivre le même choc (H+3, H+12, J+2…).' : null}
-            />
-
-            {/* Chocs récents du patient : rattacher l'examen au même choc. */}
-            {recent.length > 0 && (
-              <View style={styles.row}>
-                {recent.map((g) => (
-                  <Scat6Choice
-                    key={g.injuryAt}
-                    icon="flash-outline"
-                    label={`Choc du ${formatInjury(g.injuryAt)} · ${sinceInjuryLabel(g.injuryAt, now)} · ${g.count} examen${g.count > 1 ? 's' : ''}`}
-                    selected={choc === g.injuryAt}
-                    onPress={() => setChoc(g.injuryAt)}
-                  />
-                ))}
-                <Scat6Choice icon="add" label="Nouveau choc" selected={choc === 'new'} onPress={() => setChoc('new')} />
+            <Scat6SectionTitle title="Date du choc" />
+            <View style={styles.row}>
+              {DAYS_AGO.map((d) => (
+                <Scat6Choice
+                  key={d}
+                  label={d === 0 ? 'Aujourd’hui' : d === 1 ? 'Hier' : `Il y a ${d} jours`}
+                  selected={!otherDate && daysAgo === d}
+                  onPress={() => pickDay(d)}
+                />
+              ))}
+            </View>
+            {Platform.OS === 'web' && (
+              <View style={styles.otherDate}>
+                <Ionicons name="calendar-outline" size={18} color={SCAT.blueDark} />
+                <Text style={styles.otherLabel}>Autre date :</Text>
+                {webInput('date', otherDate, (v) => {
+                  setOtherDate(v);
+                  setHours(null);
+                }, { max: today })}
               </View>
             )}
 
-            {choc === 'new' && (
-              <>
-                {recent.length > 0 && <Text style={styles.subLabel}>Jour du nouveau choc</Text>}
-                <View style={styles.row}>
-                  {DAYS_AGO.map((d) => (
-                    <Scat6Choice
-                      key={d}
-                      label={d === 0 ? 'Aujourd’hui' : d === 1 ? 'Hier' : `Il y a ${d} jours`}
-                      selected={!otherDate && daysAgo === d}
-                      onPress={() => pickDay(d)}
-                    />
-                  ))}
-                </View>
-                {Platform.OS === 'web' && (
-                  <View style={styles.otherDate}>
-                    <Ionicons name="calendar-outline" size={18} color={SCAT.blueDark} />
-                    <Text style={styles.otherLabel}>Autre date :</Text>
-                    {webInput('date', otherDate, (v) => {
-                      setOtherDate(v);
-                      setHours(null);
-                    }, { max: today })}
-                  </View>
-                )}
-
-                {/* Facultatif, choc d'aujourd'hui ou d'hier : depuis combien d'heures (sert à H+…). */}
-                {!otherDate && (daysAgo === 0 || daysAgo === 1) && (
-                  <View style={styles.hoursRow}>
-                    <Text style={styles.subLabel}>Heures après le choc (facultatif)</Text>
-                    <Scat6Choice label="À l’instant" selected={hours === 0} onPress={() => pickHours(hours === 0 ? null : 0)} />
-                    <Scat6Counter
-                      label=""
-                      unit="h"
-                      min={1}
-                      max={24}
-                      value={hours !== null && hours >= 1 ? hours : null}
-                      onChange={pickHours}
-                    />
-                    {hours !== null && <Scat6Link title="Effacer" onPress={() => pickHours(null)} />}
-                  </View>
-                )}
-              </>
+            {/* Même jour qu'un choc déjà examiné : c'est ce choc (H+ calculé depuis son heure). */}
+            {known && (
+              <Text style={styles.knownText}>
+                Choc déjà enregistré ce jour-là{knownTime ? ` à ${formatTime(known.injuryAt)}` : ''} ({known.count} examen
+                {known.count > 1 ? 's' : ''}) : cet examen s’y rattache.
+              </Text>
             )}
 
-            {sameDayChoc && (
-              <Scat6Notice>
-                Un choc est déjà enregistré ce jour-là ({formatInjury(sameDayChoc.injuryAt)}) : l’examen y sera rattaché.
-              </Scat6Notice>
+            {/* Facultatif, choc d'aujourd'hui ou d'hier dont l'heure n'est pas connue : depuis combien d'heures. */}
+            {!otherDate && (daysAgo === 0 || daysAgo === 1) && !knownTime && (
+              <View style={styles.hoursRow}>
+                <Text style={styles.subLabel}>Heures après le choc (facultatif)</Text>
+                <Scat6Choice label="À l’instant" selected={hours === 0} onPress={() => pickHours(hours === 0 ? null : 0)} />
+                <Scat6Counter
+                  label=""
+                  unit="h"
+                  min={1}
+                  max={24}
+                  value={hours !== null && hours >= 1 ? hours : null}
+                  onChange={pickHours}
+                />
+                {hours !== null && <Scat6Link title="Effacer" onPress={() => pickHours(null)} />}
+              </View>
             )}
+
             {injuryAt && (
               <Text style={styles.when}>
                 Examen à <Text style={styles.whenStrong}>{sinceInjuryLabel(injuryAt, now)}</Text> du choc ({formatInjury(injuryAt)}
@@ -280,6 +260,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.sm,
     paddingTop: Spacings.xs,
+  },
+  knownText: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: SCAT.blueDark,
   },
   subLabel: {
     fontFamily: FONTS.medium,
