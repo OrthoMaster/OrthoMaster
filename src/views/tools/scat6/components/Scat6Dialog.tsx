@@ -50,9 +50,15 @@ export const scat6Confirm = (
 
 export const Scat6DialogHost: React.FC = () => {
   const [dialog, setDialog] = useState<DialogOptions | null>(null);
+  // Chaque boîte est un nouveau Modal : sur le web, le portail d'un Modal est ajouté à la page à son
+  // montage. Monté à l'ouverture, il passe au-dessus des fenêtres déjà ouvertes (ex. « Modifier le patient »).
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
-    hostShow = setDialog;
+    hostShow = (options) => {
+      setCount((c) => c + 1);
+      setDialog(options);
+    };
     return () => {
       hostShow = null;
     };
@@ -67,8 +73,10 @@ export const Scat6DialogHost: React.FC = () => {
     setTimeout(() => button?.onPress?.(), 0);
   };
 
+  if (!dialog) return null;
+
   return (
-    <Modal visible={!!dialog} transparent animationType="fade" onRequestClose={() => press(cancel)}>
+    <Modal key={count} visible transparent animationType="fade" onRequestClose={() => press(cancel)}>
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={() => press(cancel)} accessibilityLabel="Fermer" />
         {dialog ? (
