@@ -1,81 +1,82 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, LayoutChangeEvent } from 'react-native';
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import Spacings from '../../../../../constants/Spacings';
-import { formatInjury, injuriesWithExams, sinceInjuryLabel } from '../../../../scat6/core/injury';
+import { episodeIndex, sinceInjuryLabel } from '../../../../scat6/core/injury';
 import { COMPARE_DOMAINS, formatScore } from '../../../../scat6/core/scoring';
 import type { Scat6Summary } from '../../../../scat6/core/types';
 import type { Scat6AssessmentRow } from '../../../../services/v2/Scat6Service';
 import { SCAT, FONTS } from '../scat6Theme';
-import { Scat6Choice, Scat6SectionTitle } from './Scat6UI';
+import { Scat6SectionTitle } from './Scat6UI';
 
 /** Domaines suivis dans les graphiques (un graphique par domaine : jamais deux échelles). */
 const DOMAINS: (keyof Scat6Summary)[] = ['symptom_count', 'symptom_severity', 'cognitive_total', 'mbess'];
+/** Au-delà, les étiquettes se chevauchent : on montre les derniers examens. */
+const MAX_POINTS = 8;
 
-const CHART_H = 120;
-const PAD = { top: 22, right: 20, bottom: 22, left: 30 };
+const CHART_H = 140;
+const PAD = { top: 22, right: 22, bottom: 34, left: 38 };
 
 interface Point {
+  /** 1re ligne sous le point : « H+5 », « Baseline »… */
   label: string;
+  /** 2e ligne : date courte. */
+  date: string;
   value: number | null;
+  baseline: boolean;
+  /** Relié au point précédent ? Non au début d'un nouveau choc (« Après un choc » qui ne suit pas un autre). */
+  connect: boolean;
 }
 
+const shortDate = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '';
+
 /**
- * Évolution des scores pour un choc : un petit graphique par domaine (symptômes, sévérité, cognitif,
- * mBESS), un point par examen signé (H+5, H+12, J+2…), la baseline en pointillés. Aucun seuil :
- * le graphique montre seulement les valeurs. Les chiffres détaillés restent dans l'historique.
+ * Évolution des scores : tous les examens signés du patient (baselines comprises), du plus ancien au
+ * plus récent, un petit graphique par domaine. Le trait relie les examens à la suite, sauf au début d'un
+ * nouveau choc (« Après un choc » qui suit une baseline ou un re-test) : là, il s'interrompt.
+ * Baseline = carré, examen après un choc / re-test = rond. Aucun seuil : seulement les valeurs.
  */
 export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = ({ assessments }) => {
-  const injuries = useMemo(() => injuriesWithExams(assessments), [assessments]);
-  const [selected, setSelected] = useState<string | null>(null);
   // 4 graphiques sur une ligne si la place le permet, sinon 2 × 2 (jamais 3 + 1).
   const [gridWidth, setGridWidth] = useState(0);
   const perRow = gridWidth >= 4 * 300 + 3 * Spacings.md ? 4 : gridWidth >= 2 * 250 + Spacings.md ? 2 : 1;
   const chartWidth = gridWidth ? (gridWidth - (perRow - 1) * Spacings.md) / perRow : undefined;
-  const group = injuries.find((g) => g.exams[0].uuid === selected) ?? injuries[0];
-  if (!group) return null;
 
-  // Baseline signée la plus récente avant le choc.
-  const baseline =
-    assessments
-      .filter(
-        (a) =>
-          a.exam_kind === 'baseline' &&
-          a.status === 'completed' &&
-          new Date(a.completed_at ?? 0).getTime() <= new Date(group.injuryAt ?? group.exams[0].started_at ?? 0).getTime() + 86_400_000
-      )
-      .sort((a, b) => new Date(b.completed_at ?? 0).getTime() - new Date(a.completed_at ?? 0).getTime())[0] ?? null;
+  const { exams, episodes, total } = useMemo(() => {
+    const done = assessments
+      .filter((a) => a.status === 'completed')
+      .sort((a, b) => new Date(a.started_at ?? a.completed_at ?? 0).getTime() - new Date(b.started_at ?? b.completed_at ?? 0).getTime());
+    return { exams: done.slice(-MAX_POINTS), episodes: episodeIndex(done), total: done.length };
+  }, [assessments]);
+
+  // Rien à suivre tant qu'il n'y a pas au moins deux examens signés.
+  if (exams.length < 2) return null;
+
+  const pointsFor = (key: keyof Scat6Summary): Point[] =>
+    exams.map((e, i) => {
+      const prev = exams[i - 1];
+      const episode = episodes.get(e.uuid);
+      const at = e.started_at ?? e.completed_at;
+      return {
+        label: e.exam_kind === 'baseline' ? 'Baseline' : episode?.injuryAt ? sinceInjuryLabel(episode.injuryAt, at ?? Date.now()) : '—',
+        date: shortDate(at),
+        value: e.summary ? e.summary[key] : null,
+        baseline: e.exam_kind === 'baseline',
+        connect: !!prev && !(e.exam_kind === 'post_choc' && prev.exam_kind !== 'post_choc'),
+      };
+    });
 
   return (
     <View style={styles.wrap}>
       <Scat6SectionTitle
         title="Évolution"
-        hint={`Choc du ${formatInjury(group.injuryAt ?? group.exams[0].started_at)} · ${group.exams.length} examen${group.exams.length > 1 ? 's' : ''} signé${
-          group.exams.length > 1 ? 's' : ''
-        }${baseline ? ' · pointillés : baseline' : ''}`}
+        hint={`${total > MAX_POINTS ? `${MAX_POINTS} derniers examens signés` : 'Examens signés'} · carré : baseline · le trait s’interrompt à chaque nouveau choc`}
       />
-      {injuries.length > 1 && (
-        <View style={styles.row}>
-          {injuries.map((g) => (
-            <Scat6Choice
-              key={g.exams[0].uuid}
-              icon="flash-outline"
-              label={`Choc du ${formatInjury(g.injuryAt ?? g.exams[0].started_at)}`}
-              selected={g === group}
-              onPress={() => setSelected(g.exams[0].uuid)}
-            />
-          ))}
-        </View>
-      )}
       <View style={styles.grid} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
         {DOMAINS.map((key) => {
           const domain = COMPARE_DOMAINS.find((d) => d.key === key)!;
-          const points: Point[] = group.exams.map((e) => ({
-            // H+ depuis la date du choc (la même pour tous ses examens).
-            label: sinceInjuryLabel(group.injuryAt ?? e.started_at ?? '', e.started_at ?? e.completed_at ?? Date.now()),
-            value: e.summary ? e.summary[key] : null,
-          }));
           return (
             <MiniChart
               key={key}
@@ -83,8 +84,7 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
               title={domain.label}
               max={domain.max ?? 1}
               higherIsWorse={domain.higherIsWorse}
-              points={points}
-              baseline={baseline?.summary ? baseline.summary[key] : null}
+              points={pointsFor(key)}
             />
           );
         })}
@@ -99,14 +99,12 @@ const MiniChart: React.FC<{
   max: number;
   higherIsWorse: boolean;
   points: Point[];
-  baseline: number | null;
-}> = ({ width: cardWidth, title, max, higherIsWorse, points, baseline }) => {
+}> = ({ width: cardWidth, title, max, higherIsWorse, points }) => {
   const [width, setWidth] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   const known = points.map((p, i) => ({ ...p, i })).filter((p): p is Point & { i: number; value: number } => p.value !== null);
-  const first = known[0];
   const last = known[known.length - 1];
 
   const plotW = Math.max(0, width - PAD.left - PAD.right);
@@ -114,21 +112,24 @@ const MiniChart: React.FC<{
   const x = (i: number) => PAD.left + (points.length === 1 ? plotW / 2 : (i * plotW) / (points.length - 1));
   const y = (v: number) => PAD.top + plotH - (Math.min(v, max) / max) * plotH;
 
-  // Trait continu entre les examens réalisés (un examen « non réalisé » n'est pas relié à zéro).
-  const path = known.map((p, k) => `${k === 0 ? 'M' : 'L'}${x(p.i)},${y(p.value)}`).join(' ');
+  // Segments : relie deux examens réalisés consécutifs, sauf si un nouveau choc commence entre eux.
+  let path = '';
+  for (let k = 0; k < known.length; k++) {
+    const p = known[k];
+    const prev = known[k - 1];
+    const linked = !!prev && points.slice(prev.i + 1, p.i + 1).every((q) => q.connect);
+    path += `${linked ? 'L' : 'M'}${x(p.i)},${y(p.value)} `;
+  }
+
   const shown = hover ?? last?.i ?? null;
-  // Zone de survol : la moitié de l'écart entre deux points, 28 px au plus.
   const half = Math.min(28, (points.length > 1 ? plotW / (points.length - 1) : plotW) / 2);
+  const anchor = (i: number) => (points.length > 1 && i === 0 ? 'start' : points.length > 1 && i === points.length - 1 ? 'end' : 'middle');
 
   return (
     <View style={[styles.chart, cardWidth ? { width: cardWidth, flexGrow: 0, flexBasis: 'auto' } : null]}>
       <Text style={styles.chartTitle}>{title}</Text>
       <Text style={styles.chartSub}>
-        {first && last && first.i !== last.i
-          ? `${formatScore(first.value)} → ${formatScore(last.value)} (${first.label} → ${last.label})`
-          : last
-            ? `${formatScore(last.value)} (${last.label})`
-            : 'non réalisé'}
+        {last ? `Dernier : ${formatScore(last.value)} (${last.label}, ${last.date})` : 'non réalisé'}
         {` · ${higherIsWorse ? 'plus bas' : 'plus haut'} = mieux`}
       </Text>
       <View onLayout={onLayout} style={{ height: CHART_H }}>
@@ -143,29 +144,25 @@ const MiniChart: React.FC<{
             <SvgText x={PAD.left - 6} y={y(max) + 4} fontSize={11} fill={SCAT.muted} textAnchor="end" fontFamily="Roboto">
               {max}
             </SvgText>
-            {baseline !== null && (
-              <Line
-                x1={PAD.left}
-                x2={width - PAD.right}
-                y1={y(baseline)}
-                y2={y(baseline)}
-                stroke={SCAT.muted}
-                strokeWidth={1.5}
-                strokeDasharray="5 4"
-              />
-            )}
-            {known.length > 1 && <Path d={path} stroke={SCAT.blue} strokeWidth={2} fill="none" strokeLinejoin="round" />}
-            {known.map((p) => (
-              <Circle
-                key={p.i}
-                cx={x(p.i)}
-                cy={y(p.value)}
-                r={p.i === shown ? 6 : 4.5}
-                fill={SCAT.blue}
-                stroke={SCAT.card}
-                strokeWidth={2}
-              />
-            ))}
+            {path && <Path d={path} stroke={SCAT.blue} strokeWidth={2} fill="none" strokeLinejoin="round" />}
+            {known.map((p) => {
+              const r = p.i === shown ? 6 : 4.5;
+              return p.baseline ? (
+                <Rect
+                  key={p.i}
+                  x={x(p.i) - r}
+                  y={y(p.value) - r}
+                  width={2 * r}
+                  height={2 * r}
+                  rx={1.5}
+                  fill={SCAT.card}
+                  stroke={SCAT.blueDark}
+                  strokeWidth={2}
+                />
+              ) : (
+                <Circle key={p.i} cx={x(p.i)} cy={y(p.value)} r={r} fill={SCAT.blue} stroke={SCAT.card} strokeWidth={2} />
+              );
+            })}
             {/* Valeur du point survolé (sinon le dernier) : une seule étiquette. */}
             {shown !== null && points[shown]?.value !== null && (
               <SvgText
@@ -175,24 +172,21 @@ const MiniChart: React.FC<{
                 fontSize={12}
                 fontWeight="bold"
                 fill={SCAT.text}
-                textAnchor={shown === 0 && points.length > 1 ? 'start' : shown === points.length - 1 && points.length > 1 ? 'end' : 'middle'}
+                textAnchor={anchor(shown)}
                 fontFamily="Roboto"
               >
                 {formatScore(points[shown].value)}
               </SvgText>
             )}
             {points.map((p, i) => (
-              <SvgText
-                key={i}
-                x={x(i)}
-                y={CHART_H - 6}
-                fontSize={11}
-                fill={i === shown ? SCAT.text : SCAT.muted}
-                textAnchor={points.length > 1 && i === 0 ? 'start' : points.length > 1 && i === points.length - 1 ? 'end' : 'middle'}
-                fontFamily="Roboto"
-              >
-                {p.label}
-              </SvgText>
+              <React.Fragment key={i}>
+                <SvgText x={x(i)} y={CHART_H - 18} fontSize={11} fill={i === shown ? SCAT.text : SCAT.muted} textAnchor={anchor(i)} fontFamily="Roboto">
+                  {p.label}
+                </SvgText>
+                <SvgText x={x(i)} y={CHART_H - 5} fontSize={10} fill={SCAT.faint} textAnchor={anchor(i)} fontFamily="Roboto">
+                  {p.date}
+                </SvgText>
+              </React.Fragment>
             ))}
           </Svg>
         )}
@@ -203,11 +197,8 @@ const MiniChart: React.FC<{
               key={i}
               {...({ onHoverIn: () => setHover(i), onHoverOut: () => setHover(null) } as any)}
               onPress={() => setHover(hover === i ? null : i)}
-              accessibilityLabel={`${title}, ${p.label} : ${p.value === null ? 'non réalisé' : formatScore(p.value)}`}
-              style={[
-                styles.hit,
-                { left: x(i) - half, width: 2 * half },
-              ]}
+              accessibilityLabel={`${title}, ${p.label} ${p.date} : ${p.value === null ? 'non réalisé' : formatScore(p.value)}`}
+              style={[styles.hit, { left: x(i) - half, width: 2 * half }]}
             />
           ))}
       </View>
@@ -218,11 +209,6 @@ const MiniChart: React.FC<{
 const styles = StyleSheet.create({
   wrap: {
     gap: Spacings.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacings.xs,
   },
   grid: {
     flexDirection: 'row',

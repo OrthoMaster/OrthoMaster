@@ -300,6 +300,12 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
                     <Text style={styles.chocText}>Choc du {formatInjury(episodes.get(a.uuid)!.injuryAt ?? a.started_at)}</Text>
                   </View>
                 ) : null}
+                {/* Une baseline n'appartient à aucun choc : ligne neutre, pour ne pas la ranger sous le choc du dessus. */}
+                {!episodes.get(a.uuid) && i > 0 && episodes.get(done[i - 1].uuid) ? (
+                  <View style={[styles.tr, styles.noChocRow]}>
+                    <Text style={styles.noChocText}>Hors choc</Text>
+                  </View>
+                ) : null}
                 <Pressable
                   style={({ hovered }: any) => [styles.tr, i % 2 === 1 && styles.trAlt, hovered && styles.trHover]}
                   onPress={() => navigation.navigate('scat6-report', { uuid: a.uuid })}
@@ -409,6 +415,15 @@ const styles = StyleSheet.create({
     gap: Spacings.xs,
     alignItems: 'center',
     backgroundColor: SCAT.blueSoft,
+  },
+  noChocRow: {
+    backgroundColor: '#F3F5F8',
+    paddingVertical: 6,
+  },
+  noChocText: {
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+    color: SCAT.muted,
   },
   chocText: {
     fontFamily: FONTS.title,
