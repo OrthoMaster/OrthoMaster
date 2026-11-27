@@ -5,7 +5,7 @@ import Spacings from '../../../../../constants/Spacings';
 import { BACKGROUND, INSTRUCTIONS, ORIENTATION, SEVERITY_WORDS, SYMPTOMS } from '../../../../scat6/core/content';
 import { symptomScore } from '../../../../scat6/core/scoring';
 import { Scat6Card, Scat6Field, Scat6Instruction, Scat6Notice, Scat6YesNo } from '../components/Scat6UI';
-import { Scat6SeverityRow } from '../components/Scat6Widgets';
+import { Scat6PercentScale, Scat6SeverityRow } from '../components/Scat6Widgets';
 import { SCAT, FONTS, SEVERITY_COLORS, SEVERITY_TEXT } from '../scat6Theme';
 import type { StepProps } from './stepTypes';
 
@@ -102,17 +102,12 @@ export const SymptomsStep: React.FC<StepProps> = (props) => {
             value={valueOf(props, 'S.ment') as boolean | null}
             onChange={(v) => exam.answer('S.ment', v)}
           />
-          <Scat6Field
+          <Scat6PercentScale
             label="Si 100 % correspond à « parfaitement normal », à combien de % vous sentez-vous ?"
-            placeholder="0 – 100"
-            keyboardType="number-pad"
-            maxLength={3}
-            style={styles.percent}
-            value={data.percent_normal === null ? '' : String(data.percent_normal)}
-            onChangeText={(v) => {
-              const digits = v.replace(/\D/g, '');
-              exam.updateData((d) => ({ ...d, percent_normal: digits === '' ? null : Math.min(100, Number(digits)) }));
-            }}
+            value={data.percent_normal}
+            minLabel="0 % · pas du tout normal"
+            maxLabel="100 % · parfaitement normal"
+            onChange={(percent_normal) => exam.updateData((d) => ({ ...d, percent_normal }))}
           />
         </Scat6Card>
       )}
@@ -210,9 +205,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: 12,
     color: SCAT.muted,
-  },
-  percent: {
-    maxWidth: 160,
   },
   scoreRow: {
     flexDirection: 'row',

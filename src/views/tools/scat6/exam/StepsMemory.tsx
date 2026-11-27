@@ -44,8 +44,9 @@ export const MemoryStep: React.FC<StepProps> = ({ exam, data, showMissing, targe
     exam.patchTests({ memory: { ...mem, trials } });
   };
 
-  const changeList = async (list: ListId) => {
-    if (list === mem.list) return;
+  // Autre liste, dans l'ordre A → B → C → A. La liste en cours n'est pas affichée (rapport seulement).
+  const changeList = async () => {
+    const list = LIST_IDS[(LIST_IDS.indexOf(mem.list) + 1) % LIST_IDS.length];
     if (total > 0 && !(await scat6Confirm('Changer de liste ?', 'Les essais déjà saisis seront effacés.', 'Changer', true))) return;
     // La mémoire différée porte sur la même liste : elle repart aussi de zéro.
     exam.patchTests({
@@ -54,19 +55,14 @@ export const MemoryStep: React.FC<StepProps> = ({ exam, data, showMissing, targe
     });
   };
 
+
   return (
     <>
       <Scat6Card>
         <Scat6SectionTitle
           title="Liste de mots"
-          hint="Proposée différente de la précédente ; les listes A, B et C sont équivalentes."
-          right={
-            <View style={styles.row}>
-              {LIST_IDS.map((id) => (
-                <Scat6Choice key={id} label={`Liste ${id}`} selected={mem.list === id} onPress={() => changeList(id)} />
-              ))}
-            </View>
-          }
+          hint="Choisie différente de celle du dernier examen du patient. Les listes sont équivalentes."
+          right={<Scat6Button title="Changer de liste" icon="swap-horizontal" variant="secondary" small onPress={changeList} />}
         />
         {mem.endedAt ? (
           <Scat6Notice tone="success">
@@ -293,7 +289,7 @@ export const DelayedRecallStep: React.FC<StepProps> = ({ exam, data, target, now
         <>
           <Scat6Instruction text={INSTRUCTIONS.delayed} />
           <Scat6Card>
-            <Scat6SectionTitle title={`Liste ${memory.list} — mots rappelés`} hint="Aucun mot rappelé est un résultat valable (0/10)." />
+            <Scat6SectionTitle title="Mots rappelés" hint="Aucun mot rappelé est un résultat valable (0/10)." />
             <Scat6WordGrid words={WORD_LISTS[memory.list]} selected={delayed.recalled} onToggle={toggle} />
           </Scat6Card>
           <View style={styles.row}>

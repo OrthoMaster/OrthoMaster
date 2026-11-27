@@ -229,9 +229,120 @@ export const Scat6SeverityRow = React.forwardRef<
   );
 });
 
+/* ===================== POURCENTAGE ===================== */
+
+const PERCENT_STEPS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+/**
+ * « À combien de % vous sentez-vous normal ? » : 11 cases de 10 %, comme une réglette.
+ * Les cases jusqu'à la valeur choisie sont remplies ; libellés aux deux bouts, valeur affichée.
+ */
+export const Scat6PercentScale: React.FC<{
+  label: string;
+  value: number | null;
+  onChange: (v: number | null) => void;
+  minLabel: string;
+  maxLabel: string;
+}> = ({ label, value, onChange, minLabel, maxLabel }) => (
+  <View style={styles.pct}>
+    <View style={styles.pctHead}>
+      <Text style={[styles.flex, styles.pctLabel]}>{label}</Text>
+      <Text style={[styles.pctValue, value === null && { color: SCAT.faint }]}>{value === null ? '— %' : `${value} %`}</Text>
+    </View>
+    <View style={styles.pctBar} accessibilityRole="radiogroup" accessibilityLabel={label}>
+      {PERCENT_STEPS.map((n) => {
+        const filled = value !== null && n <= value;
+        const on = value === n;
+        return (
+          <Pressable
+            key={n}
+            onPress={() => onChange(on ? null : n)}
+            style={({ hovered }: any) => [
+              styles.pctBox,
+              filled && styles.pctBoxFilled,
+              on && styles.pctBoxOn,
+              !filled && hovered && styles.sevBoxHover,
+            ]}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={`${n} %`}
+          >
+            <Text style={[styles.pctBoxText, filled && { color: SCAT.card }, on && { fontFamily: FONTS.title }]}>{n}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+    <View style={styles.pctEnds}>
+      <Text style={styles.pctEnd}>{minLabel}</Text>
+      <Text style={[styles.pctEnd, { textAlign: 'right' }]}>{maxLabel}</Text>
+    </View>
+  </View>
+);
+
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+
+  /* ---- Pourcentage ---- */
+  pct: {
+    gap: Spacings.xs,
+  },
+  pctHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.sm,
+  },
+  pctLabel: {
+    fontFamily: FONTS.medium,
+    fontSize: 15,
+    color: SCAT.text,
+  },
+  pctValue: {
+    fontFamily: FONTS.title,
+    fontSize: 26,
+    color: SCAT.blueInk,
+    minWidth: 90,
+    textAlign: 'right',
+    fontVariant: ['tabular-nums'],
+  },
+  pctBar: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  pctBox: {
+    flex: 1,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: SCAT.blueLine,
+    backgroundColor: SCAT.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pctBoxFilled: {
+    backgroundColor: SCAT.blue,
+    borderColor: SCAT.blue,
+  },
+  pctBoxOn: {
+    backgroundColor: SCAT.blueDark,
+    borderColor: SCAT.blueInk,
+  },
+  pctBoxText: {
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+    color: SCAT.blueDark,
+  },
+  pctEnds: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: Spacings.md,
+  },
+  pctEnd: {
+    flex: 1,
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: SCAT.muted,
   },
 
   /* ---- Chronomètre ---- */

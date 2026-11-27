@@ -156,7 +156,7 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
         <Line
           key={s.key}
           label={s.label}
-          value={`${t.mbess.firm[i] ?? '—'}${t.mbess.foam ? ` · mousse ${t.mbess.foam[i] ?? '—'}` : ''}`}
+          value={`${t.mbess.firm[i] ?? '—'}${t.mbess.foam ? ` · sol instable ${t.mbess.foam[i] ?? '—'}` : ''}`}
         />
       ))}
       <Line label="mBESS sol ferme" value={summary.mbess === null ? '—' : `${summary.mbess}/30`} strong />

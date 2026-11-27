@@ -154,7 +154,7 @@ const ROWS: Omit<CompareRow, 'current' | 'baseline' | 'delta'>[] = [
   { key: 'delayed', label: 'Mémoire différée', max: 10, higherIsWorse: false },
   { key: 'cognitive_total', label: 'Total cognitif', max: 50, higherIsWorse: false },
   { key: 'mbess', label: 'mBESS sol ferme (erreurs)', max: 30, higherIsWorse: true },
-  { key: 'mbess_foam', label: 'mBESS mousse (erreurs)', max: 30, higherIsWorse: true },
+  { key: 'mbess_foam', label: 'mBESS sol instable (erreurs)', max: 30, higherIsWorse: true },
   { key: 'tandem_best', label: 'Tandem (meilleur temps)', unit: 's', higherIsWorse: true },
   { key: 'dual_best', label: 'Double tâche (meilleur temps)', unit: 's', higherIsWorse: true },
 ];

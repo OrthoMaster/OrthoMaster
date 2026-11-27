@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../../constants/Spacings';
-import { EXAM_KINDS, LIST_IDS, sportLabel } from '../../../../scat6/core/content';
+import { EXAM_KINDS, sportLabel } from '../../../../scat6/core/content';
 import { suggestList, suggestScoat6 } from '../../../../scat6/core/rules';
 import type { ExamKind, ListId } from '../../../../scat6/core/types';
 import type { Scat6PatientDetail } from '../../../../services/v2/Scat6Service';
@@ -24,7 +24,7 @@ interface Props {
 }
 
 /**
- * Démarrage d'un examen : type, date du choc (sauf baseline), liste de mots.
+ * Démarrage d'un examen : type, date du choc (sauf baseline). La liste de mots est choisie automatiquement.
  * Le patient est déjà identifié (âge vérifié en amont, comparaison avec sa baseline).
  */
 export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, error, onStart }) => {
@@ -34,9 +34,8 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
   const [tried, setTried] = useState(false);
   const [now] = useState(() => Date.now());
 
-  // Liste proposée : différente de la dernière utilisée pour ce patient.
-  const lastList = patient.assessments[0]?.word_list ?? null;
-  const [list, setList] = useState<ListId>(suggestList(lastList));
+  // Liste de mots : différente de la dernière utilisée pour ce patient (changeable à l'étape Mémoire).
+  const list: ListId = suggestList(patient.assessments[0]?.word_list ?? null);
 
   const needsInjury = kind !== 'baseline';
   const injuryAt = useMemo(() => {
@@ -121,19 +120,6 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
           </Scat6Card>
         )}
 
-        <Scat6Card>
-          <Scat6SectionTitle
-            title="Liste de mots"
-            hint={lastList ? `Dernière utilisée pour ce patient : ${lastList}. Elle peut encore être changée à l’étape Mémoire.` : 'Elle peut encore être changée à l’étape Mémoire.'}
-            right={
-              <View style={styles.row}>
-                {LIST_IDS.map((id) => (
-                  <Scat6Choice key={id} label={`Liste ${id}`} selected={list === id} onPress={() => setList(id)} />
-                ))}
-              </View>
-            }
-          />
-        </Scat6Card>
 
         {error ? <Scat6Notice tone="danger">{error}</Scat6Notice> : null}
 

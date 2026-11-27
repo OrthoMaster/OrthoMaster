@@ -6,7 +6,7 @@ import * as Crypto from 'expo-crypto';
 
 import Spacings from '../../../../../constants/Spacings';
 import { useGetUser } from '../../../../hooks/auth.hook';
-import { SKIP_REASONS, STEP_INFO, examLabel, sportLabel } from '../../../../scat6/core/content';
+import { MBESS_INFO, SKIP_REASONS, STEP_GROUPS, STEP_INFO, examLabel, sportLabel } from '../../../../scat6/core/content';
 import { delayedRecallRemainingMs } from '../../../../scat6/core/rules';
 import { EMPTY_DATA, formatScore, summarize } from '../../../../scat6/core/scoring';
 import { SCAT6_STEPS, Scat6Step, SkippablePart } from '../../../../scat6/core/types';
@@ -294,6 +294,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
   const data = record.data;
   const step = record.step;
   const info = STEP_INFO[step];
+  const group = STEP_GROUPS.find((g) => g.steps.includes(step));
   const missing = stepMissing(step, data, now);
   const summary = summarize(data);
   const skippable = (SKIPPABLE as string[]).includes(step);
@@ -308,7 +309,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
     <View style={styles.page}>
       <Scat6Header
         title={`SCAT6 · ${patient?.name ?? ''}`}
-        subtitle={`${examLabel(record.exam_kind)} · liste ${data.tests.memory.list}${
+        subtitle={`${examLabel(record.exam_kind)}${
           record.injury_at ? ` · choc du ${new Date(record.injury_at).toLocaleDateString('fr-FR')}` : ''
         }`}
         onBack={exit}
@@ -319,53 +320,108 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
       <View style={styles.body}>
         {showStepper && (
           <ScrollView style={styles.stepper} contentContainerStyle={styles.stepperContent}>
-            {order.map((s) => {
-              const available = isStepAvailable(s, data);
-              const current = s === step;
-              const skipped = !!data.skipped[s as SkippablePart];
-              const complete = !skipped && s !== 'decision' && stepMissing(s, data, now) === null && SCAT6_STEPS.indexOf(s) < position;
-              const locked = s === 'memoire-differee' && remaining !== null && remaining > 0;
-              return (
-                <Pressable
-                  key={s}
-                  disabled={!available}
-                  onPress={() => goTo(s)}
-                  style={({ hovered }: any) => [styles.stepItem, current && styles.stepItemCurrent, hovered && !current && available && styles.stepItemHover]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: current, disabled: !available }}
-                >
-                  <View
-                    style={[
-                      styles.stepDot,
-                      current && styles.stepDotCurrent,
-                      complete && styles.stepDotDone,
-                      skipped && styles.stepDotSkipped,
-                      !available && styles.stepDotOff,
-                    ]}
-                  >
-                    {complete ? (
-                      <Ionicons name="checkmark" size={16} color={SCAT.card} />
-                    ) : skipped || !available ? (
-                      <Ionicons name="remove" size={16} color={SCAT.card} />
-                    ) : (
-                      <Text style={[styles.stepNum, current && { color: SCAT.card }]}>{STEP_INFO[s].number}</Text>
-                    )}
-                  </View>
-                  <View style={styles.flex}>
-                    <Text style={[styles.stepTitle, current && styles.stepTitleCurrent, !available && styles.stepTitleOff]}>
-                      {STEP_INFO[s].title}
+            {STEP_GROUPS.map((group) => {
+              const steps = group.steps.filter((x) => order.includes(x));
+              const status = (x: Scat6Step) => {
+                const available = isStepAvailable(x, data);
+                const skipped = !!data.skipped[x as SkippablePart];
+                return {
+                  available,
+                  skipped,
+                  current: x === step,
+                  complete: !skipped && x !== 'decision' && stepMissing(x, data, now) === null && SCAT6_STEPS.indexOf(x) < position,
+                  locked: x === 'memoire-differee' && remaining !== null && remaining > 0,
+                };
+              };
+              const note = (x: Scat6Step) => {
+                const st = status(x);
+                if (!st.available) return <Text style={styles.stepNote}>Sautée (équilibre non normal)</Text>;
+                if (st.skipped) return <Text style={styles.stepNote}>Non réalisée</Text>;
+                if (st.locked) {
+                  return (
+                    <Text style={[styles.stepNote, { color: SCAT.blueDark }]}>
+                      Dans {Math.floor(remaining! / 60000)}:{String(Math.floor((remaining! % 60000) / 1000)).padStart(2, '0')}
                     </Text>
-                    {!available ? (
-                      <Text style={styles.stepNote}>Sautée (équilibre non normal)</Text>
-                    ) : skipped ? (
-                      <Text style={styles.stepNote}>Non réalisée</Text>
-                    ) : locked ? (
-                      <Text style={[styles.stepNote, { color: SCAT.blueDark }]}>
-                        Dans {Math.floor(remaining! / 60000)}:{String(Math.floor((remaining! % 60000) / 1000)).padStart(2, '0')}
-                      </Text>
-                    ) : null}
-                  </View>
-                </Pressable>
+                  );
+                }
+                return null;
+              };
+
+              // Étape à une seule partie : une ligne, comme avant.
+              if (steps.length === 1) {
+                const x = steps[0];
+                const st = status(x);
+                return (
+                  <Pressable
+                    key={group.number}
+                    disabled={!st.available}
+                    onPress={() => goTo(x)}
+                    style={({ hovered }: any) => [styles.stepItem, st.current && styles.stepItemCurrent, hovered && !st.current && st.available && styles.stepItemHover]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: st.current, disabled: !st.available }}
+                  >
+                    <StepDot number={group.number} current={st.current} complete={st.complete} off={st.skipped || !st.available} />
+                    <View style={styles.flex}>
+                      <Text style={[styles.stepTitle, st.current && styles.stepTitleCurrent, !st.available && styles.stepTitleOff]}>{group.title}</Text>
+                      {note(x)}
+                    </View>
+                  </Pressable>
+                );
+              }
+
+              // Étape à plusieurs parties : le numéro une seule fois, les parties en arbre dessous.
+              const states = steps.map(status);
+              const inGroup = steps.includes(step);
+              const done = states.every((st) => st.complete || st.skipped || !st.available) && states.some((st) => st.complete);
+              const first = steps.find((x) => isStepAvailable(x, data)) ?? steps[0];
+              return (
+                <View key={group.number}>
+                  <Pressable
+                    onPress={() => goTo(first)}
+                    style={({ hovered }: any) => [styles.stepItem, hovered && !inGroup && styles.stepItemHover]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: inGroup }}
+                  >
+                    <StepDot number={group.number} current={inGroup} complete={done && !inGroup} />
+                    <Text style={[styles.flex, styles.stepTitle, inGroup && styles.stepTitleCurrent]}>{group.title}</Text>
+                  </Pressable>
+                  {steps.map((x, i) => {
+                    const st = states[i];
+                    const last = i === steps.length - 1;
+                    return (
+                      <Pressable
+                        key={x}
+                        disabled={!st.available}
+                        onPress={() => goTo(x)}
+                        style={({ hovered }: any) => [styles.subItem, st.current && styles.stepItemCurrent, hovered && !st.current && st.available && styles.stepItemHover]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: st.current, disabled: !st.available }}
+                      >
+                        {/* Branche de l'arbre : trait vertical depuis le numéro, coude vers la partie. */}
+                        <View style={styles.branch}>
+                          <View style={[styles.branchLine, last && styles.branchLineLast]} />
+                          <View style={styles.branchElbow} />
+                        </View>
+                        <View
+                          style={[
+                            styles.subDot,
+                            st.current && styles.stepDotCurrent,
+                            st.complete && styles.stepDotDone,
+                            (st.skipped || !st.available) && styles.stepDotOff,
+                          ]}
+                        >
+                          {st.complete ? <Ionicons name="checkmark" size={11} color={SCAT.card} /> : null}
+                        </View>
+                        <View style={styles.flex}>
+                          <Text style={[styles.subTitle, st.current && styles.stepTitleCurrent, !st.available && styles.stepTitleOff]}>
+                            {STEP_INFO[x].title}
+                          </Text>
+                          {note(x)}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               );
             })}
 
@@ -389,18 +445,31 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
               <View style={[styles.progressFill, { width: `${((position + 1) / SCAT6_STEPS.length) * 100}%` }]} />
             </View>
           )}
+          {/* En-tête de l'étape : fixe, seul le contenu dessous défile. */}
+          <View style={styles.stepHeadBar}>
+            <View style={[styles.column, styles.stepHead]}>
+              <View style={styles.stepBadge}>
+                <Text style={styles.stepBadgeText}>Étape {info.number}</Text>
+              </View>
+              {group && group.steps.length > 1 ? <Text style={styles.stepHeadGroup}>{group.title} ·</Text> : null}
+              <Text style={styles.stepHeadTitle}>{info.title}</Text>
+              {step === 'equilibre' ? (
+                <Pressable
+                  onPress={() => showScat6Dialog({ title: MBESS_INFO.title, message: MBESS_INFO.message, buttons: [{ text: 'Compris' }] })}
+                  style={({ hovered }: any) => [styles.infoButton, hovered && styles.stepItemHover]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Qu’est-ce que le mBESS ?"
+                >
+                  <Ionicons name="information-circle-outline" size={26} color={SCAT.blueDark} />
+                </Pressable>
+              ) : null}
+              {data.skipped[step as SkippablePart] ? (
+                <Scat6Badge label={`Non réalisée : ${data.skipped[step as SkippablePart]}`} tone="warning" />
+              ) : null}
+            </View>
+          </View>
           <Scat6ScrollView ref={scrollRef} contentContainerStyle={styles.mainContent}>
             <View style={styles.column}>
-              <View style={styles.stepHead}>
-                <View style={styles.stepBadge}>
-                  <Text style={styles.stepBadgeText}>Étape {info.number}</Text>
-                </View>
-                <Text style={styles.stepHeadTitle}>{info.title}</Text>
-                {data.skipped[step as SkippablePart] ? (
-                  <Scat6Badge label={`Non réalisée : ${data.skipped[step as SkippablePart]}`} tone="warning" />
-                ) : null}
-              </View>
-
               {step === 'decision' ? (
                 <DecisionStep
                   {...stepProps}
@@ -449,6 +518,19 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
     </View>
   );
 };
+
+/** Pastille numérotée d'une étape (coche quand terminée, tiret quand non réalisée ou sautée). */
+const StepDot: React.FC<{ number: number; current?: boolean; complete?: boolean; off?: boolean }> = ({ number, current, complete, off }) => (
+  <View style={[styles.stepDot, current && styles.stepDotCurrent, complete && styles.stepDotDone, off && styles.stepDotSkipped]}>
+    {complete ? (
+      <Ionicons name="checkmark" size={16} color={SCAT.card} />
+    ) : off ? (
+      <Ionicons name="remove" size={16} color={SCAT.card} />
+    ) : (
+      <Text style={[styles.stepNum, current && { color: SCAT.card }]}>{number}</Text>
+    )}
+  </View>
+);
 
 const LiveRow: React.FC<{ label: string; value: string; strong?: boolean }> = ({ label, value, strong }) => (
   <View style={styles.liveRow}>
@@ -548,6 +630,50 @@ const styles = StyleSheet.create({
     backgroundColor: SCAT.line,
     borderColor: SCAT.line,
   },
+  /* Parties d'une étape (arbre sous le numéro) */
+  subItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+    minHeight: 38,
+    paddingRight: Spacings.sm,
+    borderRadius: 12,
+  },
+  // Aligné sur le centre de la pastille du numéro (stepItem : padding sm + 15 px).
+  branch: {
+    width: Spacings.sm + 22,
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+  },
+  branchLine: {
+    marginLeft: Spacings.sm + 14,
+    width: 2,
+    backgroundColor: SCAT.blueLine,
+  },
+  branchLineLast: {
+    height: '50%',
+  },
+  branchElbow: {
+    alignSelf: 'center',
+    width: 6,
+    height: 2,
+    backgroundColor: SCAT.blueLine,
+  },
+  subDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: SCAT.blueLine,
+    backgroundColor: SCAT.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subTitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: SCAT.text,
+  },
   stepNum: {
     fontFamily: FONTS.title,
     fontSize: 13,
@@ -626,6 +752,22 @@ const styles = StyleSheet.create({
     maxWidth: 900,
     alignSelf: 'center',
     gap: Spacings.md,
+  },
+  stepHeadBar: {
+    backgroundColor: SCAT.page,
+    borderBottomWidth: 1,
+    borderBottomColor: SCAT.line,
+    paddingHorizontal: Spacings.lg,
+    paddingVertical: Spacings.sm,
+  },
+  stepHeadGroup: {
+    fontFamily: FONTS.medium,
+    fontSize: 18,
+    color: SCAT.blueDark,
+  },
+  infoButton: {
+    borderRadius: 999,
+    padding: 2,
   },
   stepHead: {
     flexDirection: 'row',

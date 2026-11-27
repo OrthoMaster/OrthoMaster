@@ -48,7 +48,7 @@ export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, targ
             {/* Fin des 20 s : un compteur vide passe à 0, l'examinateur n'ajoute que les erreurs comptées. */}
             <Scat6Stopwatch target={20} startLabel="Démarrer 20 s" compact onStop={() => value === null && set(surface, i, 0)} />
             <Scat6Counter label="Erreurs" value={value} max={10} onChange={(v) => set(surface, i, v)} />
-            <Scat6Link title="Position non tenue 5 s (= 10)" onPress={() => set(surface, i, 10)} />
+            <Scat6Link title="Position non tenue 5 s : noter 10" onPress={() => set(surface, i, 10)} />
           </Scat6Card>
         );
       })}
@@ -82,18 +82,21 @@ export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, targ
               source={MBESS_DEMO}
               style={styles.demoImage}
               resizeMode="contain"
-              accessibilityLabel="Animation : deux pieds joints, tandem, un pied ; yeux fermés, mains sur les hanches"
+              accessibilityLabel="Animation : pieds joints, tandem, unipodal ; yeux fermés, mains sur les hanches ; pied dominant et non dominant indiqués"
             />
           </View>
           <View style={styles.errors}>
-            <Text style={styles.errorsTitle}>Erreurs (1 point chacune)</Text>
+            <Text style={styles.errorsTitle}>Chaque erreur coûte 1 point</Text>
             {MBESS_ERRORS.map((e) => (
               <View key={e} style={styles.errorItem}>
                 <Ionicons name="close-circle" size={18} color={SCAT.danger} />
                 <Text style={styles.errorText}>{e}</Text>
               </View>
             ))}
-            <Text style={styles.help}>10 erreurs au plus par position ; position non tenue 5 s → 10.</Text>
+            <Text style={styles.errorsNote}>
+              On compte au maximum 10 erreurs par position (score de 0 à 10). Si le patient ne tient pas la position au moins 5 secondes,
+              notez 10.
+            </Text>
           </View>
         </View>
       </Scat6Card>
@@ -104,14 +107,14 @@ export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, targ
       {m.foam ? (
         <>
           <Scat6SectionTitle
-            title="Mousse (≈ 50 × 40 × 6 cm)"
-            right={<Scat6Link title="Retirer le test sur mousse" icon="close" onPress={() => exam.patchTests({ mbess: { ...m, foam: null } })} />}
+            title="Sol instable"
+            right={<Scat6Link title="Retirer le test sur sol instable" icon="close" onPress={() => exam.patchTests({ mbess: { ...m, foam: null } })} />}
           />
           {stances('foam')}
         </>
       ) : (
         <Scat6Button
-          title="Ajouter le test sur mousse (facultatif)"
+          title="Ajouter le test sur sol instable (mousse), facultatif"
           icon="add"
           variant="secondary"
           onPress={() => exam.patchTests({ mbess: { ...m, foam: [null, null, null] } })}
@@ -121,13 +124,13 @@ export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, targ
 
       <View style={styles.row}>
         <ScoreTile label="mBESS sol ferme" value={firm === null ? '—' : `${firm}/30`} />
-        {m.foam ? <ScoreTile label="mBESS mousse" value={foam === null ? '—' : `${foam}/30`} /> : null}
+        {m.foam ? <ScoreTile label="mBESS sol instable" value={foam === null ? '—' : `${foam}/30`} /> : null}
       </View>
 
       <Scat6Card ref={target('normal')} highlight={showMissing && m.normal === null}>
         <Scat6YesNo
           label="Examen de l’équilibre normal ?"
-          hint="La marche en tandem n’est réalisée que s’il est normal."
+          hint="Étape suivante, la marche en tandem, uniquement si l’équilibre est normal (Oui)."
           value={m.normal}
           onChange={(normal) => exam.patchTests({ mbess: { ...m, normal } })}
         />
@@ -267,7 +270,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: FONTS.body,
-    fontSize: 15,
+    fontSize: 16,
     color: SCAT.text,
   },
 
@@ -285,7 +288,14 @@ const styles = StyleSheet.create({
   },
   // Deux lignes réservées : les chronomètres des trois positions restent alignés.
   stanceHint: {
-    minHeight: 40,
+    minHeight: 44,
+    fontSize: 15,
+  },
+  errorsNote: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: SCAT.text,
+    marginTop: Spacings.xs,
   },
   stanceTitle: {
     fontFamily: FONTS.title,

@@ -41,6 +41,29 @@ export const STEP_INFO: Record<Scat6Step, { number: number; title: string; short
   decision: { number: 6, title: 'Décision', short: 'Décision' },
 };
 
+/**
+ * Les 6 étapes officielles du SCAT6 et leurs parties : l'étape 3 (évaluation cognitive) et l'étape 4
+ * (coordination et équilibre) en ont plusieurs. La colonne des étapes les affiche en arbre.
+ */
+export const STEP_GROUPS: { number: number; title: string; steps: Scat6Step[] }[] = [
+  { number: 1, title: 'Renseignements', steps: ['renseignements'] },
+  { number: 2, title: 'Symptômes', steps: ['symptomes'] },
+  { number: 3, title: 'Évaluation cognitive', steps: ['orientation', 'memoire', 'concentration'] },
+  { number: 4, title: 'Coordination et équilibre', steps: ['equilibre', 'tandem'] },
+  { number: 5, title: 'Mémoire différée', steps: ['memoire-differee'] },
+  { number: 6, title: 'Décision', steps: ['decision'] },
+];
+
+/** Popup « i » à côté de mBESS (en-tête de l'étape équilibre). */
+export const MBESS_INFO = {
+  title: 'mBESS : test d’équilibre',
+  message:
+    'mBESS = modified Balance Error Scoring System (système de score des erreurs d’équilibre, version modifiée).\n\n' +
+    'Le patient tient 3 positions pendant 20 secondes chacune, yeux fermés, mains sur les hanches, pieds nus : pieds joints, tandem (pied non dominant derrière), unipodal (sur le pied non dominant).\n\n' +
+    'L’examinateur compte les erreurs : chaque erreur coûte 1 point, 10 au maximum par position. Score de 0 (aucune erreur) à 30 ; plus le score est élevé, moins bon est l’équilibre.\n\n' +
+    'Le test peut être refait sur un sol instable (mousse), facultatif. Il se compare à la baseline du patient, sans seuil fixe.',
+};
+
 /** Raisons proposées quand une partie n'est pas réalisée. */
 export const SKIP_REASONS = ['Le patient ne peut pas ou refuse', 'Conditions non réunies'] as const;
 
@@ -133,15 +156,15 @@ export const MONTHS_REVERSED = [
 /* ---- Étape 4 ---- */
 
 export const MBESS_STANCES = [
-  { key: 'double', label: 'Deux pieds', hint: 'Pieds joints, talons et orteils se touchent.' },
+  { key: 'double', label: 'Pieds joints', hint: 'Talons et orteils se touchent.' },
   { key: 'tandem', label: 'Tandem', hint: 'Pied non dominant derrière, talon contre orteils.' },
-  { key: 'single', label: 'Un pied', hint: 'Sur le pied non dominant.' },
+  { key: 'single', label: 'Unipodal', hint: 'Sur le pied non dominant, l’autre jambe pliée.' },
 ] as const;
 
 export const MBESS_ERRORS = [
   'Main(s) qui quitte(nt) la hanche',
   'Ouverture des yeux',
-  'Pas, trébuchement ou chute',
+  'Poser le pied, trébucher, chuter',
   'Abduction de hanche > 30°',
   'Soulèvement de l’avant-pied ou du talon',
   'Hors position > 5 s',

@@ -39,7 +39,7 @@ export const stepMissing = (step: Scat6Step, data: Scat6Data, now: number): Miss
       if (i >= 0) return { key: `firm-${i}`, hint: 'Saisissez le nombre d’erreurs de chaque position (0 si aucune).' };
       if (t.mbess.foam) {
         const j = t.mbess.foam.findIndex((v) => v === null);
-        if (j >= 0) return { key: `foam-${j}`, hint: 'Complétez le test sur mousse, ou retirez-le.' };
+        if (j >= 0) return { key: `foam-${j}`, hint: 'Complétez le test sur sol instable (mousse), ou retirez-le.' };
       }
       if (t.mbess.normal === null) return { key: 'normal', hint: 'Indiquez si l’examen de l’équilibre est normal.' };
       return null;
