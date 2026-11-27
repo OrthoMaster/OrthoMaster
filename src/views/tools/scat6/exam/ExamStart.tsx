@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import Spacings from '../../../../../constants/Spacings';
 import { EXAM_KINDS, sportLabel } from '../../../../scat6/core/content';
 import { formatInjury, injuryDay, injuryFromDay, injuryFromDelay, recentInjuries, sinceInjuryLabel, timeKnown } from '../../../../scat6/core/injury';
-import { formatTime } from '../scat6Format';
 import { suggestList, suggestScoat6 } from '../../../../scat6/core/rules';
 import type { ExamKind, ListId } from '../../../../scat6/core/types';
 import type { Scat6PatientDetail } from '../../../../services/v2/Scat6Service';
@@ -73,9 +72,7 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
     recent[0] && !DAYS_AGO.includes(lastDaysAgo) ? injuryDay(recent[0].injuryAt) : ''
   );
   // Facultatif : nombre d'heures depuis le choc (0 = à l'instant, 1 à 24 h), en plus du jour.
-  // Tant que le médecin n'y touche pas, on montre celles du choc déjà enregistré ce jour-là.
-  const [typedHours, setTypedHours] = useState<number | null>(null);
-  const [hoursTouched, setHoursTouched] = useState(false);
+  const [hours, setHours] = useState<number | null>(null);
   const [tried, setTried] = useState(false);
 
   // Liste de mots : différente de la dernière utilisée pour ce patient (changeable à l'étape Mémoire).
@@ -83,31 +80,25 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
 
   const needsInjury = kind !== 'baseline';
   const day = otherDate || (daysAgo === null ? null : localDay(new Date(now - daysAgo * DAY)));
-  // Choc déjà enregistré ce jour-là : l'examen s'y rattache (jamais deux chocs le même jour).
+  // Le médecin donne seulement le jour (et, s'il veut, les heures) : pas de « nouveau choc » ni de
+  // « re-test du choc X » à trancher. Les examens du même jour sont regroupés d'eux-mêmes (un choc = un jour).
+  // Sans heures saisies, on reprend en silence l'heure d'un choc déjà enregistré ce jour-là (H+ cohérent).
   const known = day ? recent.find((g) => injuryDay(g.injuryAt) === day) ?? null : null;
-  const knownTime = !!known && timeKnown(known.injuryAt);
-  const knownHours = knownTime ? Math.floor((now - new Date(known!.injuryAt).getTime()) / 3_600_000) : null;
-  const hours = hoursTouched ? typedHours : knownHours !== null && knownHours <= 24 ? knownHours : null;
   const injuryAt = useMemo(() => {
     if (!needsInjury || !day) return null;
-    // Heures changées : choc = maintenant − heures. Sinon l'heure du choc déjà enregistré, ou le jour seul.
-    if (hoursTouched && hours !== null && !otherDate) return injuryFromDelay(hours, now);
-    if (known) return known.injuryAt;
+    if (hours !== null && !otherDate) return injuryFromDelay(hours, now);
+    if (known && timeKnown(known.injuryAt)) return known.injuryAt;
     return injuryFromDay(day);
-  }, [needsInjury, day, known, hoursTouched, hours, otherDate, now]);
+  }, [needsInjury, day, known, hours, otherDate, now]);
   /** Jour choisi : les heures saisies restent si elles tombent sur ce jour, sinon effacées. */
   const pickDay = (d: number) => {
     setDaysAgo(d);
     setOtherDate('');
-    if (hours !== null && calendarDaysAgo(now - hours * 3_600_000, now) !== d) {
-      setTypedHours(null);
-      setHoursTouched(false);
-    }
+    if (hours !== null && calendarDaysAgo(now - hours * 3_600_000, now) !== d) setHours(null);
   };
   /** Heures depuis le choc : le jour (aujourd'hui / hier) suit. */
   const pickHours = (h: number | null) => {
-    setTypedHours(h);
-    setHoursTouched(true);
+    setHours(h);
     if (h !== null) {
       setDaysAgo(calendarDaysAgo(now - h * 3_600_000, now));
       setOtherDate('');
@@ -163,22 +154,12 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
                 <Text style={styles.otherLabel}>Autre date :</Text>
                 {webInput('date', otherDate, (v) => {
                   setOtherDate(v);
-                  setTypedHours(null);
-                  setHoursTouched(false);
+                  setHours(null);
                 }, { max: today })}
               </View>
             )}
 
-            {/* Même jour qu'un choc déjà examiné : c'est ce choc (H+ calculé depuis son heure). */}
-            {known && (
-              <Text style={styles.knownText}>
-                Choc déjà enregistré ce jour-là{knownTime ? ` à ${formatTime(known.injuryAt)}` : ''} ({known.count} examen
-                {known.count > 1 ? 's' : ''}) : cet examen s’y rattache.
-                {hoursTouched && hours !== null ? ' Heure du choc corrigée pour cet examen.' : ''}
-              </Text>
-            )}
-
-            {/* Facultatif, choc d'aujourd'hui ou d'hier : depuis combien d'heures (pré-rempli si l'heure est connue). */}
+            {/* Facultatif, choc d'aujourd'hui ou d'hier : depuis combien d'heures. */}
             {!otherDate && (daysAgo === 0 || daysAgo === 1) && (
               <View style={styles.hoursRow}>
                 <Text style={styles.subLabel}>Heures après le choc (facultatif)</Text>
@@ -270,11 +251,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacings.sm,
     paddingTop: Spacings.xs,
-  },
-  knownText: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: SCAT.blueDark,
   },
   subLabel: {
     fontFamily: FONTS.medium,
