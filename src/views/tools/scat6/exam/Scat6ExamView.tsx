@@ -7,7 +7,7 @@ import * as Crypto from 'expo-crypto';
 import Spacings from '../../../../../constants/Spacings';
 import { useGetUser } from '../../../../hooks/auth.hook';
 import { MBESS_INFO, SKIP_REASONS, STEP_GROUPS, STEP_INFO, examLabel, sportLabel } from '../../../../scat6/core/content';
-import { sinceInjuryLabel } from '../../../../scat6/core/injury';
+import { formatInjury, sinceInjuryLabel } from '../../../../scat6/core/injury';
 import { delayedRecallRemainingMs } from '../../../../scat6/core/rules';
 import { EMPTY_DATA, formatScore, summarize } from '../../../../scat6/core/scoring';
 import { SCAT6_STEPS, Scat6Step, SkippablePart } from '../../../../scat6/core/types';
@@ -21,7 +21,7 @@ import {
 import { showScat6Dialog, scat6Notify } from '../components/Scat6Dialog';
 import { Scat6Badge, Scat6Button, Scat6Empty, Scat6Header, Scat6Link, Scat6Loading } from '../components/Scat6UI';
 import { invalidateScat6, scat6ExamKey, scat6PatientKey, useHideScat6TabBar } from '../scat6Queries';
-import { formatDateTime, formatTime } from '../scat6Format';
+import { formatTime } from '../scat6Format';
 import { SCAT, FONTS, WEB_SIDEBAR_WIDTH } from '../scat6Theme';
 import { ExamStart } from './ExamStart';
 import { DecisionStep } from './StepDecision';
@@ -311,7 +311,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
         title={`SCAT6 · ${patient?.name ?? ''}`}
         subtitle={`${examLabel(record.exam_kind)}${
           record.injury_at
-            ? ` · choc du ${formatDateTime(record.injury_at)} · ${sinceInjuryLabel(record.injury_at, record.started_at ?? Date.now())}`
+            ? ` · choc du ${formatInjury(record.injury_at)} · ${sinceInjuryLabel(record.injury_at, record.started_at ?? Date.now())}`
             : ''
         }`}
         onBack={exit}

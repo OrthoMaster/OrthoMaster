@@ -9,8 +9,34 @@ const DAY = 24 * HOUR;
 /** Au-delà, le SCAT6 n'est plus indiqué (R6) : le choc n'est plus proposé au démarrage. */
 const RECENT_DAYS = 7;
 
-/** « H+5 » pendant les 48 premières heures, puis « J+3 ». */
+/**
+ * Le médecin indique le délai (« 3 h après le choc »), pas l'heure du choc : injury_at = début de
+ * l'examen − délai, arrondi à la minute. Délai inconnu : injury_at = minuit (heure locale) du jour du
+ * choc, ce qui marque « heure inconnue » (un délai saisi ne tombe jamais pile à minuit, voir injuryFromDelay).
+ */
+export function timeKnown(injuryAt: string): boolean {
+  const d = new Date(injuryAt);
+  return d.getHours() !== 0 || d.getMinutes() !== 0 || d.getSeconds() !== 0;
+}
+
+/** Choc à partir du délai en heures avant `at` (heure connue). */
+export function injuryFromDelay(hours: number, at: number = Date.now()): string {
+  const d = new Date(Math.floor((at - hours * HOUR) / 60_000) * 60_000); // vers le bas : H+5 reste H+5
+  if (!timeKnown(d.toISOString())) d.setMinutes(1); // pile minuit : réservé à « heure inconnue »
+  return d.toISOString();
+}
+
+/** Choc à une date sans heure (délai inconnu) : minuit local de ce jour (AAAA-MM-JJ). */
+export const injuryFromDay = (day: string) => new Date(`${day}T00:00:00`).toISOString();
+
+const calendarDays = (from: Date, to: Date) => {
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return Math.round((day(to) - day(from)) / DAY);
+};
+
+/** « H+5 » pendant les 48 premières heures, puis « J+3 » ; heure du choc inconnue : « J+0 », « J+1 »… */
 export function sinceInjuryLabel(injuryAt: string, at: string | number | Date = Date.now()): string {
+  if (!timeKnown(injuryAt)) return `J+${Math.max(0, calendarDays(new Date(injuryAt), new Date(at)))}`;
   const ms = new Date(at).getTime() - new Date(injuryAt).getTime();
   if (!Number.isFinite(ms) || ms < 0) return 'H+0';
   if (ms < 48 * HOUR) return `H+${Math.floor(ms / HOUR)}`;
@@ -40,6 +66,14 @@ export function recentInjuries(
     groups.set(key, g);
   }
   return [...groups.values()].sort((a, b) => new Date(b.injuryAt).getTime() - new Date(a.injuryAt).getTime());
+}
+
+/** « 27 nov. 2026 à 14:30 », ou « 27 nov. 2026 » si l'heure est inconnue. */
+export function formatInjury(injuryAt: string | null | undefined): string {
+  if (!injuryAt) return '—';
+  const d = new Date(injuryAt);
+  const date = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  return timeKnown(injuryAt) ? `${date} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : date;
 }
 
 /** Même choc ? (comparaison à l'instant près, pas au texte). */

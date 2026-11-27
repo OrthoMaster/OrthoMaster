@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Spacings from '../../../../constants/Spacings';
 import { DIAGNOSIS_LABEL, EXAM_KINDS, STEP_INFO, examLabel, sportLabel } from '../../../scat6/core/content';
 import { formatScore } from '../../../scat6/core/scoring';
-import { sameInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
+import { formatInjury, sameInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
 import { MIN_AGE } from '../../../scat6/core/rules';
 import { patientStatusLabel } from '../../../scat6/core/rts';
 import type { ExamKind } from '../../../scat6/core/types';
@@ -246,7 +246,7 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
                 {a.exam_kind !== 'baseline' && a.injury_at && !(i > 0 && sameInjury(done[i - 1].injury_at, a.injury_at)) ? (
                   <View style={[styles.tr, styles.chocRow]}>
                     <Ionicons name="flash-outline" size={16} color={SCAT.blueInk} />
-                    <Text style={styles.chocText}>Choc du {formatDateTime(a.injury_at)}</Text>
+                    <Text style={styles.chocText}>Choc du {formatInjury(a.injury_at)}</Text>
                   </View>
                 ) : null}
                 <Pressable

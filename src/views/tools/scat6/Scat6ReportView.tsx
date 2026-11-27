@@ -23,7 +23,7 @@ import { Scat6CompareTable, Scat6Consignes } from './components/Scat6Results';
 import { Scat6Button, Scat6Card, Scat6Empty, Scat6Header, Scat6Loading, Scat6Notice, Scat6SectionTitle } from './components/Scat6UI';
 import { scat6ExamKey } from './scat6Queries';
 import { formatDate, formatDateTime, formatTime } from './scat6Format';
-import { sinceInjuryLabel } from '../../../scat6/core/injury';
+import { formatInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE, WEB_SIDEBAR_WIDTH } from './scat6Theme';
 import { Scat6ScrollView } from './components/Scat6ScrollView';
 
@@ -209,7 +209,7 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
               {!isBaseline && (
                 <Meta
                   label="Choc"
-                  value={a.injury_at ? `${formatDateTime(a.injury_at)} · examen à ${sinceInjuryLabel(a.injury_at, a.started_at ?? a.completed_at ?? Date.now())}` : '—'}
+                  value={a.injury_at ? `${formatInjury(a.injury_at)} · examen à ${sinceInjuryLabel(a.injury_at, a.started_at ?? a.completed_at ?? Date.now())}` : '—'}
                 />
               )}
             </View>
