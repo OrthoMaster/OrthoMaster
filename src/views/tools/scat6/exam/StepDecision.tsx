@@ -15,6 +15,8 @@ import type { StepProps } from './stepTypes';
 
 interface DecisionProps extends StepProps {
   baseline: { summary: Scat6Summary | null; word_list: ListId; completed_at: string | null } | null;
+  /** Examen signé précédent du même choc (évolution), avec son libellé « H+5 ». */
+  previous: { summary: Scat6Summary | null; label: string } | null;
   doctorName: string;
   signing: boolean;
   onSign: (input: { diagnosis: Diagnosis | null; neuro: Neuro | null; notes: string }) => void;
@@ -24,7 +26,7 @@ interface DecisionProps extends StepProps {
  * Étape 6 : résumé à côté de la baseline (aucun seuil, aucun verdict), examen neurologique,
  * diagnostic Oui / Non / Différé, notes, attestation du médecin. La signature fige l'examen.
  */
-export const DecisionStep: React.FC<DecisionProps> = ({ record, data, baseline, doctorName, signing, onSign }) => {
+export const DecisionStep: React.FC<DecisionProps> = ({ record, data, baseline, previous, doctorName, signing, onSign }) => {
   const isBaseline = record.exam_kind === 'baseline';
   const [neuro, setNeuro] = useState<Neuro | null>(null);
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
@@ -33,7 +35,8 @@ export const DecisionStep: React.FC<DecisionProps> = ({ record, data, baseline, 
   const [tried, setTried] = useState(false);
 
   const summary = summarize(data);
-  const rows = compareWithBaseline(summary, isBaseline ? null : baseline?.summary ?? null);
+  const prev = !isBaseline && previous?.summary ? previous : null;
+  const rows = compareWithBaseline(summary, isBaseline ? null : baseline?.summary ?? null, prev?.summary ?? null);
 
   // Parties sans score (non réalisées ou incomplètes) : rappelées avant de signer.
   const notDone = [
@@ -69,14 +72,17 @@ export const DecisionStep: React.FC<DecisionProps> = ({ record, data, baseline, 
     <>
       <Scat6Card>
         <Scat6SectionTitle
-          title={isBaseline ? 'Résultats de la baseline' : 'Comparaison avec la baseline'}
+          title={isBaseline ? 'Résultats de la baseline' : prev ? 'Évolution et comparaison avec la baseline' : 'Comparaison avec la baseline'}
           hint={
-            !isBaseline && baseline
-              ? `Baseline du ${formatDate(baseline.completed_at)} · liste ${baseline.word_list}`
-              : null
+            [
+              prev ? `Évolution : depuis l’examen précédent du même choc (${prev.label})` : null,
+              !isBaseline && baseline ? `Baseline du ${formatDate(baseline.completed_at)} · liste ${baseline.word_list}` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || null
           }
         />
-        <Scat6CompareTable rows={rows} withBaseline={!isBaseline} />
+        <Scat6CompareTable rows={rows} withBaseline={!isBaseline} previousLabel={prev?.label ?? null} />
         {!isBaseline && !baseline && (
           <Scat6Notice tone="warning">Aucune baseline signée pour ce patient : interprétation clinique sans comparaison.</Scat6Notice>
         )}

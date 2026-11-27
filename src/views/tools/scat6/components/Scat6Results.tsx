@@ -13,11 +13,38 @@ import { SCAT, FONTS } from '../scat6Theme';
  * Étape 6 du SCAT6 : chaque domaine à côté de la baseline. Aucun seuil, aucun verdict ;
  * l'écart est seulement coloré selon le sens (plus de symptômes = moins bon, plus de mots = mieux).
  */
-export const Scat6CompareTable: React.FC<{ rows: CompareRow[]; withBaseline: boolean }> = ({ rows, withBaseline }) => (
+/** Pastille d'écart (+2 / −1 / 0) : rouge si moins bon, vert si meilleur. Aucun seuil. */
+const Delta: React.FC<{ value: number | null; higherIsWorse: boolean }> = ({ value, higherIsWorse }) => {
+  if (value === null) return <Text style={[styles.td, styles.tdMuted]}>—</Text>;
+  const worse = value !== 0 && value > 0 === higherIsWorse;
+  return (
+    <View style={[styles.delta, value === 0 ? styles.deltaSame : worse ? styles.deltaWorse : styles.deltaBetter]}>
+      <Text style={[styles.deltaText, value === 0 ? null : worse ? styles.deltaTextWorse : styles.deltaTextBetter]}>
+        {value > 0 ? `+${value}` : value}
+      </Text>
+    </View>
+  );
+};
+
+/**
+ * Tableau des scores : actuel, baseline et écart ; avec `previousLabel` (« H+5 »), aussi l'examen
+ * précédent du même choc et l'évolution depuis cet examen.
+ */
+export const Scat6CompareTable: React.FC<{ rows: CompareRow[]; withBaseline: boolean; previousLabel?: string | null }> = ({
+  rows,
+  withBaseline,
+  previousLabel,
+}) => (
   <View style={styles.table}>
     <View style={[styles.tr, styles.thead]}>
       <Text style={[styles.th, styles.cLabel]}>Domaine</Text>
       <Text style={[styles.th, styles.cNum]}>Actuel</Text>
+      {previousLabel ? (
+        <>
+          <Text style={[styles.th, styles.cNum]}>Précédent ({previousLabel})</Text>
+          <Text style={[styles.th, styles.cNum]}>Évolution</Text>
+        </>
+      ) : null}
       {withBaseline && (
         <>
           <Text style={[styles.th, styles.cNum]}>Baseline</Text>
@@ -26,7 +53,6 @@ export const Scat6CompareTable: React.FC<{ rows: CompareRow[]; withBaseline: boo
       )}
     </View>
     {rows.map((r, i) => {
-      const worse = r.delta !== null && r.delta !== 0 && (r.delta > 0) === r.higherIsWorse;
       const total = r.key === 'cognitive_total';
       return (
         <View key={r.key} style={[styles.tr, i % 2 === 1 && styles.trAlt, total && styles.trTotal]}>
@@ -34,21 +60,23 @@ export const Scat6CompareTable: React.FC<{ rows: CompareRow[]; withBaseline: boo
           <Text style={[styles.td, styles.cNum, styles.tdStrong, r.current === null && styles.tdMuted]}>
             {r.current === null ? 'non réalisé' : formatScore(r.current, r.max, r.unit)}
           </Text>
+          {previousLabel ? (
+            <>
+              <Text style={[styles.td, styles.cNum, r.previous === null && styles.tdMuted]}>
+                {formatScore(r.previous, undefined, r.unit)}
+              </Text>
+              <View style={[styles.cNum, styles.deltaCell]}>
+                <Delta value={r.prevDelta} higherIsWorse={r.higherIsWorse} />
+              </View>
+            </>
+          ) : null}
           {withBaseline && (
             <>
               <Text style={[styles.td, styles.cNum, r.baseline === null && styles.tdMuted]}>
                 {formatScore(r.baseline, undefined, r.unit)}
               </Text>
               <View style={[styles.cNum, styles.deltaCell]}>
-                {r.delta === null ? (
-                  <Text style={[styles.td, styles.tdMuted]}>—</Text>
-                ) : (
-                  <View style={[styles.delta, r.delta === 0 ? styles.deltaSame : worse ? styles.deltaWorse : styles.deltaBetter]}>
-                    <Text style={[styles.deltaText, r.delta === 0 ? null : worse ? styles.deltaTextWorse : styles.deltaTextBetter]}>
-                      {r.delta > 0 ? `+${r.delta}` : r.delta}
-                    </Text>
-                  </View>
-                )}
+                <Delta value={r.delta} higherIsWorse={r.higherIsWorse} />
               </View>
             </>
           )}

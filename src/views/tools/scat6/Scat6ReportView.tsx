@@ -17,13 +17,13 @@ import {
 } from '../../../scat6/core/content';
 import { compareWithBaseline, digitsBackward, monthsBackward, summarize, tandemGait } from '../../../scat6/core/scoring';
 import type { Scat6Summary, SkippablePart } from '../../../scat6/core/types';
-import { getScat6Assessment, openScat6Report } from '../../../services/v2/Scat6Service';
+import { getScat6Assessment, getScat6Patient, openScat6Report } from '../../../services/v2/Scat6Service';
 import { scat6Notify } from './components/Scat6Dialog';
 import { Scat6CompareTable, Scat6Consignes } from './components/Scat6Results';
 import { Scat6Button, Scat6Card, Scat6Empty, Scat6Header, Scat6Loading, Scat6Notice, Scat6SectionTitle } from './components/Scat6UI';
-import { goUpToPatient, scat6ExamKey } from './scat6Queries';
+import { goUpToPatient, scat6ExamKey, scat6PatientKey } from './scat6Queries';
 import { formatDate, formatDateTime, formatTime } from './scat6Format';
-import { formatInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
+import { formatInjury, previousExamOfInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE, WEB_SIDEBAR_WIDTH } from './scat6Theme';
 import { Scat6ScrollView } from './components/Scat6ScrollView';
 
@@ -42,6 +42,12 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
     queryKey: scat6ExamKey(uuid),
     queryFn: () => getScat6Assessment(uuid),
     enabled: !!uuid,
+  });
+  // Examens du patient : examen précédent du même choc (colonne « Évolution »).
+  const { data: owner } = useQuery({
+    queryKey: scat6PatientKey(a?.patient_id ?? 0),
+    queryFn: () => getScat6Patient(a!.patient_id),
+    enabled: !!a?.patient_id,
   });
 
   // Brouillon ouvert par erreur (lien ancien) : on le reprend.
@@ -73,7 +79,11 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
   const isBaseline = a.exam_kind === 'baseline';
   // Les scores signés (serveur) font foi ; recalcul seulement s'ils manquent.
   const summary: Scat6Summary = a.summary ?? summarize(data);
-  const rows = compareWithBaseline(summary, isBaseline ? null : a.baseline?.summary ?? null);
+  const previousExam = isBaseline ? null : previousExamOfInjury(owner?.assessments ?? [], a);
+  const prevLabel = previousExam?.summary
+    ? sinceInjuryLabel(previousExam.injury_at!, previousExam.started_at ?? previousExam.completed_at ?? Date.now())
+    : null;
+  const rows = compareWithBaseline(summary, isBaseline ? null : a.baseline?.summary ?? null, prevLabel ? previousExam!.summary : null);
   const skipped = Object.entries(data.skipped ?? {}) as [SkippablePart, string][];
   const showConsignes = a.diagnosis === 'oui' || a.diagnosis === 'differe';
   const answer = (code: string) => data.answers[code];
@@ -221,10 +231,17 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
           {/* ---- Résumé ---- */}
           <Scat6Card>
             <Scat6SectionTitle
-              title={isBaseline ? 'Scores' : 'Comparaison avec la baseline'}
-              hint={!isBaseline && a.baseline ? `Baseline du ${formatDate(a.baseline.completed_at)} · liste ${a.baseline.word_list}` : null}
+              title={isBaseline ? 'Scores' : prevLabel ? 'Évolution et comparaison avec la baseline' : 'Comparaison avec la baseline'}
+              hint={
+                [
+                  prevLabel ? `Évolution : depuis l’examen précédent du même choc (${prevLabel})` : null,
+                  !isBaseline && a.baseline ? `Baseline du ${formatDate(a.baseline.completed_at)} · liste ${a.baseline.word_list}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || null
+              }
             />
-            <Scat6CompareTable rows={rows} withBaseline={!isBaseline} />
+            <Scat6CompareTable rows={rows} withBaseline={!isBaseline} previousLabel={prevLabel} />
             {!isBaseline && !a.baseline && <Scat6Notice tone="warning">Aucune baseline signée avant cet examen.</Scat6Notice>}
             {skipped.length > 0 && (
               <Scat6Notice tone="warning">

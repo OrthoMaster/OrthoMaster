@@ -10,8 +10,8 @@ import { formatInjury, sameInjury, sinceInjuryLabel } from '../../../scat6/core/
 import { MIN_AGE } from '../../../scat6/core/rules';
 import { patientStatusLabel } from '../../../scat6/core/rts';
 import type { ExamKind } from '../../../scat6/core/types';
-import { Scat6AssessmentRow, deleteScat6Draft, getScat6Patient } from '../../../services/v2/Scat6Service';
-import { scat6Confirm, scat6Notify } from './components/Scat6Dialog';
+import { Scat6AssessmentRow, deleteScat6Draft, getScat6Patient, updateScat6Rts } from '../../../services/v2/Scat6Service';
+import { scat6Confirm, scat6Notify, showScat6Dialog } from './components/Scat6Dialog';
 import { Scat6PatientForm } from './components/Scat6PatientForm';
 import {
   Scat6Badge,
@@ -25,6 +25,7 @@ import {
   Scat6SectionTitle,
 } from './components/Scat6UI';
 import { EXAM_ICON } from './components/scat6Icons';
+import { Scat6Evolution } from './components/Scat6Evolution';
 import { goUpToPatients, invalidateScat6, scat6PatientKey } from './scat6Queries';
 import { formatDate, formatDateTime, relativeDay } from './scat6Format';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE } from './scat6Theme';
@@ -68,6 +69,8 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
   const done = patient.assessments.filter((a) => a.status === 'completed');
 
   const activeRts = patient.rts.find((r) => r.status === 'active') ?? null;
+  // Suivi ouvert mais dépassé : l'état du patient vient d'un examen plus récent (nouveau choc).
+  const staleRts = !!activeRts && patient.status?.code !== 'rts';
   const status = patientStatusLabel(patient.status);
 
   /**
@@ -75,8 +78,38 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
    * (pas de commotion retenue, diagnostic différé…), avertissement que le médecin peut passer.
    */
   const openRts = async () => {
-    if (activeRts) return navigation.navigate('scat6-rts', { rtsId: activeRts.id });
     const lastExam = patient.assessments.find((a) => a.status === 'completed' && a.exam_kind !== 'baseline');
+    if (activeRts && !staleRts) return navigation.navigate('scat6-rts', { rtsId: activeRts.id });
+    if (activeRts && staleRts) {
+      // Suivi resté ouvert pour un choc plus ancien : le rouvrir, ou le clôturer et suivre le nouveau choc.
+      const choice = await new Promise<'old' | 'new' | null>((resolve) =>
+        showScat6Dialog({
+          title: 'Un ancien suivi est encore ouvert',
+          message: `Le suivi de reprise du choc du ${formatDate(activeRts.injury_at)} (étape ${activeRts.current_step}/6) n’a pas été terminé, et un examen plus récent a été signé depuis.`,
+          buttons: [
+            { text: 'Annuler', style: 'cancel', onPress: () => resolve(null) },
+            { text: 'Ouvrir l’ancien suivi', onPress: () => resolve('old') },
+            { text: 'Le clôturer et suivre le nouveau choc', onPress: () => resolve('new') },
+          ],
+        })
+      );
+      if (choice === 'old') return navigation.navigate('scat6-rts', { rtsId: activeRts.id });
+      if (choice !== 'new') return;
+      try {
+        await updateScat6Rts(activeRts.id, {
+          current_step: activeRts.current_step,
+          steps: activeRts.steps ?? {},
+          setbacks: activeRts.setbacks ?? [],
+          notes: activeRts.notes,
+          close: true,
+        });
+        invalidateScat6(queryClient);
+      } catch (e: any) {
+        scat6Notify('Clôture impossible', e?.message);
+        return;
+      }
+      return navigation.navigate('scat6-rts', { patientId: patient.id, injuryAt: localDay(lastExam?.injury_at) });
+    }
     const warning: Record<string, string> = {
       retest: 'Diagnostic différé au dernier examen : un re-test est recommandé avant de démarrer la reprise.',
       sans_restriction: 'Dernier examen : pas de commotion retenue.',
@@ -87,7 +120,7 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
     if (reason && !(await scat6Confirm('Démarrer un suivi de reprise ?', reason, 'Continuer'))) return;
     navigation.navigate('scat6-rts', {
       patientId: patient.id,
-      injuryAt: lastExam?.injury_at?.slice(0, 10) ?? undefined,
+      injuryAt: localDay(lastExam?.injury_at),
     });
   };
 
@@ -157,7 +190,13 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
             <KindCard
               icon="walk-outline"
               title="Retour au sport"
-              hint={activeRts ? `Étape ${activeRts.current_step}/6 en cours · choc du ${formatDate(activeRts.injury_at)}` : 'Reprise en 6 étapes et certificat de reprise.'}
+              hint={
+                activeRts && !staleRts
+                  ? `Étape ${activeRts.current_step}/6 en cours · choc du ${formatDate(activeRts.injury_at)}`
+                  : staleRts
+                    ? `Ancien suivi encore ouvert (choc du ${formatDate(activeRts!.injury_at)}) · nouveau choc depuis`
+                    : 'Reprise en 6 étapes et certificat de reprise.'
+              }
               recommended={patient.status?.code === 'commotion'}
               recommendedLabel="À démarrer"
               onPress={openRts}
@@ -221,6 +260,9 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
               ))}
             </>
           )}
+
+          {/* ---- Évolution (examens signés d'un même choc) ---- */}
+          <Scat6Evolution assessments={patient.assessments} />
 
           {/* ---- Historique ---- */}
           <Scat6SectionTitle title="Historique" hint={done.length ? `${done.length} examen(s) signé(s)` : null} />
@@ -307,6 +349,13 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
       />
     </View>
   );
+};
+
+/** AAAA-MM-JJ du choc en heure locale (le jour d'un choc sans heure est stocké à minuit local). */
+const localDay = (iso: string | null | undefined) => {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
 /** Carte 3D d'un type d'examen (comme les cartes Outils). */

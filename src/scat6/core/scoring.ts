@@ -143,9 +143,12 @@ export type CompareRow = {
   current: number | null;
   baseline: number | null;
   delta: number | null;
+  /** Examen précédent du même choc (évolution). */
+  previous: number | null;
+  prevDelta: number | null;
 };
 
-const ROWS: Omit<CompareRow, 'current' | 'baseline' | 'delta'>[] = [
+const ROWS: Omit<CompareRow, 'current' | 'baseline' | 'delta' | 'previous' | 'prevDelta'>[] = [
   { key: 'symptom_count', label: 'Nombre de symptômes', max: 22, higherIsWorse: true },
   { key: 'symptom_severity', label: 'Sévérité des symptômes', max: 132, higherIsWorse: true },
   { key: 'orientation', label: 'Orientation', max: 5, higherIsWorse: false },
@@ -159,13 +162,32 @@ const ROWS: Omit<CompareRow, 'current' | 'baseline' | 'delta'>[] = [
   { key: 'dual_best', label: 'Double tâche (meilleur temps)', unit: 's', higherIsWorse: true },
 ];
 
-export function compareWithBaseline(current: Scat6Summary, baseline: Scat6Summary | null): CompareRow[] {
+/**
+ * Comparaison avec la baseline et, si fourni, avec l'examen précédent du même choc (évolution :
+ * H+5 → H+12…). Aucun seuil : seulement les écarts.
+ */
+export function compareWithBaseline(
+  current: Scat6Summary,
+  baseline: Scat6Summary | null,
+  previous: Scat6Summary | null = null
+): CompareRow[] {
   return ROWS.map((r) => {
     const c = current[r.key];
     const b = baseline ? baseline[r.key] : null;
-    return { ...r, current: c, baseline: b, delta: c !== null && b !== null ? round1(c - b) : null };
+    const p = previous ? previous[r.key] : null;
+    return {
+      ...r,
+      current: c,
+      baseline: b,
+      delta: c !== null && b !== null ? round1(c - b) : null,
+      previous: p,
+      prevDelta: c !== null && p !== null ? round1(c - p) : null,
+    };
   });
 }
+
+/** Domaines comparés (libellé, maximum, sens), pour les graphiques d'évolution. */
+export const COMPARE_DOMAINS = ROWS;
 
 /** « 12/30 », « 11.4 s », « — » : valeur d'un domaine pour l'affichage. */
 export const formatScore = (value: number | null, max?: number, unit?: string) =>

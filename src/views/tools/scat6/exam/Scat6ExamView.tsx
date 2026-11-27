@@ -7,7 +7,7 @@ import * as Crypto from 'expo-crypto';
 import Spacings from '../../../../../constants/Spacings';
 import { useGetUser } from '../../../../hooks/auth.hook';
 import { MBESS_INFO, SKIP_REASONS, STEP_GROUPS, STEP_INFO, examLabel, sportLabel } from '../../../../scat6/core/content';
-import { formatInjury, sinceInjuryLabel } from '../../../../scat6/core/injury';
+import { formatInjury, previousExamOfInjury, sinceInjuryLabel } from '../../../../scat6/core/injury';
 import { delayedRecallRemainingMs } from '../../../../scat6/core/rules';
 import { EMPTY_DATA, formatScore, summarize } from '../../../../scat6/core/scoring';
 import { SCAT6_STEPS, Scat6Step, SkippablePart } from '../../../../scat6/core/types';
@@ -91,6 +91,13 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
     queryKey: scat6PatientKey(patientId ?? 0),
     queryFn: () => getScat6Patient(patientId!),
     enabled: !uuid && !!patientId,
+  });
+
+  // Fiche du patient de l'examen repris : examens du même choc (évolution à la décision).
+  const ownerQuery = useQuery({
+    queryKey: scat6PatientKey(detail?.patient_id ?? 0),
+    queryFn: () => getScat6Patient(detail!.patient_id),
+    enabled: !!detail?.patient_id,
   });
 
   const initial = useMemo(() => (detail && detail.status === 'draft' ? toRecord(detail) : null), [detail]);
@@ -303,6 +310,14 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
   const order = SCAT6_STEPS.filter((s) => isStepAvailable(s, data) || s === 'tandem');
   const position = SCAT6_STEPS.indexOf(step);
   const baseline = detail?.baseline ?? null;
+  const previousExam = previousExamOfInjury(ownerQuery.data?.assessments ?? [], {
+    uuid: record.uuid,
+    injury_at: record.injury_at,
+    started_at: record.started_at,
+  });
+  const previousOfInjury = previousExam
+    ? { summary: previousExam.summary, label: sinceInjuryLabel(previousExam.injury_at!, previousExam.started_at ?? previousExam.completed_at ?? Date.now()) }
+    : null;
 
   return (
     <View style={styles.page}>
@@ -474,6 +489,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
                 <DecisionStep
                   {...stepProps}
                   baseline={baseline}
+                  previous={previousOfInjury}
                   doctorName={`${user?.first_name ?? ''} ${user?.name ?? ''}`.trim()}
                   signing={signing}
                   onSign={sign}

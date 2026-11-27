@@ -79,3 +79,45 @@ export function formatInjury(injuryAt: string | null | undefined): string {
 /** Même choc ? (comparaison à l'instant près, pas au texte). */
 export const sameInjury = (a: string | null, b: string | null) =>
   !!a && !!b && new Date(a).getTime() === new Date(b).getTime();
+
+/** Examen signé (après un choc ou re-test) : ce qu'il faut pour suivre l'évolution. */
+interface ExamLike {
+  uuid: string;
+  status: string;
+  exam_kind: string;
+  injury_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+const examTime = (a: { started_at: string | null; completed_at: string | null }) =>
+  new Date(a.started_at ?? a.completed_at ?? 0).getTime();
+
+/** Examens signés d'un même choc, du plus ancien au plus récent. */
+export function examsOfInjury<T extends ExamLike>(rows: T[], injuryAt: string): T[] {
+  return rows
+    .filter((a) => a.status === 'completed' && a.exam_kind !== 'baseline' && sameInjury(a.injury_at, injuryAt))
+    .sort((a, b) => examTime(a) - examTime(b));
+}
+
+/** Examen signé précédent du même choc (avant `current`), ou null. */
+export function previousExamOfInjury<T extends ExamLike>(
+  rows: T[],
+  current: { uuid: string; injury_at: string | null; started_at: string | null; completed_at?: string | null }
+): T | null {
+  if (!current.injury_at) return null;
+  const t = examTime({ started_at: current.started_at, completed_at: current.completed_at ?? null });
+  const before = examsOfInjury(rows, current.injury_at).filter((a) => a.uuid !== current.uuid && examTime(a) < t);
+  return before.length ? before[before.length - 1] : null;
+}
+
+/** Tous les chocs du patient (examens signés), du plus récent au plus ancien. */
+export function injuriesWithExams<T extends ExamLike>(rows: T[]): { injuryAt: string; exams: T[] }[] {
+  const out: { injuryAt: string; exams: T[] }[] = [];
+  for (const a of rows) {
+    if (a.status !== 'completed' || a.exam_kind === 'baseline' || !a.injury_at) continue;
+    if (out.some((g) => sameInjury(g.injuryAt, a.injury_at))) continue;
+    out.push({ injuryAt: a.injury_at, exams: examsOfInjury(rows, a.injury_at) });
+  }
+  return out.sort((a, b) => new Date(b.injuryAt).getTime() - new Date(a.injuryAt).getTime());
+}
