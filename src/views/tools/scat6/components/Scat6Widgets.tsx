@@ -13,7 +13,7 @@ import { Scat6Button } from './Scat6UI';
 interface StopwatchProps {
   onStop: (seconds: number) => void;
   onReset?: () => void;
-  /** Compte à rebours : s'arrête tout seul (mBESS : 20 s), précédé d'un 3-2-1. */
+  /** Durée cible : s'arrête toute seule (mBESS : 20 s), démarre tout de suite.  */
   target?: number;
   startLabel?: string;
   compact?: boolean;
@@ -24,7 +24,6 @@ interface StopwatchProps {
  * Chaque repère est entendu (tick, départ, fin) : le médecin regarde le patient, pas l'écran.
  */
 export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, target, startLabel = 'Démarrer', compact }) => {
-  const [countdown, setCountdown] = useState<number | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   // Ref : l'intervalle lit toujours le dernier onStop sans redémarrer.
@@ -32,19 +31,6 @@ export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, targ
   useEffect(() => {
     onStopRef.current = onStop;
   }, [onStop]);
-
-  useEffect(() => {
-    if (countdown === null) return;
-    cue('tick');
-    const id = setTimeout(() => {
-      if (countdown > 1) return setCountdown(countdown - 1);
-      setCountdown(null);
-      setElapsed(0);
-      setStartedAt(Date.now());
-      cue('start');
-    }, 1000);
-    return () => clearTimeout(id);
-  }, [countdown]);
 
   useEffect(() => {
     if (startedAt === null) return;
@@ -63,17 +49,15 @@ export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, targ
   }, [startedAt, target]);
 
   const running = startedAt !== null;
-  const counting = countdown !== null;
 
+  // Démarrage immédiat (pas de 3-2-1).
   const start = () => {
-    if (target) return setCountdown(3);
     setElapsed(0);
     setStartedAt(Date.now());
     cue('start');
   };
 
   const stop = () => {
-    if (counting) return setCountdown(null);
     const s = Math.round(((Date.now() - (startedAt ?? Date.now())) / 1000) * 10) / 10;
     setStartedAt(null);
     setElapsed(s);
@@ -87,9 +71,9 @@ export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, targ
     <View style={[styles.watch, compact && styles.watchCompact]}>
       <View style={styles.watchDisplay}>
         <Ionicons name="stopwatch-outline" size={compact ? 22 : 28} color={running ? SCAT.blue : SCAT.faint} />
-        <Text style={[styles.watchTime, compact && styles.watchTimeCompact, counting && { color: SCAT.blue }]}>
-          {counting ? String(countdown) : `${elapsed.toFixed(1)} s`}
-          {target && !counting ? <Text style={styles.watchTarget}> / {target} s</Text> : null}
+        <Text style={[styles.watchTime, compact && styles.watchTimeCompact]}>
+          {`${elapsed.toFixed(1)} s`}
+          {target ? <Text style={styles.watchTarget}> / {target} s</Text> : null}
         </Text>
       </View>
       {progress !== null && (
@@ -98,8 +82,8 @@ export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, targ
         </View>
       )}
       <View style={styles.watchActions}>
-        {running || counting ? (
-          <Scat6Button title={counting ? 'Annuler' : 'Arrêter'} variant="danger" icon="stop" onPress={stop} small={compact} style={styles.flex} />
+        {running ? (
+          <Scat6Button title="Arrêter" variant="danger" icon="stop" onPress={stop} small={compact} style={styles.flex} />
         ) : (
           <Scat6Button title={startLabel} icon="play" onPress={start} small={compact} style={styles.flex} />
         )}
@@ -108,7 +92,7 @@ export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, targ
           accessibilityLabel="Remettre à zéro"
           variant="secondary"
           icon="refresh"
-          disabled={running || counting}
+          disabled={running}
           small={compact}
           onPress={() => {
             setElapsed(0);
