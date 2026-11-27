@@ -106,32 +106,80 @@ interface ExamLike {
 const examTime = (a: { started_at: string | null; completed_at: string | null }) =>
   new Date(a.started_at ?? a.completed_at ?? 0).getTime();
 
-/** Examens signés d'un même choc, du plus ancien au plus récent. */
-export function examsOfInjury<T extends ExamLike>(rows: T[], injuryAt: string): T[] {
-  return rows
-    .filter((a) => a.status === 'completed' && a.exam_kind !== 'baseline' && sameInjury(a.injury_at, injuryAt))
-    .sort((a, b) => examTime(a) - examTime(b));
+/**
+ * Chocs (épisodes) d'un patient, déduits de l'ORDRE des examens (règle du médecin, 27/11/2026) :
+ *  - un « Après un choc » qui suit un re-test ou une baseline (ou rien) ouvre un nouveau choc ;
+ *  - deux « Après un choc » à la suite = le même choc ;
+ *  - un re-test appartient au choc en cours ; une baseline n'appartient à aucun choc et ferme le choc en cours.
+ * La date du choc est celle saisie aux examens (l'heure connue la plus précoce).
+ */
+export interface Episode<T> {
+  injuryAt: string | null;
+  exams: T[];
 }
 
-/** Examen signé précédent du même choc (avant `current`), ou null. */
+/** Ce nouvel examen continue-t-il le choc de l'examen précédent ? */
+export const continuesEpisode = (previousKind: string | null | undefined, kind: string) =>
+  !!previousKind && previousKind !== 'baseline' && kind !== 'baseline' && !(kind === 'post_choc' && previousKind === 'retest');
+
+/** Chocs des examens donnés (filtrés par l'appelant), du plus ancien au plus récent. */
+export function buildEpisodes<T extends ExamLike>(rows: T[]): Episode<T>[] {
+  const sorted = [...rows].sort((a, b) => examTime(a) - examTime(b));
+  const out: Episode<T>[] = [];
+  let previous: T | null = null;
+  for (const a of sorted) {
+    if (a.exam_kind !== 'baseline') {
+      if (previous && continuesEpisode(previous.exam_kind, a.exam_kind) && out.length) out[out.length - 1].exams.push(a);
+      else out.push({ injuryAt: null, exams: [a] });
+    }
+    previous = a;
+  }
+  for (const e of out) {
+    const dates = e.exams.map((x) => x.injury_at).filter((x): x is string => !!x);
+    e.injuryAt = dates.length ? dates.reduce(preferInjury) : null;
+  }
+  return out;
+}
+
+/** Chocs des examens signés, du plus récent au plus ancien. */
+export function injuriesWithExams<T extends ExamLike>(rows: T[]): Episode<T>[] {
+  return buildEpisodes(rows.filter((a) => a.status === 'completed')).reverse();
+}
+
+/** Choc d'un examen signé (même objet Episode pour tous les examens d'un choc). */
+export function episodeIndex<T extends ExamLike>(rows: T[]): Map<string, Episode<T>> {
+  const map = new Map<string, Episode<T>>();
+  for (const e of injuriesWithExams(rows)) for (const x of e.exams) map.set(x.uuid, e);
+  return map;
+}
+
+/**
+ * Examen signé précédent du même choc (avant `current`), ou null : l'examen signé juste avant,
+ * sauf si `current` ouvre un nouveau choc (après une baseline, ou « Après un choc » après un re-test).
+ */
 export function previousExamOfInjury<T extends ExamLike>(
   rows: T[],
-  current: { uuid: string; injury_at: string | null; started_at: string | null; completed_at?: string | null }
+  current: { uuid: string; exam_kind: string; started_at: string | null; completed_at?: string | null }
 ): T | null {
-  if (!current.injury_at) return null;
+  if (current.exam_kind === 'baseline') return null;
   const t = examTime({ started_at: current.started_at, completed_at: current.completed_at ?? null });
-  const before = examsOfInjury(rows, current.injury_at).filter((a) => a.uuid !== current.uuid && examTime(a) < t);
-  return before.length ? before[before.length - 1] : null;
+  const before = rows
+    .filter((a) => a.status === 'completed' && a.uuid !== current.uuid && examTime(a) < t)
+    .sort((a, b) => examTime(a) - examTime(b));
+  const last = before[before.length - 1];
+  return last && continuesEpisode(last.exam_kind, current.exam_kind) ? last : null;
 }
 
-/** Tous les chocs du patient (examens signés), du plus récent au plus ancien. */
-export function injuriesWithExams<T extends ExamLike>(rows: T[]): { injuryAt: string; exams: T[] }[] {
-  const out: { injuryAt: string; exams: T[] }[] = [];
-  for (const a of rows) {
-    if (a.status !== 'completed' || a.exam_kind === 'baseline' || !a.injury_at) continue;
-    if (out.some((g) => sameInjury(g.injuryAt, a.injury_at))) continue;
-    const exams = examsOfInjury(rows, a.injury_at);
-    out.push({ injuryAt: exams.map((e) => e.injury_at!).reduce(preferInjury), exams });
-  }
-  return out.sort((a, b) => new Date(b.injuryAt).getTime() - new Date(a.injuryAt).getTime());
+/**
+ * Pour un nouvel examen : le choc qu'il continue (examens signés ou en cours), s'il y en a un
+ * et qu'il date de moins de 7 jours ; sinon null (nouveau choc).
+ */
+export function currentEpisode<T extends ExamLike>(rows: T[], kind: string, now: number = Date.now()): Episode<T> | null {
+  const episodes = buildEpisodes(rows);
+  const sorted = [...rows].sort((a, b) => examTime(a) - examTime(b));
+  const last = sorted[sorted.length - 1];
+  if (!last || !continuesEpisode(last.exam_kind, kind)) return null;
+  const e = episodes[episodes.length - 1];
+  if (!e?.injuryAt || now - new Date(e.injuryAt).getTime() > RECENT_DAYS * DAY) return null;
+  return e;
 }

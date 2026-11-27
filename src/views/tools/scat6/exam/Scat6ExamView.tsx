@@ -310,13 +310,19 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
   const order = SCAT6_STEPS.filter((s) => isStepAvailable(s, data) || s === 'tandem');
   const position = SCAT6_STEPS.indexOf(step);
   const baseline = detail?.baseline ?? null;
+  // Examen précédent du même choc (ordre des examens : voir buildEpisodes).
   const previousExam = previousExamOfInjury(ownerQuery.data?.assessments ?? [], {
     uuid: record.uuid,
-    injury_at: record.injury_at,
+    exam_kind: record.exam_kind,
     started_at: record.started_at,
   });
   const previousOfInjury = previousExam
-    ? { summary: previousExam.summary, label: sinceInjuryLabel(previousExam.injury_at!, previousExam.started_at ?? previousExam.completed_at ?? Date.now()) }
+    ? {
+        summary: previousExam.summary,
+        label: previousExam.injury_at
+          ? sinceInjuryLabel(previousExam.injury_at, previousExam.started_at ?? previousExam.completed_at ?? Date.now())
+          : formatTime(previousExam.started_at),
+      }
     : null;
 
   return (

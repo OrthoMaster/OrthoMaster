@@ -33,7 +33,7 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
   const [gridWidth, setGridWidth] = useState(0);
   const perRow = gridWidth >= 4 * 300 + 3 * Spacings.md ? 4 : gridWidth >= 2 * 250 + Spacings.md ? 2 : 1;
   const chartWidth = gridWidth ? (gridWidth - (perRow - 1) * Spacings.md) / perRow : undefined;
-  const group = injuries.find((g) => g.injuryAt === selected) ?? injuries[0];
+  const group = injuries.find((g) => g.exams[0].uuid === selected) ?? injuries[0];
   if (!group) return null;
 
   // Baseline signée la plus récente avant le choc.
@@ -43,7 +43,7 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
         (a) =>
           a.exam_kind === 'baseline' &&
           a.status === 'completed' &&
-          new Date(a.completed_at ?? 0).getTime() <= new Date(group.injuryAt).getTime() + 86_400_000
+          new Date(a.completed_at ?? 0).getTime() <= new Date(group.injuryAt ?? group.exams[0].started_at ?? 0).getTime() + 86_400_000
       )
       .sort((a, b) => new Date(b.completed_at ?? 0).getTime() - new Date(a.completed_at ?? 0).getTime())[0] ?? null;
 
@@ -51,7 +51,7 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
     <View style={styles.wrap}>
       <Scat6SectionTitle
         title="Évolution"
-        hint={`Choc du ${formatInjury(group.injuryAt)} · ${group.exams.length} examen${group.exams.length > 1 ? 's' : ''} signé${
+        hint={`Choc du ${formatInjury(group.injuryAt ?? group.exams[0].started_at)} · ${group.exams.length} examen${group.exams.length > 1 ? 's' : ''} signé${
           group.exams.length > 1 ? 's' : ''
         }${baseline ? ' · pointillés : baseline' : ''}`}
       />
@@ -59,11 +59,11 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
         <View style={styles.row}>
           {injuries.map((g) => (
             <Scat6Choice
-              key={g.injuryAt}
+              key={g.exams[0].uuid}
               icon="flash-outline"
-              label={`Choc du ${formatInjury(g.injuryAt)}`}
-              selected={g.injuryAt === group.injuryAt}
-              onPress={() => setSelected(g.injuryAt)}
+              label={`Choc du ${formatInjury(g.injuryAt ?? g.exams[0].started_at)}`}
+              selected={g === group}
+              onPress={() => setSelected(g.exams[0].uuid)}
             />
           ))}
         </View>
@@ -72,7 +72,8 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
         {DOMAINS.map((key) => {
           const domain = COMPARE_DOMAINS.find((d) => d.key === key)!;
           const points: Point[] = group.exams.map((e) => ({
-            label: sinceInjuryLabel(e.injury_at!, e.started_at ?? e.completed_at ?? Date.now()),
+            // H+ depuis la date du choc (la même pour tous ses examens).
+            label: sinceInjuryLabel(group.injuryAt ?? e.started_at ?? '', e.started_at ?? e.completed_at ?? Date.now()),
             value: e.summary ? e.summary[key] : null,
           }));
           return (

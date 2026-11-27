@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../../constants/Spacings';
 import { EXAM_KINDS, sportLabel } from '../../../../scat6/core/content';
-import { formatInjury, injuryDay, injuryFromDay, injuryFromDelay, recentInjuries, sinceInjuryLabel, timeKnown } from '../../../../scat6/core/injury';
+import { currentEpisode, formatInjury, injuryDay, injuryFromDay, injuryFromDelay, sinceInjuryLabel, timeKnown } from '../../../../scat6/core/injury';
 import { suggestList, suggestScoat6 } from '../../../../scat6/core/rules';
 import type { ExamKind, ListId } from '../../../../scat6/core/types';
 import type { Scat6PatientDetail } from '../../../../services/v2/Scat6Service';
@@ -63,14 +63,15 @@ interface Props {
 export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, error, onStart }) => {
   const [kind, setKind] = useState<ExamKind>(initialKind ?? (patient.has_baseline ? 'post_choc' : 'baseline'));
   const [now] = useState(() => Date.now());
-  // Chocs récents du patient (< 7 jours). Un choc = un jour : choisir son jour rattache l'examen à ce choc.
-  const recent = useMemo(() => recentInjuries(patient.assessments, now), [patient.assessments, now]);
-  // Jour proposé : celui du dernier choc récent (re-test, H+12…), sinon aujourd'hui.
-  const lastDaysAgo = recent[0] ? calendarDaysAgo(new Date(recent[0].injuryAt).getTime(), now) : 0;
-  const [daysAgo, setDaysAgo] = useState<number | null>(DAYS_AGO.includes(lastDaysAgo) ? lastDaysAgo : null);
-  const [otherDate, setOtherDate] = useState<string>(
-    recent[0] && !DAYS_AGO.includes(lastDaysAgo) ? injuryDay(recent[0].injuryAt) : ''
-  );
+  // Choc que ce nouvel examen continue (re-test, ou « Après un choc » juste après un autre), sinon nouveau choc.
+  const episode = useMemo(() => currentEpisode(patient.assessments, kind, now), [patient.assessments, kind, now]);
+  // Jour proposé : celui du choc en cours, sinon aujourd'hui (tant que le médecin n'a pas choisi).
+  const episodeDaysAgo = episode?.injuryAt ? calendarDaysAgo(new Date(episode.injuryAt).getTime(), now) : 0;
+  const [dayChoice, setDayChoice] = useState<{ daysAgo: number | null; otherDate: string } | null>(null);
+  const daysAgo = dayChoice ? dayChoice.daysAgo : DAYS_AGO.includes(episodeDaysAgo) ? episodeDaysAgo : null;
+  const otherDate = dayChoice ? dayChoice.otherDate : !DAYS_AGO.includes(episodeDaysAgo) && episode?.injuryAt ? injuryDay(episode.injuryAt) : '';
+  const setDaysAgo = (d: number | null) => setDayChoice({ daysAgo: d, otherDate: '' });
+  const setOtherDate = (v: string) => setDayChoice({ daysAgo: v ? null : daysAgo, otherDate: v });
   // Facultatif : nombre d'heures depuis le choc (0 = à l'instant, 1 à 24 h), en plus du jour.
   const [hours, setHours] = useState<number | null>(null);
   const [tried, setTried] = useState(false);
@@ -80,29 +81,24 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
 
   const needsInjury = kind !== 'baseline';
   const day = otherDate || (daysAgo === null ? null : localDay(new Date(now - daysAgo * DAY)));
-  // Le médecin donne seulement le jour (et, s'il veut, les heures) : pas de « nouveau choc » ni de
-  // « re-test du choc X » à trancher. Les examens du même jour sont regroupés d'eux-mêmes (un choc = un jour).
-  // Sans heures saisies, on reprend en silence l'heure d'un choc déjà enregistré ce jour-là (H+ cohérent).
-  const known = day ? recent.find((g) => injuryDay(g.injuryAt) === day) ?? null : null;
+  // Le médecin donne le jour (et, s'il veut, les heures). Sans heures saisies, on reprend en silence l'heure
+  // du choc en cours s'il tombe ce jour-là (H+ cohérent entre ses examens).
+  const known = episode?.injuryAt && day && injuryDay(episode.injuryAt) === day ? episode.injuryAt : null;
   const injuryAt = useMemo(() => {
     if (!needsInjury || !day) return null;
     if (hours !== null && !otherDate) return injuryFromDelay(hours, now);
-    if (known && timeKnown(known.injuryAt)) return known.injuryAt;
+    if (known && timeKnown(known)) return known;
     return injuryFromDay(day);
   }, [needsInjury, day, known, hours, otherDate, now]);
   /** Jour choisi : les heures saisies restent si elles tombent sur ce jour, sinon effacées. */
   const pickDay = (d: number) => {
     setDaysAgo(d);
-    setOtherDate('');
     if (hours !== null && calendarDaysAgo(now - hours * 3_600_000, now) !== d) setHours(null);
   };
   /** Heures depuis le choc : le jour (aujourd'hui / hier) suit. */
   const pickHours = (h: number | null) => {
     setHours(h);
-    if (h !== null) {
-      setDaysAgo(calendarDaysAgo(now - h * 3_600_000, now));
-      setOtherDate('');
-    }
+    if (h !== null) setDaysAgo(calendarDaysAgo(now - h * 3_600_000, now));
   };
 
   const tooLate = injuryAt ? suggestScoat6(new Date(injuryAt), new Date(now)) : false;

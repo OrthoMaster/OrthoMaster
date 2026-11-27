@@ -81,7 +81,9 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
   const summary: Scat6Summary = a.summary ?? summarize(data);
   const previousExam = isBaseline ? null : previousExamOfInjury(owner?.assessments ?? [], a);
   const prevLabel = previousExam?.summary
-    ? sinceInjuryLabel(previousExam.injury_at!, previousExam.started_at ?? previousExam.completed_at ?? Date.now())
+    ? previousExam.injury_at
+      ? sinceInjuryLabel(previousExam.injury_at, previousExam.started_at ?? previousExam.completed_at ?? Date.now())
+      : formatTime(previousExam.started_at)
     : null;
   const rows = compareWithBaseline(summary, isBaseline ? null : a.baseline?.summary ?? null, prevLabel ? previousExam!.summary : null);
   const skipped = Object.entries(data.skipped ?? {}) as [SkippablePart, string][];

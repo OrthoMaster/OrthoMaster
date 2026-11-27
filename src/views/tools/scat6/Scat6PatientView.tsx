@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Spacings from '../../../../constants/Spacings';
 import { DIAGNOSIS_LABEL, EXAM_KINDS, STEP_INFO, examLabel, sportLabel } from '../../../scat6/core/content';
 import { formatScore } from '../../../scat6/core/scoring';
-import { formatInjury, preferInjury, sameInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
+import { episodeIndex, formatInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
 import { MIN_AGE } from '../../../scat6/core/rules';
 import { patientStatusLabel } from '../../../scat6/core/rts';
 import type { ExamKind } from '../../../scat6/core/types';
@@ -70,6 +70,8 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
   const cardWidth = kindsWidth ? (kindsWidth - (perRow - 1) * Spacings.md) / perRow : undefined;
   const drafts = patient.assessments.filter((a) => a.status === 'draft');
   const done = patient.assessments.filter((a) => a.status === 'completed');
+  // Choc de chaque examen signé (déduit de l'ordre des examens, voir buildEpisodes).
+  const episodes = episodeIndex(done);
 
   const activeRts = patient.rts.find((r) => r.status === 'active') ?? null;
   // Suivi ouvert mais dépassé : l'état du patient vient d'un examen plus récent (nouveau choc).
@@ -292,13 +294,10 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
               {done.map((a, i) => (
                 <React.Fragment key={a.uuid}>
                 {/* Un même choc regroupe ses examens (après un choc, re-tests) sous une ligne « Choc du … ». */}
-                {a.exam_kind !== 'baseline' && a.injury_at && !(i > 0 && sameInjury(done[i - 1].injury_at, a.injury_at)) ? (
+                {episodes.get(a.uuid) && !(i > 0 && episodes.get(done[i - 1].uuid) === episodes.get(a.uuid)) ? (
                   <View style={[styles.tr, styles.chocRow]}>
                     <Ionicons name="flash-outline" size={16} color={SCAT.blueInk} />
-                    <Text style={styles.chocText}>
-                      Choc du{' '}
-                      {formatInjury(done.filter((x) => sameInjury(x.injury_at, a.injury_at)).map((x) => x.injury_at!).reduce(preferInjury))}
-                    </Text>
+                    <Text style={styles.chocText}>Choc du {formatInjury(episodes.get(a.uuid)!.injuryAt ?? a.started_at)}</Text>
                   </View>
                 ) : null}
                 <Pressable
@@ -311,8 +310,11 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
                     <Ionicons name={EXAM_ICON[a.exam_kind]} size={16} color={SCAT.blueDark} />
                     <Text style={styles.td}>
                       {examLabel(a.exam_kind)}
-                      {a.exam_kind !== 'baseline' && a.injury_at ? (
-                        <Text style={styles.since}> · {sinceInjuryLabel(a.injury_at, a.started_at ?? a.completed_at ?? Date.now())}</Text>
+                      {episodes.get(a.uuid)?.injuryAt ? (
+                        <Text style={styles.since}>
+                          {' '}
+                          · {sinceInjuryLabel(episodes.get(a.uuid)!.injuryAt!, a.started_at ?? a.completed_at ?? Date.now())}
+                        </Text>
                       ) : null}
                     </Text>
                   </View>
