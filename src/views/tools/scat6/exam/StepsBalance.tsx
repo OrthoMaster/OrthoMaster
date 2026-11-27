@@ -30,9 +30,9 @@ const DEMO_WIDTH = 460;
 export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, target }) => {
   const m = data.tests.mbess;
 
-  // Pied testé : droit par défaut (modifiable).
+  // Pied testé (non dominant) : gauche par défaut (modifiable).
   useEffect(() => {
-    if (!m.foot) exam.patchTests({ mbess: { ...m, foot: 'droite' } });
+    if (!m.foot) exam.patchTests({ mbess: { ...m, foot: 'gauche' } });
   }, [m.foot]);
 
   const set = (surface: 'firm' | 'foam', i: number, v: number) => {
@@ -90,7 +90,7 @@ export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, targ
         <View style={styles.demo}>
           <View style={styles.demoFrame}>
             <Image
-              source={MBESS_DEMO[m.foot ?? 'droite']}
+              source={MBESS_DEMO[m.foot ?? 'gauche']}
               style={styles.demoImage}
               resizeMode="contain"
               accessibilityLabel="Animation : pieds joints, tandem, unipodal ; yeux fermés, mains sur les hanches ; pied dominant et non dominant indiqués"
