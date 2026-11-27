@@ -577,9 +577,11 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
+  // Le badge (Oui, Baseline…) se cale à droite de sa colonne, sous « Commotion ».
   cDiag: {
     flex: 1.1,
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   right: {
     textAlign: 'right',

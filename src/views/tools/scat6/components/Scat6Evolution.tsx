@@ -29,6 +29,10 @@ interface Point {
 export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = ({ assessments }) => {
   const injuries = useMemo(() => injuriesWithExams(assessments), [assessments]);
   const [selected, setSelected] = useState<string | null>(null);
+  // 4 graphiques sur une ligne si la place le permet, sinon 2 × 2 (jamais 3 + 1).
+  const [gridWidth, setGridWidth] = useState(0);
+  const perRow = gridWidth >= 4 * 300 + 3 * Spacings.md ? 4 : gridWidth >= 2 * 250 + Spacings.md ? 2 : 1;
+  const chartWidth = gridWidth ? (gridWidth - (perRow - 1) * Spacings.md) / perRow : undefined;
   const group = injuries.find((g) => g.injuryAt === selected) ?? injuries[0];
   if (!group) return null;
 
@@ -64,7 +68,7 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
           ))}
         </View>
       )}
-      <View style={styles.grid}>
+      <View style={styles.grid} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
         {DOMAINS.map((key) => {
           const domain = COMPARE_DOMAINS.find((d) => d.key === key)!;
           const points: Point[] = group.exams.map((e) => ({
@@ -74,6 +78,7 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
           return (
             <MiniChart
               key={key}
+              width={chartWidth}
               title={domain.label}
               max={domain.max ?? 1}
               higherIsWorse={domain.higherIsWorse}
@@ -88,12 +93,13 @@ export const Scat6Evolution: React.FC<{ assessments: Scat6AssessmentRow[] }> = (
 };
 
 const MiniChart: React.FC<{
+  width?: number;
   title: string;
   max: number;
   higherIsWorse: boolean;
   points: Point[];
   baseline: number | null;
-}> = ({ title, max, higherIsWorse, points, baseline }) => {
+}> = ({ width: cardWidth, title, max, higherIsWorse, points, baseline }) => {
   const [width, setWidth] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
@@ -114,7 +120,7 @@ const MiniChart: React.FC<{
   const half = Math.min(28, (points.length > 1 ? plotW / (points.length - 1) : plotW) / 2);
 
   return (
-    <View style={styles.chart}>
+    <View style={[styles.chart, cardWidth ? { width: cardWidth, flexGrow: 0, flexBasis: 'auto' } : null]}>
       <Text style={styles.chartTitle}>{title}</Text>
       <Text style={styles.chartSub}>
         {first && last && first.i !== last.i
