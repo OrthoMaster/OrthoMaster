@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Spacings from '../../../../constants/Spacings';
 import { DIAGNOSIS_LABEL, EXAM_KINDS, STEP_INFO, examLabel, sportLabel } from '../../../scat6/core/content';
 import { formatScore } from '../../../scat6/core/scoring';
+import { sameInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
 import { MIN_AGE } from '../../../scat6/core/rules';
 import { patientStatusLabel } from '../../../scat6/core/rts';
 import type { ExamKind } from '../../../scat6/core/types';
@@ -240,16 +241,28 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
                 <View style={styles.cGo} />
               </View>
               {done.map((a, i) => (
+                <React.Fragment key={a.uuid}>
+                {/* Un même choc regroupe ses examens (après un choc, re-tests) sous une ligne « Choc du … ». */}
+                {a.exam_kind !== 'baseline' && a.injury_at && !(i > 0 && sameInjury(done[i - 1].injury_at, a.injury_at)) ? (
+                  <View style={[styles.tr, styles.chocRow]}>
+                    <Ionicons name="flash-outline" size={16} color={SCAT.blueInk} />
+                    <Text style={styles.chocText}>Choc du {formatDateTime(a.injury_at)}</Text>
+                  </View>
+                ) : null}
                 <Pressable
-                  key={a.uuid}
                   style={({ hovered }: any) => [styles.tr, i % 2 === 1 && styles.trAlt, hovered && styles.trHover]}
                   onPress={() => navigation.navigate('scat6-report', { uuid: a.uuid })}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.td, styles.cDate]}>{formatDate(a.completed_at)}</Text>
+                  <Text style={[styles.td, styles.cDate]}>{formatDateTime(a.started_at ?? a.completed_at)}</Text>
                   <View style={[styles.cKind, styles.kindCell]}>
                     <Ionicons name={EXAM_ICON[a.exam_kind]} size={16} color={SCAT.blueDark} />
-                    <Text style={styles.td}>{examLabel(a.exam_kind)}</Text>
+                    <Text style={styles.td}>
+                      {examLabel(a.exam_kind)}
+                      {a.exam_kind !== 'baseline' && a.injury_at ? (
+                        <Text style={styles.since}> · {sinceInjuryLabel(a.injury_at, a.started_at ?? a.completed_at ?? Date.now())}</Text>
+                      ) : null}
+                    </Text>
                   </View>
                   <Text style={[styles.td, styles.cNum]}>
                     {a.summary?.symptom_count ?? '—'} · {a.summary?.symptom_severity ?? '—'}
@@ -270,6 +283,7 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
                     <Ionicons name="document-text-outline" size={20} color={SCAT.blue} />
                   </View>
                 </Pressable>
+                </React.Fragment>
               ))}
             </View>
           )}
@@ -330,6 +344,20 @@ const KindCard: React.FC<{
 );
 
 const styles = StyleSheet.create({
+  chocRow: {
+    gap: Spacings.xs,
+    alignItems: 'center',
+    backgroundColor: SCAT.blueSoft,
+  },
+  chocText: {
+    fontFamily: FONTS.title,
+    fontSize: 14,
+    color: SCAT.blueInk,
+  },
+  since: {
+    fontFamily: FONTS.medium,
+    color: SCAT.blueDark,
+  },
   flex: {
     flex: 1,
   },
@@ -476,7 +504,7 @@ const styles = StyleSheet.create({
     color: SCAT.text,
   },
   cDate: {
-    flex: 1.1,
+    flex: 1.5,
   },
   cKind: {
     flex: 1.5,
