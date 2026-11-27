@@ -122,27 +122,34 @@ export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, targ
 
 /* ===================== COMPTEUR ===================== */
 
-/** Compteur – / + (erreurs). null = pas encore saisi (différent de 0) : « – » le met à 0, « + » à 1. */
+/**
+ * Compteur – / + (erreurs, heures…). null = pas encore saisi (différent de 0) : « – » le met au minimum,
+ * « + » à 1 (ou au minimum s'il est plus grand). `unit` s'affiche après la valeur (« 5 h »).
+ */
 export const Scat6Counter: React.FC<{
   label: string;
   value: number | null;
   onChange: (value: number) => void;
+  min?: number;
   max?: number;
-}> = ({ label, value, onChange, max = 99 }) => (
+  unit?: string;
+}> = ({ label, value, onChange, min = 0, max = 99, unit }) => (
   <View style={styles.counter}>
-    <Text style={styles.counterLabel}>{label}</Text>
+    {label ? <Text style={styles.counterLabel}>{label}</Text> : null}
     <View style={styles.counterControls}>
       <Pressable
-        style={[styles.counterButton, (value ?? 0) <= 0 && styles.counterButtonOff]}
-        onPress={() => onChange(Math.max(0, (value ?? 0) - 1))}
+        style={[styles.counterButton, (value ?? min) <= min && styles.counterButtonOff]}
+        onPress={() => onChange(value === null ? min : Math.max(min, value - 1))}
         accessibilityLabel={`${label} : moins un`}
       >
         <Ionicons name="remove" size={20} color={SCAT.blueDark} />
       </Pressable>
-      <Text style={[styles.counterValue, value === null && styles.counterValueEmpty]}>{value === null ? '–' : value}</Text>
+      <Text style={[styles.counterValue, value === null && styles.counterValueEmpty]}>
+        {value === null ? '–' : unit ? `${value} ${unit}` : value}
+      </Text>
       <Pressable
         style={[styles.counterButton, (value ?? 0) >= max && styles.counterButtonOff]}
-        onPress={() => onChange(Math.min(max, (value ?? 0) + 1))}
+        onPress={() => onChange(value === null ? Math.max(min, 1) : Math.min(max, value + 1))}
         accessibilityLabel={`${label} : plus un`}
       >
         <Ionicons name="add" size={20} color={SCAT.blueDark} />

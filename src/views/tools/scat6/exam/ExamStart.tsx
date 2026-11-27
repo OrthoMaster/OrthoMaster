@@ -8,21 +8,30 @@ import { formatInjury, injuryFromDay, injuryFromDelay, recentInjuries, sinceInju
 import { suggestList, suggestScoat6 } from '../../../../scat6/core/rules';
 import type { ExamKind, ListId } from '../../../../scat6/core/types';
 import type { Scat6PatientDetail } from '../../../../services/v2/Scat6Service';
-import { Scat6Button, Scat6Card, Scat6Choice, Scat6Notice, Scat6SectionTitle } from '../components/Scat6UI';
+import { Scat6Button, Scat6Card, Scat6Choice, Scat6Link, Scat6Notice, Scat6SectionTitle } from '../components/Scat6UI';
+import { Scat6Counter } from '../components/Scat6Widgets';
 import { EXAM_ICON } from '../components/scat6Icons';
 import { SCAT, FONTS } from '../scat6Theme';
 import { Scat6ScrollView } from '../components/Scat6ScrollView';
 
 const DAY = 86_400_000;
 const DAYS_AGO = [0, 1, 2, 3, 5, 7];
-const DELAYS = [0, 1, 2, 3, 6, 12, 24, 48];
+
+/** Nombre de jours calendaires (heure locale) entre `t` et `now`. */
+const calendarDaysAgo = (t: number, now: number) => {
+  const day = (x: number) => {
+    const d = new Date(x);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  };
+  return Math.round((day(now) - day(t)) / DAY);
+};
 
 /** AAAA-MM-JJ en heure locale (toISOString donnerait le jour UTC). */
 const localDay = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 /** Champ date / heure natif du navigateur (souris ou clavier). */
-const webInput = (type: 'date' | 'number', value: string, onChange: (v: string) => void, extra: { style?: object; [k: string]: any } = {}, error = false) =>
+const webInput = (type: 'date', value: string, onChange: (v: string) => void, extra: { style?: object; [k: string]: any } = {}, error = false) =>
   React.createElement('input', {
     type,
     value,
@@ -55,9 +64,8 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
   const [kind, setKind] = useState<ExamKind>(initialKind ?? (patient.has_baseline ? 'post_choc' : 'baseline'));
   const [daysAgo, setDaysAgo] = useState<number | null>(0);
   const [otherDate, setOtherDate] = useState<string>('');
-  // Délai depuis le choc, en heures (facultatif) : choisi dans la liste ou saisi.
-  const [delay, setDelay] = useState<number | null>(null);
-  const [delayText, setDelayText] = useState('');
+  // Facultatif : nombre d'heures depuis le choc (0 = à l'instant, 1 à 24 h), en plus du jour.
+  const [hours, setHours] = useState<number | null>(null);
   const [tried, setTried] = useState(false);
   const [now] = useState(() => Date.now());
 
@@ -69,16 +77,29 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
   const list: ListId = suggestList(patient.assessments[0]?.word_list ?? null);
 
   const needsInjury = kind !== 'baseline';
-  const typedDelay = delayText.trim() === '' ? null : Number(delayText.replace(',', '.'));
-  const hours = typedDelay !== null && Number.isFinite(typedDelay) && typedDelay >= 0 ? typedDelay : delay;
   const injuryAt = useMemo(() => {
     if (!needsInjury) return null;
     if (choc !== 'new') return choc;
-    // Délai connu : choc = maintenant − délai. Sinon le jour seulement (heure inconnue).
-    if (hours !== null) return injuryFromDelay(hours, now);
+    // Heures connues : choc = maintenant − heures (le jour suit). Sinon le jour seulement (heure inconnue).
+    if (hours !== null && !otherDate) return injuryFromDelay(hours, now);
     const day = otherDate || (daysAgo === null ? null : localDay(new Date(now - daysAgo * DAY)));
     return day ? injuryFromDay(day) : null;
   }, [needsInjury, choc, hours, otherDate, daysAgo, now]);
+  /** Jour choisi : les heures saisies restent si elles tombent sur ce jour, sinon effacées. */
+  const pickDay = (d: number) => {
+    setDaysAgo(d);
+    setOtherDate('');
+    if (hours !== null && calendarDaysAgo(now - hours * 3_600_000, now) !== d) setHours(null);
+  };
+  /** Heures depuis le choc : le jour (aujourd'hui / hier) suit. */
+  const pickHours = (h: number | null) => {
+    setHours(h);
+    if (h !== null) {
+      setDaysAgo(calendarDaysAgo(now - h * 3_600_000, now));
+      setOtherDate('');
+    }
+  };
+
   const tooLate = injuryAt ? suggestScoat6(new Date(injuryAt), new Date(now)) : false;
   const today = localDay(new Date(now));
 
@@ -134,53 +155,43 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
 
             {choc === 'new' && (
               <>
-                <Text style={styles.subLabel}>Combien d’heures après le choc ? (facultatif)</Text>
+                {recent.length > 0 && <Text style={styles.subLabel}>Jour du nouveau choc</Text>}
                 <View style={styles.row}>
-                  {DELAYS.map((h) => (
+                  {DAYS_AGO.map((d) => (
                     <Scat6Choice
-                      key={h}
-                      label={h === 0 ? 'Moins d’1 h' : `${h} h`}
-                      selected={delayText === '' && delay === h}
-                      onPress={() => {
-                        setDelay(delay === h && delayText === '' ? null : h);
-                        setDelayText('');
-                      }}
+                      key={d}
+                      label={d === 0 ? 'Aujourd’hui' : d === 1 ? 'Hier' : `Il y a ${d} jours`}
+                      selected={!otherDate && daysAgo === d}
+                      onPress={() => pickDay(d)}
                     />
                   ))}
-                  {Platform.OS === 'web' && (
-                    <View style={styles.otherDate}>
-                      <Text style={styles.otherLabel}>Autre :</Text>
-                      {webInput('number', delayText, setDelayText, { min: 0, max: 168, step: 1, placeholder: 'h', style: { width: 80 } })}
-                      <Text style={styles.otherLabel}>h</Text>
-                    </View>
-                  )}
                 </View>
+                {Platform.OS === 'web' && (
+                  <View style={styles.otherDate}>
+                    <Ionicons name="calendar-outline" size={18} color={SCAT.blueDark} />
+                    <Text style={styles.otherLabel}>Autre date :</Text>
+                    {webInput('date', otherDate, (v) => {
+                      setOtherDate(v);
+                      setHours(null);
+                    }, { max: today })}
+                  </View>
+                )}
 
-                {/* Délai inconnu : le jour du choc suffit (l'heure reste inconnue). */}
-                {hours === null && (
-                  <>
-                    <Text style={styles.subLabel}>Sinon, jour du choc</Text>
-                    <View style={styles.row}>
-                      {DAYS_AGO.map((d) => (
-                        <Scat6Choice
-                          key={d}
-                          label={d === 0 ? 'Aujourd’hui' : d === 1 ? 'Hier' : `Il y a ${d} jours`}
-                          selected={!otherDate && daysAgo === d}
-                          onPress={() => {
-                            setDaysAgo(d);
-                            setOtherDate('');
-                          }}
-                        />
-                      ))}
-                    </View>
-                    {Platform.OS === 'web' && (
-                      <View style={styles.otherDate}>
-                        <Ionicons name="calendar-outline" size={18} color={SCAT.blueDark} />
-                        <Text style={styles.otherLabel}>Autre date :</Text>
-                        {webInput('date', otherDate, setOtherDate, { max: today })}
-                      </View>
-                    )}
-                  </>
+                {/* Facultatif, choc d'aujourd'hui ou d'hier : depuis combien d'heures (sert à H+…). */}
+                {!otherDate && (daysAgo === 0 || daysAgo === 1) && (
+                  <View style={styles.hoursRow}>
+                    <Text style={styles.subLabel}>Heures après le choc (facultatif)</Text>
+                    <Scat6Choice label="À l’instant" selected={hours === 0} onPress={() => pickHours(hours === 0 ? null : 0)} />
+                    <Scat6Counter
+                      label=""
+                      unit="h"
+                      min={1}
+                      max={24}
+                      value={hours !== null && hours >= 1 ? hours : null}
+                      onChange={pickHours}
+                    />
+                    {hours !== null && <Scat6Link title="Effacer" onPress={() => pickHours(null)} />}
+                  </View>
                 )}
               </>
             )}
@@ -253,6 +264,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.xs,
+  },
+  hoursRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: Spacings.sm,
+    paddingTop: Spacings.xs,
   },
   subLabel: {
     fontFamily: FONTS.medium,
