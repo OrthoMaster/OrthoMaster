@@ -49,7 +49,7 @@ export const stepMissing = (step: Scat6Step, data: Scat6Data, now: number): Miss
     case 'memoire-differee': {
       if (!t.memory.endedAt) return { key: 'lock', hint: 'La mémoire immédiate n’a pas été terminée.' };
       return delayedRecallRemainingMs(new Date(t.memory.endedAt), new Date(now)) > 0 && !t.delayed.early
-        ? { key: 'lock', hint: 'Attendez la fin du délai de 5 minutes (ou « Commencer maintenant »).' }
+        ? { key: 'lock', hint: 'Attendez la fin du délai de 5 minutes (ou « Commencer »).' }
         : null;
     }
     case 'decision':

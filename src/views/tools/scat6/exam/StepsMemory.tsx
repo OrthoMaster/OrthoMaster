@@ -8,7 +8,7 @@ import { delayedRecallRemainingMs } from '../../../../scat6/core/rules';
 import { digitsBackward, digitsState, monthsBackward } from '../../../../scat6/core/scoring';
 import type { ListId } from '../../../../scat6/core/types';
 import { cue } from '../../../../scat6/cues';
-import { scat6Confirm } from '../components/Scat6Dialog';
+import { dismissScat6Dialog, scat6Confirm } from '../components/Scat6Dialog';
 import { Scat6Button, Scat6Card, Scat6Choice, Scat6Instruction, Scat6Link, Scat6Notice, Scat6SectionTitle } from '../components/Scat6UI';
 import { Scat6Counter, Scat6Stopwatch, Scat6WordGrid } from '../components/Scat6Widgets';
 import { formatTime } from '../scat6Format';
@@ -236,6 +236,8 @@ export const ConcentrationStep: React.FC<StepProps> = ({ exam, data, showMissing
 
 /* ===================== 5 · MÉMOIRE DIFFÉRÉE ===================== */
 
+const EARLY_DIALOG = 'scat6-delayed-early';
+
 /** Rappel des mots, ouvert au moins 5 minutes après la fin de la mémoire immédiate (R8). */
 export const DelayedRecallStep: React.FC<StepProps> = ({ exam, data, target, now }) => {
   const { memory, delayed } = data.tests;
@@ -248,18 +250,26 @@ export const DelayedRecallStep: React.FC<StepProps> = ({ exam, data, target, now
     if (remaining === null || remaining <= 0) return;
     const ok = await scat6Confirm(
       'Commencer avant 5 minutes ?',
-      `Le SCAT6 prévoit au moins 5 minutes après la mémoire immédiate (il reste ${Math.floor(remaining / 60000)}:${String(
-        Math.floor((remaining % 60000) / 1000)
-      ).padStart(2, '0')}). Ce choix sera indiqué dans le rapport.`,
-      'Commencer maintenant'
+      'Le SCAT6 prévoit au moins 5 minutes après la fin de la mémoire immédiate. Ce choix sera indiqué dans le rapport.',
+      'Commencer',
+      false,
+      EARLY_DIALOG
     );
-    if (ok) exam.patchTests({ delayed: { ...delayed, early: { at: new Date().toISOString(), remainingS: Math.ceil(remaining / 1000) } } });
+    if (!ok || !memory.endedAt) return;
+    // Temps restant au moment du clic (et non à l'ouverture de la boîte).
+    const left = delayedRecallRemainingMs(new Date(memory.endedAt), new Date());
+    if (left <= 0) return; // le délai s'est terminé entre-temps : rien à signaler
+    exam.patchTests({ delayed: { ...delayed, early: { at: new Date().toISOString(), remainingS: Math.ceil(left / 1000) } } });
   };
 
   // Fin du délai entendue : le médecin fait peut-être l'équilibre pendant l'attente.
   const wasLocked = useRef(locked);
+  // Fin du délai : la boîte « Commencer avant 5 minutes ? » n'a plus d'objet, elle se ferme.
   useEffect(() => {
-    if (wasLocked.current && !locked && remaining !== null) cue('end');
+    if (wasLocked.current && !locked && remaining !== null) {
+      cue('end');
+      dismissScat6Dialog(EARLY_DIALOG);
+    }
     wasLocked.current = locked;
   }, [locked, remaining]);
 
@@ -297,7 +307,7 @@ export const DelayedRecallStep: React.FC<StepProps> = ({ exam, data, target, now
             </View>
           </View>
           <Scat6Button
-            title="Commencer maintenant"
+            title="Commencer"
             icon="play-skip-forward-outline"
             variant="secondary"
             small

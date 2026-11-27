@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+
+import { Scat6Button } from './Scat6UI';
 
 import Spacings from '../../../../../constants/Spacings';
 import { SCAT, FONTS } from '../scat6Theme';
@@ -19,9 +21,15 @@ interface DialogOptions {
   title: string;
   message?: string | null;
   buttons?: Scat6DialogButton[];
+  /** Pour fermer la boîte depuis l'écran (dismissScat6Dialog), ex. quand elle n'a plus d'objet. */
+  id?: string;
 }
 
 let hostShow: ((options: DialogOptions) => void) | null = null;
+let hostDismiss: ((id: string) => void) | null = null;
+
+/** Ferme la boîte `id` si elle est ouverte, comme « Annuler ». */
+export const dismissScat6Dialog = (id: string) => hostDismiss?.(id);
 
 export const showScat6Dialog = (options: DialogOptions) => {
   if (hostShow) hostShow(options);
@@ -30,15 +38,17 @@ export const showScat6Dialog = (options: DialogOptions) => {
 
 export const scat6Notify = (title: string, message?: string | null) => showScat6Dialog({ title, message });
 
-/** Confirmation : résout true si l'action est choisie. */
+/** Confirmation : résout true si l'action est choisie (false si annulée ou fermée par dismissScat6Dialog). */
 export const scat6Confirm = (
   title: string,
   message: string,
   confirmText: string,
-  destructive = false
+  destructive = false,
+  id?: string
 ): Promise<boolean> =>
   new Promise((resolve) => {
     showScat6Dialog({
+      id,
       title,
       message,
       buttons: [
@@ -53,6 +63,9 @@ export const Scat6DialogHost: React.FC = () => {
   // Chaque boîte est un nouveau Modal : sur le web, le portail d'un Modal est ajouté à la page à son
   // montage. Monté à l'ouverture, il passe au-dessus des fenêtres déjà ouvertes (ex. « Modifier le patient »).
   const [count, setCount] = useState(0);
+  // Écran étroit : boutons l'un sous l'autre, pleine largeur (jamais de libellé coupé).
+  const { width } = useWindowDimensions();
+  const stacked = width < 480;
 
   useEffect(() => {
     hostShow = (options) => {
@@ -63,6 +76,17 @@ export const Scat6DialogHost: React.FC = () => {
       hostShow = null;
     };
   }, []);
+
+  // Fermeture demandée par l'écran : seulement si c'est bien cette boîte qui est ouverte.
+  useEffect(() => {
+    hostDismiss = (id) => {
+      if (!dialog || dialog.id !== id) return;
+      press(dialog.buttons?.find((b) => b.style === 'cancel'));
+    };
+    return () => {
+      hostDismiss = null;
+    };
+  }, [dialog]);
 
   const buttons = dialog?.buttons?.length ? dialog.buttons : [{ text: 'OK' }];
   const cancel = buttons.find((b) => b.style === 'cancel');
@@ -83,26 +107,17 @@ export const Scat6DialogHost: React.FC = () => {
           <View style={styles.box} accessibilityRole="alert">
             <Text style={styles.title}>{dialog.title}</Text>
             {dialog.message ? <Text style={styles.message}>{dialog.message}</Text> : null}
-            <View style={[styles.buttons, buttons.length > 2 && styles.buttonsColumn]}>
-              {buttons.map((b, i) => {
-                const main = b.style !== 'cancel';
-                const color = b.style === 'destructive' ? SCAT.danger : SCAT.blue;
-                return (
-                  <Pressable
-                    key={`${b.text}-${i}`}
-                    style={({ pressed }) => [
-                      styles.button,
-                      buttons.length <= 2 && styles.buttonFlex,
-                      main ? { backgroundColor: color, borderColor: color } : styles.buttonCancel,
-                      pressed && { opacity: 0.85 },
-                    ]}
-                    onPress={() => press(b)}
-                    accessibilityRole="button"
-                  >
-                    <Text style={[styles.buttonText, main && styles.buttonTextMain]}>{b.text}</Text>
-                  </Pressable>
-                );
-              })}
+            {/* Boutons 3D de l'espace (Scat6Button) : Annuler en secondaire, l'action en principal / rouge. */}
+            <View style={[styles.buttons, (buttons.length > 2 || stacked) && styles.buttonsColumn]}>
+              {buttons.map((b, i) => (
+                <Scat6Button
+                  key={`${b.text}-${i}`}
+                  title={b.text}
+                  variant={b.style === 'cancel' ? 'secondary' : b.style === 'destructive' ? 'danger' : 'primary'}
+                  style={buttons.length <= 2 && !stacked ? styles.buttonFlex : undefined}
+                  onPress={() => press(b)}
+                />
+              ))}
             </View>
           </View>
         ) : null}
@@ -145,28 +160,9 @@ const styles = StyleSheet.create({
   },
   buttonsColumn: {
     flexDirection: 'column-reverse',
-  },
-  button: {
-    minHeight: 44,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacings.md,
+    alignItems: 'stretch',
   },
   buttonFlex: {
     flex: 1,
-  },
-  buttonCancel: {
-    backgroundColor: SCAT.card,
-    borderColor: SCAT.line,
-  },
-  buttonText: {
-    fontFamily: FONTS.medium,
-    fontSize: 15,
-    color: SCAT.text,
-  },
-  buttonTextMain: {
-    color: SCAT.card,
   },
 });
