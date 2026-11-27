@@ -16,7 +16,7 @@ import { SCAT, FONTS } from '../scat6Theme';
 import { Scat6ScrollView } from '../components/Scat6ScrollView';
 
 const DAY = 86_400_000;
-const DAYS_AGO = [0, 1, 2, 3, 5, 7];
+const DAYS_AGO = [0, 1];
 
 /** Nombre de jours calendaires (heure locale) entre `t` et `now`. */
 const calendarDaysAgo = (t: number, now: number) => {
@@ -73,7 +73,9 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
     recent[0] && !DAYS_AGO.includes(lastDaysAgo) ? injuryDay(recent[0].injuryAt) : ''
   );
   // Facultatif : nombre d'heures depuis le choc (0 = à l'instant, 1 à 24 h), en plus du jour.
-  const [hours, setHours] = useState<number | null>(null);
+  // Tant que le médecin n'y touche pas, on montre celles du choc déjà enregistré ce jour-là.
+  const [typedHours, setTypedHours] = useState<number | null>(null);
+  const [hoursTouched, setHoursTouched] = useState(false);
   const [tried, setTried] = useState(false);
 
   // Liste de mots : différente de la dernière utilisée pour ce patient (changeable à l'étape Mémoire).
@@ -84,22 +86,28 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
   // Choc déjà enregistré ce jour-là : l'examen s'y rattache (jamais deux chocs le même jour).
   const known = day ? recent.find((g) => injuryDay(g.injuryAt) === day) ?? null : null;
   const knownTime = !!known && timeKnown(known.injuryAt);
+  const knownHours = knownTime ? Math.floor((now - new Date(known!.injuryAt).getTime()) / 3_600_000) : null;
+  const hours = hoursTouched ? typedHours : knownHours !== null && knownHours <= 24 ? knownHours : null;
   const injuryAt = useMemo(() => {
     if (!needsInjury || !day) return null;
-    // Heure du choc déjà connue : on la garde. Sinon, heures saisies : choc = maintenant − heures.
-    if (known && (knownTime || hours === null)) return known.injuryAt;
-    if (hours !== null && !otherDate) return injuryFromDelay(hours, now);
+    // Heures changées : choc = maintenant − heures. Sinon l'heure du choc déjà enregistré, ou le jour seul.
+    if (hoursTouched && hours !== null && !otherDate) return injuryFromDelay(hours, now);
+    if (known) return known.injuryAt;
     return injuryFromDay(day);
-  }, [needsInjury, day, known, knownTime, hours, otherDate, now]);
+  }, [needsInjury, day, known, hoursTouched, hours, otherDate, now]);
   /** Jour choisi : les heures saisies restent si elles tombent sur ce jour, sinon effacées. */
   const pickDay = (d: number) => {
     setDaysAgo(d);
     setOtherDate('');
-    if (hours !== null && calendarDaysAgo(now - hours * 3_600_000, now) !== d) setHours(null);
+    if (hours !== null && calendarDaysAgo(now - hours * 3_600_000, now) !== d) {
+      setTypedHours(null);
+      setHoursTouched(false);
+    }
   };
   /** Heures depuis le choc : le jour (aujourd'hui / hier) suit. */
   const pickHours = (h: number | null) => {
-    setHours(h);
+    setTypedHours(h);
+    setHoursTouched(true);
     if (h !== null) {
       setDaysAgo(calendarDaysAgo(now - h * 3_600_000, now));
       setOtherDate('');
@@ -155,7 +163,8 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
                 <Text style={styles.otherLabel}>Autre date :</Text>
                 {webInput('date', otherDate, (v) => {
                   setOtherDate(v);
-                  setHours(null);
+                  setTypedHours(null);
+                  setHoursTouched(false);
                 }, { max: today })}
               </View>
             )}
@@ -165,11 +174,12 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
               <Text style={styles.knownText}>
                 Choc déjà enregistré ce jour-là{knownTime ? ` à ${formatTime(known.injuryAt)}` : ''} ({known.count} examen
                 {known.count > 1 ? 's' : ''}) : cet examen s’y rattache.
+                {hoursTouched && hours !== null ? ' Heure du choc corrigée pour cet examen.' : ''}
               </Text>
             )}
 
-            {/* Facultatif, choc d'aujourd'hui ou d'hier dont l'heure n'est pas connue : depuis combien d'heures. */}
-            {!otherDate && (daysAgo === 0 || daysAgo === 1) && !knownTime && (
+            {/* Facultatif, choc d'aujourd'hui ou d'hier : depuis combien d'heures (pré-rempli si l'heure est connue). */}
+            {!otherDate && (daysAgo === 0 || daysAgo === 1) && (
               <View style={styles.hoursRow}>
                 <Text style={styles.subLabel}>Heures après le choc (facultatif)</Text>
                 <Scat6Choice label="À l’instant" selected={hours === 0} onPress={() => pickHours(hours === 0 ? null : 0)} />
