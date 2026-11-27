@@ -31,6 +31,10 @@ export const useHideScat6TabBar = (navigation: any) => {
 };
 
 /** Ouvre un écran de la pile Patients depuis n'importe quel onglet de l'espace. */
-export const openInPatients = (navigation: any, screen: 'scat6-patient' | 'scat6-exam' | 'scat6-report', params: object) => {
+export const openInPatients = (
+  navigation: any,
+  screen: 'scat6-patient' | 'scat6-exam' | 'scat6-report' | 'scat6-rts',
+  params: object
+) => {
   navigation.navigate('scat6-patients-tab', { screen, params, initial: false });
 };

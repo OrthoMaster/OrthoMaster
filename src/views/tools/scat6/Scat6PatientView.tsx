@@ -7,6 +7,7 @@ import Spacings from '../../../../constants/Spacings';
 import { DIAGNOSIS_LABEL, EXAM_KINDS, STEP_INFO, examLabel, sportLabel } from '../../../scat6/core/content';
 import { formatScore } from '../../../scat6/core/scoring';
 import { MIN_AGE } from '../../../scat6/core/rules';
+import { patientStatusLabel } from '../../../scat6/core/rts';
 import type { ExamKind } from '../../../scat6/core/types';
 import { Scat6AssessmentRow, deleteScat6Draft, getScat6Patient } from '../../../services/v2/Scat6Service';
 import { scat6Confirm, scat6Notify } from './components/Scat6Dialog';
@@ -64,6 +65,30 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
   const drafts = patient.assessments.filter((a) => a.status === 'draft');
   const done = patient.assessments.filter((a) => a.status === 'completed');
 
+  const activeRts = patient.rts.find((r) => r.status === 'active') ?? null;
+  const status = patientStatusLabel(patient.status);
+
+  /**
+   * Retour au sport : ouvre le suivi en cours, sinon en démarre un. Si l'état du patient ne l'appelle pas
+   * (pas de commotion retenue, diagnostic différé…), avertissement que le médecin peut passer.
+   */
+  const openRts = async () => {
+    if (activeRts) return navigation.navigate('scat6-rts', { rtsId: activeRts.id });
+    const lastExam = patient.assessments.find((a) => a.status === 'completed' && a.exam_kind !== 'baseline');
+    const warning: Record<string, string> = {
+      retest: 'Diagnostic différé au dernier examen : un re-test est recommandé avant de démarrer la reprise.',
+      sans_restriction: 'Dernier examen : pas de commotion retenue.',
+      reprise: 'Le dernier suivi est terminé (compétition autorisée). Un nouveau suivi correspond à une nouvelle commotion.',
+      none: 'Aucune commotion diagnostiquée dans l’application (diagnostic posé ailleurs, étapes déjà faites sur papier ?).',
+    };
+    const reason = patient.status?.code === 'commotion' ? null : warning[patient.status?.code ?? 'none'];
+    if (reason && !(await scat6Confirm('Démarrer un suivi de reprise ?', reason, 'Continuer'))) return;
+    navigation.navigate('scat6-rts', {
+      patientId: patient.id,
+      injuryAt: lastExam?.injury_at?.slice(0, 10) ?? undefined,
+    });
+  };
+
   const start = (kind: ExamKind) => {
     if (tooYoung) {
       scat6Notify('Moins de 13 ans', 'Le SCAT6 ne s’applique pas avant 13 ans. Utilisez le Child SCAT6.');
@@ -95,7 +120,12 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
         subtitle={`${sportLabel(patient.sport)} · né·e en ${patient.birth_year}${patient.age !== null ? ` (≈ ${patient.age} ans)` : ''}`}
         onBack={back}
         backLabel="Retour aux patients"
-        right={<Scat6Button title="Modifier" icon="create-outline" variant="light" small onPress={() => setEditing(true)} />}
+        right={
+          <>
+            {status && <Scat6Badge label={status.label} tone={status.tone} />}
+            <Scat6Button title="Modifier" icon="create-outline" variant="light" small onPress={() => setEditing(true)} />
+          </>
+        }
       />
 
       <Scat6ScrollView contentContainerStyle={styles.scroll}>
@@ -121,7 +151,46 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
                 onPress={() => start(k.id)}
               />
             ))}
+            {/* Retour au sport : 4e carte, à côté des examens. */}
+            <KindCard
+              icon="walk-outline"
+              title="Retour au sport"
+              hint={activeRts ? `Étape ${activeRts.current_step}/6 en cours · choc du ${formatDate(activeRts.injury_at)}` : 'Reprise en 6 étapes et certificat de reprise.'}
+              recommended={patient.status?.code === 'commotion'}
+              recommendedLabel="À démarrer"
+              onPress={openRts}
+            />
           </View>
+
+          {/* ---- Suivis de reprise terminés ---- */}
+          {patient.rts.some((r) => r.status !== 'active') && (
+            <>
+              <Scat6SectionTitle title="Suivis de reprise" />
+              <View style={styles.table}>
+                {patient.rts
+                  .filter((r) => r.status !== 'active')
+                  .map((r, i) => (
+                    <Pressable
+                      key={r.id}
+                      style={({ hovered }: any) => [styles.tr, i % 2 === 1 && styles.trAlt, hovered && styles.trHover]}
+                      onPress={() => navigation.navigate('scat6-rts', { rtsId: r.id })}
+                      accessibilityRole="button"
+                    >
+                      <Text style={[styles.td, styles.cDate]}>Choc du {formatDate(r.injury_at)}</Text>
+                      <Text style={[styles.td, styles.cKind]}>
+                        {r.status === 'completed' ? `Compétition autorisée le ${formatDate(r.completed_at)}` : `Clôturé à l’étape ${r.current_step}`}
+                      </Text>
+                      <View style={styles.cDiag}>
+                        <Scat6Badge label={r.status === 'completed' ? 'Terminé' : 'Clôturé'} tone={r.status === 'completed' ? 'success' : 'neutral'} />
+                      </View>
+                      <View style={styles.cGo}>
+                        <Ionicons name="chevron-forward" size={20} color={SCAT.blue} />
+                      </View>
+                    </Pressable>
+                  ))}
+              </View>
+            </>
+          )}
 
           {/* ---- Brouillons ---- */}
           {drafts.length > 0 && (
@@ -231,9 +300,10 @@ const KindCard: React.FC<{
   title: string;
   hint: string;
   recommended?: boolean;
+  recommendedLabel?: string;
   disabled?: boolean;
   onPress: () => void;
-}> = ({ icon, title, hint, recommended, disabled, onPress }) => (
+}> = ({ icon, title, hint, recommended, recommendedLabel = 'Recommandé', disabled, onPress }) => (
   <Pressable
     style={({ hovered, pressed }: any) => [
       styles.kind,
@@ -251,7 +321,7 @@ const KindCard: React.FC<{
     <View style={styles.flex}>
       <View style={styles.kindTitleRow}>
         <Text style={styles.kindTitle}>{title}</Text>
-        {recommended && <Scat6Badge label="Recommandé" tone="warning" icon="star" />}
+        {recommended && <Scat6Badge label={recommendedLabel} tone="warning" icon="star" />}
       </View>
       <Text style={styles.kindHint}>{hint}</Text>
     </View>
@@ -288,7 +358,7 @@ const styles = StyleSheet.create({
   },
   kind: {
     flexGrow: 1,
-    flexBasis: 300,
+    flexBasis: 240,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacings.sm,

@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../../constants/Spacings';
 import { DISCLAIMER, INSTRUCTIONS, STEP_INFO } from '../../../../scat6/core/content';
-import { compareWithBaseline, summarize } from '../../../../scat6/core/scoring';
+import { compareWithBaseline, summarize, unfavorableSignals } from '../../../../scat6/core/scoring';
+import { scat6Confirm } from '../components/Scat6Dialog';
 import type { Diagnosis, ListId, Neuro, Scat6Summary } from '../../../../scat6/core/types';
 import { Scat6Button, Scat6Card, Scat6Choice, Scat6Field, Scat6Notice, Scat6SectionTitle } from '../components/Scat6UI';
 import { Scat6CompareTable } from '../components/Scat6Results';
@@ -45,6 +46,18 @@ export const DecisionStep: React.FC<DecisionProps> = ({ record, data, baseline, 
   ].filter(Boolean) as string[];
 
   const missingDiagnosis = !isBaseline && !diagnosis;
+
+  /**
+   * « Non » n'est jamais retenu sans confirmation : c'est l'état favorable (aucune restriction).
+   * Les éléments défavorables de l'examen sont rappelés dans la confirmation.
+   */
+  const chooseNo = async () => {
+    const signals = unfavorableSignals(summary, baseline?.summary ?? null, neuro);
+    const message = signals.length
+      ? `Éléments défavorables dans cet examen :\n• ${signals.join('\n• ')}\n\nAucune restriction sportive ne sera enregistrée pour ce patient.`
+      : 'Aucune restriction sportive ne sera enregistrée pour ce patient.';
+    if (await scat6Confirm('Pas de commotion retenue ?', message, 'Confirmer « Non »', signals.length > 0)) setDiagnosis('non');
+  };
 
   const sign = () => {
     setTried(true);
@@ -92,10 +105,13 @@ export const DecisionStep: React.FC<DecisionProps> = ({ record, data, baseline, 
             <Text style={styles.groupTitle}>Commotion cérébrale diagnostiquée ?</Text>
             <View style={styles.row}>
               <Scat6Choice label="Oui" tone="danger" selected={diagnosis === 'oui'} onPress={() => setDiagnosis('oui')} style={styles.diag} />
-              <Scat6Choice label="Non" selected={diagnosis === 'non'} onPress={() => setDiagnosis('non')} style={styles.diag} />
+              <Scat6Choice label="Non" selected={diagnosis === 'non'} onPress={chooseNo} style={styles.diag} />
               <Scat6Choice label="Différé" tone="warning" selected={diagnosis === 'differe'} onPress={() => setDiagnosis('differe')} style={styles.diag} />
             </View>
             {diagnosis === 'differe' && <Text style={styles.help}>En cas de doute : re-tester le lendemain ou avant 72 h.</Text>}
+            {diagnosis === 'oui' && (
+              <Text style={styles.help}>À la signature, le suivi « retour au sport » (6 étapes) s’ouvre pour ce patient.</Text>
+            )}
             {tried && missingDiagnosis && <Text style={styles.error}>Choisissez Oui, Non ou Différé.</Text>}
           </View>
         </Scat6Card>

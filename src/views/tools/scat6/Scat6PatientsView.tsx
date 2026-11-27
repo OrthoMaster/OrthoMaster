@@ -5,9 +5,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Spacings from '../../../../constants/Spacings';
 import { DIAGNOSIS_LABEL, examLabel, sportLabel } from '../../../scat6/core/content';
+import { PatientStatusCode, patientStatusLabel } from '../../../scat6/core/rts';
 import { getScat6Patients, Scat6Patient } from '../../../services/v2/Scat6Service';
 import { Scat6PatientForm } from './components/Scat6PatientForm';
-import { Scat6Badge, Scat6Button, Scat6Empty, Scat6Header, Scat6Loading, Scat6Notice } from './components/Scat6UI';
+import { Scat6Badge, Scat6Button, Scat6Choice, Scat6Empty, Scat6Header, Scat6Loading, Scat6Notice } from './components/Scat6UI';
 import { SPORT_ICON } from './components/scat6Icons';
 import { SCAT6_PATIENTS_KEY, invalidateScat6 } from './scat6Queries';
 import { initials, relativeDay } from './scat6Format';
@@ -28,10 +29,23 @@ export const Scat6PatientsView = ({ navigation }: { navigation: any }) => {
     queryFn: () => getScat6Patients(),
   });
 
+  // Filtre par état (décisions du médecin) : qui est en reprise, à re-tester, autorisé…
+  const [statusFilter, setStatusFilter] = useState<'all' | NonNullable<PatientStatusCode>>('all');
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (patients ?? []).filter((p) => !q || p.name.toLowerCase().includes(q));
-  }, [patients, search]);
+    return (patients ?? []).filter(
+      (p) => (!q || p.name.toLowerCase().includes(q)) && (statusFilter === 'all' || p.status?.code === statusFilter)
+    );
+  }, [patients, search, statusFilter]);
+
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {};
+    (patients ?? []).forEach((p) => {
+      if (p.status?.code) c[p.status.code] = (c[p.status.code] ?? 0) + 1;
+    });
+    return c;
+  }, [patients]);
 
   const stats = useMemo(
     () => ({
@@ -104,8 +118,30 @@ export const Scat6PatientsView = ({ navigation }: { navigation: any }) => {
                 ) : null}
               </View>
 
+              <View style={styles.filters}>
+                {(
+                  [
+                    ['all', 'Tous'],
+                    ['rts', 'Reprise en cours'],
+                    ['commotion', 'Commotion à suivre'],
+                    ['retest', 'À re-tester'],
+                    ['reprise', 'Compétition autorisée'],
+                    ['sans_restriction', 'Pas de commotion'],
+                  ] as ['all' | NonNullable<PatientStatusCode>, string][]
+                )
+                  .filter(([key]) => key === 'all' || counts[key])
+                  .map(([key, label]) => (
+                    <Scat6Choice
+                      key={key}
+                      label={key === 'all' ? label : `${label} · ${counts[key]}`}
+                      selected={statusFilter === key}
+                      onPress={() => setStatusFilter(key)}
+                    />
+                  ))}
+              </View>
+
               {filtered.length === 0 ? (
-                <Scat6Notice>Aucun patient ne correspond à « {search} ».</Scat6Notice>
+                <Scat6Notice>Aucun patient pour ce filtre{search ? ` et la recherche « ${search} »` : ''}.</Scat6Notice>
               ) : (
                 <View style={styles.grid}>
                   {filtered.map((p) => (
@@ -151,6 +187,7 @@ const Stat: React.FC<{ icon: keyof typeof Ionicons.glyphMap; value: number; labe
 
 const PatientCard: React.FC<{ patient: Scat6Patient; onPress: () => void }> = ({ patient: p, onPress }) => {
   const last = p.last_assessment;
+  const status = patientStatusLabel(p.status);
   return (
     <Pressable style={({ hovered }: any) => [styles.card, hovered && styles.cardHover]} onPress={onPress} accessibilityRole="button">
       <View style={styles.cardTop}>
@@ -173,6 +210,7 @@ const PatientCard: React.FC<{ patient: Scat6Patient; onPress: () => void }> = ({
       </View>
 
       <View style={styles.badges}>
+        {status && <Scat6Badge label={status.label} tone={status.tone} icon="pulse" />}
         {p.has_baseline ? (
           <Scat6Badge label="Baseline" tone="success" icon="checkmark-circle" />
         ) : (
@@ -330,6 +368,11 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: 13,
     color: SCAT.muted,
+  },
+  filters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacings.xs,
   },
   badges: {
     flexDirection: 'row',

@@ -258,6 +258,14 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
           )}
 
           <View style={styles.actions}>
+            {a.patient.status?.code === 'rts' && a.patient.status.rts_id ? (
+              <Scat6Button
+                title={`Retour au sport · étape ${a.patient.status.step}/6`}
+                icon="walk-outline"
+                variant="secondary"
+                onPress={() => navigation.navigate('scat6-rts', { rtsId: a.patient.status.rts_id })}
+              />
+            ) : null}
             <Scat6Button
               title="Fiche du patient"
               icon="person-outline"

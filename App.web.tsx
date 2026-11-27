@@ -308,6 +308,7 @@ export default function App({ navigation }) {
                     'scat6-patient': { path: 'patient/:patientId', parse: { patientId: Number } },
                     'scat6-exam': { path: 'examen/:uuid?', parse: { patientId: Number } },
                     'scat6-report': 'rapport/:uuid',
+                    'scat6-rts': { path: 'reprise/:rtsId?', parse: { rtsId: Number, patientId: Number } },
                   },
                 },
                 'scat6-exams-tab': { path: 'examens', screens: { 'scat6-exams': '' } },

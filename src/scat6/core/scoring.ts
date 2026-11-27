@@ -170,3 +170,28 @@ export function compareWithBaseline(current: Scat6Summary, baseline: Scat6Summar
 /** « 12/30 », « 11.4 s », « — » : valeur d'un domaine pour l'affichage. */
 export const formatScore = (value: number | null, max?: number, unit?: string) =>
   value === null ? '—' : unit ? `${value} ${unit}` : max ? `${value}/${max}` : String(value);
+
+/* ---- Signaux défavorables (étape 6, avant « Non ») ---- */
+
+/**
+ * Éléments de l'examen qui vont dans le sens d'une commotion. Ce n'est pas un verdict : le SCAT6 n'a
+ * pas de seuil. Ils servent à faire confirmer explicitement un « Non » par le médecin.
+ *  - avec baseline : tout domaine moins bon que la baseline ;
+ *  - sans baseline : symptômes présents, orientation incomplète ;
+ *  - examen neurologique anormal.
+ */
+export function unfavorableSignals(current: Scat6Summary, baseline: Scat6Summary | null, neuro: string | null): string[] {
+  const out: string[] = [];
+  if (baseline) {
+    for (const r of compareWithBaseline(current, baseline)) {
+      if (r.delta !== null && r.delta !== 0 && r.delta > 0 === r.higherIsWorse) {
+        out.push(`${r.label} : ${formatScore(r.current, r.max, r.unit)} (baseline ${formatScore(r.baseline, undefined, r.unit)})`);
+      }
+    }
+  } else {
+    if ((current.symptom_count ?? 0) > 0) out.push(`${current.symptom_count} symptôme(s) présent(s), sévérité ${current.symptom_severity}/132`);
+    if (current.orientation !== null && current.orientation < 5) out.push(`Orientation ${current.orientation}/5`);
+  }
+  if (neuro === 'anormal') out.push('Examen neurologique anormal');
+  return out;
+}

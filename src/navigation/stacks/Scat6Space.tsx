@@ -14,6 +14,7 @@ import { Scat6ExamsView } from '../../views/tools/scat6/Scat6ExamsView';
 import { Scat6GuideView } from '../../views/tools/scat6/Scat6GuideView';
 import { Scat6ReportView } from '../../views/tools/scat6/Scat6ReportView';
 import { Scat6ExamView } from '../../views/tools/scat6/exam/Scat6ExamView';
+import { Scat6RtsView } from '../../views/tools/scat6/rts/Scat6RtsView';
 import { Scat6DialogHost } from '../../views/tools/scat6/components/Scat6Dialog';
 import { Scat6Empty, Scat6Loading, Scat6Button } from '../../views/tools/scat6/components/Scat6UI';
 import { SCAT } from '../../views/tools/scat6/scat6Theme';
@@ -24,13 +25,14 @@ const Scat6Tab = createBottomTabNavigator();
 const PatientsStackNav = createStackNavigator();
 const ExamsStackNav = createStackNavigator();
 
-/** Patients : liste, fiche, examen en cours et rapport (l'examen et le rapport s'ouvrent aussi depuis Examens). */
+/** Patients : liste, fiche, examen, rapport, retour au sport (examen et rapport s'ouvrent aussi depuis Examens). */
 const PatientsStack = () => (
   <PatientsStackNav.Navigator id={'scat6-patients-stack' as undefined} screenOptions={{ headerShown: false }}>
     <PatientsStackNav.Screen name="scat6-patients" component={Scat6PatientsView} options={{ title: 'Patients' }} />
     <PatientsStackNav.Screen name="scat6-patient" component={Scat6PatientView} options={{ title: 'Patient' }} />
     <PatientsStackNav.Screen name="scat6-exam" component={Scat6ExamView} options={{ title: 'Examen SCAT6' }} />
     <PatientsStackNav.Screen name="scat6-report" component={Scat6ReportView} options={{ title: 'Rapport SCAT6' }} />
+    <PatientsStackNav.Screen name="scat6-rts" component={Scat6RtsView} options={{ title: 'Retour au sport' }} />
   </PatientsStackNav.Navigator>
 );
 

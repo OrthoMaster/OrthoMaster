@@ -47,6 +47,7 @@ const ROUTE_TITLES: Record<string, string> = {
   'scat6-patient': 'SCAT6 · Patient',
   'scat6-exam': 'SCAT6 · Examen',
   'scat6-report': 'SCAT6 · Rapport',
+  'scat6-rts': 'SCAT6 · Retour au sport',
   'scat6-exams-tab': 'SCAT6 · Examens',
   'scat6-exams': 'SCAT6 · Examens',
   'scat6-guide-tab': 'SCAT6 · Protocole',
