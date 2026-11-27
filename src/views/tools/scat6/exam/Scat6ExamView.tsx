@@ -20,7 +20,7 @@ import {
 } from '../../../../services/v2/Scat6Service';
 import { showScat6Dialog, scat6Notify } from '../components/Scat6Dialog';
 import { Scat6Badge, Scat6Button, Scat6Empty, Scat6Header, Scat6Link, Scat6Loading } from '../components/Scat6UI';
-import { invalidateScat6, scat6ExamKey, scat6PatientKey, useHideScat6TabBar } from '../scat6Queries';
+import { goUpToPatient, goUpToPatients, invalidateScat6, scat6ExamKey, scat6PatientKey, useHideScat6TabBar } from '../scat6Queries';
 import { formatTime } from '../scat6Format';
 import { SCAT, FONTS, WEB_SIDEBAR_WIDTH } from '../scat6Theme';
 import { ExamStart } from './ExamStart';
@@ -226,8 +226,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
   const exit = async () => {
     await exam.flush();
     invalidateScat6(queryClient);
-    if (navigation.canGoBack()) navigation.goBack();
-    else navigation.navigate('scat6-patient', { patientId: record?.patient_id ?? patientId });
+    goUpToPatient(navigation, record?.patient_id ?? patientId);
   };
 
   const [signing, setSigning] = useState(false);
@@ -254,7 +253,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
     if (!patientQuery.data) {
       return (
         <View style={styles.page}>
-          <Scat6Header title="Nouvel examen" onBack={() => navigation.goBack()} />
+          <Scat6Header title="Nouvel examen" onBack={() => goUpToPatients(navigation)} />
           <Scat6Empty icon="person-outline" title="Patient introuvable" />
         </View>
       );
@@ -264,7 +263,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
         <Scat6Header
           title={`Nouvel examen · ${patientQuery.data.name}`}
           subtitle={`${sportLabel(patientQuery.data.sport)} · né·e en ${patientQuery.data.birth_year}`}
-          onBack={() => navigation.goBack()}
+          onBack={() => goUpToPatient(navigation, patientQuery.data!.id)}
         />
         <ExamStart
           patient={patientQuery.data}
@@ -281,7 +280,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
     if (detailQuery.isLoading || detail?.status === 'completed') return <Scat6Loading />;
     return (
       <View style={styles.page}>
-        <Scat6Header title="Examen" onBack={() => navigation.goBack()} />
+        <Scat6Header title="Examen" onBack={() => goUpToPatient(navigation, detail?.patient_id ?? patientId)} />
         <Scat6Empty
           icon="document-outline"
           title="Examen introuvable"

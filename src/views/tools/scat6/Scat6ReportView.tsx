@@ -21,7 +21,7 @@ import { getScat6Assessment, openScat6Report } from '../../../services/v2/Scat6S
 import { scat6Notify } from './components/Scat6Dialog';
 import { Scat6CompareTable, Scat6Consignes } from './components/Scat6Results';
 import { Scat6Button, Scat6Card, Scat6Empty, Scat6Header, Scat6Loading, Scat6Notice, Scat6SectionTitle } from './components/Scat6UI';
-import { scat6ExamKey } from './scat6Queries';
+import { goUpToPatient, scat6ExamKey } from './scat6Queries';
 import { formatDate, formatDateTime, formatTime } from './scat6Format';
 import { formatInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE, WEB_SIDEBAR_WIDTH } from './scat6Theme';
@@ -49,11 +49,8 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
     if (a?.status === 'draft') navigation.replace('scat6-exam', { uuid: a.uuid });
   }, [a?.status]);
 
-  const back = () => {
-    if (navigation.canGoBack()) navigation.goBack();
-    else if (a) navigation.navigate('scat6-patient', { patientId: a.patient_id });
-    else navigation.navigate('scat6-patients');
-  };
+  // Retour : toujours à la fiche du patient (voir goUpToPatient).
+  const back = () => goUpToPatient(navigation, a?.patient_id);
 
   if (isLoading) return <Scat6Loading />;
   if (!a) {
@@ -276,7 +273,7 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
               title="Fiche du patient"
               icon="person-outline"
               variant="secondary"
-              onPress={() => navigation.navigate('scat6-patient', { patientId: a.patient_id })}
+              onPress={() => goUpToPatient(navigation, a.patient_id)}
             />
             <Scat6Button
               title="Nouvel examen"

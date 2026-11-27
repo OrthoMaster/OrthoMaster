@@ -25,7 +25,7 @@ import {
   Scat6SectionTitle,
 } from './components/Scat6UI';
 import { EXAM_ICON } from './components/scat6Icons';
-import { invalidateScat6, scat6PatientKey } from './scat6Queries';
+import { goUpToPatients, invalidateScat6, scat6PatientKey } from './scat6Queries';
 import { formatDate, formatDateTime, relativeDay } from './scat6Format';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE } from './scat6Theme';
 import { Scat6ScrollView } from './components/Scat6ScrollView';
@@ -45,7 +45,8 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
     enabled: !!patientId,
   });
 
-  const back = () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('scat6-patients'));
+  // Retour : toujours à la liste des patients.
+  const back = () => goUpToPatients(navigation);
 
   if (isLoading) return <Scat6Loading />;
   if (isError || !patient) {
@@ -301,7 +302,7 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
         onDeleted={() => {
           setEditing(false);
           invalidateScat6(queryClient);
-          navigation.navigate('scat6-patients');
+          goUpToPatients(navigation);
         }}
       />
     </View>

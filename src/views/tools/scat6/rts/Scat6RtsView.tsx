@@ -41,7 +41,7 @@ import {
   Scat6Notice,
   Scat6SectionTitle,
 } from '../components/Scat6UI';
-import { invalidateScat6, scat6PatientKey } from '../scat6Queries';
+import { goUpToPatient, invalidateScat6, scat6PatientKey } from '../scat6Queries';
 import { formatDate } from '../scat6Format';
 import { SCAT, FONTS, PAGE_MAX_WIDTH, TAB_BAR_SPACE, WEB_SIDEBAR_WIDTH } from '../scat6Theme';
 import { RtsAction, Scat6RtsMoveModal, moveTitle } from './Scat6RtsMoveModal';
@@ -71,10 +71,8 @@ export const Scat6RtsView = ({ navigation, route }: { navigation: any; route: an
   });
   const patient = patientQuery.data;
 
-  const back = () => {
-    if (navigation.canGoBack()) navigation.goBack();
-    else navigation.navigate('scat6-patient', { patientId: rts?.patient_id ?? patientId });
-  };
+  // Retour : toujours à la fiche du patient (voir goUpToPatient).
+  const back = () => goUpToPatient(navigation, rts?.patient_id ?? patientId);
 
   /* ---- Ouverture d'un suivi ---- */
 

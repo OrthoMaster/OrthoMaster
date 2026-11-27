@@ -38,3 +38,18 @@ export const openInPatients = (
 ) => {
   navigation.navigate('scat6-patients-tab', { screen, params, initial: false });
 };
+
+/*
+ * Retour = remonter d'un niveau dans l'espace (Patients › Patient › examen / rapport / reprise),
+ * jamais « l'écran d'avant » de l'historique : un rapport ouvert depuis l'onglet Examens, ou
+ * après un re-test lancé depuis un autre rapport, revient toujours à la fiche de son patient.
+ * popTo revient à l'écran s'il est dans la pile (en dépilant ce qui est au-dessus), sinon il le met
+ * à la place de l'écran courant.
+ */
+
+/** Remonter à la liste des patients. */
+export const goUpToPatients = (navigation: any) => navigation.popTo('scat6-patients');
+
+/** Remonter à la fiche du patient (la liste si le patient n'est pas encore connu). */
+export const goUpToPatient = (navigation: any, patientId: number | null | undefined) =>
+  patientId ? navigation.popTo('scat6-patient', { patientId }) : goUpToPatients(navigation);

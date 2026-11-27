@@ -29,7 +29,13 @@ const ExamsStackNav = createStackNavigator();
 const PatientsStack = () => (
   <PatientsStackNav.Navigator id={'scat6-patients-stack' as undefined} screenOptions={{ headerShown: false }}>
     <PatientsStackNav.Screen name="scat6-patients" component={Scat6PatientsView} options={{ title: 'Patients' }} />
-    <PatientsStackNav.Screen name="scat6-patient" component={Scat6PatientView} options={{ title: 'Patient' }} />
+    {/* Un écran par patient : remonter à « sa » fiche ne réutilise pas celle d'un autre patient. */}
+    <PatientsStackNav.Screen
+      name="scat6-patient"
+      component={Scat6PatientView}
+      options={{ title: 'Patient' }}
+      getId={({ params }: any) => (params?.patientId ? String(params.patientId) : undefined)}
+    />
     <PatientsStackNav.Screen name="scat6-exam" component={Scat6ExamView} options={{ title: 'Examen SCAT6' }} />
     <PatientsStackNav.Screen name="scat6-report" component={Scat6ReportView} options={{ title: 'Rapport SCAT6' }} />
     <PatientsStackNav.Screen name="scat6-rts" component={Scat6RtsView} options={{ title: 'Retour au sport' }} />
@@ -61,11 +67,8 @@ export const Scat6Space = ({ navigation }: { navigation: any }) => {
   });
   const drafts = exams?.filter((e) => e.status === 'draft').length ?? 0;
 
-  // Retour aux Outils ; ouvert par un lien direct, il n'y a rien derrière.
-  const exit = useCallback(() => {
-    if (navigation.canGoBack()) navigation.goBack();
-    else navigation.navigate('tools-home');
-  }, [navigation]);
+  // Retour : toujours aux Outils (écran parent), même ouvert par un lien direct.
+  const exit = useCallback(() => navigation.popTo('tools-home'), [navigation]);
 
   useEffect(() => {
     // Sans compte médecin, l'outil n'existe pas : retour aux Outils (lien direct d'un compte étudiant).
