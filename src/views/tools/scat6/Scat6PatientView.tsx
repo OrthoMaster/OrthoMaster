@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Spacings from '../../../../constants/Spacings';
 import { DIAGNOSIS_LABEL, EXAM_KINDS, STEP_INFO, examLabel, sportLabel } from '../../../scat6/core/content';
 import { formatScore } from '../../../scat6/core/scoring';
-import { formatInjury, sameInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
+import { formatInjury, preferInjury, sameInjury, sinceInjuryLabel } from '../../../scat6/core/injury';
 import { MIN_AGE } from '../../../scat6/core/rules';
 import { patientStatusLabel } from '../../../scat6/core/rts';
 import type { ExamKind } from '../../../scat6/core/types';
@@ -39,6 +39,7 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
   const patientId = Number(route.params?.patientId);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const [kindsWidth, setKindsWidth] = useState(0);
 
   const { data: patient, isLoading, isError, refetch } = useQuery({
     queryKey: scat6PatientKey(patientId),
@@ -65,6 +66,8 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
   }
 
   const tooYoung = patient.age !== null && patient.age < MIN_AGE;
+  const perRow = kindsWidth >= 4 * 210 + 3 * Spacings.md ? 4 : 2;
+  const cardWidth = kindsWidth ? (kindsWidth - (perRow - 1) * Spacings.md) / perRow : undefined;
   const drafts = patient.assessments.filter((a) => a.status === 'draft');
   const done = patient.assessments.filter((a) => a.status === 'completed');
 
@@ -174,10 +177,12 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
 
           {/* ---- Commencer ---- */}
           <Scat6SectionTitle title="Nouvel examen" hint="Au calme, après repos · 10 à 15 minutes · chronomètre, ruban de 3 m et mousse (facultative)." />
-          <View style={styles.kinds}>
+          {/* 4 cartes sur une ligne si la place le permet, sinon 2 × 2 (jamais 3 + 1). */}
+          <View style={styles.kinds} onLayout={(e) => setKindsWidth(e.nativeEvent.layout.width)}>
             {EXAM_KINDS.map((k) => (
               <KindCard
                 key={k.id}
+                width={cardWidth}
                 icon={EXAM_ICON[k.id]}
                 title={k.label}
                 hint={k.hint}
@@ -188,6 +193,7 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
             ))}
             {/* Retour au sport : 4e carte, à côté des examens. */}
             <KindCard
+              width={cardWidth}
               icon="walk-outline"
               title="Retour au sport"
               hint={
@@ -289,7 +295,10 @@ export const Scat6PatientView = ({ navigation, route }: { navigation: any; route
                 {a.exam_kind !== 'baseline' && a.injury_at && !(i > 0 && sameInjury(done[i - 1].injury_at, a.injury_at)) ? (
                   <View style={[styles.tr, styles.chocRow]}>
                     <Ionicons name="flash-outline" size={16} color={SCAT.blueInk} />
-                    <Text style={styles.chocText}>Choc du {formatInjury(a.injury_at)}</Text>
+                    <Text style={styles.chocText}>
+                      Choc du{' '}
+                      {formatInjury(done.filter((x) => sameInjury(x.injury_at, a.injury_at)).map((x) => x.injury_at!).reduce(preferInjury))}
+                    </Text>
                   </View>
                 ) : null}
                 <Pressable
@@ -359,7 +368,8 @@ const localDay = (iso: string | null | undefined) => {
 };
 
 /** Carte 3D d'un type d'examen (comme les cartes Outils). */
-const KindCard: React.FC<{
+export const KindCard: React.FC<{
+  width?: number;
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   hint: string;
@@ -367,10 +377,11 @@ const KindCard: React.FC<{
   recommendedLabel?: string;
   disabled?: boolean;
   onPress: () => void;
-}> = ({ icon, title, hint, recommended, recommendedLabel = 'Recommandé', disabled, onPress }) => (
+}> = ({ width, icon, title, hint, recommended, recommendedLabel = 'Recommandé', disabled, onPress }) => (
   <Pressable
     style={({ hovered, pressed }: any) => [
       styles.kind,
+      width ? { width, flexGrow: 0, flexBasis: 'auto' } : null,
       hovered && !disabled && styles.kindHover,
       pressed && !disabled && styles.kindPressed,
       disabled && styles.kindDisabled,
@@ -379,17 +390,15 @@ const KindCard: React.FC<{
     accessibilityRole="button"
     accessibilityLabel={`Commencer : ${title}`}
   >
+    {/* Icône en haut, puis titre et sous-titre. */}
     <View style={styles.kindIcon}>
       <Ionicons name={icon} size={24} color={SCAT.card} />
     </View>
-    <View style={styles.flex}>
-      <View style={styles.kindTitleRow}>
-        <Text style={styles.kindTitle}>{title}</Text>
-        {recommended && <Scat6Badge label={recommendedLabel} tone="warning" icon="star" />}
-      </View>
-      <Text style={styles.kindHint}>{hint}</Text>
+    <View style={styles.kindTitleRow}>
+      <Text style={styles.kindTitle}>{title}</Text>
+      {recommended && <Scat6Badge label={recommendedLabel} tone="warning" icon="star" />}
     </View>
-    <Ionicons name="arrow-forward-circle" size={28} color={SCAT.card} />
+    <Text style={styles.kindHint}>{hint}</Text>
   </Pressable>
 );
 
@@ -436,10 +445,10 @@ const styles = StyleSheet.create({
   },
   kind: {
     flexGrow: 1,
-    flexBasis: 240,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacings.sm,
+    flexBasis: 200,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: Spacings.xs,
     backgroundColor: SCAT.blue,
     borderRadius: 18,
     borderBottomWidth: 6,

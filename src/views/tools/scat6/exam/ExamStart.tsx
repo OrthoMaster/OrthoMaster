@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../../constants/Spacings';
 import { EXAM_KINDS, sportLabel } from '../../../../scat6/core/content';
-import { formatInjury, injuryFromDay, injuryFromDelay, recentInjuries, sinceInjuryLabel, timeKnown } from '../../../../scat6/core/injury';
+import { formatInjury, injuryDay, injuryFromDay, injuryFromDelay, recentInjuries, sinceInjuryLabel, timeKnown } from '../../../../scat6/core/injury';
 import { suggestList, suggestScoat6 } from '../../../../scat6/core/rules';
 import type { ExamKind, ListId } from '../../../../scat6/core/types';
 import type { Scat6PatientDetail } from '../../../../services/v2/Scat6Service';
@@ -83,8 +83,12 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
     // Heures connues : choc = maintenant − heures (le jour suit). Sinon le jour seulement (heure inconnue).
     if (hours !== null && !otherDate) return injuryFromDelay(hours, now);
     const day = otherDate || (daysAgo === null ? null : localDay(new Date(now - daysAgo * DAY)));
-    return day ? injuryFromDay(day) : null;
-  }, [needsInjury, choc, hours, otherDate, daysAgo, now]);
+    if (!day) return null;
+    // Un choc est déjà connu ce jour-là : c'est le même (un choc = un jour), on reprend son heure.
+    return recent.find((g) => injuryDay(g.injuryAt) === day)?.injuryAt ?? injuryFromDay(day);
+  }, [needsInjury, choc, hours, otherDate, daysAgo, now, recent]);
+  // « Nouveau choc » sur un jour qui a déjà un choc : rattaché à ce choc (pas de second choc le même jour).
+  const sameDayChoc = choc === 'new' && injuryAt ? recent.find((g) => injuryDay(g.injuryAt) === injuryDay(injuryAt)) ?? null : null;
   /** Jour choisi : les heures saisies restent si elles tombent sur ce jour, sinon effacées. */
   const pickDay = (d: number) => {
     setDaysAgo(d);
@@ -196,6 +200,11 @@ export const ExamStart: React.FC<Props> = ({ patient, initialKind, starting, err
               </>
             )}
 
+            {sameDayChoc && (
+              <Scat6Notice>
+                Un choc est déjà enregistré ce jour-là ({formatInjury(sameDayChoc.injuryAt)}) : l’examen y sera rattaché.
+              </Scat6Notice>
+            )}
             {injuryAt && (
               <Text style={styles.when}>
                 Examen à <Text style={styles.whenStrong}>{sinceInjuryLabel(injuryAt, now)}</Text> du choc ({formatInjury(injuryAt)}

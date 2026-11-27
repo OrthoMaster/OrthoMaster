@@ -1,7 +1,8 @@
 /**
  * Un même choc peut donner plusieurs examens (après un choc à H+3, re-test à H+12, J+2…).
- * Ils sont reliés par la même date-heure du choc (`injury_at`, identique à la seconde) :
- * au démarrage, le médecin choisit un choc récent du patient au lieu d'en saisir un nouveau.
+ * Un choc = un JOUR (heure locale) pour un patient : tous les examens dont le choc tombe le même jour
+ * sont rattachés au même choc, même si l'heure a été saisie différemment (ou pas du tout).
+ * Au démarrage, un choc déjà connu ce jour-là est repris au lieu d'en créer un second.
  */
 
 const HOUR = 3_600_000;
@@ -59,9 +60,10 @@ export function recentInjuries(
     if (a.exam_kind === 'baseline' || !a.injury_at) continue;
     const t = new Date(a.injury_at).getTime();
     if (!Number.isFinite(t) || now - t > RECENT_DAYS * DAY || t > now) continue;
-    // Même instant = même choc (le serveur peut renvoyer « …Z » ou « …+00:00 »).
-    const key = new Date(t).toISOString();
+    // Même jour = même choc ; on garde l'heure connue la plus précoce comme heure du choc.
+    const key = injuryDay(a.injury_at);
     const g = groups.get(key) ?? { injuryAt: a.injury_at, count: 0 };
+    g.injuryAt = preferInjury(g.injuryAt, a.injury_at);
     g.count++;
     groups.set(key, g);
   }
@@ -76,9 +78,20 @@ export function formatInjury(injuryAt: string | null | undefined): string {
   return timeKnown(injuryAt) ? `${date} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : date;
 }
 
-/** Même choc ? (comparaison à l'instant près, pas au texte). */
-export const sameInjury = (a: string | null, b: string | null) =>
-  !!a && !!b && new Date(a).getTime() === new Date(b).getTime();
+/** Jour du choc, AAAA-MM-JJ en heure locale : c'est l'identité du choc. */
+export const injuryDay = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/** Même choc ? (même jour, heure locale). */
+export const sameInjury = (a: string | null, b: string | null) => !!a && !!b && injuryDay(a) === injuryDay(b);
+
+/** Entre deux saisies du même choc : l'heure connue plutôt qu'inconnue, sinon la plus précoce. */
+export function preferInjury(a: string, b: string): string {
+  if (timeKnown(a) !== timeKnown(b)) return timeKnown(a) ? a : b;
+  return new Date(a).getTime() <= new Date(b).getTime() ? a : b;
+}
 
 /** Examen signé (après un choc ou re-test) : ce qu'il faut pour suivre l'évolution. */
 interface ExamLike {
@@ -117,7 +130,8 @@ export function injuriesWithExams<T extends ExamLike>(rows: T[]): { injuryAt: st
   for (const a of rows) {
     if (a.status !== 'completed' || a.exam_kind === 'baseline' || !a.injury_at) continue;
     if (out.some((g) => sameInjury(g.injuryAt, a.injury_at))) continue;
-    out.push({ injuryAt: a.injury_at, exams: examsOfInjury(rows, a.injury_at) });
+    const exams = examsOfInjury(rows, a.injury_at);
+    out.push({ injuryAt: exams.map((e) => e.injury_at!).reduce(preferInjury), exams });
   }
   return out.sort((a, b) => new Date(b.injuryAt).getTime() - new Date(a.injuryAt).getTime());
 }
