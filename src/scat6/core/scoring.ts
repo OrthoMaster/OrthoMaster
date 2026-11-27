@@ -84,6 +84,20 @@ export function mbess(stances: (number | null)[] | null): number | null {
   return stances.reduce<number>((sum, e) => sum + clamp(e as number, 0, 10), 0);
 }
 
+/**
+ * Double tâche : essai retenu parmi les essais réussis (temps ≥ 0) : le moins d'erreurs de calcul,
+ * puis le plus rapide. null si aucun essai réussi.
+ */
+export function dualTaskBest(trials: (number | null)[], wrongByTrial: number[][]) {
+  let best: { index: number; time: number; errors: number } | null = null;
+  trials.forEach((t, index) => {
+    if (t === null || t < 0) return;
+    const errors = wrongByTrial[index]?.length ?? 0;
+    if (!best || errors < best.errors || (errors === best.errors && t < best.time)) best = { index, time: t, errors };
+  });
+  return best as { index: number; time: number; errors: number } | null;
+}
+
 /** Essais de tandem (-1 = échec) : meilleur temps, moyenne, nombre d'échecs. */
 export function tandemGait(trials: (number | null)[]) {
   const ok = trials.filter((t): t is number => t !== null && t > 0);

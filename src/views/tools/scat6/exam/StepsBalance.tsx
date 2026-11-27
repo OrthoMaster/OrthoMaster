@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../../constants/Spacings';
 import { DUAL_TASK_SEQUENCE, INSTRUCTIONS, MBESS_ERRORS, MBESS_STANCES } from '../../../../scat6/core/content';
-import { mbess, tandemGait } from '../../../../scat6/core/scoring';
+import { dualTaskBest, mbess, tandemGait } from '../../../../scat6/core/scoring';
 import { Scat6Button, Scat6Card, Scat6Choice, Scat6Instruction, Scat6Link, Scat6Notice, Scat6SectionTitle, Scat6YesNo } from '../components/Scat6UI';
 import { Scat6Counter, Scat6Stopwatch } from '../components/Scat6Widgets';
 import { SCAT, FONTS } from '../scat6Theme';
@@ -161,19 +161,39 @@ export const TandemStep: React.FC<StepProps> = ({ exam, data, showMissing, targe
   const nextEmpty = td.trials.findIndex((v) => v === null);
   const result = tandemGait(td.trials);
 
-  // Double tâche : 3 essais chronométrés (meilleur temps réussi) + nombres manqués de la suite 88, 81…
+  // Double tâche : 3 essais, chacun avec son temps et ses erreurs de calcul (nombres manqués de 88, 81…).
+  // Essai retenu : le moins d'erreurs, puis le plus rapide (dualTaskBest).
   const dualTrials = td.dualTrials ?? [null, null, null];
-  const dualWrong = td.dualWrong ?? [];
+  const wrongBy = td.dualWrongByTrial ?? [td.dualWrong ?? [], [], []];
   const dualNext = dualTrials.findIndex((v) => v === null);
+  const lastTimed = dualTrials.reduce<number>((acc, v, i) => (v !== null ? i : acc), -1);
+  const [active, setActive] = useState(lastTimed >= 0 ? lastTimed : 0);
+  const best = dualTaskBest(dualTrials, wrongBy);
+  const commit = (trials: (number | null)[], wrong: number[][]) => {
+    const b = dualTaskBest(trials, wrong);
+    exam.patchTests({
+      tandem: {
+        ...td,
+        dualTrials: trials,
+        dualWrongByTrial: wrong,
+        dualWrong: undefined,
+        dualBestTrial: b?.index ?? null,
+        dualBest: b?.time ?? null,
+        dualErrors: b?.errors ?? null,
+      },
+    });
+  };
   const setDual = (i: number, v: number | null) => {
     const trials = [...dualTrials];
     trials[i] = v;
-    const ok = trials.filter((x): x is number => x !== null && x >= 0);
-    exam.patchTests({ tandem: { ...td, dualTrials: trials, dualBest: ok.length ? Math.min(...ok) : null } });
+    const wrong = wrongBy.map((w) => [...w]);
+    if (v === null) wrong[i] = []; // « Effacer » : temps et réponses de l'essai
+    commit(trials, wrong);
   };
   const toggleWrong = (n: number) => {
-    const wrong = dualWrong.includes(n) ? dualWrong.filter((x) => x !== n) : [...dualWrong, n];
-    exam.patchTests({ tandem: { ...td, dualWrong: wrong, dualErrors: wrong.length } });
+    const wrong = wrongBy.map((w) => [...w]);
+    wrong[active] = wrong[active].includes(n) ? wrong[active].filter((x) => x !== n) : [...wrong[active], n];
+    commit(dualTrials, wrong);
   };
 
   const setTrial = (i: number, v: number | null) => {
@@ -225,33 +245,57 @@ export const TandemStep: React.FC<StepProps> = ({ exam, data, showMissing, targe
         {/* Temps : même chronomètre que la marche simple, rien à taper. */}
         <Scat6Stopwatch
           startLabel={dualNext >= 0 ? `Démarrer l’essai ${dualNext + 1}` : 'Démarrer'}
+          onStart={() => {
+            // Les réponses suivent l'essai qui démarre.
+            if (dualNext >= 0) setActive(dualNext);
+          }}
           onStop={(sec) => {
-            if (dualNext >= 0) setDual(dualNext, sec);
+            if (dualNext >= 0) {
+              setDual(dualNext, sec);
+              setActive(dualNext);
+            }
           }}
         />
+        {/* Un essai = son temps + ses erreurs ; cliquer un essai pour saisir / revoir ses réponses. */}
         <View style={styles.trials}>
-          {dualTrials.map((v, i) => (
-            <View key={i} style={styles.trial}>
-              <Text style={styles.trialLabel}>Essai {i + 1}</Text>
-              <Text style={[styles.trialValue, v !== null && v < 0 && { color: SCAT.danger }]}>
-                {v === null ? '—' : v < 0 ? 'Échec' : `${v} s`}
-              </Text>
-              <View style={styles.row}>
-                {v === null || v >= 0 ? <Scat6Link title="Échec" onPress={() => setDual(i, -1)} /> : null}
-                {v !== null ? <Scat6Link title="Effacer" onPress={() => setDual(i, null)} /> : null}
-              </View>
-            </View>
-          ))}
+          {dualTrials.map((v, i) => {
+            const errors = wrongBy[i]?.length ?? 0;
+            const isBest = best?.index === i;
+            return (
+              <Pressable
+                key={i}
+                onPress={() => setActive(i)}
+                style={({ hovered }: any) => [styles.trial, styles.dualTrial, active === i && styles.dualTrialOn, hovered && active !== i && styles.numberHover]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active === i }}
+              >
+                <View style={styles.dualTrialHead}>
+                  <Text style={styles.trialLabel}>Essai {i + 1}</Text>
+                  {isBest ? <Text style={styles.bestTag}>Retenu</Text> : null}
+                </View>
+                <Text style={[styles.trialValue, v !== null && v < 0 && { color: SCAT.danger }]}>
+                  {v === null ? '—' : v < 0 ? 'Échec' : `${v} s`}
+                </Text>
+                <Text style={styles.help}>
+                  {errors} erreur{errors > 1 ? 's' : ''} de calcul
+                </Text>
+                <View style={styles.row}>
+                  {v === null || v >= 0 ? <Scat6Link title="Échec" onPress={() => setDual(i, -1)} /> : null}
+                  {v !== null || errors > 0 ? <Scat6Link title="Effacer" onPress={() => setDual(i, null)} /> : null}
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
 
-        {/* Calcul : la suite attendue ; un clic sur un nombre manqué le compte comme erreur. */}
+        {/* Calcul : la suite attendue ; un clic sur un nombre manqué le compte comme erreur de l'essai choisi. */}
         <View>
-          <Text style={styles.dualTitle}>Réponses attendues</Text>
+          <Text style={styles.dualTitle}>Réponses attendues · essai {active + 1}</Text>
           <Text style={styles.help}>Cliquez sur un nombre si le patient se trompe ou le saute.</Text>
         </View>
         <View style={styles.sequence}>
           {DUAL_TASK_SEQUENCE.map((n) => {
-            const wrong = dualWrong.includes(n);
+            const wrong = wrongBy[active]?.includes(n) ?? false;
             return (
               <Pressable
                 key={n}
@@ -268,8 +312,10 @@ export const TandemStep: React.FC<StepProps> = ({ exam, data, showMissing, targe
         </View>
 
         <View style={styles.row}>
-          <ScoreTile label="Meilleur temps (double tâche)" value={td.dualBest === null ? '—' : `${td.dualBest} s`} />
-          <ScoreTile label="Erreurs de calcul" value={String(dualWrong.length)} muted={dualWrong.length === 0} />
+          <ScoreTile
+            label={best ? `Essai retenu (${best.index + 1}) : moins d’erreurs, puis plus rapide` : 'Essai retenu'}
+            value={best ? `${best.time} s · ${best.errors} erreur${best.errors > 1 ? 's' : ''}` : '—'}
+          />
         </View>
       </Scat6Card>
     </>
@@ -382,6 +428,28 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.title,
     fontSize: 24,
     color: SCAT.blueInk,
+  },
+  dualTrial: {
+    borderWidth: 1.5,
+  },
+  dualTrialOn: {
+    borderColor: SCAT.blue,
+    backgroundColor: SCAT.blueSoft,
+  },
+  dualTrialHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacings.xs,
+  },
+  bestTag: {
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+    color: SCAT.success,
+    backgroundColor: SCAT.successSoft,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    overflow: 'hidden',
   },
   dualTitle: {
     fontFamily: FONTS.title,

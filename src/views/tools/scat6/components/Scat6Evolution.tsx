@@ -14,7 +14,7 @@ import { Scat6Choice, Scat6SectionTitle } from './Scat6UI';
 const DOMAINS: (keyof Scat6Summary)[] = ['symptom_count', 'symptom_severity', 'cognitive_total', 'mbess'];
 
 const CHART_H = 120;
-const PAD = { top: 16, right: 20, bottom: 22, left: 30 };
+const PAD = { top: 22, right: 20, bottom: 22, left: 30 };
 
 interface Point {
   label: string;
@@ -163,7 +163,8 @@ const MiniChart: React.FC<{
             {shown !== null && points[shown]?.value !== null && (
               <SvgText
                 x={x(shown)}
-                y={y(points[shown].value!) - 10}
+                // Au-dessus du point ; sous le point s'il est en haut du graphique (pour ne pas sortir du cadre).
+                y={y(points[shown].value!) - 10 < 13 ? y(points[shown].value!) + 19 : y(points[shown].value!) - 10}
                 fontSize={12}
                 fontWeight="bold"
                 fill={SCAT.text}

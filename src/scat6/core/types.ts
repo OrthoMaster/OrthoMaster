@@ -40,10 +40,19 @@ export type Scat6Tests = {
     done: boolean;
     /** Double tâche : essais chronométrés (s, -1 = échec) ; dualBest = meilleur temps réussi. */
     dualTrials?: (number | null)[];
-    /** Double tâche : nombres de la suite 88, 81… que le patient a manqués (dualErrors = leur nombre). */
+    /** Ancien format : nombres manqués, un seul essai (remplacé par dualWrongByTrial). */
     dualWrong?: number[];
+    /** Double tâche : nombres de la suite 88, 81… manqués, essai par essai. */
+    dualWrongByTrial?: number[][];
+    /** Essai retenu (0–2) : le moins d'erreurs, puis le plus rapide ; dualBest / dualErrors sont les siens. */
+    dualBestTrial?: number | null;
   };
-  delayed: { recalled: string[]; done: boolean };
+  delayed: {
+    recalled: string[];
+    done: boolean;
+    /** Commencée avant les 5 minutes, sur décision du médecin : quand, et combien de secondes il restait. */
+    early?: { at: string; remainingS: number } | null;
+  };
 };
 
 /**

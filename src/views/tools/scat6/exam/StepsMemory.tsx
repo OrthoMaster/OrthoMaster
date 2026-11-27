@@ -240,7 +240,21 @@ export const ConcentrationStep: React.FC<StepProps> = ({ exam, data, showMissing
 export const DelayedRecallStep: React.FC<StepProps> = ({ exam, data, target, now }) => {
   const { memory, delayed } = data.tests;
   const remaining = memory.endedAt ? delayedRecallRemainingMs(new Date(memory.endedAt), new Date(now)) : null;
-  const locked = remaining === null || remaining > 0;
+  // Le médecin peut commencer avant la fin des 5 minutes (confirmation, mentionné dans le rapport).
+  const early = delayed.early ?? null;
+  const locked = remaining === null || (remaining > 0 && !early);
+
+  const startEarly = async () => {
+    if (remaining === null || remaining <= 0) return;
+    const ok = await scat6Confirm(
+      'Commencer avant 5 minutes ?',
+      `Le SCAT6 prévoit au moins 5 minutes après la mémoire immédiate (il reste ${Math.floor(remaining / 60000)}:${String(
+        Math.floor((remaining % 60000) / 1000)
+      ).padStart(2, '0')}). Ce choix sera indiqué dans le rapport.`,
+      'Commencer maintenant'
+    );
+    if (ok) exam.patchTests({ delayed: { ...delayed, early: { at: new Date().toISOString(), remainingS: Math.ceil(remaining / 1000) } } });
+  };
 
   // Fin du délai entendue : le médecin fait peut-être l'équilibre pendant l'attente.
   const wasLocked = useRef(locked);
@@ -256,6 +270,7 @@ export const DelayedRecallStep: React.FC<StepProps> = ({ exam, data, target, now
     exam.patchTests({
       delayed: {
         done: true,
+        early: delayed.early ?? null,
         recalled: delayed.recalled.includes(w) ? delayed.recalled.filter((x) => x !== w) : [...delayed.recalled, w],
       },
     });
@@ -268,6 +283,7 @@ export const DelayedRecallStep: React.FC<StepProps> = ({ exam, data, target, now
             La mémoire immédiate n’a pas été terminée : la mémoire différée ne peut pas être réalisée.
           </Scat6Notice>
         ) : locked ? (
+          <View style={styles.waitWrap}>
           <View style={styles.wait}>
             <Ionicons name="hourglass-outline" size={34} color={SCAT.blue} />
             <View style={styles.flex}>
@@ -280,6 +296,20 @@ export const DelayedRecallStep: React.FC<StepProps> = ({ exam, data, target, now
               </Text>
             </View>
           </View>
+          <Scat6Button
+            title="Commencer maintenant"
+            icon="play-skip-forward-outline"
+            variant="secondary"
+            small
+            style={styles.alignStart}
+            onPress={startEarly}
+          />
+          </View>
+        ) : early ? (
+          <Scat6Notice tone="warning">
+            Commencée avant la fin du délai de 5 minutes (il restait {Math.floor(early.remainingS / 60)}:
+            {String(early.remainingS % 60).padStart(2, '0')}), sur décision du médecin.
+          </Scat6Notice>
         ) : (
           <Scat6Notice tone="success">Le délai de 5 minutes est respecté.</Scat6Notice>
         )}
@@ -316,6 +346,9 @@ const styles = StyleSheet.create({
   },
   markButton: {
     minWidth: 160,
+  },
+  waitWrap: {
+    gap: Spacings.sm,
   },
   alignStart: {
     alignSelf: 'flex-start',

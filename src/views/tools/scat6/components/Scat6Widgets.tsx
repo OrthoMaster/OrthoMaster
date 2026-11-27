@@ -11,6 +11,7 @@ import { Scat6Button } from './Scat6UI';
 /* ===================== CHRONOMÈTRE ===================== */
 
 interface StopwatchProps {
+  onStart?: () => void;
   onStop: (seconds: number) => void;
   onReset?: () => void;
   /** Durée cible : s'arrête toute seule (mBESS : 20 s), démarre tout de suite.  */
@@ -23,7 +24,7 @@ interface StopwatchProps {
  * Chronomètre (mois à l'envers, tandem) ou durée cible (mBESS 20 s), au dixième.
  * Chaque repère est entendu (tick, départ, fin) : le médecin regarde le patient, pas l'écran.
  */
-export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, target, startLabel = 'Démarrer', compact }) => {
+export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStart, onStop, onReset, target, startLabel = 'Démarrer', compact }) => {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   // Ref : l'intervalle lit toujours le dernier onStop sans redémarrer.
@@ -52,6 +53,7 @@ export const Scat6Stopwatch: React.FC<StopwatchProps> = ({ onStop, onReset, targ
 
   // Démarrage immédiat (pas de 3-2-1).
   const start = () => {
+    onStart?.();
     setElapsed(0);
     setStartedAt(Date.now());
     cue('start');

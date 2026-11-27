@@ -48,8 +48,8 @@ export const stepMissing = (step: Scat6Step, data: Scat6Data, now: number): Miss
       return t.tandem.done ? null : { key: 'chrono', hint: 'Chronométrez au moins un essai (ou notez « Échec »).' };
     case 'memoire-differee': {
       if (!t.memory.endedAt) return { key: 'lock', hint: 'La mémoire immédiate n’a pas été terminée.' };
-      return delayedRecallRemainingMs(new Date(t.memory.endedAt), new Date(now)) > 0
-        ? { key: 'lock', hint: 'Attendez la fin du délai de 5 minutes.' }
+      return delayedRecallRemainingMs(new Date(t.memory.endedAt), new Date(now)) > 0 && !t.delayed.early
+        ? { key: 'lock', hint: 'Attendez la fin du délai de 5 minutes (ou « Commencer maintenant »).' }
         : null;
     }
     case 'decision':

@@ -346,7 +346,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
                   skipped,
                   current: x === step,
                   complete: !skipped && x !== 'decision' && stepMissing(x, data, now) === null && SCAT6_STEPS.indexOf(x) < position,
-                  locked: x === 'memoire-differee' && remaining !== null && remaining > 0,
+                  locked: x === 'memoire-differee' && remaining !== null && remaining > 0 && !data.tests.delayed.early,
                 };
               };
               const note = (x: Scat6Step) => {

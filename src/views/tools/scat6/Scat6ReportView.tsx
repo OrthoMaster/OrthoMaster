@@ -153,7 +153,18 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
         label="Mois à l’envers"
         value={t.months.done ? `${t.months.seconds} s · ${t.months.errors ?? 0} erreur(s) → ${monthsBackward(t.months)}/1` : '—'}
       />
-      <Line label="Mémoire différée" value={summary.delayed === null ? '—' : `${summary.delayed}/10`} />
+      <Line
+        label="Mémoire différée"
+        value={
+          summary.delayed === null
+            ? '—'
+            : `${summary.delayed}/10${
+                t.delayed.early
+                  ? ` · commencée avant 5 min (il restait ${Math.floor(t.delayed.early.remainingS / 60)}:${String(t.delayed.early.remainingS % 60).padStart(2, '0')}), décision du médecin`
+                  : ''
+              }`
+        }
+      />
     </Scat6Card>,
     <Scat6Card key="balance" style={styles.cell}>
       <Scat6SectionTitle
@@ -184,7 +195,23 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
         </Text>
       ) : null}
       {t.tandem.dualBest !== null ? (
-        <Line label="Double tâche" value={`${t.tandem.dualBest} s · ${t.tandem.dualErrors ?? 0} erreur(s)`} />
+        <Line
+          label="Double tâche"
+          value={
+            t.tandem.dualTrials
+              ? `${t.tandem.dualTrials
+                  .map((v, i) =>
+                    v === null
+                      ? null
+                      : `essai ${i + 1} : ${v < 0 ? 'échec' : `${v} s`}, ${t.tandem.dualWrongByTrial?.[i]?.length ?? 0} erreur(s)${
+                          t.tandem.dualBestTrial === i ? ' (retenu)' : ''
+                        }`
+                  )
+                  .filter(Boolean)
+                  .join(' · ')}`
+              : `${t.tandem.dualBest} s · ${t.tandem.dualErrors ?? 0} erreur(s)`
+          }
+        />
       ) : null}
     </Scat6Card>,
   ];
