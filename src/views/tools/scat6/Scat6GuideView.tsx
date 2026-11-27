@@ -12,7 +12,7 @@ type IconName = keyof typeof Ionicons.glyphMap;
 
 const MATERIAL: { icon: IconName; text: string }[] = [
   { icon: 'home-outline', text: 'Une pièce calme, patient au repos, 10 à 15 minutes.' },
-  { icon: 'resize-outline', text: 'Ruban adhésif au sol : ligne de 3 m × 38 mm (marche en tandem).' },
+  { icon: 'resize-outline', text: 'Ruban adhésif au sol : ligne de 3 m (marche sur une ligne).' },
   { icon: 'square-outline', text: 'Mousse ≈ 50 × 40 × 6 cm (facultative, mBESS sur mousse).' },
   { icon: 'stopwatch-outline', text: 'Chronomètre et signaux sonores intégrés : activez le son de l’ordinateur.' },
 ];
@@ -21,7 +21,7 @@ const STEPS: { n: string; title: string; text: string }[] = [
   { n: '1', title: 'Renseignements', text: 'Antécédents : blessures à la tête, migraines, troubles de l’apprentissage, TDA/H, troubles psychologiques, antécédents neurologiques.' },
   { n: '2', title: 'Symptômes', text: '22 symptômes notés de 0 à 6 (/22 · /132). Baseline : « habituellement » ; après un choc : « maintenant ».' },
   { n: '3', title: 'Cognitif', text: 'Orientation /5, mémoire immédiate /30 (3 essais toujours), concentration /5 (chiffres et mois à l’envers).' },
-  { n: '4', title: 'Équilibre', text: 'mBESS : 3 positions × 20 s, yeux fermés (/30 erreurs) ; marche en tandem si l’équilibre est normal.' },
+  { n: '4', title: 'Équilibre', text: 'mBESS : 3 positions × 20 s, yeux fermés (/30 erreurs) ; marche sur une ligne si l’équilibre est normal.' },
   { n: '5', title: 'Mémoire différée', text: 'Au moins 5 minutes après la fin de la mémoire immédiate (/10) : l’équilibre occupe ce délai.' },
   { n: '6', title: 'Décision', text: 'Comparaison avec la baseline, examen neurologique, diagnostic Oui / Non / Différé, signature.' },
 ];

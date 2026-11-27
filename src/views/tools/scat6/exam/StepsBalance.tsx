@@ -1,11 +1,11 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Spacings from '../../../../../constants/Spacings';
-import { INSTRUCTIONS, MBESS_ERRORS, MBESS_STANCES } from '../../../../scat6/core/content';
+import { DUAL_TASK_SEQUENCE, INSTRUCTIONS, MBESS_ERRORS, MBESS_STANCES } from '../../../../scat6/core/content';
 import { mbess, tandemGait } from '../../../../scat6/core/scoring';
-import { Scat6Button, Scat6Card, Scat6Choice, Scat6Field, Scat6Instruction, Scat6Link, Scat6Notice, Scat6SectionTitle, Scat6YesNo } from '../components/Scat6UI';
+import { Scat6Button, Scat6Card, Scat6Choice, Scat6Instruction, Scat6Link, Scat6Notice, Scat6SectionTitle, Scat6YesNo } from '../components/Scat6UI';
 import { Scat6Counter, Scat6Stopwatch } from '../components/Scat6Widgets';
 import { SCAT, FONTS } from '../scat6Theme';
 import { ScoreTile } from './StepsHistory';
@@ -13,8 +13,14 @@ import type { StepProps } from './stepTypes';
 
 /* ===================== 4 · ÉQUILIBRE (mBESS) ===================== */
 
-/** Animation des 3 positions (générée, voir assets/scat6/mbess.gif). Rapport largeur / hauteur 720 × 400. */
-const MBESS_DEMO = require('../../../../../assets/scat6/mbess.gif');
+/**
+ * Animation des 3 positions, selon le pied testé (non dominant) : personnage et vue de dessus des pieds
+ * en miroir. Rapport largeur / hauteur 720 × 400.
+ */
+const MBESS_DEMO = {
+  droite: require('../../../../../assets/scat6/mbess.gif'),
+  gauche: require('../../../../../assets/scat6/mbess-gauche.gif'),
+};
 const DEMO_WIDTH = 460;
 
 /**
@@ -23,6 +29,11 @@ const DEMO_WIDTH = 460;
  */
 export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, target }) => {
   const m = data.tests.mbess;
+
+  // Pied testé : droit par défaut (modifiable).
+  useEffect(() => {
+    if (!m.foot) exam.patchTests({ mbess: { ...m, foot: 'droite' } });
+  }, [m.foot]);
 
   const set = (surface: 'firm' | 'foam', i: number, v: number) => {
     const arr = [...(m[surface] ?? [null, null, null])];
@@ -79,7 +90,7 @@ export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, targ
         <View style={styles.demo}>
           <View style={styles.demoFrame}>
             <Image
-              source={MBESS_DEMO}
+              source={MBESS_DEMO[m.foot ?? 'droite']}
               style={styles.demoImage}
               resizeMode="contain"
               accessibilityLabel="Animation : pieds joints, tandem, unipodal ; yeux fermés, mains sur les hanches ; pied dominant et non dominant indiqués"
@@ -130,7 +141,7 @@ export const BalanceStep: React.FC<StepProps> = ({ exam, data, showMissing, targ
       <Scat6Card ref={target('normal')} highlight={showMissing && m.normal === null}>
         <Scat6YesNo
           label="Examen de l’équilibre normal ?"
-          hint="Étape suivante, la marche en tandem, uniquement si l’équilibre est normal (Oui)."
+          hint="Étape suivante, la marche sur une ligne, uniquement si l’équilibre est normal (Oui)."
           value={m.normal}
           onChange={(normal) => exam.patchTests({ mbess: { ...m, normal } })}
         />
@@ -150,6 +161,21 @@ export const TandemStep: React.FC<StepProps> = ({ exam, data, showMissing, targe
   const nextEmpty = td.trials.findIndex((v) => v === null);
   const result = tandemGait(td.trials);
 
+  // Double tâche : 3 essais chronométrés (meilleur temps réussi) + nombres manqués de la suite 88, 81…
+  const dualTrials = td.dualTrials ?? [null, null, null];
+  const dualWrong = td.dualWrong ?? [];
+  const dualNext = dualTrials.findIndex((v) => v === null);
+  const setDual = (i: number, v: number | null) => {
+    const trials = [...dualTrials];
+    trials[i] = v;
+    const ok = trials.filter((x): x is number => x !== null && x >= 0);
+    exam.patchTests({ tandem: { ...td, dualTrials: trials, dualBest: ok.length ? Math.min(...ok) : null } });
+  };
+  const toggleWrong = (n: number) => {
+    const wrong = dualWrong.includes(n) ? dualWrong.filter((x) => x !== n) : [...dualWrong, n];
+    exam.patchTests({ tandem: { ...td, dualWrong: wrong, dualErrors: wrong.length } });
+  };
+
   const setTrial = (i: number, v: number | null) => {
     const trials = [...td.trials];
     trials[i] = v;
@@ -159,7 +185,7 @@ export const TandemStep: React.FC<StepProps> = ({ exam, data, showMissing, targe
   return (
     <>
       <Scat6Instruction text={INSTRUCTIONS.tandem} />
-      <Scat6Notice>Ligne de 3 m × 38 mm (ruban adhésif). Un essai d’entraînement, puis 3 essais chronométrés.</Scat6Notice>
+      <Scat6Notice>Ligne de 3 m (ruban adhésif). Un essai d’entraînement, puis 3 essais chronométrés.</Scat6Notice>
 
       <Scat6Card ref={target('chrono')} highlight={showMissing && !td.done}>
         <Scat6Stopwatch
@@ -195,26 +221,55 @@ export const TandemStep: React.FC<StepProps> = ({ exam, data, showMissing, targe
       <Scat6Card>
         <Scat6SectionTitle title="Double tâche (facultative)" />
         <Scat6Instruction text={INSTRUCTIONS.dualTask} />
-        <View style={styles.dual}>
-          <View style={styles.dualField}>
-            <Scat6Field
-              label="Meilleur temps en double tâche (s)"
-              keyboardType="decimal-pad"
-              placeholder="ex. 14,2"
-              value={td.dualBest === null ? '' : String(td.dualBest).replace('.', ',')}
-              onChangeText={(v) => {
-                const n = Number(v.replace(',', '.'));
-                exam.patchTests({ tandem: { ...td, dualBest: v.trim() === '' || !Number.isFinite(n) || n <= 0 ? null : n } });
-              }}
-            />
-          </View>
-          <View style={styles.dualField}>
-            <Scat6Counter
-              label="Erreurs de calcul"
-              value={td.dualErrors}
-              onChange={(dualErrors) => exam.patchTests({ tandem: { ...td, dualErrors } })}
-            />
-          </View>
+
+        {/* Temps : même chronomètre que la marche simple, rien à taper. */}
+        <Scat6Stopwatch
+          startLabel={dualNext >= 0 ? `Démarrer l’essai ${dualNext + 1}` : 'Démarrer'}
+          onStop={(sec) => {
+            if (dualNext >= 0) setDual(dualNext, sec);
+          }}
+        />
+        <View style={styles.trials}>
+          {dualTrials.map((v, i) => (
+            <View key={i} style={styles.trial}>
+              <Text style={styles.trialLabel}>Essai {i + 1}</Text>
+              <Text style={[styles.trialValue, v !== null && v < 0 && { color: SCAT.danger }]}>
+                {v === null ? '—' : v < 0 ? 'Échec' : `${v} s`}
+              </Text>
+              <View style={styles.row}>
+                {v === null || v >= 0 ? <Scat6Link title="Échec" onPress={() => setDual(i, -1)} /> : null}
+                {v !== null ? <Scat6Link title="Effacer" onPress={() => setDual(i, null)} /> : null}
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Calcul : la suite attendue ; un clic sur un nombre manqué le compte comme erreur. */}
+        <View>
+          <Text style={styles.dualTitle}>Réponses attendues</Text>
+          <Text style={styles.help}>Cliquez sur un nombre si le patient se trompe ou le saute.</Text>
+        </View>
+        <View style={styles.sequence}>
+          {DUAL_TASK_SEQUENCE.map((n) => {
+            const wrong = dualWrong.includes(n);
+            return (
+              <Pressable
+                key={n}
+                onPress={() => toggleWrong(n)}
+                style={({ hovered }: any) => [styles.number, wrong && styles.numberWrong, !wrong && hovered && styles.numberHover]}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: wrong }}
+                accessibilityLabel={`${n}${wrong ? ' : erreur' : ''}`}
+              >
+                <Text style={[styles.numberText, wrong && styles.numberTextWrong]}>{n}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.row}>
+          <ScoreTile label="Meilleur temps (double tâche)" value={td.dualBest === null ? '—' : `${td.dualBest} s`} />
+          <ScoreTile label="Erreurs de calcul" value={String(dualWrong.length)} muted={dualWrong.length === 0} />
         </View>
       </Scat6Card>
     </>
@@ -328,14 +383,41 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: SCAT.blueInk,
   },
-  dual: {
+  dualTitle: {
+    fontFamily: FONTS.title,
+    fontSize: 15,
+    color: SCAT.blueInk,
+  },
+  sequence: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacings.lg,
-    alignItems: 'flex-end',
+    gap: Spacings.xs,
   },
-  dualField: {
-    flexGrow: 1,
-    flexBasis: 260,
+  number: {
+    minWidth: 52,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: SCAT.blueLine,
+    backgroundColor: SCAT.card,
+    alignItems: 'center',
+  },
+  numberHover: {
+    backgroundColor: SCAT.blueSoft,
+  },
+  numberWrong: {
+    backgroundColor: SCAT.dangerSoft,
+    borderColor: SCAT.danger,
+  },
+  numberText: {
+    fontFamily: FONTS.title,
+    fontSize: 18,
+    color: SCAT.blueInk,
+    fontVariant: ['tabular-nums'],
+  },
+  numberTextWrong: {
+    color: SCAT.dangerDark,
+    textDecorationLine: 'line-through',
   },
 });

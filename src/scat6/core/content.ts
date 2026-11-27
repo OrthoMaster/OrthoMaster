@@ -36,7 +36,7 @@ export const STEP_INFO: Record<Scat6Step, { number: number; title: string; short
   memoire: { number: 3, title: 'Mémoire immédiate', short: 'Mémoire' },
   concentration: { number: 3, title: 'Concentration', short: 'Concentration' },
   equilibre: { number: 4, title: 'Équilibre (mBESS)', short: 'Équilibre' },
-  tandem: { number: 4, title: 'Marche en tandem', short: 'Tandem' },
+  tandem: { number: 4, title: 'Marche sur une ligne', short: 'Ligne' },
   'memoire-differee': { number: 5, title: 'Mémoire différée', short: 'Mémoire différée' },
   decision: { number: 6, title: 'Décision', short: 'Décision' },
 };
@@ -53,6 +53,9 @@ export const STEP_GROUPS: { number: number; title: string; steps: Scat6Step[] }[
   { number: 5, title: 'Mémoire différée', steps: ['memoire-differee'] },
   { number: 6, title: 'Décision', steps: ['decision'] },
 ];
+
+/** Double tâche : réponses attendues (88, puis − 7 à chaque fois), affichées pour suivre le patient. */
+export const DUAL_TASK_SEQUENCE = Array.from({ length: 13 }, (_, i) => 88 - 7 * i);
 
 /** Popup « i » à côté de mBESS (en-tête de l'étape équilibre). */
 export const MBESS_INFO = {
@@ -190,7 +193,7 @@ export const INSTRUCTIONS = {
   tandem:
     'Aussi vite que possible, marchez jusqu’au bout de la ligne en posant le talon juste devant les orteils, puis revenez sans séparer vos pieds ou les poser sur le côté.',
   dualTask:
-    'Maintenant marchez en plaçant un pied directement devant l’autre et comptez à rebours à voix haute en soustrayant 7. Commencez à 88. Allez-y.',
+    'Maintenant, marchez comme avant et, à voix haute, comptez à l’envers en commençant à 88 et en retranchant 7 à chaque fois.',
   attestation:
     'Je suis un professionnel de santé. J’ai personnellement effectué ou supervisé cette évaluation menée à l’aide du SCAT6.',
 };

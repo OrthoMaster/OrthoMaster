@@ -161,7 +161,7 @@ export const Scat6ReportView = ({ navigation, route }: { navigation: any; route:
       ))}
       <Line label="mBESS sol ferme" value={summary.mbess === null ? '—' : `${summary.mbess}/30`} strong />
       <Line
-        label="Marche en tandem"
+        label="Marche sur une ligne"
         value={
           t.tandem.done
             ? t.tandem.trials.map((v) => (v === null ? '—' : v < 0 ? 'échec' : `${v} s`)).join(' · ')

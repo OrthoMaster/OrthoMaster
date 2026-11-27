@@ -33,7 +33,16 @@ export type Scat6Tests = {
   months: { seconds: number | null; errors: number | null; done: boolean };
   mbess: { foot: 'gauche' | 'droite' | null; firm: (number | null)[]; foam: (number | null)[] | null; normal: boolean | null };
   /** Essai de tandem : secondes, -1 = échec, null = pas fait. */
-  tandem: { trials: (number | null)[]; dualBest: number | null; dualErrors: number | null; done: boolean };
+  tandem: {
+    trials: (number | null)[];
+    dualBest: number | null;
+    dualErrors: number | null;
+    done: boolean;
+    /** Double tâche : essais chronométrés (s, -1 = échec) ; dualBest = meilleur temps réussi. */
+    dualTrials?: (number | null)[];
+    /** Double tâche : nombres de la suite 88, 81… que le patient a manqués (dualErrors = leur nombre). */
+    dualWrong?: number[];
+  };
   delayed: { recalled: string[]; done: boolean };
 };
 

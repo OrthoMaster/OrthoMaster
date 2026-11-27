@@ -233,8 +233,16 @@ export const Scat6SeverityRow = React.forwardRef<
 
 const PERCENT_STEPS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
+/** Bleu de plus en plus foncé de 0 à 100 % (case remplie). */
+const percentColor = (n: number) => {
+  const from = [0xdc, 0xe9, 0xfa];
+  const to = [0x24, 0x50, 0x8f];
+  const k = n / 100;
+  return `rgb(${from.map((c, i) => Math.round(c + (to[i] - c) * k)).join(',')})`;
+};
+
 /**
- * « À combien de % vous sentez-vous normal ? » : 11 cases de 10 %, comme une réglette.
+ * « À combien de % vous sentez-vous normal ? » : 11 cases de 10 %, sans chiffres, de plus en plus foncées.
  * Les cases jusqu'à la valeur choisie sont remplies ; libellés aux deux bouts, valeur affichée.
  */
 export const Scat6PercentScale: React.FC<{
@@ -259,16 +267,14 @@ export const Scat6PercentScale: React.FC<{
             onPress={() => onChange(on ? null : n)}
             style={({ hovered }: any) => [
               styles.pctBox,
-              filled && styles.pctBoxFilled,
+              filled && { backgroundColor: percentColor(n), borderColor: percentColor(n) },
               on && styles.pctBoxOn,
-              !filled && hovered && styles.sevBoxHover,
+              !filled && hovered && { backgroundColor: percentColor(n), opacity: 0.45 },
             ]}
             accessibilityRole="radio"
             accessibilityState={{ selected: on }}
             accessibilityLabel={`${n} %`}
-          >
-            <Text style={[styles.pctBoxText, filled && { color: SCAT.card }, on && { fontFamily: FONTS.title }]}>{n}</Text>
-          </Pressable>
+          />
         );
       })}
     </View>
@@ -308,11 +314,13 @@ const styles = StyleSheet.create({
   },
   pctBar: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
+    paddingVertical: 3,
   },
   pctBox: {
     flex: 1,
-    height: 44,
+    height: 22,
     borderRadius: 8,
     borderWidth: 1.5,
     borderColor: SCAT.blueLine,
@@ -320,18 +328,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pctBoxFilled: {
-    backgroundColor: SCAT.blue,
-    borderColor: SCAT.blue,
-  },
+  // Case choisie : contour foncé, un peu plus haute.
   pctBoxOn: {
-    backgroundColor: SCAT.blueDark,
     borderColor: SCAT.blueInk,
-  },
-  pctBoxText: {
-    fontFamily: FONTS.medium,
-    fontSize: 13,
-    color: SCAT.blueDark,
+    borderWidth: 2.5,
+    transform: [{ scaleY: 1.25 }],
   },
   pctEnds: {
     flexDirection: 'row',

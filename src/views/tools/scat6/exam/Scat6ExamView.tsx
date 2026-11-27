@@ -294,7 +294,6 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
   const data = record.data;
   const step = record.step;
   const info = STEP_INFO[step];
-  const group = STEP_GROUPS.find((g) => g.steps.includes(step));
   const missing = stepMissing(step, data, now);
   const summary = summarize(data);
   const skippable = (SKIPPABLE as string[]).includes(step);
@@ -434,7 +433,7 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
               <LiveRow label="Mémoire différée" value={formatScore(summary.delayed, 10)} />
               <LiveRow label="Total cognitif" value={formatScore(summary.cognitive_total, 50)} strong />
               <LiveRow label="mBESS" value={formatScore(summary.mbess, 30)} />
-              {summary.tandem_best !== null && <LiveRow label="Tandem" value={`${summary.tandem_best} s`} />}
+              {summary.tandem_best !== null && <LiveRow label="Marche sur une ligne" value={`${summary.tandem_best} s`} />}
             </View>
           </ScrollView>
         )}
@@ -451,7 +450,6 @@ export const Scat6ExamView = ({ navigation, route }: { navigation: any; route: a
               <View style={styles.stepBadge}>
                 <Text style={styles.stepBadgeText}>Étape {info.number}</Text>
               </View>
-              {group && group.steps.length > 1 ? <Text style={styles.stepHeadGroup}>{group.title} ·</Text> : null}
               <Text style={styles.stepHeadTitle}>{info.title}</Text>
               {step === 'equilibre' ? (
                 <Pressable
@@ -759,11 +757,6 @@ const styles = StyleSheet.create({
     borderBottomColor: SCAT.line,
     paddingHorizontal: Spacings.lg,
     paddingVertical: Spacings.sm,
-  },
-  stepHeadGroup: {
-    fontFamily: FONTS.medium,
-    fontSize: 18,
-    color: SCAT.blueDark,
   },
   infoButton: {
     borderRadius: 999,
